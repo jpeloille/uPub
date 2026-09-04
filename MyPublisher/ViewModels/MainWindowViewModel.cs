@@ -194,10 +194,15 @@ public partial class MainWindowViewModel : ViewModelBase
     /// </summary>
     public Frame? SingleSelected => Selection.Count == 1 ? Selection[0] : null;
 
+    /// <summary>
+    /// Ce que porte la sélection, en toutes lettres. On compte les blocs plutôt que de
+    /// les nommer : un libellé bâti sur le nom d'un bloc se démentirait dès qu'on le
+    /// renomme, faute d'être prévenu.
+    /// </summary>
     public string SelectionLabel => Selection.Count switch
     {
         0 => "Aucun bloc sélectionné.",
-        1 => Selection[0].DisplayName,
+        1 => "1 bloc sélectionné.",
         _ => $"{Selection.Count} blocs sélectionnés."
     };
 
