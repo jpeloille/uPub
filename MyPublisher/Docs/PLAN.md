@@ -265,6 +265,11 @@ juste offerte nulle part) et traits en pointillés.
 *Recette* : encadrer une image d'un filet de 2 pt sans superposer de forme ; l'export
 est identique à l'écran. Le contrôle P2 passe.
 
+*Note du 5 septembre 2026* — C3c a ajouté le discriminant `group` sans toucher à
+`FormatVersion`, aucun fichier existant n'étant concerné par une addition (un document
+contenant un groupe ne s'ouvrira pas dans une version antérieure, c'est le prix assumé).
+Le passage à 2 reste attaché au renommage ci-dessus, et ne se compte donc qu'une fois.
+
 ### C2 — Repères *(fiches 05, 06, 02)*
 
 **C2a — Grille de composition.** Colonnes, lignes, et grille de ligne de base réglée en
@@ -304,6 +309,28 @@ Faire C3a et C3b d'abord : environ 80 % de l'usage pour une fraction du coût.
 
 *Recette* : sélectionner quatre blocs, les aligner sur leur bord gauche, les grouper,
 déplacer le groupe, l'exporter — la géométrie tient.
+
+*Fait le 5 septembre 2026*, en trois temps comme prévu ci-dessus.
+
+- **C3a** — `Selection` est une collection ; `Selected` n'en est plus que l'ancre.
+  Déplacement, suppression, duplication, ordre de superposition et annulation portent
+  sur l'ensemble. Le panneau de propriétés reste muet à plusieurs blocs, et les
+  poignées ne s'affichent que sur un bloc seul : redimensionner un ensemble, c'est le
+  grouper.
+- **C3b** — six alignements et deux répartitions. L'incohérence signalée est tranchée
+  par la case *Par rapport aux marges*, cochée par défaut : « centrer horizontalement »
+  sur un bloc seul travaille désormais sur la zone de composition et non sur la page.
+  La répartition égalise les blancs, pas les centres.
+- **C3c** — `GroupFrame` porte ses blocs en coordonnées relatives ; rendu et export
+  sont devenus récursifs. Redimensionner un groupe met ses blocs à l'échelle, sans
+  toucher au corps du texte. Dissocier compose la rotation du groupe avec celle de
+  chaque bloc, si bien qu'un groupe tourné se défait sans que rien ne bouge.
+
+Vérifié en comparant les rendus : le PDF d'un groupe est identique au pixel près à
+celui des mêmes blocs posés à plat, grouper puis dissocier rend exactement le document
+de départ, et un groupe élargi de moitié donne la même image que les blocs mis à
+l'échelle à la main. Les positions à l'écran ont été relevées dans l'arbre visuel :
+elles concordent avec l'export.
 
 ### C4 — Champs *(fiches 08, 19)*
 

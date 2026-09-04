@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text.Json.Serialization;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -51,6 +52,7 @@ public readonly record struct Extent(double Left, double Top, double Right, doub
 [JsonDerivedType(typeof(TextFrame), "text")]
 [JsonDerivedType(typeof(ImageFrame), "image")]
 [JsonDerivedType(typeof(ShapeFrame), "shape")]
+[JsonDerivedType(typeof(GroupFrame), "group")]
 public abstract partial class Frame : ObservableObject
 {
     // L'ordre d'écriture est explicite d'un bout à l'autre du modèle. Sans lui, le
@@ -155,6 +157,20 @@ public abstract partial class Frame : ObservableObject
         var dx = lx - Width / 2;
         var dy = ly - Height / 2;
         return (dx * cos - dy * sin + CenterX, dx * sin + dy * cos + CenterY);
+    }
+
+    partial void OnWidthChanged(double oldValue, double newValue) =>
+        OnResized(oldValue, newValue, horizontal: true);
+
+    partial void OnHeightChanged(double oldValue, double newValue) =>
+        OnResized(oldValue, newValue, horizontal: false);
+
+    /// <summary>
+    /// Appelé quand le bloc change de taille. Un bloc ordinaire n'en fait rien ; un
+    /// groupe s'en sert pour suivre avec les blocs qu'il contient.
+    /// </summary>
+    protected virtual void OnResized(double oldSize, double newSize, bool horizontal)
+    {
     }
 
     public abstract Frame Clone();
@@ -352,6 +368,67 @@ public partial class ShapeFrame : Frame
             StrokeThickness = StrokeThickness, CornerRadius = CornerRadius
         };
         CopyBaseTo(c);
+        return c;
+    }
+}
+
+/// <summary>
+/// Groupe de blocs manipulé comme un bloc unique : il se déplace, se tourne et se
+/// redimensionne d'une pièce, et c'est ce qui permet à une légende de suivre son image.
+///
+/// Les enfants sont en coordonnées relatives au coin supérieur gauche du groupe. Rendu
+/// et export composent les deux repères ; le groupe n'a donc aucune position absolue à
+/// tenir à jour quand il bouge, et une rotation se compose naturellement avec celle de
+/// chaque enfant.
+///
+/// Un enfant ne se sélectionne pas : comme dans Publisher, on dissocie pour retoucher.
+/// </summary>
+public partial class GroupFrame : Frame
+{
+    /// <summary>
+    /// Blocs du groupe, du fond vers l'avant. Sérialisés en dernier (rang 100) et ce
+    /// n'est pas indifférent : la taille du groupe doit être relue avant eux, sinon la
+    /// mise à l'échelle ci-dessous s'appliquerait à des enfants déjà en place.
+    /// </summary>
+    [JsonPropertyOrder(100)]
+    public ObservableCollection<Frame> Children { get; set; } = [];
+
+    [JsonIgnore] public override string Kind => "Groupe";
+
+    /// <summary>
+    /// Redimensionner le groupe mesure ses blocs à la même aune. Le corps du texte, lui,
+    /// ne change pas : un bloc de texte élargi recompose son texte, il ne le grossit pas.
+    /// C'est le choix qui garde la mise en page lisible plutôt que photographique.
+    /// </summary>
+    protected override void OnResized(double oldSize, double newSize, bool horizontal)
+    {
+        if (oldSize <= 0 || newSize <= 0) return;
+
+        var factor = newSize / oldSize;
+        foreach (var child in Children)
+        {
+            if (horizontal)
+            {
+                child.X *= factor;
+                child.Width *= factor;
+            }
+            else
+            {
+                child.Y *= factor;
+                child.Height *= factor;
+            }
+        }
+    }
+
+    public override Frame Clone()
+    {
+        var c = new GroupFrame();
+
+        // La géométrie d'abord : poser la taille du groupe met ses enfants à l'échelle.
+        // Copier les enfants avant reviendrait à les mesurer au rapport entre la taille
+        // par défaut d'un bloc et celle du groupe.
+        CopyBaseTo(c);
+        foreach (var child in Children) c.Children.Add(child.Clone());
         return c;
     }
 }

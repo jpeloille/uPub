@@ -18,7 +18,104 @@
                  et on ne pourrait plus poser le curseur dans le texte. -->
             <Setter Property="Background" Value="Transparent"/>
         </Style>
+
+        <!-- ItemsControl place ses éléments via un ContentPresenter : c'est lui qui porte
+             la position sur le Canvas. Le style est posé ici, et non sur un ItemsControl
+             précis, pour valoir aussi bien pour les blocs de la page que pour ceux d'un
+             groupe — le rendu est récursif. -->
+        <Style Selector="ItemsControl.frames ContentPresenter" x:DataType="models:Frame">
+            <Setter Property="Canvas.Left" Value="{Binding X}"/>
+            <Setter Property="Canvas.Top" Value="{Binding Y}"/>
+        </Style>
     </UserControl.Styles>
+
+    <!-- Gabarits des blocs, posés au niveau du contrôle : le canevas d'un groupe les
+         retrouve par la même recherche, ce qui rend le rendu récursif sans duplication. -->
+    <UserControl.DataTemplates>
+
+        <DataTemplate DataType="models:ShapeFrame">
+            <Panel Width="{Binding Width}" Height="{Binding Height}"
+                   RenderTransformOrigin="50%,50%"
+                   RenderTransform="{Binding Rotation, Converter={x:Static conv:Conv.Rotate}}">
+                <Rectangle IsVisible="{Binding IsRectangle}"
+                           Fill="{Binding Fill, Converter={x:Static conv:Conv.Brush}}"
+                           Stroke="{Binding Stroke, Converter={x:Static conv:Conv.Brush}}"
+                           StrokeThickness="{Binding StrokeThickness}"
+                           RadiusX="{Binding CornerRadius}"
+                           RadiusY="{Binding CornerRadius}"/>
+                <Ellipse IsVisible="{Binding IsEllipse}"
+                         Fill="{Binding Fill, Converter={x:Static conv:Conv.Brush}}"
+                         Stroke="{Binding Stroke, Converter={x:Static conv:Conv.Brush}}"
+                         StrokeThickness="{Binding StrokeThickness}"/>
+            </Panel>
+        </DataTemplate>
+
+        <DataTemplate DataType="models:ImageFrame">
+            <Panel Width="{Binding Width}" Height="{Binding Height}"
+                   RenderTransformOrigin="50%,50%"
+                   RenderTransform="{Binding Rotation, Converter={x:Static conv:Conv.Rotate}}">
+                <!-- Repère visible tant qu'aucune image n'est chargée. -->
+                <Rectangle Stroke="#FFB0B0B0" StrokeThickness="0.5" StrokeDashArray="4,3"/>
+                <Image Source="{Binding Path, Converter={x:Static conv:Conv.Image}}"
+                       Stretch="{Binding Fit, Converter={x:Static conv:Conv.Fit}}"/>
+            </Panel>
+        </DataTemplate>
+
+        <DataTemplate DataType="models:TextFrame">
+            <!-- Le fond est porté par le conteneur, pas par l'un des deux
+                 contrôles : il reste donc identique à l'affichage et pendant
+                 la saisie, le TextBox se contentant d'être transparent. -->
+            <Panel Width="{Binding Width}" Height="{Binding Height}"
+                   ClipToBounds="True"
+                   Background="{Binding Background, Converter={x:Static conv:Conv.Brush}}"
+                   RenderTransformOrigin="50%,50%"
+                   RenderTransform="{Binding Rotation, Converter={x:Static conv:Conv.Rotate}}">
+                <!-- Affichage et saisie sont deux contrôles distincts : le TextBlock
+                     donne le contrôle typographique, le TextBox l'édition et le caret. -->
+                <TextBlock IsVisible="{Binding !IsEditing}"
+                           Text="{Binding Text}"
+                           FontFamily="{Binding FontFamily, Converter={x:Static conv:Conv.Font}}"
+                           FontSize="{Binding FontSize}"
+                           FontWeight="{Binding Bold, Converter={x:Static conv:Conv.Weight}}"
+                           FontStyle="{Binding Italic, Converter={x:Static conv:Conv.Slant}}"
+                           Foreground="{Binding Foreground, Converter={x:Static conv:Conv.Brush}}"
+                           TextAlignment="{Binding Align, Converter={x:Static conv:Conv.Align}}"
+                           LineHeight="{Binding AbsoluteLineHeight}"
+                           Padding="{Binding Padding, Converter={x:Static conv:Conv.Pad}}"
+                           TextWrapping="Wrap"/>
+                <TextBox IsVisible="{Binding IsEditing}"
+                         Text="{Binding Text, Mode=TwoWay}"
+                         FontFamily="{Binding FontFamily, Converter={x:Static conv:Conv.Font}}"
+                         FontSize="{Binding FontSize}"
+                         FontWeight="{Binding Bold, Converter={x:Static conv:Conv.Weight}}"
+                         FontStyle="{Binding Italic, Converter={x:Static conv:Conv.Slant}}"
+                         Foreground="{Binding Foreground, Converter={x:Static conv:Conv.Brush}}"
+                         TextAlignment="{Binding Align, Converter={x:Static conv:Conv.Align}}"
+                         Padding="{Binding Padding, Converter={x:Static conv:Conv.Pad}}"
+                         AcceptsReturn="True" TextWrapping="Wrap"
+                         Classes="frameEditor"
+                         Background="Transparent" BorderThickness="0"
+                         VerticalContentAlignment="Top"/>
+            </Panel>
+        </DataTemplate>
+
+        <DataTemplate DataType="models:GroupFrame">
+            <!-- Un groupe n'a pas d'apparence propre : il pose son repère, et ses blocs
+                 se dessinent dedans, en coordonnées relatives. -->
+            <Panel Width="{Binding Width}" Height="{Binding Height}"
+                   RenderTransformOrigin="50%,50%"
+                   RenderTransform="{Binding Rotation, Converter={x:Static conv:Conv.Rotate}}">
+                <ItemsControl Classes="frames" ItemsSource="{Binding Children}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <Canvas/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                </ItemsControl>
+            </Panel>
+        </DataTemplate>
+
+    </UserControl.DataTemplates>
 
     <ScrollViewer Name="Scroller"
                   Background="#FF3A3D42"
@@ -52,91 +149,15 @@
                                            StrokeDashArray="6,4" IsHitTestVisible="False"/>
                             </Canvas>
 
-                            <ItemsControl ItemsSource="{Binding CurrentPage.Frames}">
+                            <!-- La classe « frames » vaut pour ce canevas comme pour celui
+                                 d'un groupe : c'est elle que vise le style de position. -->
+                            <ItemsControl Classes="frames" ItemsSource="{Binding CurrentPage.Frames}">
                                 <ItemsControl.ItemsPanel>
                                     <ItemsPanelTemplate>
                                         <Canvas/>
                                     </ItemsPanelTemplate>
                                 </ItemsControl.ItemsPanel>
 
-                                <ItemsControl.Styles>
-                                    <!-- ItemsControl place ses éléments via un ContentPresenter :
-                                         c'est donc lui qui porte la position sur le Canvas. -->
-                                    <Style Selector="ContentPresenter" x:DataType="models:Frame">
-                                        <Setter Property="Canvas.Left" Value="{Binding X}"/>
-                                        <Setter Property="Canvas.Top" Value="{Binding Y}"/>
-                                    </Style>
-                                </ItemsControl.Styles>
-
-                                <ItemsControl.DataTemplates>
-
-                                    <DataTemplate DataType="models:ShapeFrame">
-                                        <Panel Width="{Binding Width}" Height="{Binding Height}"
-                                               RenderTransformOrigin="50%,50%"
-                                               RenderTransform="{Binding Rotation, Converter={x:Static conv:Conv.Rotate}}">
-                                            <Rectangle IsVisible="{Binding IsRectangle}"
-                                                       Fill="{Binding Fill, Converter={x:Static conv:Conv.Brush}}"
-                                                       Stroke="{Binding Stroke, Converter={x:Static conv:Conv.Brush}}"
-                                                       StrokeThickness="{Binding StrokeThickness}"
-                                                       RadiusX="{Binding CornerRadius}"
-                                                       RadiusY="{Binding CornerRadius}"/>
-                                            <Ellipse IsVisible="{Binding IsEllipse}"
-                                                     Fill="{Binding Fill, Converter={x:Static conv:Conv.Brush}}"
-                                                     Stroke="{Binding Stroke, Converter={x:Static conv:Conv.Brush}}"
-                                                     StrokeThickness="{Binding StrokeThickness}"/>
-                                        </Panel>
-                                    </DataTemplate>
-
-                                    <DataTemplate DataType="models:ImageFrame">
-                                        <Panel Width="{Binding Width}" Height="{Binding Height}"
-                                               RenderTransformOrigin="50%,50%"
-                                               RenderTransform="{Binding Rotation, Converter={x:Static conv:Conv.Rotate}}">
-                                            <!-- Repère visible tant qu'aucune image n'est chargée. -->
-                                            <Rectangle Stroke="#FFB0B0B0" StrokeThickness="0.5" StrokeDashArray="4,3"/>
-                                            <Image Source="{Binding Path, Converter={x:Static conv:Conv.Image}}"
-                                                   Stretch="{Binding Fit, Converter={x:Static conv:Conv.Fit}}"/>
-                                        </Panel>
-                                    </DataTemplate>
-
-                                    <DataTemplate DataType="models:TextFrame">
-                                        <!-- Le fond est porté par le conteneur, pas par l'un des deux
-                                             contrôles : il reste donc identique à l'affichage et pendant
-                                             la saisie, le TextBox se contentant d'être transparent. -->
-                                        <Panel Width="{Binding Width}" Height="{Binding Height}"
-                                               ClipToBounds="True"
-                                               Background="{Binding Background, Converter={x:Static conv:Conv.Brush}}"
-                                               RenderTransformOrigin="50%,50%"
-                                               RenderTransform="{Binding Rotation, Converter={x:Static conv:Conv.Rotate}}">
-                                            <!-- Affichage et saisie sont deux contrôles distincts : le TextBlock
-                                                 donne le contrôle typographique, le TextBox l'édition et le caret. -->
-                                            <TextBlock IsVisible="{Binding !IsEditing}"
-                                                       Text="{Binding Text}"
-                                                       FontFamily="{Binding FontFamily, Converter={x:Static conv:Conv.Font}}"
-                                                       FontSize="{Binding FontSize}"
-                                                       FontWeight="{Binding Bold, Converter={x:Static conv:Conv.Weight}}"
-                                                       FontStyle="{Binding Italic, Converter={x:Static conv:Conv.Slant}}"
-                                                       Foreground="{Binding Foreground, Converter={x:Static conv:Conv.Brush}}"
-                                                       TextAlignment="{Binding Align, Converter={x:Static conv:Conv.Align}}"
-                                                       LineHeight="{Binding AbsoluteLineHeight}"
-                                                       Padding="{Binding Padding, Converter={x:Static conv:Conv.Pad}}"
-                                                       TextWrapping="Wrap"/>
-                                            <TextBox IsVisible="{Binding IsEditing}"
-                                                     Text="{Binding Text, Mode=TwoWay}"
-                                                     FontFamily="{Binding FontFamily, Converter={x:Static conv:Conv.Font}}"
-                                                     FontSize="{Binding FontSize}"
-                                                     FontWeight="{Binding Bold, Converter={x:Static conv:Conv.Weight}}"
-                                                     FontStyle="{Binding Italic, Converter={x:Static conv:Conv.Slant}}"
-                                                     Foreground="{Binding Foreground, Converter={x:Static conv:Conv.Brush}}"
-                                                     TextAlignment="{Binding Align, Converter={x:Static conv:Conv.Align}}"
-                                                     Padding="{Binding Padding, Converter={x:Static conv:Conv.Pad}}"
-                                                     AcceptsReturn="True" TextWrapping="Wrap"
-                                                     Classes="frameEditor"
-                                                     Background="Transparent" BorderThickness="0"
-                                                     VerticalContentAlignment="Top"/>
-                                        </Panel>
-                                    </DataTemplate>
-
-                                </ItemsControl.DataTemplates>
                             </ItemsControl>
                         </Panel>
                     </LayoutTransformControl>

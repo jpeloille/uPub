@@ -25,6 +25,8 @@
         <KeyBinding Gesture="Ctrl+Shift+Z" Command="{Binding RedoCommand}"/>
         <KeyBinding Gesture="Ctrl+D" Command="{Binding DuplicateSelectedCommand}"/>
         <KeyBinding Gesture="Ctrl+A" Command="{Binding SelectAllCommand}"/>
+        <KeyBinding Gesture="Ctrl+Shift+G" Command="{Binding GroupSelectedCommand}"/>
+        <KeyBinding Gesture="Ctrl+Shift+H" Command="{Binding UngroupSelectedCommand}"/>
         <KeyBinding Gesture="Ctrl+OemPlus" Command="{Binding ZoomInCommand}"/>
         <KeyBinding Gesture="Ctrl+Add" Command="{Binding ZoomInCommand}"/>
         <KeyBinding Gesture="Ctrl+OemMinus" Command="{Binding ZoomOutCommand}"/>
@@ -140,6 +142,11 @@
             </MenuItem>
 
             <MenuItem Header="_Disposition">
+                <MenuItem Header="_Grouper" InputGesture="Ctrl+Shift+G"
+                          Command="{Binding GroupSelectedCommand}"/>
+                <MenuItem Header="_Dissocier" InputGesture="Ctrl+Shift+H"
+                          Command="{Binding UngroupSelectedCommand}"/>
+                <Separator/>
                 <MenuItem Header="Premier _plan" Command="{Binding BringToFrontCommand}"/>
                 <MenuItem Header="_Avancer" Command="{Binding BringForwardCommand}"/>
                 <MenuItem Header="_Reculer" Command="{Binding SendBackwardCommand}"/>
@@ -393,6 +400,16 @@
                                         <NumericUpDown Grid.Row="1" Grid.Column="2" FormatString="0.#" Increment="1" Minimum="0"
                                                        Value="{Binding CornerRadius, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
                                     </Grid>
+                                </StackPanel>
+                            </DataTemplate>
+
+                            <DataTemplate DataType="models:GroupFrame">
+                                <StackPanel>
+                                    <TextBlock Classes="section" Text="GROUPE"/>
+                                    <TextBlock Text="{Binding Children.Count, StringFormat='{}{0} blocs réunis'}"/>
+                                    <TextBlock Text="Le groupe se déplace, se tourne et se redimensionne d'une pièce ; le redimensionner met ses blocs à la même échelle. Pour en retoucher un, dissociez (Ctrl+Maj+H)."
+                                               FontSize="11" Foreground="#FF8A929E"
+                                               TextWrapping="Wrap" Margin="0,6,0,0"/>
                                 </StackPanel>
                             </DataTemplate>
 

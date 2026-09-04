@@ -60,6 +60,9 @@ la barre du haut regroupe les commandes du document : fichier, annulation, zoom.
   formes (rectangle, rectangle arrondi, ellipse) avec remplissage et contour.
 - Rotation libre de n'importe quel bloc, y compris pour la sélection et le
   redimensionnement.
+- Groupes : plusieurs blocs réunis se déplacent, se tournent et se redimensionnent
+  d'une pièce — le redimensionnement met les blocs du groupe à la même échelle. Un
+  bloc d'un groupe ne se sélectionne pas directement : on dissocie pour le retoucher.
 - Sélection d'un bloc ou de plusieurs (`Ctrl` + clic), déplacement d'ensemble,
   redimensionnement par huit poignées, aimantation sur les marges, les bords et
   l'axe médian de la page.
@@ -82,6 +85,7 @@ la barre du haut regroupe les commandes du document : fichier, annulation, zoom.
 | `Ctrl+Z` / `Ctrl+Y` | Annuler / Rétablir |
 | `Ctrl+D` | Dupliquer la sélection |
 | `Ctrl+A` | Sélectionner tous les blocs de la page |
+| `Ctrl+Maj+G` / `Ctrl+Maj+H` | Grouper / Dissocier |
 | `Suppr` | Supprimer la sélection |
 | Flèches | Déplacer de 3 pt (`Maj` : 0,5 pt) |
 | `Ctrl` + molette, `Ctrl` `+`/`-`/`0` | Zoom |
@@ -127,8 +131,10 @@ superposition exact.
 ## Format de fichier
 
 `.mypub` est du JSON indenté, versionné par `FormatVersion`. Chaque bloc porte un
-discriminant `$kind` (`text`, `image`, `shape`). Les images sont référencées par
-chemin absolu : déplacer un document sans ses images casse les liens.
+discriminant `$kind` (`text`, `image`, `shape`, `group`). Un groupe contient ses blocs
+en coordonnées relatives à son coin supérieur gauche, écrits après sa géométrie — le
+rendu et l'export composent les deux repères. Les images sont référencées par chemin
+absolu : déplacer un document sans ses images casse les liens.
 
 ## Limites connues
 

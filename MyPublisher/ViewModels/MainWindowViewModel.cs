@@ -314,7 +314,12 @@ public partial class MainWindowViewModel : ViewModelBase
         DistributeVerticallyCommand.NotifyCanExecuteChanged();
         FitToMarginsCommand.NotifyCanExecuteChanged();
 
+        GroupSelectedCommand.NotifyCanExecuteChanged();
+        UngroupSelectedCommand.NotifyCanExecuteChanged();
+
         OnPropertyChanged(nameof(CanDistribute));
+        OnPropertyChanged(nameof(CanGroup));
+        OnPropertyChanged(nameof(CanUngroup));
     }
 
     // ---------------------------------------------------------------- historique
@@ -710,6 +715,100 @@ public partial class MainWindowViewModel : ViewModelBase
         }
 
         CommitEdit();
+    }
+
+    // ---------------------------------------------------------------- groupes
+
+    public bool CanGroup => Selection.Count > 1;
+
+    public bool CanUngroup => Selection.Any(frame => frame is GroupFrame);
+
+    /// <summary>
+    /// Réunit les blocs sélectionnés. Le groupe prend l'empreinte de l'ensemble, les
+    /// blocs y entrent en coordonnées relatives et dans leur ordre de superposition ;
+    /// le groupe se pose au rang du plus avancé d'entre eux, pour que l'ensemble garde
+    /// l'aspect qu'il avait.
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(CanGroup))]
+    private void GroupSelected()
+    {
+        if (CurrentPage is null || Selection.Count < 2) return;
+
+        var members = SelectionInPageOrder();
+        var bounds = Extent.Union(members.Select(frame => frame.Extent)) ?? default;
+
+        // Le rang visé se lit avant les retraits ; les blocs retirés étant tous au
+        // niveau du plus avancé ou en dessous, il redescend d'autant.
+        var target = CurrentPage.Frames.IndexOf(members[^1]) - (members.Count - 1);
+
+        var group = new GroupFrame
+        {
+            Name = "Groupe",
+            X = bounds.Left,
+            Y = bounds.Top,
+            Width = bounds.Width,
+            Height = bounds.Height
+        };
+
+        BeginEdit();
+        foreach (var frame in members)
+        {
+            CurrentPage.Frames.Remove(frame);
+            frame.X -= bounds.Left;
+            frame.Y -= bounds.Top;
+            group.Children.Add(frame);
+        }
+
+        CurrentPage.Frames.Insert(Math.Clamp(target, 0, CurrentPage.Frames.Count), group);
+        SelectOnly(group);
+        CommitEdit();
+        Status = $"Groupe de {group.Children.Count} blocs";
+    }
+
+    /// <summary>
+    /// Défait les groupes sélectionnés. Chaque bloc retrouve sa place sur la page : son
+    /// centre est celui que le repère du groupe lui donnait, et la rotation du groupe
+    /// s'ajoute à la sienne. Un groupe tourné se dissocie donc sans que rien ne bouge.
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(CanUngroup))]
+    private void UngroupSelected()
+    {
+        if (CurrentPage is null || !CanUngroup) return;
+
+        var released = new List<Frame>();
+
+        BeginEdit();
+        foreach (var frame in SelectionInPageOrder())
+        {
+            if (frame is not GroupFrame group)
+            {
+                released.Add(frame);
+                continue;
+            }
+
+            var index = CurrentPage.Frames.IndexOf(group);
+            CurrentPage.Frames.Remove(group);
+
+            var children = group.Children.ToList();
+            group.Children.Clear();
+
+            for (var i = 0; i < children.Count; i++)
+            {
+                var child = children[i];
+                var (centreX, centreY) = group.ToPage(child.CenterX, child.CenterY);
+
+                child.Rotation += group.Rotation;
+                child.X = centreX - child.Width / 2;
+                child.Y = centreY - child.Height / 2;
+
+                CurrentPage.Frames.Insert(index + i, child);
+                released.Add(child);
+            }
+        }
+
+        SetSelection(released);
+        CommitEdit();
+        Status = "Groupe dissocié";
     }
 
     // ---------------------------------------------------------------- alignement

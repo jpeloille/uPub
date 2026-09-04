@@ -38,37 +38,52 @@ public static class PdfExporter
 
             using var gfx = XGraphics.FromPdfPage(pdfPage);
 
-            foreach (var frame in page.Frames)
-            {
-                var state = gfx.Save();
-                if (frame.Rotation != 0)
-                {
-                    gfx.TranslateTransform(frame.CenterX, frame.CenterY);
-                    gfx.RotateTransform(frame.Rotation);
-                    gfx.TranslateTransform(-frame.CenterX, -frame.CenterY);
-                }
-
-                try
-                {
-                    switch (frame)
-                    {
-                        case ShapeFrame shape: DrawShape(gfx, shape); break;
-                        case TextFrame text: DrawText(gfx, text); break;
-                        case ImageFrame image: DrawImage(gfx, image, warnings); break;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    warnings.Add($"{frame.DisplayName} : {ex.Message}");
-                }
-
-                gfx.Restore(state);
-            }
+            foreach (var frame in page.Frames) DrawFrame(gfx, frame, warnings);
         }
 
         var pageCount = pdf.PageCount;
         pdf.Save(path);
         return new ExportReport(pageCount, warnings);
+    }
+
+    /// <summary>
+    /// Dessine un bloc dans le repère courant. Récursif : un groupe translate le repère
+    /// et redescend, ses enfants étant en coordonnées relatives. La rotation s'applique
+    /// avant la translation, si bien que celle d'un groupe se compose avec celle de
+    /// chacun de ses blocs sans qu'aucun calcul n'ait à les combiner.
+    /// </summary>
+    private static void DrawFrame(XGraphics gfx, Frame frame, List<string> warnings)
+    {
+        var state = gfx.Save();
+        if (frame.Rotation != 0)
+        {
+            gfx.TranslateTransform(frame.CenterX, frame.CenterY);
+            gfx.RotateTransform(frame.Rotation);
+            gfx.TranslateTransform(-frame.CenterX, -frame.CenterY);
+        }
+
+        try
+        {
+            switch (frame)
+            {
+                case ShapeFrame shape: DrawShape(gfx, shape); break;
+                case TextFrame text: DrawText(gfx, text); break;
+                case ImageFrame image: DrawImage(gfx, image, warnings); break;
+                case GroupFrame group: DrawGroup(gfx, group, warnings); break;
+            }
+        }
+        catch (Exception ex)
+        {
+            warnings.Add($"{frame.DisplayName} : {ex.Message}");
+        }
+
+        gfx.Restore(state);
+    }
+
+    private static void DrawGroup(XGraphics gfx, GroupFrame group, List<string> warnings)
+    {
+        gfx.TranslateTransform(group.X, group.Y);
+        foreach (var child in group.Children) DrawFrame(gfx, child, warnings);
     }
 
     private static void DrawShape(XGraphics gfx, ShapeFrame shape)
