@@ -60,7 +60,8 @@ d'entrée sans interface, `--resave`, et vérifié son utilité dès le premier 
   la lisibilité que le format revendique. Corrigé dans `DocumentSerializer`.
 - `Samples/exemple-bulletin.mypub` avait été écrit à la main et non par le sérialiseur.
   Il est régénéré par lui, à données égales, pour que l'étape 2 reste l'égalité stricte
-  demandée ici plutôt qu'un écart toléré.
+  demandée ici plutôt qu'un écart toléré. L'ordre d'écriture est depuis déclaré dans le
+  modèle, de dix en dix, ce qui rend au fichier l'ordre lisible qu'il avait à la main.
 
 Le contrôle a été éprouvé en le faisant échouer : JSON écarté du sérialiseur, compte de
 pages différent, bloc image au chemin inexistant.
