@@ -1,0 +1,460 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:MyPublisher.ViewModels"
+        xmlns:models="using:MyPublisher.Models"
+        xmlns:views="using:MyPublisher.Views"
+        xmlns:conv="using:MyPublisher.Converters"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="1280" d:DesignHeight="820"
+        x:Class="MyPublisher.Views.MainWindow"
+        x:Name="Root"
+        x:DataType="vm:MainWindowViewModel"
+        Icon="/Assets/avalonia-logo.ico"
+        Width="1280" Height="820"
+        Title="{Binding WindowTitle}">
+
+    <Design.DataContext>
+        <vm:MainWindowViewModel/>
+    </Design.DataContext>
+
+    <Window.KeyBindings>
+        <KeyBinding Gesture="Ctrl+N" Command="{Binding NewDocumentCommand}"/>
+        <KeyBinding Gesture="Ctrl+Z" Command="{Binding UndoCommand}"/>
+        <KeyBinding Gesture="Ctrl+Y" Command="{Binding RedoCommand}"/>
+        <KeyBinding Gesture="Ctrl+Shift+Z" Command="{Binding RedoCommand}"/>
+        <KeyBinding Gesture="Ctrl+D" Command="{Binding DuplicateSelectedCommand}"/>
+        <KeyBinding Gesture="Ctrl+OemPlus" Command="{Binding ZoomInCommand}"/>
+        <KeyBinding Gesture="Ctrl+Add" Command="{Binding ZoomInCommand}"/>
+        <KeyBinding Gesture="Ctrl+OemMinus" Command="{Binding ZoomOutCommand}"/>
+        <KeyBinding Gesture="Ctrl+Subtract" Command="{Binding ZoomOutCommand}"/>
+        <KeyBinding Gesture="Ctrl+D0" Command="{Binding ZoomResetCommand}"/>
+        <KeyBinding Gesture="Ctrl+NumPad0" Command="{Binding ZoomResetCommand}"/>
+    </Window.KeyBindings>
+
+
+    <Window.Resources>
+        <!-- Icônes vectorielles de la barre latérale, dessinées dans un carré de 24.
+             Le préfixe F0 impose la règle pair-impair : c'est ce qui creuse l'intérieur
+             des formes en contour au lieu de les remplir. -->
+        <StreamGeometry x:Key="IconSelect">F1 M 6,3 L 6,20 L 10.2,15.9 L 12.9,21.5 L 15.3,20.3 L 12.7,14.9 L 18.5,14.6 Z</StreamGeometry>
+        <StreamGeometry x:Key="IconText">F1 M 4,4 H 20 V 8.2 H 14.1 V 20 H 9.9 V 8.2 H 4 Z</StreamGeometry>
+        <StreamGeometry x:Key="IconHeading">F1 M 4,4 H 8 V 10.4 H 16 V 4 H 20 V 20 H 16 V 13.6 H 8 V 20 H 4 Z</StreamGeometry>
+        <StreamGeometry x:Key="IconRectangle">F0 M 3,5 H 21 V 19 H 3 Z M 5,7 V 17 H 19 V 7 Z</StreamGeometry>
+        <StreamGeometry x:Key="IconEllipse">F0 M 3,12 A 9,7 0 1 0 21,12 A 9,7 0 1 0 3,12 Z M 5,12 A 7,5 0 1 1 19,12 A 7,5 0 1 1 5,12 Z</StreamGeometry>
+        <StreamGeometry x:Key="IconImage">F0 M 3,5 H 21 V 19 H 3 Z M 5,7 V 17 H 19 V 7 Z M 6.4,16 L 10.2,11 L 13,14.2 L 15.6,10.8 L 18.4,16 Z M 7.6,9.6 A 1.4,1.4 0 1 1 10.4,9.6 A 1.4,1.4 0 1 1 7.6,9.6 Z</StreamGeometry>
+        <StreamGeometry x:Key="IconToFront">F1 M 12,2.5 L 19.5,10 H 4.5 Z M 4.5,12.5 H 19.5 V 15 H 4.5 Z M 4.5,17 H 19.5 V 19.5 H 4.5 Z</StreamGeometry>
+        <StreamGeometry x:Key="IconForward">F1 M 12,4.5 L 19.5,12 H 4.5 Z M 4.5,15.5 H 19.5 V 19.5 H 4.5 Z</StreamGeometry>
+        <StreamGeometry x:Key="IconBackward">F1 M 4.5,4.5 H 19.5 V 8.5 H 4.5 Z M 12,19.5 L 4.5,12 H 19.5 Z</StreamGeometry>
+        <StreamGeometry x:Key="IconToBack">F1 M 4.5,4.5 H 19.5 V 7 H 4.5 Z M 4.5,9 H 19.5 V 11.5 H 4.5 Z M 12,21.5 L 19.5,14 H 4.5 Z</StreamGeometry>
+        <StreamGeometry x:Key="IconCentreH">F1 M 11.4,1.5 H 12.6 V 5 H 11.4 Z M 3,6.5 H 21 V 11 H 3 Z M 7,13 H 17 V 17.5 H 7 Z M 11.4,19 H 12.6 V 22.5 H 11.4 Z</StreamGeometry>
+        <StreamGeometry x:Key="IconCentreV">F1 M 1.5,11.4 H 5 V 12.6 H 1.5 Z M 6.5,3 H 11 V 21 H 6.5 Z M 13,7 H 17.5 V 17 H 13 Z M 19,11.4 H 22.5 V 12.6 H 19 Z</StreamGeometry>
+        <StreamGeometry x:Key="IconFitMargins">F0 M 2,4 H 22 V 20 H 2 Z M 4,6 V 18 H 20 V 6 Z M 6.5,8.5 H 17.5 V 15.5 H 6.5 Z</StreamGeometry>
+    </Window.Resources>
+
+    <Window.Styles>
+        <Style Selector="TextBlock.section">
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="0,10,0,4"/>
+            <Setter Property="Foreground" Value="#FF5A6472"/>
+        </Style>
+        <Style Selector="TextBlock.field">
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="0,0,8,0"/>
+        </Style>
+        <Style Selector="NumericUpDown">
+            <Setter Property="Margin" Value="0,2"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        </Style>
+        <Style Selector="Button.tool">
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="Margin" Value="0,0,4,0"/>
+        </Style>
+
+        <!-- Barre d'outils latérale : boutons carrés à icône. Les outils sont des
+             bascules mutuellement exclusives, les actions de simples boutons. -->
+        <Style Selector="ToggleButton.sidebar, Button.sidebar">
+            <Setter Property="Width" Value="40"/>
+            <Setter Property="Height" Value="38"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Margin" Value="0,1"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+        <!-- Échelle 1:1 : toutes les icônes sont dessinées sur une grille de 24, donc
+             l'épaisseur de trait reste identique d'un bouton à l'autre. Une mise à
+             l'échelle uniforme les normaliserait chacune sur sa propre boîte englobante
+             et ferait varier ce trait de 40 %. -->
+        <Style Selector="Path.icon">
+            <Setter Property="Fill" Value="#FF3A4450"/>
+            <Setter Property="Stretch" Value="None"/>
+        </Style>
+        <Style Selector="ToggleButton.sidebar:checked Path.icon">
+            <Setter Property="Fill" Value="White"/>
+        </Style>
+        <Style Selector="Button.sidebar:disabled Path.icon">
+            <Setter Property="Fill" Value="#FFAEB5BE"/>
+        </Style>
+        <Style Selector="Rectangle.sep">
+            <Setter Property="Height" Value="1"/>
+            <Setter Property="Width" Value="26"/>
+            <Setter Property="Fill" Value="#FFD5DAE1"/>
+            <Setter Property="Margin" Value="0,9"/>
+        </Style>
+    </Window.Styles>
+
+    <DockPanel>
+
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_Fichier">
+                <MenuItem Header="_Nouveau" InputGesture="Ctrl+N" Command="{Binding NewDocumentCommand}"/>
+                <Separator/>
+                <MenuItem Header="_Ouvrir…" InputGesture="Ctrl+O" Click="OnOpen"/>
+                <MenuItem Header="_Enregistrer" InputGesture="Ctrl+S" Click="OnSave"/>
+                <MenuItem Header="Enregistrer _sous…" Click="OnSaveAs"/>
+                <Separator/>
+                <MenuItem Header="Exporter en _PDF…" InputGesture="Ctrl+E" Click="OnExportPdf"/>
+                <Separator/>
+                <MenuItem Header="_Quitter" Click="OnQuit"/>
+            </MenuItem>
+
+            <MenuItem Header="_Édition">
+                <MenuItem Header="_Annuler" InputGesture="Ctrl+Z" Command="{Binding UndoCommand}"/>
+                <MenuItem Header="_Rétablir" InputGesture="Ctrl+Y" Command="{Binding RedoCommand}"/>
+                <Separator/>
+                <MenuItem Header="_Dupliquer" InputGesture="Ctrl+D" Command="{Binding DuplicateSelectedCommand}"/>
+                <MenuItem Header="_Supprimer" InputGesture="Delete" Command="{Binding DeleteSelectedCommand}"/>
+            </MenuItem>
+
+            <MenuItem Header="_Insertion">
+                <MenuItem Header="_Titre" Command="{Binding AddHeadingCommand}"/>
+                <MenuItem Header="Bloc de _texte" Command="{Binding AddTextCommand}"/>
+                <MenuItem Header="_Image…" Click="OnInsertImage"/>
+                <Separator/>
+                <MenuItem Header="_Rectangle" Command="{Binding AddRectangleCommand}"/>
+                <MenuItem Header="_Ellipse" Command="{Binding AddEllipseCommand}"/>
+            </MenuItem>
+
+            <MenuItem Header="_Disposition">
+                <MenuItem Header="Premier _plan" Command="{Binding BringToFrontCommand}"/>
+                <MenuItem Header="_Avancer" Command="{Binding BringForwardCommand}"/>
+                <MenuItem Header="_Reculer" Command="{Binding SendBackwardCommand}"/>
+                <MenuItem Header="Arrière-p_lan" Command="{Binding SendToBackCommand}"/>
+                <Separator/>
+                <MenuItem Header="Centrer _horizontalement" Command="{Binding AlignCentreHorizontallyCommand}"/>
+                <MenuItem Header="Centrer _verticalement" Command="{Binding AlignCentreVerticallyCommand}"/>
+                <MenuItem Header="Ajuster aux _marges" Command="{Binding FitToMarginsCommand}"/>
+            </MenuItem>
+
+            <MenuItem Header="_Page">
+                <MenuItem Header="_Ajouter une page" Command="{Binding AddPageCommand}"/>
+                <MenuItem Header="_Dupliquer la page" Command="{Binding DuplicatePageCommand}"/>
+                <MenuItem Header="_Supprimer la page" Command="{Binding DeletePageCommand}"/>
+            </MenuItem>
+
+            <MenuItem Header="_Affichage">
+                <MenuItem Header="Zoom _avant" Command="{Binding ZoomInCommand}"/>
+                <MenuItem Header="Zoom a_rrière" Command="{Binding ZoomOutCommand}"/>
+                <MenuItem Header="Taille _réelle" Command="{Binding ZoomResetCommand}"/>
+            </MenuItem>
+        </Menu>
+
+        <Border DockPanel.Dock="Top" Background="#FFF3F4F6" BorderBrush="#FFD9DDE3"
+                BorderThickness="0,0,0,1" Padding="8,6">
+            <StackPanel Orientation="Horizontal">
+                <Button Classes="tool" Content="Nouveau" Command="{Binding NewDocumentCommand}"/>
+                <Button Classes="tool" Content="Ouvrir…" Click="OnOpen"/>
+                <Button Classes="tool" Content="Enregistrer" Click="OnSave"/>
+                <Button Classes="tool" Content="Exporter en PDF" Click="OnExportPdf"/>
+
+                <Rectangle Width="1" Margin="8,2" Fill="#FFD9DDE3"/>
+
+                <Button Classes="tool" Content="Annuler" Command="{Binding UndoCommand}"/>
+                <Button Classes="tool" Content="Rétablir" Command="{Binding RedoCommand}"/>
+
+                <Rectangle Width="1" Margin="8,2" Fill="#FFD9DDE3"/>
+
+                <Button Classes="tool" Content="−" Command="{Binding ZoomOutCommand}"/>
+                <TextBlock Text="{Binding ZoomLabel}" VerticalAlignment="Center"
+                           Width="52" TextAlignment="Center"/>
+                <Button Classes="tool" Content="+" Command="{Binding ZoomInCommand}"/>
+                <Button Classes="tool" Content="100 %" Command="{Binding ZoomResetCommand}"/>
+            </StackPanel>
+        </Border>
+
+        <Border DockPanel.Dock="Bottom" Background="#FFF3F4F6" BorderBrush="#FFD9DDE3"
+                BorderThickness="0,1,0,0" Padding="10,4">
+            <Grid ColumnDefinitions="*,Auto,Auto,Auto">
+                <TextBlock Grid.Column="0" Text="{Binding Status}" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="1" Text="{Binding CursorLabel}" Margin="16,0" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="2" Margin="16,0" VerticalAlignment="Center"
+                           Text="{Binding PageCountLabel}"/>
+                <TextBlock Grid.Column="3" Margin="16,0" VerticalAlignment="Center"
+                           Text="{Binding ZoomLabel}"/>
+            </Grid>
+        </Border>
+
+        <Grid ColumnDefinitions="210,Auto,*,Auto,300,Auto">
+
+            <!-- Colonne de gauche : pages, puis blocs de la page courante. -->
+            <Grid Grid.Column="0" RowDefinitions="Auto,*,Auto,2*" Background="#FFFAFAFB">
+                <TextBlock Grid.Row="0" Classes="section" Text="Pages" Margin="10,8,10,4"/>
+                <ListBox Grid.Row="1" Margin="6,0,6,6"
+                         ItemsSource="{Binding Document.Pages}"
+                         SelectedItem="{Binding CurrentPage}">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate DataType="models:Page">
+                            <TextBlock Text="{Binding Name}"/>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+                <TextBlock Grid.Row="2" Classes="section" Text="Blocs (du fond vers l'avant)" Margin="10,4"/>
+                <ListBox Grid.Row="3" Margin="6,0,6,8"
+                         ItemsSource="{Binding CurrentPage.Frames}"
+                         SelectedItem="{Binding Selected}">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate DataType="models:Frame">
+                            <StackPanel>
+                                <TextBlock Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis"/>
+                                <TextBlock Text="{Binding Kind}" FontSize="11" Foreground="#FF8A929E"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+            </Grid>
+
+            <GridSplitter Grid.Column="1" Width="4" Background="#FFE3E6EA"/>
+
+            <views:PageCanvas Grid.Column="2" x:Name="PageView"/>
+
+            <GridSplitter Grid.Column="3" Width="4" Background="#FFE3E6EA"/>
+
+            <!-- Colonne de droite : propriétés. Le panneau ouvre une transaction
+                 d'annulation dès qu'un champ prend le focus et la ferme au relâchement. -->
+            <ScrollViewer Grid.Column="4" Background="#FFFAFAFB"
+                          GotFocus="OnPropertyPanelGotFocus" LostFocus="OnPropertyPanelLostFocus">
+                <StackPanel Margin="12">
+
+                    <TextBlock Classes="section" Text="DOCUMENT"/>
+                    <TextBlock Classes="field" Text="Format"/>
+                    <ComboBox HorizontalAlignment="Stretch"
+                              ItemsSource="{Binding PageSizes}"
+                              SelectedItem="{Binding SelectedPageSize}"/>
+                    <CheckBox Content="Paysage" Margin="0,6" IsChecked="{Binding IsLandscape}"/>
+
+                    <Grid ColumnDefinitions="*,8,*" RowDefinitions="Auto,Auto,Auto,Auto">
+                        <TextBlock Grid.Row="0" Grid.Column="0" Classes="field" Text="Marge gauche (mm)"/>
+                        <TextBlock Grid.Row="0" Grid.Column="2" Classes="field" Text="Marge droite (mm)"/>
+                        <NumericUpDown Grid.Row="1" Grid.Column="0" FormatString="0.#" Increment="1"
+                                       Value="{Binding Document.MarginLeft, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
+                        <NumericUpDown Grid.Row="1" Grid.Column="2" FormatString="0.#" Increment="1"
+                                       Value="{Binding Document.MarginRight, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
+                        <TextBlock Grid.Row="2" Grid.Column="0" Classes="field" Text="Marge haute (mm)"/>
+                        <TextBlock Grid.Row="2" Grid.Column="2" Classes="field" Text="Marge basse (mm)"/>
+                        <NumericUpDown Grid.Row="3" Grid.Column="0" FormatString="0.#" Increment="1"
+                                       Value="{Binding Document.MarginTop, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
+                        <NumericUpDown Grid.Row="3" Grid.Column="2" FormatString="0.#" Increment="1"
+                                       Value="{Binding Document.MarginBottom, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
+                    </Grid>
+
+                    <TextBlock Classes="section" Text="BLOC"
+                               IsVisible="{Binding HasSelection}"/>
+                    <TextBlock Text="Aucun bloc sélectionné." Foreground="#FF8A929E" Margin="0,8"
+                               IsVisible="{Binding !HasSelection}"/>
+
+                    <ContentControl Content="{Binding Selected}">
+                        <ContentControl.DataTemplates>
+                            <DataTemplate DataType="models:Frame">
+                                <StackPanel>
+                                    <TextBlock Classes="field" Text="Nom"/>
+                                    <TextBox Text="{Binding Name}"/>
+                                    <Grid ColumnDefinitions="*,8,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto">
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Classes="field" Text="X (mm)"/>
+                                        <TextBlock Grid.Row="0" Grid.Column="2" Classes="field" Text="Y (mm)"/>
+                                        <NumericUpDown Grid.Row="1" Grid.Column="0" FormatString="0.##" Increment="1"
+                                                       Value="{Binding X, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
+                                        <NumericUpDown Grid.Row="1" Grid.Column="2" FormatString="0.##" Increment="1"
+                                                       Value="{Binding Y, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
+                                        <TextBlock Grid.Row="2" Grid.Column="0" Classes="field" Text="Largeur (mm)"/>
+                                        <TextBlock Grid.Row="2" Grid.Column="2" Classes="field" Text="Hauteur (mm)"/>
+                                        <NumericUpDown Grid.Row="3" Grid.Column="0" FormatString="0.##" Increment="1" Minimum="2"
+                                                       Value="{Binding Width, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
+                                        <NumericUpDown Grid.Row="3" Grid.Column="2" FormatString="0.##" Increment="1" Minimum="2"
+                                                       Value="{Binding Height, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
+                                        <TextBlock Grid.Row="4" Grid.Column="0" Classes="field" Text="Rotation (°)"/>
+                                        <NumericUpDown Grid.Row="5" Grid.Column="0" FormatString="0.#" Increment="1"
+                                                       Minimum="-360" Maximum="360"
+                                                       Value="{Binding Rotation, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
+                                    </Grid>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ContentControl.DataTemplates>
+                    </ContentControl>
+
+                    <!-- Propriétés propres au type de bloc. -->
+                    <ContentControl Content="{Binding Selected}">
+                        <ContentControl.DataTemplates>
+
+                            <DataTemplate DataType="models:TextFrame">
+                                <StackPanel>
+                                    <TextBlock Classes="section" Text="TEXTE"/>
+                                    <TextBox Text="{Binding Text}" AcceptsReturn="True" TextWrapping="Wrap"
+                                             Height="110" VerticalContentAlignment="Top"/>
+
+                                    <TextBlock Classes="field" Text="Police" Margin="0,8,0,2"/>
+                                    <ComboBox HorizontalAlignment="Stretch" MaxDropDownHeight="320"
+                                              ItemsSource="{Binding #Root.((vm:MainWindowViewModel)DataContext).FontFamilies}"
+                                              SelectedItem="{Binding FontFamily}"/>
+
+                                    <Grid ColumnDefinitions="*,8,*" RowDefinitions="Auto,Auto">
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Classes="field" Text="Corps (pt)"/>
+                                        <TextBlock Grid.Row="0" Grid.Column="2" Classes="field" Text="Interligne"/>
+                                        <NumericUpDown Grid.Row="1" Grid.Column="0" FormatString="0.#" Increment="0.5" Minimum="1"
+                                                       Value="{Binding FontSize, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
+                                        <NumericUpDown Grid.Row="1" Grid.Column="2" FormatString="0.00" Increment="0.05" Minimum="0.5"
+                                                       Value="{Binding LineHeight, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
+                                    </Grid>
+
+                                    <StackPanel Orientation="Horizontal" Margin="0,8">
+                                        <ToggleButton Content="G" FontWeight="Bold" Width="36" IsChecked="{Binding Bold}"/>
+                                        <ToggleButton Content="I" FontStyle="Italic" Width="36" Margin="4,0"
+                                                      IsChecked="{Binding Italic}"/>
+                                    </StackPanel>
+
+                                    <TextBlock Classes="field" Text="Alignement"/>
+                                    <ComboBox HorizontalAlignment="Stretch"
+                                              ItemsSource="{Binding #Root.((vm:MainWindowViewModel)DataContext).TextAlignments}"
+                                              SelectedItem="{Binding Align}"/>
+
+                                    <TextBlock Classes="field" Text="Marge intérieure (pt)" Margin="0,8,0,2"/>
+                                    <NumericUpDown FormatString="0.#" Increment="1" Minimum="0"
+                                                   Value="{Binding Padding, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
+
+                                    <TextBlock Classes="field" Text="Couleur" Margin="0,8,0,2"/>
+                                    <ColorPicker HorizontalAlignment="Left"
+                                                 Color="{Binding Foreground, Converter={x:Static conv:HexToColor.Instance}}"/>
+
+                                    <TextBlock Classes="field" Text="Fond" Margin="0,10,0,2"/>
+                                    <CheckBox Content="Appliquer un fond" IsChecked="{Binding HasBackground}"/>
+                                    <ColorPicker HorizontalAlignment="Left" Margin="0,2,0,0"
+                                                 IsEnabled="{Binding HasBackground}"
+                                                 Color="{Binding BackgroundColor, Converter={x:Static conv:HexToColor.Instance}}"/>
+                                    <TextBlock Text="Sans fond, ce qui passe sous le bloc reste visible."
+                                               IsVisible="{Binding !HasBackground}"
+                                               FontSize="11" Foreground="#FF8A929E"
+                                               TextWrapping="Wrap" Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </DataTemplate>
+
+                            <DataTemplate DataType="models:ShapeFrame">
+                                <StackPanel>
+                                    <TextBlock Classes="section" Text="FORME"/>
+                                    <TextBlock Classes="field" Text="Remplissage"/>
+                                    <ColorPicker HorizontalAlignment="Left"
+                                                 Color="{Binding Fill, Converter={x:Static conv:HexToColor.Instance}}"/>
+                                    <TextBlock Classes="field" Text="Contour" Margin="0,8,0,2"/>
+                                    <ColorPicker HorizontalAlignment="Left"
+                                                 Color="{Binding Stroke, Converter={x:Static conv:HexToColor.Instance}}"/>
+                                    <Grid ColumnDefinitions="*,8,*" RowDefinitions="Auto,Auto" Margin="0,8,0,0">
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Classes="field" Text="Épaisseur (pt)"/>
+                                        <TextBlock Grid.Row="0" Grid.Column="2" Classes="field" Text="Arrondi (pt)"/>
+                                        <NumericUpDown Grid.Row="1" Grid.Column="0" FormatString="0.#" Increment="0.5" Minimum="0"
+                                                       Value="{Binding StrokeThickness, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
+                                        <NumericUpDown Grid.Row="1" Grid.Column="2" FormatString="0.#" Increment="1" Minimum="0"
+                                                       Value="{Binding CornerRadius, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
+                                    </Grid>
+                                </StackPanel>
+                            </DataTemplate>
+
+                            <DataTemplate DataType="models:ImageFrame">
+                                <StackPanel>
+                                    <TextBlock Classes="section" Text="IMAGE"/>
+                                    <TextBlock Text="{Binding Path}" TextWrapping="Wrap" FontSize="11"
+                                               Foreground="#FF8A929E"/>
+                                    <TextBlock Classes="field" Text="Cadrage" Margin="0,8,0,2"/>
+                                    <ComboBox HorizontalAlignment="Stretch"
+                                              ItemsSource="{Binding #Root.((vm:MainWindowViewModel)DataContext).ImageFits}"
+                                              SelectedItem="{Binding Fit}"/>
+                                </StackPanel>
+                            </DataTemplate>
+
+                        </ContentControl.DataTemplates>
+                    </ContentControl>
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- Barre d'outils latérale. Les cinq premiers boutons arment un outil :
+                 on trace ensuite le bloc directement sur la page. Les suivants sont
+                 des actions immédiates sur le bloc sélectionné. -->
+            <Border Grid.Column="5" Background="#FFF3F4F6"
+                    BorderBrush="#FFD9DDE3" BorderThickness="1,0,0,0">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Margin="9,10" HorizontalAlignment="Center">
+
+                        <ToggleButton Classes="sidebar" ToolTip.Tip="Sélection (V)"
+                                      IsChecked="{Binding ActiveTool, Converter={x:Static conv:EnumToBool.Instance}, ConverterParameter=Select}">
+                            <Path Classes="icon" Data="{StaticResource IconSelect}"/>
+                        </ToggleButton>
+                        <ToggleButton Classes="sidebar" ToolTip.Tip="Bloc de texte (T)"
+                                      IsChecked="{Binding ActiveTool, Converter={x:Static conv:EnumToBool.Instance}, ConverterParameter=Text}">
+                            <Path Classes="icon" Data="{StaticResource IconText}"/>
+                        </ToggleButton>
+                        <ToggleButton Classes="sidebar" ToolTip.Tip="Titre (H)"
+                                      IsChecked="{Binding ActiveTool, Converter={x:Static conv:EnumToBool.Instance}, ConverterParameter=Heading}">
+                            <Path Classes="icon" Data="{StaticResource IconHeading}"/>
+                        </ToggleButton>
+                        <ToggleButton Classes="sidebar" ToolTip.Tip="Rectangle (R)"
+                                      IsChecked="{Binding ActiveTool, Converter={x:Static conv:EnumToBool.Instance}, ConverterParameter=Rectangle}">
+                            <Path Classes="icon" Data="{StaticResource IconRectangle}"/>
+                        </ToggleButton>
+                        <ToggleButton Classes="sidebar" ToolTip.Tip="Ellipse (E)"
+                                      IsChecked="{Binding ActiveTool, Converter={x:Static conv:EnumToBool.Instance}, ConverterParameter=Ellipse}">
+                            <Path Classes="icon" Data="{StaticResource IconEllipse}"/>
+                        </ToggleButton>
+
+                        <!-- L'image ne se trace pas : elle demande d'abord un fichier. -->
+                        <Button Classes="sidebar" ToolTip.Tip="Insérer une image…" Click="OnInsertImage">
+                            <Path Classes="icon" Data="{StaticResource IconImage}"/>
+                        </Button>
+
+                        <Rectangle Classes="sep"/>
+
+                        <Button Classes="sidebar" ToolTip.Tip="Premier plan"
+                                Command="{Binding BringToFrontCommand}">
+                            <Path Classes="icon" Data="{StaticResource IconToFront}"/>
+                        </Button>
+                        <Button Classes="sidebar" ToolTip.Tip="Avancer d'un rang"
+                                Command="{Binding BringForwardCommand}">
+                            <Path Classes="icon" Data="{StaticResource IconForward}"/>
+                        </Button>
+                        <Button Classes="sidebar" ToolTip.Tip="Reculer d'un rang"
+                                Command="{Binding SendBackwardCommand}">
+                            <Path Classes="icon" Data="{StaticResource IconBackward}"/>
+                        </Button>
+                        <Button Classes="sidebar" ToolTip.Tip="Arrière-plan"
+                                Command="{Binding SendToBackCommand}">
+                            <Path Classes="icon" Data="{StaticResource IconToBack}"/>
+                        </Button>
+
+                        <Rectangle Classes="sep"/>
+
+                        <Button Classes="sidebar" ToolTip.Tip="Centrer horizontalement"
+                                Command="{Binding AlignCentreHorizontallyCommand}">
+                            <Path Classes="icon" Data="{StaticResource IconCentreH}"/>
+                        </Button>
+                        <Button Classes="sidebar" ToolTip.Tip="Centrer verticalement"
+                                Command="{Binding AlignCentreVerticallyCommand}">
+                            <Path Classes="icon" Data="{StaticResource IconCentreV}"/>
+                        </Button>
+                        <Button Classes="sidebar" ToolTip.Tip="Ajuster aux marges"
+                                Command="{Binding FitToMarginsCommand}">
+                            <Path Classes="icon" Data="{StaticResource IconFitMargins}"/>
+                        </Button>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+    </DockPanel>
+</Window>

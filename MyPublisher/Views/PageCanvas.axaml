@@ -1,0 +1,153 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:MyPublisher.ViewModels"
+             xmlns:models="using:MyPublisher.Models"
+             xmlns:conv="using:MyPublisher.Converters"
+             x:Class="MyPublisher.Views.PageCanvas"
+             x:DataType="vm:MainWindowViewModel"
+             Focusable="True">
+
+    <UserControl.Styles>
+        <!-- Le thème repeint le fond du champ de saisie au survol et pendant la frappe, et
+             il le fait sur l'élément de gabarit, pas sur le contrôle : le fond transparent
+             posé sur le TextBox est donc perdu dès qu'on entre dans le bloc. On le rétablit
+             pour chacun de ces états. Un fond blanc n'est pas un fond transparent : ce qui
+             passe sous le bloc doit rester visible pendant la saisie comme en dehors. -->
+        <Style Selector="TextBox.frameEditor /template/ Border#PART_BorderElement, TextBox.frameEditor:pointerover /template/ Border#PART_BorderElement, TextBox.frameEditor:focus /template/ Border#PART_BorderElement, TextBox.frameEditor:focus-within /template/ Border#PART_BorderElement">
+            <!-- « Transparent » et non « nul » : un fond nul ne reçoit pas le clic,
+                 et on ne pourrait plus poser le curseur dans le texte. -->
+            <Setter Property="Background" Value="Transparent"/>
+        </Style>
+    </UserControl.Styles>
+
+    <ScrollViewer Name="Scroller"
+                  Background="#FF3A3D42"
+                  HorizontalScrollBarVisibility="Auto"
+                  VerticalScrollBarVisibility="Auto">
+
+        <!-- La planche est centrée tant qu'elle tient dans la fenêtre, sinon elle défile. -->
+        <Panel Name="Stage" Margin="40" HorizontalAlignment="Center" VerticalAlignment="Center">
+            <Border Background="White" BoxShadow="0 6 28 0 #70000000">
+
+                <!-- Trois couches superposées et exactement alignées :
+                     la page mise à l'échelle, la couche de poignées, la couche de saisie. -->
+                <Panel Name="Surface">
+
+                    <LayoutTransformControl Name="Scaler"
+                                            LayoutTransform="{Binding RenderScale, Converter={x:Static conv:Conv.Scale}}">
+                        <!-- À l'intérieur de cette mise à l'échelle, une unité = un point typographique.
+                             Aucune conversion n'est donc nécessaire sur les liaisons ci-dessous. -->
+                        <Panel Name="PageRoot"
+                               Width="{Binding Document.PageWidth}"
+                               Height="{Binding Document.PageHeight}"
+                               Background="White"
+                               ClipToBounds="True">
+
+                            <Canvas>
+                                <Rectangle Canvas.Left="{Binding Document.MarginLeft}"
+                                           Canvas.Top="{Binding Document.MarginTop}"
+                                           Width="{Binding Document.MarginBoxWidth}"
+                                           Height="{Binding Document.MarginBoxHeight}"
+                                           Stroke="#FF7FB2E5" StrokeThickness="0.4"
+                                           StrokeDashArray="6,4" IsHitTestVisible="False"/>
+                            </Canvas>
+
+                            <ItemsControl ItemsSource="{Binding CurrentPage.Frames}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <Canvas/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+
+                                <ItemsControl.Styles>
+                                    <!-- ItemsControl place ses éléments via un ContentPresenter :
+                                         c'est donc lui qui porte la position sur le Canvas. -->
+                                    <Style Selector="ContentPresenter" x:DataType="models:Frame">
+                                        <Setter Property="Canvas.Left" Value="{Binding X}"/>
+                                        <Setter Property="Canvas.Top" Value="{Binding Y}"/>
+                                    </Style>
+                                </ItemsControl.Styles>
+
+                                <ItemsControl.DataTemplates>
+
+                                    <DataTemplate DataType="models:ShapeFrame">
+                                        <Panel Width="{Binding Width}" Height="{Binding Height}"
+                                               RenderTransformOrigin="50%,50%"
+                                               RenderTransform="{Binding Rotation, Converter={x:Static conv:Conv.Rotate}}">
+                                            <Rectangle IsVisible="{Binding IsRectangle}"
+                                                       Fill="{Binding Fill, Converter={x:Static conv:Conv.Brush}}"
+                                                       Stroke="{Binding Stroke, Converter={x:Static conv:Conv.Brush}}"
+                                                       StrokeThickness="{Binding StrokeThickness}"
+                                                       RadiusX="{Binding CornerRadius}"
+                                                       RadiusY="{Binding CornerRadius}"/>
+                                            <Ellipse IsVisible="{Binding IsEllipse}"
+                                                     Fill="{Binding Fill, Converter={x:Static conv:Conv.Brush}}"
+                                                     Stroke="{Binding Stroke, Converter={x:Static conv:Conv.Brush}}"
+                                                     StrokeThickness="{Binding StrokeThickness}"/>
+                                        </Panel>
+                                    </DataTemplate>
+
+                                    <DataTemplate DataType="models:ImageFrame">
+                                        <Panel Width="{Binding Width}" Height="{Binding Height}"
+                                               RenderTransformOrigin="50%,50%"
+                                               RenderTransform="{Binding Rotation, Converter={x:Static conv:Conv.Rotate}}">
+                                            <!-- Repère visible tant qu'aucune image n'est chargée. -->
+                                            <Rectangle Stroke="#FFB0B0B0" StrokeThickness="0.5" StrokeDashArray="4,3"/>
+                                            <Image Source="{Binding Path, Converter={x:Static conv:Conv.Image}}"
+                                                   Stretch="{Binding Fit, Converter={x:Static conv:Conv.Fit}}"/>
+                                        </Panel>
+                                    </DataTemplate>
+
+                                    <DataTemplate DataType="models:TextFrame">
+                                        <!-- Le fond est porté par le conteneur, pas par l'un des deux
+                                             contrôles : il reste donc identique à l'affichage et pendant
+                                             la saisie, le TextBox se contentant d'être transparent. -->
+                                        <Panel Width="{Binding Width}" Height="{Binding Height}"
+                                               ClipToBounds="True"
+                                               Background="{Binding Background, Converter={x:Static conv:Conv.Brush}}"
+                                               RenderTransformOrigin="50%,50%"
+                                               RenderTransform="{Binding Rotation, Converter={x:Static conv:Conv.Rotate}}">
+                                            <!-- Affichage et saisie sont deux contrôles distincts : le TextBlock
+                                                 donne le contrôle typographique, le TextBox l'édition et le caret. -->
+                                            <TextBlock IsVisible="{Binding !IsEditing}"
+                                                       Text="{Binding Text}"
+                                                       FontFamily="{Binding FontFamily, Converter={x:Static conv:Conv.Font}}"
+                                                       FontSize="{Binding FontSize}"
+                                                       FontWeight="{Binding Bold, Converter={x:Static conv:Conv.Weight}}"
+                                                       FontStyle="{Binding Italic, Converter={x:Static conv:Conv.Slant}}"
+                                                       Foreground="{Binding Foreground, Converter={x:Static conv:Conv.Brush}}"
+                                                       TextAlignment="{Binding Align, Converter={x:Static conv:Conv.Align}}"
+                                                       LineHeight="{Binding AbsoluteLineHeight}"
+                                                       Padding="{Binding Padding, Converter={x:Static conv:Conv.Pad}}"
+                                                       TextWrapping="Wrap"/>
+                                            <TextBox IsVisible="{Binding IsEditing}"
+                                                     Text="{Binding Text, Mode=TwoWay}"
+                                                     FontFamily="{Binding FontFamily, Converter={x:Static conv:Conv.Font}}"
+                                                     FontSize="{Binding FontSize}"
+                                                     FontWeight="{Binding Bold, Converter={x:Static conv:Conv.Weight}}"
+                                                     FontStyle="{Binding Italic, Converter={x:Static conv:Conv.Slant}}"
+                                                     Foreground="{Binding Foreground, Converter={x:Static conv:Conv.Brush}}"
+                                                     TextAlignment="{Binding Align, Converter={x:Static conv:Conv.Align}}"
+                                                     Padding="{Binding Padding, Converter={x:Static conv:Conv.Pad}}"
+                                                     AcceptsReturn="True" TextWrapping="Wrap"
+                                                     Classes="frameEditor"
+                                                     Background="Transparent" BorderThickness="0"
+                                                     VerticalContentAlignment="Top"/>
+                                        </Panel>
+                                    </DataTemplate>
+
+                                </ItemsControl.DataTemplates>
+                            </ItemsControl>
+                        </Panel>
+                    </LayoutTransformControl>
+
+                    <!-- Hors de la mise à l'échelle : les poignées gardent une taille constante
+                         quel que soit le zoom. Leurs positions sont calculées en code-behind. -->
+                    <Canvas Name="Overlay" IsHitTestVisible="False"/>
+
+                    <Border Name="InputLayer" Background="Transparent"/>
+                </Panel>
+            </Border>
+        </Panel>
+    </ScrollViewer>
+</UserControl>

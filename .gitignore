@@ -1,0 +1,9 @@
+# Sorties de compilation
+bin/
+obj/
+
+# Réglages de l'EDI (Rider / Visual Studio)
+.idea/
+.vs/
+*.user
+*.suo
