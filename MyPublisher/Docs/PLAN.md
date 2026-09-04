@@ -25,6 +25,10 @@ un plan sans annulation — alors même que l'application, elle, en offre 60 pas
 
 *Recette* : `git log` montre un commit initial contenant l'état actuel.
 
+*Fait le 5 septembre 2026* — dépôt initialisé (`main`), commit initial `cc098e0`,
+52 fichiers. Les sorties de compilation et les réglages Rider sont écartés par
+`.gitignore` ; les deux guides PDF de `Books/` sont suivis.
+
 ### P2 — Un contrôle de non-régression minimal
 
 Il n'y a pas de projet de test. Sans aller jusqu'à une stratégie de test, il faut au
@@ -47,6 +51,20 @@ poste de la phase C. C'est le filet, pas la ceinture.
 *Recette* : le script tourne sur l'état actuel et produit un relevé de référence ; il
 sort en code 0 tant que le relevé ne change pas.
 
+*Fait le 5 septembre 2026* — `Scripts/controle.sh`, référence dans
+`Scripts/reference.txt` (2 pages, aucun avertissement). L'étape 2 a demandé un point
+d'entrée sans interface, `--resave`, et vérifié son utilité dès le premier passage :
+
+- l'encodeur JSON par défaut échappait tout caractère non-ASCII et l'apostrophe — un
+  document français enregistré par l'application sortait en `l\u0027unit\u00E9`, contre
+  la lisibilité que le format revendique. Corrigé dans `DocumentSerializer`.
+- `Samples/exemple-bulletin.mypub` avait été écrit à la main et non par le sérialiseur.
+  Il est régénéré par lui, à données égales, pour que l'étape 2 reste l'égalité stricte
+  demandée ici plutôt qu'un écart toléré.
+
+Le contrôle a été éprouvé en le faisant échouer : JSON écarté du sérialiseur, compte de
+pages différent, bloc image au chemin inexistant.
+
 ### P0 — Une décision à prendre tout de suite
 
 **Le nom du remplissage.** `ShapeFrame.Fill` et `TextFrame.Background` désignent la même
@@ -65,6 +83,11 @@ qui arrive en C5. `FormatVersion` (`Models/Document.cs`) passe à 2 le jour où 
 renommage est fait.
 
 *Recette* : la décision est actée ici, en une ligne, avec sa date.
+
+**Décision, 5 septembre 2026 : `Fill`, pour tous les blocs** — la recommandation
+ci-dessus est retenue. Le renommage lui-même reste au poste C1, et `FormatVersion`
+passera à 2 ce jour-là. La normalisation du document d'exemple y a depuis ajouté
+`"Background": null` sur 15 blocs de texte : le renommage reste un `sed`.
 
 ---
 
