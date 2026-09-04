@@ -36,12 +36,28 @@ case "${1-}" in
     *) echo "Usage : $0 [--enregistrer]" >&2; exit 2 ;;
 esac
 
-dotnet build MyPublisher/MyPublisher.csproj -c Debug -v q --nologo >/dev/null
-
 # Les fichiers de travail restent hors du dépôt : le contrôle ne doit rien
 # laisser derrière lui, ni salir « git status ».
 travail="$(mktemp -d)"
 trap 'rm -rf "$travail"' EXIT
+
+# Le contrôle se passe sur un arbre en cours de modification : une compilation
+# qui casse doit se dire, pas s'avaler.
+if ! dotnet build MyPublisher/MyPublisher.csproj -c Debug -v q --nologo \
+        > "$travail/compilation.txt" 2>&1; then
+    echo "ÉCHEC : la compilation ne passe pas." >&2
+    cat "$travail/compilation.txt" >&2
+    exit 1
+fi
+
+# Le chemin du binaire est écrit en dur : le jour où le cadriciel cible change
+# dans le .csproj, mieux vaut s'arrêter ici que contrôler un binaire périmé
+# laissé par la cible précédente.
+if [ ! -x "$binaire" ]; then
+    echo "ÉCHEC : binaire introuvable après compilation ($binaire)." >&2
+    echo "Le cadriciel cible du .csproj a-t-il changé ?" >&2
+    exit 1
+fi
 
 # Étapes 1 et 2 — l'aller-retour d'écriture.
 if ! "$binaire" "$document" --resave "$travail/copie.mypub" >/dev/null; then
