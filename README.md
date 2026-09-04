@@ -20,8 +20,21 @@ dotnet run --project MyPublisher -- mon-doc.mypub --export sortie.pdf   # export
 dotnet run --project MyPublisher -- mon-doc.mypub --resave copie.mypub  # relit et réécrit
 ```
 
-La réécriture ne sert pas à l'usage courant : elle donne prise au contrôle de
-non-régression, qui vérifie qu'un document relu puis réécrit rend le même JSON.
+La réécriture ne sert pas à l'usage courant : elle donne prise au contrôle
+ci-dessous.
+
+## Contrôle de non-régression
+
+```bash
+Scripts/controle.sh                 # sort en 0 tant que rien ne bouge
+Scripts/controle.sh --enregistrer   # remplace le relevé de référence, après examen
+```
+
+Trois vérifications sur `Samples/exemple-bulletin.mypub` : il se relit, il se réécrit
+au caractère près, et son export PDF donne le même nombre de pages et les mêmes
+avertissements que le relevé de `Scripts/reference.txt`. C'est un filet, pas une
+stratégie de test : il tient la chaîne ouvrir → enregistrer → exporter, celle dont
+tout le reste dépend.
 
 ## Interface
 

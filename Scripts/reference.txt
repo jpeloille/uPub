@@ -1,0 +1,2 @@
+document : Samples/exemple-bulletin.mypub
+pages : 2
