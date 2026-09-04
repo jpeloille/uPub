@@ -1,6 +1,7 @@
 using System.IO;
 using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using MyPublisher.Models;
 
@@ -29,8 +30,21 @@ public static class DocumentSerializer
 
     public static string ToJson(Document document) => JsonSerializer.Serialize(document, Options);
 
-    public static Document FromJson(string json) =>
-        JsonSerializer.Deserialize<Document>(json, Options) ?? Document.CreateDefault();
+    /// <summary>
+    /// Relit un document, de n'importe quelle version du format jusqu'à la courante. On
+    /// passe par l'arbre JSON plutôt que par le modèle : une propriété renommée n'a plus
+    /// de propriété où atterrir, la migration doit donc se faire avant.
+    /// </summary>
+    public static Document FromJson(string json)
+    {
+        if (JsonNode.Parse(json) is not JsonObject root)
+        {
+            throw new InvalidDataException("Le document n'est pas un objet JSON.");
+        }
+
+        FormatMigrations.Apply(root);
+        return JsonSerializer.Deserialize<Document>(root, Options) ?? Document.CreateDefault();
+    }
 
     public static void Save(Document document, string path) =>
         File.WriteAllText(path, ToJson(document));

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using Avalonia;
+using Avalonia.Collections;
 using Avalonia.Data.Converters;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
@@ -58,6 +59,10 @@ public static class Conv
 
     public static readonly FuncValueConverter<double, Thickness> Pad =
         new(points => new Thickness(points));
+
+    /// <summary>Motif du trait, en multiples de l'épaisseur ; null laisse le trait continu.</summary>
+    public static readonly FuncValueConverter<StrokeStyle, AvaloniaList<double>?> Dash =
+        new(style => Frame.DashPattern(style) is { } pattern ? new AvaloniaList<double>(pattern) : null);
 
     public static readonly FuncValueConverter<string?, Bitmap?> Image =
         new(path => string.IsNullOrWhiteSpace(path) ? null : BitmapCache.Get(path));

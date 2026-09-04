@@ -27,6 +27,28 @@
             <Setter Property="Canvas.Left" Value="{Binding X}"/>
             <Setter Property="Canvas.Top" Value="{Binding Y}"/>
         </Style>
+
+        <!-- Fond et contour d'un bloc : deux rectangles qui prennent le contenu en
+             sandwich, le fond dessous, le contour dessus — un filet posé sur une image
+             passe sur son bord et non sous elle, et l'export trace dans le même ordre.
+             Les liaisons sont posées ici une fois pour toutes ; chaque gabarit n'a plus
+             qu'à poser un rectangle de la classe voulue. Aucun des deux ne reçoit le
+             pointeur : la couche de saisie s'en charge, et pendant la frappe le contour
+             ne doit pas voler le clic au champ de texte. -->
+        <Style Selector="Rectangle.frameFill" x:DataType="models:Frame">
+            <Setter Property="Fill" Value="{Binding Fill, Converter={x:Static conv:Conv.Brush}}"/>
+            <Setter Property="RadiusX" Value="{Binding CornerRadius}"/>
+            <Setter Property="RadiusY" Value="{Binding CornerRadius}"/>
+            <Setter Property="IsHitTestVisible" Value="False"/>
+        </Style>
+        <Style Selector="Rectangle.frameStroke" x:DataType="models:Frame">
+            <Setter Property="Stroke" Value="{Binding Stroke, Converter={x:Static conv:Conv.Brush}}"/>
+            <Setter Property="StrokeThickness" Value="{Binding StrokeThickness}"/>
+            <Setter Property="StrokeDashArray" Value="{Binding StrokeStyle, Converter={x:Static conv:Conv.Dash}}"/>
+            <Setter Property="RadiusX" Value="{Binding CornerRadius}"/>
+            <Setter Property="RadiusY" Value="{Binding CornerRadius}"/>
+            <Setter Property="IsHitTestVisible" Value="False"/>
+        </Style>
     </UserControl.Styles>
 
     <!-- Gabarits des blocs, posés au niveau du contrôle : le canevas d'un groupe les
@@ -37,16 +59,20 @@
             <Panel Width="{Binding Width}" Height="{Binding Height}"
                    RenderTransformOrigin="50%,50%"
                    RenderTransform="{Binding Rotation, Converter={x:Static conv:Conv.Rotate}}">
+                <!-- Une forme n'a pas de contenu : fond et contour tiennent en un seul
+                     élément, sans passer par les deux rectangles des autres blocs. -->
                 <Rectangle IsVisible="{Binding IsRectangle}"
                            Fill="{Binding Fill, Converter={x:Static conv:Conv.Brush}}"
                            Stroke="{Binding Stroke, Converter={x:Static conv:Conv.Brush}}"
                            StrokeThickness="{Binding StrokeThickness}"
+                           StrokeDashArray="{Binding StrokeStyle, Converter={x:Static conv:Conv.Dash}}"
                            RadiusX="{Binding CornerRadius}"
                            RadiusY="{Binding CornerRadius}"/>
                 <Ellipse IsVisible="{Binding IsEllipse}"
                          Fill="{Binding Fill, Converter={x:Static conv:Conv.Brush}}"
                          Stroke="{Binding Stroke, Converter={x:Static conv:Conv.Brush}}"
-                         StrokeThickness="{Binding StrokeThickness}"/>
+                         StrokeThickness="{Binding StrokeThickness}"
+                         StrokeDashArray="{Binding StrokeStyle, Converter={x:Static conv:Conv.Dash}}"/>
             </Panel>
         </DataTemplate>
 
@@ -54,48 +80,55 @@
             <Panel Width="{Binding Width}" Height="{Binding Height}"
                    RenderTransformOrigin="50%,50%"
                    RenderTransform="{Binding Rotation, Converter={x:Static conv:Conv.Rotate}}">
+                <Rectangle Classes="frameFill"/>
                 <!-- Repère visible tant qu'aucune image n'est chargée. -->
                 <Rectangle Stroke="#FFB0B0B0" StrokeThickness="0.5" StrokeDashArray="4,3"/>
                 <Image Source="{Binding Path, Converter={x:Static conv:Conv.Image}}"
                        Stretch="{Binding Fit, Converter={x:Static conv:Conv.Fit}}"/>
+                <Rectangle Classes="frameStroke"/>
             </Panel>
         </DataTemplate>
 
         <DataTemplate DataType="models:TextFrame">
-            <!-- Le fond est porté par le conteneur, pas par l'un des deux
-                 contrôles : il reste donc identique à l'affichage et pendant
-                 la saisie, le TextBox se contentant d'être transparent. -->
             <Panel Width="{Binding Width}" Height="{Binding Height}"
-                   ClipToBounds="True"
-                   Background="{Binding Background, Converter={x:Static conv:Conv.Brush}}"
                    RenderTransformOrigin="50%,50%"
                    RenderTransform="{Binding Rotation, Converter={x:Static conv:Conv.Rotate}}">
-                <!-- Affichage et saisie sont deux contrôles distincts : le TextBlock
-                     donne le contrôle typographique, le TextBox l'édition et le caret. -->
-                <TextBlock IsVisible="{Binding !IsEditing}"
-                           Text="{Binding Text}"
-                           FontFamily="{Binding FontFamily, Converter={x:Static conv:Conv.Font}}"
-                           FontSize="{Binding FontSize}"
-                           FontWeight="{Binding Bold, Converter={x:Static conv:Conv.Weight}}"
-                           FontStyle="{Binding Italic, Converter={x:Static conv:Conv.Slant}}"
-                           Foreground="{Binding Foreground, Converter={x:Static conv:Conv.Brush}}"
-                           TextAlignment="{Binding Align, Converter={x:Static conv:Conv.Align}}"
-                           LineHeight="{Binding AbsoluteLineHeight}"
-                           Padding="{Binding Padding, Converter={x:Static conv:Conv.Pad}}"
-                           TextWrapping="Wrap"/>
-                <TextBox IsVisible="{Binding IsEditing}"
-                         Text="{Binding Text, Mode=TwoWay}"
-                         FontFamily="{Binding FontFamily, Converter={x:Static conv:Conv.Font}}"
-                         FontSize="{Binding FontSize}"
-                         FontWeight="{Binding Bold, Converter={x:Static conv:Conv.Weight}}"
-                         FontStyle="{Binding Italic, Converter={x:Static conv:Conv.Slant}}"
-                         Foreground="{Binding Foreground, Converter={x:Static conv:Conv.Brush}}"
-                         TextAlignment="{Binding Align, Converter={x:Static conv:Conv.Align}}"
-                         Padding="{Binding Padding, Converter={x:Static conv:Conv.Pad}}"
-                         AcceptsReturn="True" TextWrapping="Wrap"
-                         Classes="frameEditor"
-                         Background="Transparent" BorderThickness="0"
-                         VerticalContentAlignment="Top"/>
+                <!-- Le fond est un rectangle sous les deux contrôles, pas une propriété
+                     de l'un d'eux : il reste donc identique à l'affichage et pendant la
+                     saisie, le TextBox se contentant d'être transparent. -->
+                <Rectangle Classes="frameFill"/>
+                <!-- Seul le texte est découpé au bloc. Le contour, lui, est centré sur le
+                     bord et déborde de moitié, comme à l'export : le découper le
+                     réduirait à l'écran à la moitié de son épaisseur. -->
+                <Panel ClipToBounds="True">
+                    <!-- Affichage et saisie sont deux contrôles distincts : le TextBlock
+                         donne le contrôle typographique, le TextBox l'édition et le caret. -->
+                    <TextBlock IsVisible="{Binding !IsEditing}"
+                               Text="{Binding Text}"
+                               FontFamily="{Binding FontFamily, Converter={x:Static conv:Conv.Font}}"
+                               FontSize="{Binding FontSize}"
+                               FontWeight="{Binding Bold, Converter={x:Static conv:Conv.Weight}}"
+                               FontStyle="{Binding Italic, Converter={x:Static conv:Conv.Slant}}"
+                               Foreground="{Binding Foreground, Converter={x:Static conv:Conv.Brush}}"
+                               TextAlignment="{Binding Align, Converter={x:Static conv:Conv.Align}}"
+                               LineHeight="{Binding AbsoluteLineHeight}"
+                               Padding="{Binding Padding, Converter={x:Static conv:Conv.Pad}}"
+                               TextWrapping="Wrap"/>
+                    <TextBox IsVisible="{Binding IsEditing}"
+                             Text="{Binding Text, Mode=TwoWay}"
+                             FontFamily="{Binding FontFamily, Converter={x:Static conv:Conv.Font}}"
+                             FontSize="{Binding FontSize}"
+                             FontWeight="{Binding Bold, Converter={x:Static conv:Conv.Weight}}"
+                             FontStyle="{Binding Italic, Converter={x:Static conv:Conv.Slant}}"
+                             Foreground="{Binding Foreground, Converter={x:Static conv:Conv.Brush}}"
+                             TextAlignment="{Binding Align, Converter={x:Static conv:Conv.Align}}"
+                             Padding="{Binding Padding, Converter={x:Static conv:Conv.Pad}}"
+                             AcceptsReturn="True" TextWrapping="Wrap"
+                             Classes="frameEditor"
+                             Background="Transparent" BorderThickness="0"
+                             VerticalContentAlignment="Top"/>
+                </Panel>
+                <Rectangle Classes="frameStroke"/>
             </Panel>
         </DataTemplate>
 
@@ -105,6 +138,7 @@
             <Panel Width="{Binding Width}" Height="{Binding Height}"
                    RenderTransformOrigin="50%,50%"
                    RenderTransform="{Binding Rotation, Converter={x:Static conv:Conv.Rotate}}">
+                <Rectangle Classes="frameFill"/>
                 <ItemsControl Classes="frames" ItemsSource="{Binding Children}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
@@ -112,6 +146,7 @@
                         </ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
                 </ItemsControl>
+                <Rectangle Classes="frameStroke"/>
             </Panel>
         </DataTemplate>
 

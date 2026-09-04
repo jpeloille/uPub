@@ -22,7 +22,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 
 | Poste | Intitulé | Avancement | Où ça en est |
 |---|---|:---:|---|
-| **P0** | Nom du remplissage | **100 %** | `Fill` retenu et daté ; le renommage lui-même appartient à C1 |
+| **P0** | Nom du remplissage | **100 %** | `Fill` retenu et daté ; renommage fait en C1 |
 | **P1** | Dépôt sous git | **100 %** | Branche `main`, commit initial `cc098e0` |
 | **P2** | Contrôle de non-régression | **100 %** | `Scripts/controle.sh`, référence dans `Scripts/reference.txt` |
 | **A1** | Poignée de rotation | 0 % | La rotation est déjà partout ; il manque la neuvième poignée |
@@ -37,18 +37,18 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **B3** | Imprimer | 0 % | — |
 | **B4** | Archive `.mypubz` | 0 % | — |
 | **B5** | Avertir sur les substitutions de polices | 0 % | — |
-| **C1** | Fond et bordure au niveau de `Frame` | 0 % | Décision de nommage acquise en P0 ; porte aussi le passage de `FormatVersion` à 2 |
+| **C1** | Fond et bordure au niveau de `Frame` | **100 %** | Fond, contour, trait, arrondi et opacité sur tout bloc ; `FormatVersion` 2, migration à l'ouverture |
 | **C2** | Repères | 0 % | C2a grille de composition · C2b règles et repères libres |
 | **C3** | Sélection multiple, puis groupement | **100 %** | C3a sélection · C3b alignement et répartition · C3c groupe persistant |
 | **C4** | Champs | 0 % | N'a d'intérêt qu'avec les modèles de B1 |
-| **C5** | Remplissage riche et cohérence visuelle | 0 % | C5a fond de page · C5b jeux de couleurs · C5c dégradés — C5a et C5c attendent C1 |
-| **C6** | Marges intérieures par côté | 0 % | À grouper avec C1, pour ne payer la migration de format qu'une fois |
+| **C5** | Remplissage riche et cohérence visuelle | 0 % | C5a fond de page · C5b jeux de couleurs · C5c dégradés — C5a et C5c débloqués par C1 |
+| **C6** | Marges intérieures par côté | 0 % | La mécanique de migration existe depuis C1 : ne coûte plus qu'un numéro de version et son étape |
 | **C7** | Bibliothèque de blocs | 0 % | Débloqué depuis C3a |
 | **D** | Moteur de composition | — | Décision non ouverte ; à rouvrir quand A, B et C sont livrées |
 
-**Par phase** — P : 3 sur 3 · A : 0 sur 7 · B : 0 sur 5 · C : 1 sur 7 · D : non planifié.
+**Par phase** — P : 3 sur 3 · A : 0 sur 7 · B : 0 sur 5 · C : 2 sur 7 · D : non planifié.
 
-Soit **4 postes sur 22**. C'est un compte de postes et non d'effort : C3 pesait à lui
+Soit **5 postes sur 22**. C'est un compte de postes et non d'effort : C3 pesait à lui
 seul plus que toute la phase A, et les préalables ne produisaient aucune fonctionnalité.
 Le tableau dit ce qui est clos, pas ce qui reste à peiner.
 
@@ -132,6 +132,8 @@ renommage est fait.
 ci-dessus est retenue. Le renommage lui-même reste au poste C1, et `FormatVersion`
 passera à 2 ce jour-là. La normalisation du document d'exemple y a depuis ajouté
 `"Background": null` sur 15 blocs de texte : le renommage reste un `sed`.
+*Renommage fait en C1, le même jour — par une migration à l'ouverture plutôt qu'un
+`sed`, parce que des `.mypub` de la version 1 existent désormais hors du dépôt.*
 
 ---
 
@@ -308,10 +310,24 @@ juste offerte nulle part) et traits en pointillés.
 *Recette* : encadrer une image d'un filet de 2 pt sans superposer de forme ; l'export
 est identique à l'écran. Le contrôle P2 passe.
 
-*Note du 5 septembre 2026* — C3c a ajouté le discriminant `group` sans toucher à
-`FormatVersion`, aucun fichier existant n'étant concerné par une addition (un document
-contenant un groupe ne s'ouvrira pas dans une version antérieure, c'est le prix assumé).
-Le passage à 2 reste attaché au renommage ci-dessus, et ne se compte donc qu'une fois.
+*Fait le 5 septembre 2026.* Fond, contour, épaisseur, trait (continu, tirets, points)
+et arrondi sont sur `Frame` ; l'opacité du fond est offerte en clair dans le panneau,
+en plus du sélecteur. À l'écran comme à l'export, le fond passe sous le contenu et le
+contour dessus — un filet sur une image passe sur son bord, pas sous elle — et le
+contour se trace même quand le contenu échoue : une image illisible garde son cadre.
+Les motifs de trait sont une seule table, en multiples de l'épaisseur, que les deux
+rendus lisent ; le PDF en porte la trace (`3 w [12 6] 0 d`).
+
+`FormatVersion` passe à 2. Un fichier de la version 1 — C3c y avait déjà ajouté le
+discriminant `group` sans changer de numéro, une addition ne cassant rien — est migré
+à l'ouverture, groupes compris ; un fichier plus récent est refusé avec son numéro. Le
+contrôle P2 a gagné une quatrième étape : la version 1 du document d'exemple, figée
+dans `Scripts/fixtures/`, doit s'ouvrir et se migrer en un point fixe.
+
+Vérifié en rendant la même page des deux côtés — l'écran hors champ, par
+`RenderTargetBitmap`, l'export par `pdftoppm` — à deux pixels par point : mêmes tirets,
+mêmes points, même filet de 2 pt, mêmes arrondis ; 2,4 % des pixels diffèrent, tous
+sur le lissage des bords, le texte et le repère de marge propre à l'écran.
 
 ### C2 — Repères *(fiches 05, 06, 02)*
 

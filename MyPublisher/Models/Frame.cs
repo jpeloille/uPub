@@ -13,6 +13,9 @@ public enum ImageFit { Uniform, UniformToFill, Fill }
 
 public enum ShapeKind { Rectangle, Ellipse }
 
+/// <summary>Continu, tirets ou points. Les motifs sont en multiples de l'épaisseur.</summary>
+public enum StrokeStyle { Solid, Dashed, Dotted }
+
 /// <summary>
 /// Rectangle englobant en coordonnées page, bords parallèles à la page. C'est la forme
 /// sous laquelle on compare des blocs entre eux — alignement, répartition, aimantation
@@ -61,6 +64,8 @@ public abstract partial class Frame : ObservableObject
     // document après ses pages. Un format qui se relit se lit dans l'ordre où on
     // pense — le bloc d'abord, ses réglages ensuite. Les rangs vont de dix en dix :
     // remonter une propriété d'une classe à l'autre n'oblige pas à tout renuméroter.
+    // Le fond et le contour, remontés de la forme vers le bloc, tiennent de 70 à 90 ;
+    // les propriétés propres à chaque type commencent à cent.
     [ObservableProperty]
     [property: JsonPropertyOrder(10)]
     private string _name = "";
@@ -89,6 +94,153 @@ public abstract partial class Frame : ObservableObject
     [ObservableProperty]
     [property: JsonPropertyOrder(60)]
     private double _rotation;
+
+    /// <summary>
+    /// Fond du bloc, en #AARRGGBB. Null signifie « aucun fond » : ce qui passe sous le
+    /// bloc reste visible. Un fond blanc, lui, est un aplat opaque qui masque. Les deux
+    /// ne se confondent pas, même posés sur une page blanche — la différence se voit dès
+    /// qu'un bloc passe dessous, et elle est conservée à l'export. Commun à tous les
+    /// blocs : une image ou un texte se remplit comme une forme.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasFill))]
+    [NotifyPropertyChangedFor(nameof(FillColor))]
+    [NotifyPropertyChangedFor(nameof(FillOpacity))]
+    [property: JsonPropertyOrder(70)]
+    private string? _fill;
+
+    /// <summary>Contour du bloc, en #AARRGGBB ; null pour aucun contour.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasStroke))]
+    [NotifyPropertyChangedFor(nameof(StrokeColor))]
+    [property: JsonPropertyOrder(75)]
+    private string? _stroke;
+
+    /// <summary>Épaisseur du contour en points, centrée sur le bord du bloc.</summary>
+    [ObservableProperty]
+    [property: JsonPropertyOrder(80)]
+    private double _strokeThickness = 1;
+
+    [ObservableProperty]
+    [property: JsonPropertyOrder(85)]
+    private StrokeStyle _strokeStyle = StrokeStyle.Solid;
+
+    /// <summary>Rayon des angles en points ; sans effet sur une ellipse.</summary>
+    [ObservableProperty]
+    [property: JsonPropertyOrder(90)]
+    private double _cornerRadius;
+
+    /// <summary>
+    /// Teintes retenues pendant qu'aucun fond ou contour n'est appliqué, pour que
+    /// retirer puis remettre retrouve la couleur choisie au lieu d'une valeur neuve.
+    /// État transitoire d'interface : jamais sérialisé.
+    /// </summary>
+    private string _lastFill = "#FFFFFFFF";
+    private string _lastStroke = "#FF1A1A1A";
+
+    /// <summary>
+    /// Présence d'un fond, telle que la manipule le panneau de propriétés. Décocher
+    /// efface le fond sans perdre la teinte, recocher la restitue.
+    /// </summary>
+    [JsonIgnore]
+    public bool HasFill
+    {
+        get => Fill is not null;
+        set
+        {
+            if (value == HasFill) return;
+            Fill = value ? _lastFill : null;
+        }
+    }
+
+    /// <summary>
+    /// Teinte présentée au sélecteur de couleur, toujours définie même quand le bloc
+    /// n'a pas de fond. Le sélecteur renvoie vers la source la valeur qu'il vient d'en
+    /// lire dès qu'il s'affiche : le brancher directement sur <see cref="Fill"/>
+    /// donnerait un fond transparent parasite au premier bloc sélectionné, et la case
+    /// « fond » se cocherait d'elle-même. On sépare donc la teinte de sa présence.
+    /// </summary>
+    [JsonIgnore]
+    public string FillColor
+    {
+        get => Fill ?? _lastFill;
+        set
+        {
+            if (value == FillColor) return;
+
+            _lastFill = value;
+            // Choisir une teinte ne crée pas un fond : seule la case le fait.
+            if (HasFill) Fill = value;
+            else
+            {
+                OnPropertyChanged();
+                OnPropertyChanged(nameof(FillOpacity));
+            }
+        }
+    }
+
+    /// <summary>
+    /// Opacité du fond en pour cent. Elle ne fait que lire et réécrire l'octet alpha de
+    /// la teinte : c'est le même réglage que celui du sélecteur, offert là où on le
+    /// cherche.
+    /// </summary>
+    [JsonIgnore]
+    public double FillOpacity
+    {
+        get => HexColor.TryParse(FillColor, out var a, out _, out _, out _) ? Math.Round(a * 100.0 / 255) : 100;
+        set
+        {
+            var alpha = (byte)Math.Round(Math.Clamp(value, 0, 100) * 255 / 100);
+            FillColor = HexColor.WithAlpha(FillColor, alpha);
+        }
+    }
+
+    [JsonIgnore]
+    public bool HasStroke
+    {
+        get => Stroke is not null;
+        set
+        {
+            if (value == HasStroke) return;
+            Stroke = value ? _lastStroke : null;
+        }
+    }
+
+    [JsonIgnore]
+    public string StrokeColor
+    {
+        get => Stroke ?? _lastStroke;
+        set
+        {
+            if (value == StrokeColor) return;
+
+            _lastStroke = value;
+            if (HasStroke) Stroke = value;
+            else OnPropertyChanged();
+        }
+    }
+
+    partial void OnFillChanged(string? value)
+    {
+        if (value is not null) _lastFill = value;
+    }
+
+    partial void OnStrokeChanged(string? value)
+    {
+        if (value is not null) _lastStroke = value;
+    }
+
+    /// <summary>
+    /// Motif du trait en multiples de l'épaisseur, ou null pour un trait continu. Écran
+    /// et export lisent la même table : les deux comptent en multiples de l'épaisseur,
+    /// un tiret de quatre fois l'épaisseur est donc le même des deux côtés.
+    /// </summary>
+    public static double[]? DashPattern(StrokeStyle style) => style switch
+    {
+        StrokeStyle.Dashed => [4, 2],
+        StrokeStyle.Dotted => [1, 2],
+        _ => null
+    };
 
     [JsonIgnore] public double Right => X + Width;
     [JsonIgnore] public double Bottom => Y + Height;
@@ -183,6 +335,11 @@ public abstract partial class Frame : ObservableObject
         target.Width = Width;
         target.Height = Height;
         target.Rotation = Rotation;
+        target.Fill = Fill;
+        target.Stroke = Stroke;
+        target.StrokeThickness = StrokeThickness;
+        target.StrokeStyle = StrokeStyle;
+        target.CornerRadius = CornerRadius;
     }
 }
 
@@ -213,25 +370,6 @@ public partial class TextFrame : Frame
     [property: JsonPropertyOrder(150)]
     private string _foreground = "#FF1A1A1A";
 
-    /// <summary>
-    /// Fond du bloc, en #AARRGGBB. Null signifie « aucun fond » : ce qui passe sous le
-    /// bloc reste visible. Un fond blanc, lui, est un aplat opaque qui masque. Les deux
-    /// ne se confondent pas, même posés sur une page blanche — la différence se voit dès
-    /// qu'un bloc passe dessous, et elle est conservée à l'export.
-    /// </summary>
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasBackground))]
-    [NotifyPropertyChangedFor(nameof(BackgroundColor))]
-    [property: JsonPropertyOrder(160)]
-    private string? _background;
-
-    /// <summary>
-    /// Teinte retenue pendant qu'aucun fond n'est appliqué, pour que retirer puis
-    /// remettre le fond retrouve la couleur choisie au lieu d'un blanc neuf.
-    /// État transitoire d'interface : jamais sérialisé.
-    /// </summary>
-    private string _lastBackground = "#FFFFFFFF";
-
     [ObservableProperty]
     [property: JsonPropertyOrder(170)]
     private TextAlign _align = TextAlign.Left;
@@ -252,48 +390,6 @@ public partial class TextFrame : Frame
     [property: JsonIgnore]
     private bool _isEditing;
 
-    /// <summary>
-    /// Présence d'un fond, telle que la manipule le panneau de propriétés. Décocher
-    /// efface le fond sans perdre la teinte, recocher la restitue.
-    /// </summary>
-    [JsonIgnore]
-    public bool HasBackground
-    {
-        get => Background is not null;
-        set
-        {
-            if (value == HasBackground) return;
-            Background = value ? _lastBackground : null;
-        }
-    }
-
-    /// <summary>
-    /// Teinte présentée au sélecteur de couleur, toujours définie même quand le bloc
-    /// n'a pas de fond. Le sélecteur renvoie vers la source la valeur qu'il vient d'en
-    /// lire dès qu'il s'affiche : le brancher directement sur <see cref="Background"/>
-    /// donnerait un fond transparent parasite au premier bloc sélectionné, et la case
-    /// « fond » se cocherait d'elle-même. On sépare donc la teinte de sa présence.
-    /// </summary>
-    [JsonIgnore]
-    public string BackgroundColor
-    {
-        get => Background ?? _lastBackground;
-        set
-        {
-            if (value == BackgroundColor) return;
-
-            _lastBackground = value;
-            // Choisir une teinte ne crée pas un fond : seule la case le fait.
-            if (HasBackground) Background = value;
-            else OnPropertyChanged();
-        }
-    }
-
-    partial void OnBackgroundChanged(string? value)
-    {
-        if (value is not null) _lastBackground = value;
-    }
-
     [JsonIgnore] public double AbsoluteLineHeight => FontSize * LineHeight;
 
     [JsonIgnore] public override string Kind => "Texte";
@@ -303,7 +399,7 @@ public partial class TextFrame : Frame
         var c = new TextFrame
         {
             Text = Text, FontFamily = FontFamily, FontSize = FontSize, Bold = Bold,
-            Italic = Italic, Foreground = Foreground, Background = Background, Align = Align,
+            Italic = Italic, Foreground = Foreground, Align = Align,
             LineHeight = LineHeight, Padding = Padding
         };
         CopyBaseTo(c);
@@ -339,21 +435,15 @@ public partial class ShapeFrame : Frame
     [property: JsonPropertyOrder(100)]
     private ShapeKind _shape = ShapeKind.Rectangle;
 
-    [ObservableProperty]
-    [property: JsonPropertyOrder(110)]
-    private string? _fill = "#FF9DC3E6";
-
-    [ObservableProperty]
-    [property: JsonPropertyOrder(120)]
-    private string? _stroke = "#FF2E5C8A";
-
-    [ObservableProperty]
-    [property: JsonPropertyOrder(130)]
-    private double _strokeThickness = 1;
-
-    [ObservableProperty]
-    [property: JsonPropertyOrder(140)]
-    private double _cornerRadius;
+    /// <summary>
+    /// Fond et contour sont ceux de tout bloc ; une forme naît simplement avec les deux,
+    /// là où un texte ou une image naissent nus.
+    /// </summary>
+    public ShapeFrame()
+    {
+        Fill = "#FF9DC3E6";
+        Stroke = "#FF2E5C8A";
+    }
 
     [JsonIgnore] public bool IsRectangle => Shape == ShapeKind.Rectangle;
     [JsonIgnore] public bool IsEllipse => Shape == ShapeKind.Ellipse;
@@ -362,11 +452,7 @@ public partial class ShapeFrame : Frame
 
     public override Frame Clone()
     {
-        var c = new ShapeFrame
-        {
-            Shape = Shape, Fill = Fill, Stroke = Stroke,
-            StrokeThickness = StrokeThickness, CornerRadius = CornerRadius
-        };
+        var c = new ShapeFrame { Shape = Shape };
         CopyBaseTo(c);
         return c;
     }

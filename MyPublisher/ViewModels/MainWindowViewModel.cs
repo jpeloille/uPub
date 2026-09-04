@@ -180,6 +180,9 @@ public partial class MainWindowViewModel : ViewModelBase
     public IReadOnlyList<ImageFit> ImageFits { get; } =
         [ImageFit.Uniform, ImageFit.UniformToFill, ImageFit.Fill];
 
+    public IReadOnlyList<StrokeStyle> StrokeStyles { get; } =
+        [StrokeStyle.Solid, StrokeStyle.Dashed, StrokeStyle.Dotted];
+
     /// <summary>Facteur points -> pixels écran, zoom inclus. Le seul endroit qui mélange les deux unités.</summary>
     public double RenderScale => Zoom * Units.PointToDip;
 

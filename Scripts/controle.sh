@@ -2,13 +2,15 @@
 #
 # Contrôle de non-régression minimal — poste P2 de MyPublisher/Docs/PLAN.md.
 #
-# Trois étapes sur le document d'exemple, à passer avant et après chaque poste
-# qui touche au modèle, au format de fichier ou à l'export :
+# Quatre étapes, à passer avant et après chaque poste qui touche au modèle, au
+# format de fichier ou à l'export :
 #
-#   1. le relire,
+#   1. relire le document d'exemple,
 #   2. le réécrire sous un autre nom : les deux JSON doivent être identiques,
 #   3. l'exporter en PDF : le nombre de pages et la liste des avertissements
-#      doivent correspondre au relevé de référence.
+#      doivent correspondre au relevé de référence,
+#   4. relire la version 1 du même document, figée dans Scripts/fixtures/ : elle
+#      doit s'ouvrir encore, et sa migration doit être un point fixe.
 #
 # La troisième étape se formule comme un écart et non comme une absence : un
 # contrôle qui exigerait zéro avertissement tomberait le jour où le document de
@@ -25,6 +27,9 @@ cd "$racine"
 
 document="Samples/exemple-bulletin.mypub"
 reference="Scripts/reference.txt"
+# Le même document tel qu'il s'écrivait au format 1. Ce fichier ne bouge jamais :
+# c'est le passé qu'on s'engage à relire, quelle que soit la version courante.
+fixture="Scripts/fixtures/exemple-bulletin-v1.mypub"
 # Configuration explicite : sans elle, un binaire Release oublié pourrait être
 # ce qu'on contrôle, alors qu'on vient de compiler en Debug.
 binaire="MyPublisher/bin/Debug/net9.0/MyPublisher"
@@ -87,6 +92,23 @@ if [ -z "$pages" ]; then
     exit 1
 fi
 
+# Étape 4 — le passé s'ouvre encore. Un document migré puis réécrit ne doit plus
+# changer : c'est ce qui garantit que la migration a tout traité, et qu'un fichier
+# ancien ouvert puis enregistré n'a pas laissé de résidu derrière lui.
+if ! "$binaire" "$fixture" --resave "$travail/migre.mypub" \
+        >/dev/null 2> "$travail/migration.txt"; then
+    echo "ÉCHEC : le document de la version 1 ne s'ouvre plus." >&2
+    cat "$travail/migration.txt" >&2
+    exit 1
+fi
+
+"$binaire" "$travail/migre.mypub" --resave "$travail/migre-bis.mypub" >/dev/null
+if ! diff -u "$travail/migre.mypub" "$travail/migre-bis.mypub" > "$travail/ecart-migration.diff"; then
+    echo "ÉCHEC : la migration de la version 1 n'est pas un point fixe." >&2
+    head -40 "$travail/ecart-migration.diff" >&2
+    exit 1
+fi
+
 {
     echo "document : $document"
     echo "pages : $pages"
@@ -116,4 +138,4 @@ if ! diff -u "$reference" "$travail/releve.txt"; then
 fi
 
 avertissements="$(grep -c '^avertissement : ' "$travail/releve.txt" || true)"
-echo "Contrôle passé : aller-retour identique, $pages page(s), $avertissements avertissement(s)."
+echo "Contrôle passé : aller-retour identique, $pages page(s), $avertissements avertissement(s), version 1 migrée."

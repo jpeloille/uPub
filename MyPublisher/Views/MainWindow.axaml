@@ -370,37 +370,15 @@
                                     <TextBlock Classes="field" Text="Couleur" Margin="0,8,0,2"/>
                                     <ColorPicker HorizontalAlignment="Left"
                                                  Color="{Binding Foreground, Converter={x:Static conv:HexToColor.Instance}}"/>
-
-                                    <TextBlock Classes="field" Text="Fond" Margin="0,10,0,2"/>
-                                    <CheckBox Content="Appliquer un fond" IsChecked="{Binding HasBackground}"/>
-                                    <ColorPicker HorizontalAlignment="Left" Margin="0,2,0,0"
-                                                 IsEnabled="{Binding HasBackground}"
-                                                 Color="{Binding BackgroundColor, Converter={x:Static conv:HexToColor.Instance}}"/>
-                                    <TextBlock Text="Sans fond, ce qui passe sous le bloc reste visible."
-                                               IsVisible="{Binding !HasBackground}"
-                                               FontSize="11" Foreground="#FF8A929E"
-                                               TextWrapping="Wrap" Margin="0,4,0,0"/>
                                 </StackPanel>
                             </DataTemplate>
 
+                            <!-- Rien de propre à la forme : tout ce qu'elle avait — fond,
+                                 contour, épaisseur, arrondi — est commun à tous les blocs et
+                                 se règle plus bas. Le gabarit vide évite que le contrôle
+                                 n'affiche le nom du type faute de gabarit. -->
                             <DataTemplate DataType="models:ShapeFrame">
-                                <StackPanel>
-                                    <TextBlock Classes="section" Text="FORME"/>
-                                    <TextBlock Classes="field" Text="Remplissage"/>
-                                    <ColorPicker HorizontalAlignment="Left"
-                                                 Color="{Binding Fill, Converter={x:Static conv:HexToColor.Instance}}"/>
-                                    <TextBlock Classes="field" Text="Contour" Margin="0,8,0,2"/>
-                                    <ColorPicker HorizontalAlignment="Left"
-                                                 Color="{Binding Stroke, Converter={x:Static conv:HexToColor.Instance}}"/>
-                                    <Grid ColumnDefinitions="*,8,*" RowDefinitions="Auto,Auto" Margin="0,8,0,0">
-                                        <TextBlock Grid.Row="0" Grid.Column="0" Classes="field" Text="Épaisseur (pt)"/>
-                                        <TextBlock Grid.Row="0" Grid.Column="2" Classes="field" Text="Arrondi (pt)"/>
-                                        <NumericUpDown Grid.Row="1" Grid.Column="0" FormatString="0.#" Increment="0.5" Minimum="0"
-                                                       Value="{Binding StrokeThickness, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
-                                        <NumericUpDown Grid.Row="1" Grid.Column="2" FormatString="0.#" Increment="1" Minimum="0"
-                                                       Value="{Binding CornerRadius, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
-                                    </Grid>
-                                </StackPanel>
+                                <Panel/>
                             </DataTemplate>
 
                             <DataTemplate DataType="models:GroupFrame">
@@ -425,6 +403,51 @@
                                 </StackPanel>
                             </DataTemplate>
 
+                        </ContentControl.DataTemplates>
+                    </ContentControl>
+
+                    <!-- Fond et contour, communs à tous les blocs. En dernier, après ce
+                         qui est propre au type : d'abord ce qu'est le bloc, ensuite
+                         comment il est habillé. -->
+                    <ContentControl Content="{Binding SingleSelected}">
+                        <ContentControl.DataTemplates>
+                            <DataTemplate DataType="models:Frame">
+                                <StackPanel>
+                                    <TextBlock Classes="section" Text="FOND ET CONTOUR"/>
+
+                                    <CheckBox Content="Appliquer un fond" IsChecked="{Binding HasFill}"/>
+                                    <StackPanel IsEnabled="{Binding HasFill}">
+                                        <ColorPicker HorizontalAlignment="Left" Margin="0,2,0,0"
+                                                     Color="{Binding FillColor, Converter={x:Static conv:HexToColor.Instance}}"/>
+                                        <TextBlock Classes="field" Text="Opacité du fond (%)" Margin="0,6,0,2"/>
+                                        <NumericUpDown FormatString="0" Increment="5" Minimum="0" Maximum="100"
+                                                       Value="{Binding FillOpacity, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
+                                    </StackPanel>
+                                    <TextBlock Text="Sans fond, ce qui passe sous le bloc reste visible."
+                                               IsVisible="{Binding !HasFill}"
+                                               FontSize="11" Foreground="#FF8A929E"
+                                               TextWrapping="Wrap" Margin="0,4,0,0"/>
+
+                                    <CheckBox Content="Appliquer un contour" Margin="0,10,0,0" IsChecked="{Binding HasStroke}"/>
+                                    <StackPanel IsEnabled="{Binding HasStroke}">
+                                        <ColorPicker HorizontalAlignment="Left" Margin="0,2,0,0"
+                                                     Color="{Binding StrokeColor, Converter={x:Static conv:HexToColor.Instance}}"/>
+                                        <Grid ColumnDefinitions="*,8,*" RowDefinitions="Auto,Auto" Margin="0,6,0,0">
+                                            <TextBlock Grid.Row="0" Grid.Column="0" Classes="field" Text="Épaisseur (pt)"/>
+                                            <TextBlock Grid.Row="0" Grid.Column="2" Classes="field" Text="Trait"/>
+                                            <NumericUpDown Grid.Row="1" Grid.Column="0" FormatString="0.#" Increment="0.5" Minimum="0"
+                                                           Value="{Binding StrokeThickness, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
+                                            <ComboBox Grid.Row="1" Grid.Column="2" HorizontalAlignment="Stretch"
+                                                      ItemsSource="{Binding #Root.((vm:MainWindowViewModel)DataContext).StrokeStyles}"
+                                                      SelectedItem="{Binding StrokeStyle}"/>
+                                        </Grid>
+                                    </StackPanel>
+
+                                    <TextBlock Classes="field" Text="Arrondi des angles (pt)" Margin="0,10,0,2"/>
+                                    <NumericUpDown FormatString="0.#" Increment="1" Minimum="0"
+                                                   Value="{Binding CornerRadius, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
+                                </StackPanel>
+                            </DataTemplate>
                         </ContentControl.DataTemplates>
                     </ContentControl>
                 </StackPanel>

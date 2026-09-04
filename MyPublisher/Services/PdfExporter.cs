@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using MyPublisher.Models;
 using PdfSharp.Drawing;
@@ -62,39 +61,75 @@ public static class PdfExporter
             gfx.TranslateTransform(-frame.CenterX, -frame.CenterY);
         }
 
-        try
+        if (frame is ShapeFrame shape)
         {
-            switch (frame)
-            {
-                case ShapeFrame shape: DrawShape(gfx, shape); break;
-                case TextFrame text: DrawText(gfx, text); break;
-                case ImageFrame image: DrawImage(gfx, image, warnings); break;
-                case GroupFrame group: DrawGroup(gfx, group, warnings); break;
-            }
+            DrawShape(gfx, shape);
         }
-        catch (Exception ex)
+        else
         {
-            warnings.Add($"{frame.DisplayName} : {ex.Message}");
+            // Fond dessous, contenu, contour dessus : un filet posé sur une image
+            // passe sur son bord et non sous elle — c'est aussi l'ordre de l'écran.
+            DrawFill(gfx, frame);
+
+            // Seul le contenu est sous surveillance : une image illisible se signale et
+            // laisse son cadre en place, comme une image manquante laisse le sien.
+            try
+            {
+                switch (frame)
+                {
+                    case TextFrame text: DrawText(gfx, text); break;
+                    case ImageFrame image: DrawImage(gfx, image, warnings); break;
+                    case GroupFrame group: DrawChildren(gfx, group, warnings); break;
+                }
+            }
+            catch (Exception ex)
+            {
+                warnings.Add($"{frame.DisplayName} : {ex.Message}");
+            }
+
+            DrawStroke(gfx, frame);
         }
 
         gfx.Restore(state);
     }
 
-    private static void DrawGroup(XGraphics gfx, GroupFrame group, List<string> warnings)
+    private static void DrawChildren(XGraphics gfx, GroupFrame group, List<string> warnings)
     {
+        // La translation ne vaut que pour les enfants : le contour du groupe, tracé
+        // ensuite, est en coordonnées de page comme son fond.
+        var state = gfx.Save();
         gfx.TranslateTransform(group.X, group.Y);
         foreach (var child in group.Children) DrawFrame(gfx, child, warnings);
+        gfx.Restore(state);
     }
 
-    private static void DrawShape(XGraphics gfx, ShapeFrame shape)
-    {
-        var rect = new XRect(shape.X, shape.Y, shape.Width, shape.Height);
-        var brush = ParseBrush(shape.Fill);
-        var pen = ParsePen(shape.Stroke, shape.StrokeThickness);
+    /// <summary>Une forme n'a pas de contenu : fond et contour se tracent d'un seul trait.</summary>
+    private static void DrawShape(XGraphics gfx, ShapeFrame shape) =>
+        DrawOutline(gfx, shape, ParseBrush(shape.Fill), MakePen(shape));
 
+    /// <summary>
+    /// Le fond couvre le bloc entier, marge intérieure comprise, et se dessine même sans
+    /// contenu : un bloc vide muni d'un fond est un aplat voulu. ParseBrush rend null pour
+    /// un fond absent comme pour un alpha nul, si bien qu'un bloc sans fond ne pose rien
+    /// du tout et laisse voir ce qui est dessous.
+    /// </summary>
+    private static void DrawFill(XGraphics gfx, Frame frame) =>
+        DrawOutline(gfx, frame, ParseBrush(frame.Fill), null);
+
+    private static void DrawStroke(XGraphics gfx, Frame frame) =>
+        DrawOutline(gfx, frame, null, MakePen(frame));
+
+    /// <summary>
+    /// Trace le pourtour du bloc avec le fond et le contour qu'on lui passe : une ellipse
+    /// pour la forme qui en est une, sinon un rectangle, arrondi s'il l'est.
+    /// </summary>
+    private static void DrawOutline(XGraphics gfx, Frame frame, XBrush? brush, XPen? pen)
+    {
         if (brush is null && pen is null) return;
 
-        if (shape.Shape == ShapeKind.Ellipse)
+        var rect = new XRect(frame.X, frame.Y, frame.Width, frame.Height);
+
+        if (frame is ShapeFrame { Shape: ShapeKind.Ellipse })
         {
             if (brush is not null && pen is not null) gfx.DrawEllipse(pen, brush, rect);
             else if (brush is not null) gfx.DrawEllipse(brush, rect);
@@ -102,10 +137,10 @@ public static class PdfExporter
             return;
         }
 
-        if (shape.CornerRadius > 0)
+        if (frame.CornerRadius > 0)
         {
             // PDFsharp attend le diamètre des coins, pas le rayon.
-            var corner = new XSize(shape.CornerRadius * 2, shape.CornerRadius * 2);
+            var corner = new XSize(frame.CornerRadius * 2, frame.CornerRadius * 2);
             if (brush is not null && pen is not null) gfx.DrawRoundedRectangle(pen, brush, rect, corner);
             else if (brush is not null) gfx.DrawRoundedRectangle(brush, rect, corner);
             else gfx.DrawRoundedRectangle(pen!, rect, corner);
@@ -117,16 +152,21 @@ public static class PdfExporter
         else gfx.DrawRectangle(pen!, rect);
     }
 
+    private static XPen? MakePen(Frame frame)
+    {
+        var pen = ParsePen(frame.Stroke, frame.StrokeThickness);
+        if (pen is not null && Frame.DashPattern(frame.StrokeStyle) is { } pattern)
+        {
+            // PDFsharp multiplie le motif par l'épaisseur, comme le fait Avalonia :
+            // la table du modèle sert telle quelle des deux côtés.
+            pen.DashPattern = pattern;
+        }
+
+        return pen;
+    }
+
     private static void DrawText(XGraphics gfx, TextFrame text)
     {
-        // Le fond couvre le bloc entier, marge intérieure comprise, et se dessine même
-        // sans texte : un bloc vide muni d'un fond est un aplat voulu. ParseBrush rend
-        // null pour un fond absent comme pour un alpha nul, si bien qu'un bloc sans fond
-        // ne pose rien du tout et laisse voir ce qui est dessous.
-        var background = ParseBrush(text.Background);
-        if (background is not null)
-            gfx.DrawRectangle(background, new XRect(text.X, text.Y, text.Width, text.Height));
-
         if (string.IsNullOrEmpty(text.Text)) return;
 
         var style = XFontStyleEx.Regular;
@@ -173,9 +213,18 @@ public static class PdfExporter
             var clip = new XGraphicsPath();
             clip.AddRectangle(new XRect(frame.X, frame.Y, frame.Width, frame.Height));
             var state = gfx.Save();
-            gfx.IntersectClip(clip);
-            gfx.DrawImage(image, target);
-            gfx.Restore(state);
+            try
+            {
+                gfx.IntersectClip(clip);
+                gfx.DrawImage(image, target);
+            }
+            finally
+            {
+                // Le découpage ne doit pas survivre à un échec : le contour tracé
+                // ensuite serait rogné au bloc, à la moitié de son épaisseur.
+                gfx.Restore(state);
+            }
+
             return;
         }
 
@@ -215,22 +264,10 @@ public static class PdfExporter
         return parsed is null ? null : new XPen(parsed.Value, thickness);
     }
 
-    /// <summary>Analyse une couleur au format #AARRGGBB ou #RRGGBB.</summary>
+    /// <summary>Une couleur du modèle ; null pour une couleur absente, illisible ou entièrement transparente.</summary>
     private static XColor? ParseColor(string? value)
     {
-        if (string.IsNullOrWhiteSpace(value)) return null;
-
-        var hex = value.TrimStart('#');
-        if (hex.Length == 6) hex = "FF" + hex;
-        if (hex.Length != 8 ||
-            !uint.TryParse(hex, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var packed))
-        {
-            return null;
-        }
-
-        var a = (byte)((packed >> 24) & 0xFF);
-        if (a == 0) return null;
-
-        return XColor.FromArgb(a, (byte)((packed >> 16) & 0xFF), (byte)((packed >> 8) & 0xFF), (byte)(packed & 0xFF));
+        if (!HexColor.TryParse(value, out var a, out var r, out var g, out var b) || a == 0) return null;
+        return XColor.FromArgb(a, r, g, b);
     }
 }

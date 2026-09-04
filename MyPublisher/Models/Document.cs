@@ -17,9 +17,16 @@ public partial class Page : ObservableObject
 
 public partial class Document : ObservableObject
 {
-    /// <summary>Version du format de fichier, pour pouvoir migrer plus tard.</summary>
+    /// <summary>
+    /// Version du format que cette version du logiciel écrit. Un fichier plus ancien est
+    /// migré à la lecture (<see cref="Services.FormatMigrations"/>) ; un fichier plus
+    /// récent est refusé, plutôt que lu de travers.
+    /// </summary>
+    public const int CurrentFormatVersion = 2;
+
+    /// <summary>Version du format de fichier, telle que lue puis migrée.</summary>
     [JsonPropertyOrder(10)]
-    public int FormatVersion { get; set; } = 1;
+    public int FormatVersion { get; set; } = CurrentFormatVersion;
 
     [ObservableProperty]
     [property: JsonPropertyOrder(20)]
