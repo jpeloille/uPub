@@ -24,6 +24,7 @@
         <KeyBinding Gesture="Ctrl+Y" Command="{Binding RedoCommand}"/>
         <KeyBinding Gesture="Ctrl+Shift+Z" Command="{Binding RedoCommand}"/>
         <KeyBinding Gesture="Ctrl+D" Command="{Binding DuplicateSelectedCommand}"/>
+        <KeyBinding Gesture="Ctrl+A" Command="{Binding SelectAllCommand}"/>
         <KeyBinding Gesture="Ctrl+OemPlus" Command="{Binding ZoomInCommand}"/>
         <KeyBinding Gesture="Ctrl+Add" Command="{Binding ZoomInCommand}"/>
         <KeyBinding Gesture="Ctrl+OemMinus" Command="{Binding ZoomOutCommand}"/>
@@ -125,6 +126,8 @@
                 <Separator/>
                 <MenuItem Header="_Dupliquer" InputGesture="Ctrl+D" Command="{Binding DuplicateSelectedCommand}"/>
                 <MenuItem Header="_Supprimer" InputGesture="Delete" Command="{Binding DeleteSelectedCommand}"/>
+                <Separator/>
+                <MenuItem Header="_Tout sélectionner" InputGesture="Ctrl+A" Command="{Binding SelectAllCommand}"/>
             </MenuItem>
 
             <MenuItem Header="_Insertion">
@@ -260,11 +263,22 @@
                     </Grid>
 
                     <TextBlock Classes="section" Text="BLOC"
-                               IsVisible="{Binding HasSelection}"/>
+                               IsVisible="{Binding HasSingleSelection}"/>
                     <TextBlock Text="Aucun bloc sélectionné." Foreground="#FF8A929E" Margin="0,8"
                                IsVisible="{Binding !HasSelection}"/>
 
-                    <ContentControl Content="{Binding Selected}">
+                    <!-- À plusieurs blocs, le panneau ne montre aucun champ : éditer les
+                         valeurs de l'un d'eux modifierait en silence celui qu'on ne regarde
+                         pas. Restent les commandes de disposition, qui, elles, valent pour
+                         l'ensemble. -->
+                    <StackPanel IsVisible="{Binding HasMultipleSelection}" Margin="0,8">
+                        <TextBlock Classes="section" Text="SÉLECTION"/>
+                        <TextBlock Text="{Binding SelectionLabel}"/>
+                        <TextBlock Text="Alignement, répartition, ordre et déplacement valent pour l'ensemble. Les propriétés s'éditent bloc par bloc."
+                                   FontSize="11" Foreground="#FF8A929E" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                    </StackPanel>
+
+                    <ContentControl Content="{Binding SingleSelected}">
                         <ContentControl.DataTemplates>
                             <DataTemplate DataType="models:Frame">
                                 <StackPanel>
@@ -294,7 +308,7 @@
                     </ContentControl>
 
                     <!-- Propriétés propres au type de bloc. -->
-                    <ContentControl Content="{Binding Selected}">
+                    <ContentControl Content="{Binding SingleSelected}">
                         <ContentControl.DataTemplates>
 
                             <DataTemplate DataType="models:TextFrame">

@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Linq;
 using Avalonia;
@@ -53,14 +55,18 @@ public partial class PageCanvas : UserControl
 
     private static readonly Cursor DrawCursor = new(StandardCursorType.Cross);
 
-    private readonly Polygon _outline;
+    /// <summary>
+    /// Un contour par bloc sélectionné, créés à la demande et gardés sous les poignées.
+    /// </summary>
+    private readonly List<Polygon> _outlines = [];
+
     private readonly Rectangle[] _handles = new Rectangle[8];
 
     /// <summary>Cadre en pointillés affiché pendant le tracé d'un nouveau bloc.</summary>
     private readonly Rectangle _preview;
 
     private MainWindowViewModel? _vm;
-    private Frame? _tracked;
+    private readonly List<Frame> _tracked = [];
     private TextFrame? _editing;
 
     private DragMode _mode;
@@ -68,18 +74,21 @@ public partial class PageCanvas : UserControl
     private Point _startPointer;
     private double _startX, _startY, _startWidth, _startHeight, _startRotation;
 
+    /// <summary>Position de départ de chaque bloc déplacé : le geste vaut pour l'ensemble.</summary>
+    private readonly List<(Frame Frame, double X, double Y)> _moveStart = [];
+
+    /// <summary>
+    /// Empreinte de la sélection au début du déplacement. C'est elle qu'on aimante, et
+    /// non chaque bloc : sinon un ensemble se disloquerait au premier repère rencontré.
+    /// </summary>
+    private Extent _moveExtent;
+
+    /// <summary>Aucun bloc tourné dans la sélection : l'aimantation a des bords à offrir.</summary>
+    private bool _moveSnappable;
+
     public PageCanvas()
     {
         InitializeComponent();
-
-        _outline = new Polygon
-        {
-            Stroke = new SolidColorBrush(Color.Parse("#FF2D7DD2")),
-            StrokeThickness = 1,
-            Fill = null,
-            IsVisible = false
-        };
-        Overlay.Children.Add(_outline);
 
         for (var i = 0; i < _handles.Length; i++)
         {
@@ -132,11 +141,30 @@ public partial class PageCanvas : UserControl
 
     private void AttachViewModel()
     {
-        if (_vm is not null) _vm.PropertyChanged -= OnViewModelPropertyChanged;
-        _vm = DataContext as MainWindowViewModel;
-        if (_vm is not null) _vm.PropertyChanged += OnViewModelPropertyChanged;
+        if (_vm is not null)
+        {
+            _vm.PropertyChanged -= OnViewModelPropertyChanged;
+            _vm.Selection.CollectionChanged -= OnSelectionChanged;
+        }
 
-        TrackFrame(_vm?.Selected);
+        _vm = DataContext as MainWindowViewModel;
+
+        if (_vm is not null)
+        {
+            _vm.PropertyChanged += OnViewModelPropertyChanged;
+            // La collection n'est jamais remplacée : un seul abonnement suffit, et il
+            // couvre aussi les changements qui ne déplacent pas l'ancre.
+            _vm.Selection.CollectionChanged += OnSelectionChanged;
+        }
+
+        TrackFrames();
+        RefreshOverlay();
+    }
+
+    private void OnSelectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        EndTextEdit();
+        TrackFrames();
         RefreshOverlay();
     }
 
@@ -145,8 +173,6 @@ public partial class PageCanvas : UserControl
         switch (e.PropertyName)
         {
             case nameof(MainWindowViewModel.Selected):
-                EndTextEdit();
-                TrackFrame(_vm?.Selected);
                 RefreshOverlay();
                 break;
             case nameof(MainWindowViewModel.RenderScale):
@@ -167,14 +193,22 @@ public partial class PageCanvas : UserControl
         }
     }
 
-    /// <summary>Suit la géométrie du bloc sélectionné pour maintenir les poignées collées à lui.</summary>
-    private void TrackFrame(Frame? frame)
+    /// <summary>
+    /// Suit la géométrie de tous les blocs sélectionnés : pendant un déplacement
+    /// d'ensemble, chacun d'eux bouge, et chaque contour doit suivre le sien.
+    /// </summary>
+    private void TrackFrames()
     {
-        if (ReferenceEquals(_tracked, frame)) return;
+        foreach (var frame in _tracked) frame.PropertyChanged -= OnFramePropertyChanged;
+        _tracked.Clear();
 
-        if (_tracked is not null) _tracked.PropertyChanged -= OnFramePropertyChanged;
-        _tracked = frame;
-        if (_tracked is not null) _tracked.PropertyChanged += OnFramePropertyChanged;
+        if (_vm is null) return;
+
+        foreach (var frame in _vm.Selection)
+        {
+            _tracked.Add(frame);
+            frame.PropertyChanged += OnFramePropertyChanged;
+        }
     }
 
     private void OnFramePropertyChanged(object? sender, PropertyChangedEventArgs e) => RefreshOverlay();
@@ -183,30 +217,65 @@ public partial class PageCanvas : UserControl
 
     private void RefreshOverlay()
     {
-        var frame = _vm?.Selected;
-        var visible = frame is not null && _vm?.CurrentPage?.Frames.Contains(frame) == true;
+        var page = _vm?.CurrentPage;
+        var frames = _vm is null || page is null
+            ? []
+            : _vm.Selection.Where(page.Frames.Contains).ToList();
 
-        _outline.IsVisible = visible;
-        foreach (var handle in _handles) handle.IsVisible = visible;
-        if (!visible || frame is null) return;
-
-        var corners = new[]
+        for (var i = 0; i < frames.Count; i++)
         {
-            SurfacePoint(frame, 0, 0),
-            SurfacePoint(frame, frame.Width, 0),
-            SurfacePoint(frame, frame.Width, frame.Height),
-            SurfacePoint(frame, 0, frame.Height)
-        };
+            var outline = OutlineAt(i);
+            outline.Points = Corners(frames[i]);
+            outline.IsVisible = true;
+        }
 
-        _outline.Points = corners.ToList();
+        for (var i = frames.Count; i < _outlines.Count; i++) _outlines[i].IsVisible = false;
+
+        // Les poignées ne servent qu'à un bloc seul : redimensionner un ensemble
+        // demanderait de mettre à l'échelle chacun de ses blocs, ce que le groupe fait
+        // proprement. On sélectionne, on groupe, puis on redimensionne.
+        var single = frames.Count == 1 ? frames[0] : null;
+        foreach (var handle in _handles) handle.IsVisible = single is not null;
+        if (single is null) return;
 
         for (var i = 0; i < _handles.Length; i++)
         {
-            var (lx, ly) = LocalAnchor(frame, (Anchor)i);
-            var point = SurfacePoint(frame, lx, ly);
+            var (lx, ly) = LocalAnchor(single, (Anchor)i);
+            var point = SurfacePoint(single, lx, ly);
             Canvas.SetLeft(_handles[i], point.X - HandleSize / 2);
             Canvas.SetTop(_handles[i], point.Y - HandleSize / 2);
         }
+    }
+
+    private List<Point> Corners(Frame frame) =>
+    [
+        SurfacePoint(frame, 0, 0),
+        SurfacePoint(frame, frame.Width, 0),
+        SurfacePoint(frame, frame.Width, frame.Height),
+        SurfacePoint(frame, 0, frame.Height)
+    ];
+
+    /// <summary>
+    /// Contour de rang donné, créé au besoin. Les contours s'insèrent en tête de la
+    /// couche pour rester sous les poignées, qui doivent rester saisissables.
+    /// </summary>
+    private Polygon OutlineAt(int index)
+    {
+        while (_outlines.Count <= index)
+        {
+            var outline = new Polygon
+            {
+                Stroke = new SolidColorBrush(Color.Parse("#FF2D7DD2")),
+                StrokeThickness = 1,
+                Fill = null,
+                IsVisible = false
+            };
+
+            _outlines.Add(outline);
+            Overlay.Children.Insert(0, outline);
+        }
+
+        return _outlines[index];
     }
 
     /// <summary>Convertit un point du repère local d'un bloc vers les pixels écran de la surface.</summary>
@@ -270,11 +339,11 @@ public partial class PageCanvas : UserControl
             return;
         }
 
-        if (_vm.Selected is { } selected && HitHandle(selected, surfacePoint) is { } anchor)
+        if (_vm.SingleSelected is { } single && HitHandle(single, surfacePoint) is { } anchor)
         {
             _mode = DragMode.Resize;
             _anchor = anchor;
-            Remember(selected, page);
+            RememberResize(single, page);
             _vm.BeginEdit();
             e.Pointer.Capture(InputLayer);
             e.Handled = true;
@@ -283,12 +352,27 @@ public partial class PageCanvas : UserControl
 
         // Ordre de superposition : le dernier bloc dessiné est le premier candidat.
         var hit = _vm.CurrentPage.Frames.LastOrDefault(f => f.HitTest(page.X, page.Y));
-        _vm.Selected = hit;
+        var additive = e.KeyModifiers.HasFlag(KeyModifiers.Control) ||
+                       e.KeyModifiers.HasFlag(KeyModifiers.Shift);
 
-        if (hit is not null)
+        if (hit is null)
+        {
+            // Cliquer à côté libère la sélection — sauf si l'on est en train de
+            // l'étendre, geste où un clic manqué ne doit pas tout défaire.
+            if (!additive) _vm.SetSelection([]);
+            e.Handled = true;
+            return;
+        }
+
+        if (additive) _vm.ToggleSelection(hit);
+        else if (!_vm.Selection.Contains(hit)) _vm.SelectOnly(hit);
+
+        // Un bloc déjà pris garde la sélection entière : c'est ce qui permet de saisir
+        // un ensemble par n'importe lequel de ses blocs.
+        if (_vm.Selection.Contains(hit))
         {
             _mode = DragMode.Move;
-            Remember(hit, page);
+            RememberMove(page);
             _vm.BeginEdit();
             e.Pointer.Capture(InputLayer);
         }
@@ -296,7 +380,7 @@ public partial class PageCanvas : UserControl
         e.Handled = true;
     }
 
-    private void Remember(Frame frame, Point page)
+    private void RememberResize(Frame frame, Point page)
     {
         _startPointer = page;
         _startX = frame.X;
@@ -304,6 +388,19 @@ public partial class PageCanvas : UserControl
         _startWidth = frame.Width;
         _startHeight = frame.Height;
         _startRotation = frame.Rotation;
+    }
+
+    /// <summary>Retient d'où part chaque bloc de la sélection, et ce que l'ensemble occupe.</summary>
+    private void RememberMove(Point page)
+    {
+        if (_vm is null) return;
+
+        _startPointer = page;
+        _moveStart.Clear();
+        foreach (var frame in _vm.Selection) _moveStart.Add((frame, frame.X, frame.Y));
+
+        _moveSnappable = _vm.Selection.All(frame => frame.Rotation == 0);
+        _moveExtent = Extent.Union(_vm.Selection.Select(frame => frame.Extent)) ?? default;
     }
 
     private void OnPointerMoved(object? sender, PointerEventArgs e)
@@ -328,10 +425,16 @@ public partial class PageCanvas : UserControl
             return;
         }
 
-        if (_vm.Selected is not { } frame) return;
+        if (_mode == DragMode.Move)
+        {
+            ApplyMove(page, e.KeyModifiers);
+            return;
+        }
 
-        if (_mode == DragMode.Move) ApplyMove(frame, page, e.KeyModifiers);
-        else ApplyResize(frame, page, e.KeyModifiers.HasFlag(KeyModifiers.Shift));
+        if (_vm.SingleSelected is { } frame)
+        {
+            ApplyResize(frame, page, e.KeyModifiers.HasFlag(KeyModifiers.Shift));
+        }
     }
 
     private void OnPointerReleased(object? sender, PointerReleasedEventArgs e)
@@ -404,7 +507,7 @@ public partial class PageCanvas : UserControl
             return;
         }
 
-        if (_vm?.Selected is { } selected && HitHandle(selected, surfacePoint) is { } anchor)
+        if (_vm?.SingleSelected is { } selected && HitHandle(selected, surfacePoint) is { } anchor)
         {
             // La rotation fait tourner le sens du redimensionnement : on décale
             // l'index de poignée d'un cran par quart de tour de 45°.
@@ -419,29 +522,33 @@ public partial class PageCanvas : UserControl
 
     // ---------------------------------------------------------------- déplacement
 
-    private void ApplyMove(Frame frame, Point page, KeyModifiers modifiers)
+    private void ApplyMove(Point page, KeyModifiers modifiers)
     {
-        var x = _startX + (page.X - _startPointer.X);
-        var y = _startY + (page.Y - _startPointer.Y);
+        var dx = page.X - _startPointer.X;
+        var dy = page.Y - _startPointer.Y;
 
-        // Alt désactive l'aimantation ; la rotation la désactive aussi, faute de
-        // bords parallèles aux repères.
-        if (!modifiers.HasFlag(KeyModifiers.Alt) && frame.Rotation == 0 && _vm is not null)
+        // Alt désactive l'aimantation ; un bloc tourné la désactive aussi, faute de
+        // bords parallèles aux repères. On aimante l'empreinte de l'ensemble, puis on
+        // reporte le même écart sur chaque bloc : la sélection garde sa forme.
+        if (!modifiers.HasFlag(KeyModifiers.Alt) && _moveSnappable && _vm is not null)
         {
             var document = _vm.Document;
             var tolerance = SnapPixels / Scale;
 
-            x = SnapEdge(x, frame.Width, tolerance,
+            dx = SnapEdge(_moveExtent.Left + dx, _moveExtent.Width, tolerance,
                 [0, document.MarginLeft, document.PageWidth / 2,
-                 document.PageWidth - document.MarginRight, document.PageWidth]);
+                 document.PageWidth - document.MarginRight, document.PageWidth]) - _moveExtent.Left;
 
-            y = SnapEdge(y, frame.Height, tolerance,
+            dy = SnapEdge(_moveExtent.Top + dy, _moveExtent.Height, tolerance,
                 [0, document.MarginTop, document.PageHeight / 2,
-                 document.PageHeight - document.MarginBottom, document.PageHeight]);
+                 document.PageHeight - document.MarginBottom, document.PageHeight]) - _moveExtent.Top;
         }
 
-        frame.X = x;
-        frame.Y = y;
+        foreach (var (frame, startX, startY) in _moveStart)
+        {
+            frame.X = startX + dx;
+            frame.Y = startY + dy;
+        }
     }
 
     /// <summary>
@@ -531,7 +638,7 @@ public partial class PageCanvas : UserControl
 
     private void OnDoubleTapped(object? sender, TappedEventArgs e)
     {
-        if (_vm?.Selected is TextFrame text) BeginTextEdit(text);
+        if (_vm?.SingleSelected is TextFrame text) BeginTextEdit(text);
     }
 
     private void BeginTextEdit(TextFrame frame)

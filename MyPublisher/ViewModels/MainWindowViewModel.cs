@@ -16,7 +16,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private const int MaxHistory = 60;
 
     /// <summary>Historique d'annulation par instantané JSON du document complet.</summary>
-    private sealed record Snapshot(string Json, int PageIndex, int SelectionIndex);
+    private sealed record Snapshot(string Json, int PageIndex, IReadOnlyList<int> SelectionIndices);
 
     private readonly List<Snapshot> _undo = [];
     private readonly List<Snapshot> _redo = [];
@@ -35,21 +35,26 @@ public partial class MainWindowViewModel : ViewModelBase
     [NotifyPropertyChangedFor(nameof(CurrentPageNumber))]
     private Page? _currentPage;
 
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(SelectedText))]
-    [NotifyPropertyChangedFor(nameof(SelectedShape))]
-    [NotifyPropertyChangedFor(nameof(SelectedImage))]
-    [NotifyPropertyChangedFor(nameof(HasSelection))]
-    [NotifyCanExecuteChangedFor(nameof(DeleteSelectedCommand))]
-    [NotifyCanExecuteChangedFor(nameof(DuplicateSelectedCommand))]
-    [NotifyCanExecuteChangedFor(nameof(BringToFrontCommand))]
-    [NotifyCanExecuteChangedFor(nameof(BringForwardCommand))]
-    [NotifyCanExecuteChangedFor(nameof(SendBackwardCommand))]
-    [NotifyCanExecuteChangedFor(nameof(SendToBackCommand))]
-    [NotifyCanExecuteChangedFor(nameof(AlignCentreHorizontallyCommand))]
-    [NotifyCanExecuteChangedFor(nameof(AlignCentreVerticallyCommand))]
-    [NotifyCanExecuteChangedFor(nameof(FitToMarginsCommand))]
-    private Frame? _selected;
+    /// <summary>
+    /// Blocs sélectionnés. Invariant tenu par <see cref="SetSelection"/> : n'y figurent
+    /// que des blocs posés directement sur <see cref="CurrentPage"/>, jamais l'enfant
+    /// d'un groupe — celui-ci ne se retouche qu'en dissociant. Les index d'instantané
+    /// et les commandes de disposition en dépendent.
+    /// </summary>
+    public ObservableCollection<Frame> Selection { get; } = [];
+
+    /// <summary>
+    /// Dernier bloc désigné : c'est lui que met en évidence la liste des blocs. Nul
+    /// exactement quand la sélection est vide, et toujours membre de celle-ci.
+    /// </summary>
+    [ObservableProperty] private Frame? _selected;
+
+    /// <summary>
+    /// Empêche l'ancre de reboucler sur la sélection : <see cref="SetSelection"/> écrit
+    /// les deux, tandis que la liaison de la liste des blocs n'écrit que l'ancre — et
+    /// doit alors, elle, remplacer la sélection entière.
+    /// </summary>
+    private bool _syncingSelection;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(RenderScale))]
@@ -144,12 +149,16 @@ public partial class MainWindowViewModel : ViewModelBase
     /// <summary>Déplace la sélection au clavier ; le pas fin sert au calage précis.</summary>
     public void NudgeSelection(double dx, double dy, bool fine)
     {
-        if (Selected is null) return;
+        if (Selection.Count == 0) return;
 
         var step = fine ? 0.5 : 3.0;
         BeginEdit();
-        Selected.X += dx * step;
-        Selected.Y += dy * step;
+        foreach (var frame in Selection)
+        {
+            frame.X += dx * step;
+            frame.Y += dy * step;
+        }
+
         CommitEdit();
     }
 
@@ -166,10 +175,23 @@ public partial class MainWindowViewModel : ViewModelBase
     /// <summary>Facteur points -> pixels écran, zoom inclus. Le seul endroit qui mélange les deux unités.</summary>
     public double RenderScale => Zoom * Units.PointToDip;
 
-    public bool HasSelection => Selected is not null;
-    public TextFrame? SelectedText => Selected as TextFrame;
-    public ShapeFrame? SelectedShape => Selected as ShapeFrame;
-    public ImageFrame? SelectedImage => Selected as ImageFrame;
+    public bool HasSelection => Selection.Count > 0;
+    public bool HasSingleSelection => Selection.Count == 1;
+    public bool HasMultipleSelection => Selection.Count > 1;
+
+    /// <summary>
+    /// Le bloc, quand il n'y en a qu'un. Le panneau de propriétés n'édite que ce cas :
+    /// afficher les champs d'un seul bloc alors que plusieurs sont pris ferait modifier
+    /// en silence celui qu'on ne regarde pas.
+    /// </summary>
+    public Frame? SingleSelected => Selection.Count == 1 ? Selection[0] : null;
+
+    public string SelectionLabel => Selection.Count switch
+    {
+        0 => "Aucun bloc sélectionné.",
+        1 => Selection[0].DisplayName,
+        _ => $"{Selection.Count} blocs sélectionnés."
+    };
 
     public bool CanUndo => _undo.Count > 0;
     public bool CanRedo => _redo.Count > 0;
@@ -191,6 +213,92 @@ public partial class MainWindowViewModel : ViewModelBase
             var name = FilePath is null ? "Sans titre" : Path.GetFileName(FilePath);
             return $"{(IsDirty ? "• " : "")}{name} — MyPublisher";
         }
+    }
+
+    // ---------------------------------------------------------------- sélection
+
+    /// <summary>Sélectionne ce seul bloc, ou vide la sélection si le bloc est nul.</summary>
+    public void SelectOnly(Frame? frame) => SetSelection(frame is null ? [] : [frame]);
+
+    /// <summary>Ctrl+clic : ajoute le bloc à la sélection, ou l'en retire s'il y était.</summary>
+    public void ToggleSelection(Frame frame)
+    {
+        var frames = Selection.ToList();
+        if (!frames.Remove(frame)) frames.Add(frame);
+        SetSelection(frames);
+    }
+
+    /// <summary>
+    /// Unique porte d'entrée de la sélection : elle filtre sur la page courante, tient
+    /// l'ancre à jour et prévient l'interface. Les blocs sont conservés dans l'ordre
+    /// reçu, le dernier devenant l'ancre — celui que la liste des blocs met en évidence.
+    /// </summary>
+    public void SetSelection(IReadOnlyList<Frame> frames)
+    {
+        _syncingSelection = true;
+        try
+        {
+            Selection.Clear();
+            foreach (var frame in frames)
+            {
+                if (CurrentPage?.Frames.Contains(frame) == true) Selection.Add(frame);
+            }
+
+            Selected = Selection.Count > 0 ? Selection[^1] : null;
+        }
+        finally
+        {
+            _syncingSelection = false;
+        }
+
+        NotifySelection();
+    }
+
+    /// <summary>La sélection dans l'ordre de superposition de la page, du fond vers l'avant.</summary>
+    public List<Frame> SelectionInPageOrder() =>
+        CurrentPage is null ? [] : CurrentPage.Frames.Where(Selection.Contains).ToList();
+
+    [RelayCommand]
+    private void SelectAll()
+    {
+        if (CurrentPage is null) return;
+
+        SetSelection(CurrentPage.Frames.ToList());
+        Status = SelectionLabel;
+    }
+
+    partial void OnSelectedChanged(Frame? value)
+    {
+        // Seule la liste des blocs écrit l'ancre directement : elle désigne alors un
+        // bloc unique, qui remplace la sélection.
+        if (!_syncingSelection) SelectOnly(value);
+    }
+
+    partial void OnCurrentPageChanged(Page? value)
+    {
+        // La sélection ne contient que des blocs de la page courante : changer de page
+        // la vide, sans quoi les commandes de disposition travailleraient sur des blocs
+        // qui ne sont plus à l'écran.
+        if (!_syncingSelection) SetSelection([]);
+    }
+
+    private void NotifySelection()
+    {
+        OnPropertyChanged(nameof(HasSelection));
+        OnPropertyChanged(nameof(HasSingleSelection));
+        OnPropertyChanged(nameof(HasMultipleSelection));
+        OnPropertyChanged(nameof(SingleSelected));
+        OnPropertyChanged(nameof(SelectionLabel));
+
+        DeleteSelectedCommand.NotifyCanExecuteChanged();
+        DuplicateSelectedCommand.NotifyCanExecuteChanged();
+        BringToFrontCommand.NotifyCanExecuteChanged();
+        BringForwardCommand.NotifyCanExecuteChanged();
+        SendBackwardCommand.NotifyCanExecuteChanged();
+        SendToBackCommand.NotifyCanExecuteChanged();
+        AlignCentreHorizontallyCommand.NotifyCanExecuteChanged();
+        AlignCentreVerticallyCommand.NotifyCanExecuteChanged();
+        FitToMarginsCommand.NotifyCanExecuteChanged();
     }
 
     // ---------------------------------------------------------------- historique
@@ -271,21 +379,26 @@ public partial class MainWindowViewModel : ViewModelBase
     private Snapshot Capture() => new(
         DocumentSerializer.ToJson(Document),
         CurrentPage is null ? -1 : Document.Pages.IndexOf(CurrentPage),
-        CurrentPage is null || Selected is null ? -1 : CurrentPage.Frames.IndexOf(Selected));
+        CurrentPage is null
+            ? []
+            : Selection.Select(frame => CurrentPage.Frames.IndexOf(frame)).Where(i => i >= 0).ToList());
 
     private void Restore(Snapshot snapshot)
     {
         Document = DocumentSerializer.FromJson(snapshot.Json);
 
+        // La page d'abord : changer de page vide la sélection, c'est donc elle qui
+        // doit être rétablie en dernier.
         CurrentPage = snapshot.PageIndex >= 0 && snapshot.PageIndex < Document.Pages.Count
             ? Document.Pages[snapshot.PageIndex]
             : Document.Pages.FirstOrDefault();
 
-        Selected = CurrentPage is not null &&
-                   snapshot.SelectionIndex >= 0 &&
-                   snapshot.SelectionIndex < CurrentPage.Frames.Count
-            ? CurrentPage.Frames[snapshot.SelectionIndex]
-            : null;
+        SetSelection(CurrentPage is null
+            ? []
+            : snapshot.SelectionIndices
+                .Where(i => i >= 0 && i < CurrentPage.Frames.Count)
+                .Select(i => CurrentPage.Frames[i])
+                .ToList());
 
         SyncPageSetup();
         NotifyPageList();
@@ -306,7 +419,7 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         Document = Document.CreateDefault();
         CurrentPage = Document.Pages[0];
-        Selected = null;
+        SetSelection([]);
         FilePath = null;
         IsDirty = false;
         _undo.Clear();
@@ -322,7 +435,7 @@ public partial class MainWindowViewModel : ViewModelBase
         Document = DocumentSerializer.Load(path);
         if (Document.Pages.Count == 0) Document.Pages.Add(new Page { Name = "Page 1" });
         CurrentPage = Document.Pages[0];
-        Selected = null;
+        SetSelection([]);
         FilePath = path;
         IsDirty = false;
         _undo.Clear();
@@ -460,7 +573,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
         BeginEdit();
         CurrentPage.Frames.Add(frame);
-        Selected = frame;
+        SelectOnly(frame);
         CommitEdit();
         Status = $"{frame.Kind} ajouté";
     }
@@ -488,89 +601,130 @@ public partial class MainWindowViewModel : ViewModelBase
     [RelayCommand(CanExecute = nameof(HasSelection))]
     private void DeleteSelected()
     {
-        if (CurrentPage is null || Selected is null) return;
+        if (CurrentPage is null || Selection.Count == 0) return;
+
+        var doomed = SelectionInPageOrder();
 
         BeginEdit();
-        CurrentPage.Frames.Remove(Selected);
-        Selected = null;
+        foreach (var frame in doomed) CurrentPage.Frames.Remove(frame);
+        SetSelection([]);
         CommitEdit();
-        Status = "Bloc supprimé";
+        Status = doomed.Count == 1 ? "Bloc supprimé" : $"{doomed.Count} blocs supprimés";
     }
 
     [RelayCommand(CanExecute = nameof(HasSelection))]
     private void DuplicateSelected()
     {
-        if (CurrentPage is null || Selected is null) return;
+        if (CurrentPage is null || Selection.Count == 0) return;
 
-        var copy = Selected.Clone();
-        copy.X += 12;
-        copy.Y += 12;
+        var copies = new List<Frame>();
 
         BeginEdit();
-        CurrentPage.Frames.Add(copy);
-        Selected = copy;
+        // Dans l'ordre de superposition : les copies se retrouvent empilées comme
+        // les originaux, et non dans l'ordre où les blocs ont été désignés.
+        foreach (var frame in SelectionInPageOrder())
+        {
+            var copy = frame.Clone();
+            copy.X += 12;
+            copy.Y += 12;
+            CurrentPage.Frames.Add(copy);
+            copies.Add(copy);
+        }
+
+        SetSelection(copies);
         CommitEdit();
-        Status = "Bloc dupliqué";
+        Status = copies.Count == 1 ? "Bloc dupliqué" : $"{copies.Count} blocs dupliqués";
     }
 
     [RelayCommand(CanExecute = nameof(HasSelection))]
-    private void BringToFront() => Reorder(int.MaxValue);
+    private void BringToFront() => MoveToEnd(front: true);
 
     [RelayCommand(CanExecute = nameof(HasSelection))]
-    private void SendToBack() => Reorder(0);
+    private void SendToBack() => MoveToEnd(front: false);
 
     [RelayCommand(CanExecute = nameof(HasSelection))]
-    private void BringForward() => Reorder(IndexOfSelected() + 1);
+    private void BringForward() => StepOrder(1);
 
     [RelayCommand(CanExecute = nameof(HasSelection))]
-    private void SendBackward() => Reorder(IndexOfSelected() - 1);
+    private void SendBackward() => StepOrder(-1);
 
-    private int IndexOfSelected() =>
-        CurrentPage is null || Selected is null ? -1 : CurrentPage.Frames.IndexOf(Selected);
-
-    private void Reorder(int target)
+    /// <summary>
+    /// Porte la sélection tout devant ou tout derrière. Les blocs pris ensemble
+    /// conservent leur ordre relatif : un ensemble monté au premier plan garde
+    /// l'aspect qu'il avait.
+    /// </summary>
+    private void MoveToEnd(bool front)
     {
-        if (CurrentPage is null || Selected is null) return;
+        if (CurrentPage is null || Selection.Count == 0) return;
 
-        var from = CurrentPage.Frames.IndexOf(Selected);
-        if (from < 0) return;
-
-        var to = Math.Clamp(target, 0, CurrentPage.Frames.Count - 1);
-        if (to == from) return;
+        var frames = CurrentPage.Frames;
+        var moving = SelectionInPageOrder();
 
         BeginEdit();
-        CurrentPage.Frames.Move(from, to);
+        foreach (var frame in moving) frames.Remove(frame);
+        for (var i = 0; i < moving.Count; i++) frames.Insert(front ? frames.Count : i, moving[i]);
         CommitEdit();
     }
 
-    /// <summary>Aligne le bloc sélectionné sur la zone de composition.</summary>
-    [RelayCommand(CanExecute = nameof(HasSelection))]
+    /// <summary>
+    /// Avance ou recule la sélection d'un rang. On parcourt depuis le côté vers lequel
+    /// on va, pour qu'un bloc déjà déplacé n'arrête pas le suivant ; un bloc buté sur un
+    /// autre bloc sélectionné ne bouge pas, l'ensemble garde donc sa forme.
+    /// </summary>
+    private void StepOrder(int direction)
+    {
+        if (CurrentPage is null || Selection.Count == 0) return;
+
+        var frames = CurrentPage.Frames;
+
+        BeginEdit();
+        if (direction > 0)
+        {
+            for (var i = frames.Count - 2; i >= 0; i--)
+            {
+                if (Selection.Contains(frames[i]) && !Selection.Contains(frames[i + 1])) frames.Move(i, i + 1);
+            }
+        }
+        else
+        {
+            for (var i = 1; i < frames.Count; i++)
+            {
+                if (Selection.Contains(frames[i]) && !Selection.Contains(frames[i - 1])) frames.Move(i, i - 1);
+            }
+        }
+
+        CommitEdit();
+    }
+
+    /// <summary>Centre le bloc sur la page.</summary>
+    [RelayCommand(CanExecute = nameof(HasSingleSelection))]
     private void AlignCentreHorizontally()
     {
-        if (Selected is null) return;
+        if (SingleSelected is not { } frame) return;
         BeginEdit();
-        Selected.X = (Document.PageWidth - Selected.Width) / 2;
+        frame.X = (Document.PageWidth - frame.Width) / 2;
         CommitEdit();
     }
 
-    [RelayCommand(CanExecute = nameof(HasSelection))]
+    [RelayCommand(CanExecute = nameof(HasSingleSelection))]
     private void AlignCentreVertically()
     {
-        if (Selected is null) return;
+        if (SingleSelected is not { } frame) return;
         BeginEdit();
-        Selected.Y = (Document.PageHeight - Selected.Height) / 2;
+        frame.Y = (Document.PageHeight - frame.Height) / 2;
         CommitEdit();
     }
 
-    [RelayCommand(CanExecute = nameof(HasSelection))]
+    /// <summary>Un bloc à lui seul dans la zone de composition : sans objet à plusieurs.</summary>
+    [RelayCommand(CanExecute = nameof(HasSingleSelection))]
     private void FitToMargins()
     {
-        if (Selected is null) return;
+        if (SingleSelected is not { } frame) return;
         BeginEdit();
-        Selected.X = Document.MarginLeft;
-        Selected.Y = Document.MarginTop;
-        Selected.Width = Document.MarginBoxWidth;
-        Selected.Height = Document.MarginBoxHeight;
+        frame.X = Document.MarginLeft;
+        frame.Y = Document.MarginTop;
+        frame.Width = Document.MarginBoxWidth;
+        frame.Height = Document.MarginBoxHeight;
         CommitEdit();
     }
 
@@ -584,7 +738,7 @@ public partial class MainWindowViewModel : ViewModelBase
         var page = new Page { Name = $"Page {Document.Pages.Count + 1}" };
         Document.Pages.Insert(index, page);
         CurrentPage = page;
-        Selected = null;
+        SetSelection([]);
         RenumberPages();
         CommitEdit();
         NotifyPageList();
@@ -600,7 +754,7 @@ public partial class MainWindowViewModel : ViewModelBase
         foreach (var frame in CurrentPage.Frames) copy.Frames.Add(frame.Clone());
         Document.Pages.Insert(Document.Pages.IndexOf(CurrentPage) + 1, copy);
         CurrentPage = copy;
-        Selected = null;
+        SetSelection([]);
         CommitEdit();
         NotifyPageList();
     }
@@ -616,7 +770,7 @@ public partial class MainWindowViewModel : ViewModelBase
         var index = Document.Pages.IndexOf(CurrentPage);
         Document.Pages.Remove(CurrentPage);
         CurrentPage = Document.Pages[Math.Clamp(index, 0, Document.Pages.Count - 1)];
-        Selected = null;
+        SetSelection([]);
         RenumberPages();
         CommitEdit();
         NotifyPageList();

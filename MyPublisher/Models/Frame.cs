@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json.Serialization;
 using CommunityToolkit.Mvvm.ComponentModel;
 
@@ -9,6 +11,35 @@ public enum TextAlign { Left, Center, Right, Justify }
 public enum ImageFit { Uniform, UniformToFill, Fill }
 
 public enum ShapeKind { Rectangle, Ellipse }
+
+/// <summary>
+/// Rectangle englobant en coordonnées page, bords parallèles à la page. C'est la forme
+/// sous laquelle on compare des blocs entre eux — alignement, répartition, aimantation
+/// d'un ensemble — parce qu'un bloc tourné occupe autre chose que son cadre.
+/// </summary>
+public readonly record struct Extent(double Left, double Top, double Right, double Bottom)
+{
+    public double Width => Right - Left;
+    public double Height => Bottom - Top;
+    public double CenterX => (Left + Right) / 2;
+    public double CenterY => (Top + Bottom) / 2;
+
+    /// <summary>Plus petit rectangle contenant tous les autres ; nul si la suite est vide.</summary>
+    public static Extent? Union(IEnumerable<Extent> extents)
+    {
+        Extent? union = null;
+        foreach (var extent in extents)
+        {
+            union = union is not { } current
+                ? extent
+                : new Extent(
+                    Math.Min(current.Left, extent.Left), Math.Min(current.Top, extent.Top),
+                    Math.Max(current.Right, extent.Right), Math.Max(current.Bottom, extent.Bottom));
+        }
+
+        return union;
+    }
+}
 
 /// <summary>
 /// Bloc positionné sur une page. Toutes les coordonnées sont en points, l'origine
@@ -61,6 +92,29 @@ public abstract partial class Frame : ObservableObject
     [JsonIgnore] public double Bottom => Y + Height;
     [JsonIgnore] public double CenterX => X + Width / 2;
     [JsonIgnore] public double CenterY => Y + Height / 2;
+
+    /// <summary>
+    /// Ce que le bloc occupe réellement sur la page, rotation comprise. Un bloc tourné
+    /// déborde de son cadre : c'est cette empreinte-là qu'on aligne et qu'on aimante,
+    /// pas les X et Y bruts.
+    /// </summary>
+    [JsonIgnore]
+    public Extent Extent
+    {
+        get
+        {
+            if (Rotation == 0) return new Extent(X, Y, X + Width, Y + Height);
+
+            var corners = new[]
+            {
+                ToPage(0, 0), ToPage(Width, 0), ToPage(Width, Height), ToPage(0, Height)
+            };
+
+            return new Extent(
+                corners.Min(c => c.X), corners.Min(c => c.Y),
+                corners.Max(c => c.X), corners.Max(c => c.Y));
+        }
+    }
 
     /// <summary>Libellé affiché dans le panneau des calques.</summary>
     [JsonIgnore] public abstract string Kind { get; }

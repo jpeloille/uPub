@@ -60,8 +60,9 @@ la barre du haut regroupe les commandes du document : fichier, annulation, zoom.
   formes (rectangle, rectangle arrondi, ellipse) avec remplissage et contour.
 - Rotation libre de n'importe quel bloc, y compris pour la sélection et le
   redimensionnement.
-- Sélection, déplacement, redimensionnement par huit poignées, aimantation sur les
-  marges, les bords et l'axe médian de la page.
+- Sélection d'un bloc ou de plusieurs (`Ctrl` + clic), déplacement d'ensemble,
+  redimensionnement par huit poignées, aimantation sur les marges, les bords et
+  l'axe médian de la page.
 - Édition du texte directement sur la page (double-clic).
 - Ordre de superposition, alignement, ajustement aux marges.
 - Annulation / rétablissement sur 60 pas, couvrant aussi bien les gestes à la
@@ -75,13 +76,15 @@ la barre du haut regroupe les commandes du document : fichier, annulation, zoom.
 | `Ctrl+N` / `Ctrl+O` / `Ctrl+S` | Nouveau / Ouvrir / Enregistrer |
 | `Ctrl+E` | Exporter en PDF |
 | `Ctrl+Z` / `Ctrl+Y` | Annuler / Rétablir |
-| `Ctrl+D` | Dupliquer le bloc |
-| `Suppr` | Supprimer le bloc |
+| `Ctrl+D` | Dupliquer la sélection |
+| `Ctrl+A` | Sélectionner tous les blocs de la page |
+| `Suppr` | Supprimer la sélection |
 | Flèches | Déplacer de 3 pt (`Maj` : 0,5 pt) |
 | `Ctrl` + molette, `Ctrl` `+`/`-`/`0` | Zoom |
 | `V` / `T` / `H` / `R` / `E` | Outil sélection / texte / titre / rectangle / ellipse |
 | `Échap` | Désarme l'outil, sinon désélectionne |
 | Double-clic | Éditer le texte d'un bloc |
+| `Ctrl` ou `Maj` + clic | Ajoute un bloc à la sélection, ou l'en retire |
 | `Alt` pendant le déplacement | Désactive l'aimantation |
 | `Maj` sur une poignée d'angle | Conserve les proportions |
 
