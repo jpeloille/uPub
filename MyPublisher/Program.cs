@@ -13,25 +13,32 @@ sealed class Program
     [STAThread]
     public static int Main(string[] args)
     {
-        if (TryRunHeadlessExport(args, out var exitCode)) return exitCode;
+        if (TryRunHeadless(args, out var exitCode)) return exitCode;
 
         BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
         return 0;
     }
 
     /// <summary>
-    /// Mode sans interface : « MyPublisher doc.mypub --export sortie.pdf ».
-    /// Permet de régénérer un PDF depuis un script ou une chaîne d'intégration.
+    /// Mode sans interface, pour un script ou une chaîne d'intégration :
+    /// « MyPublisher doc.mypub --export sortie.pdf » régénère un PDF,
+    /// « MyPublisher doc.mypub --resave copie.mypub » relit le document et le réécrit
+    /// sous un autre nom. La réécriture n'a d'intérêt que pour le contrôle : un
+    /// document relu puis réécrit doit rendre exactement le même JSON.
     /// </summary>
-    private static bool TryRunHeadlessExport(string[] args, out int exitCode)
+    private static bool TryRunHeadless(string[] args, out int exitCode)
     {
         exitCode = 0;
-        var flag = Array.IndexOf(args, "--export");
+
+        var export = Array.IndexOf(args, "--export");
+        var resave = Array.IndexOf(args, "--resave");
+        var flag = export >= 0 ? export : resave;
         if (flag < 0) return false;
 
         if (flag == 0 || flag + 1 >= args.Length)
         {
             Console.Error.WriteLine("Usage : MyPublisher <document.mypub> --export <sortie.pdf>");
+            Console.Error.WriteLine("        MyPublisher <document.mypub> --resave <copie.mypub>");
             exitCode = 2;
             return true;
         }
@@ -48,13 +55,23 @@ sealed class Program
 
         try
         {
-            var report = PdfExporter.Export(DocumentSerializer.Load(source), target);
-            Console.WriteLine($"{report.PageCount} page(s) exportée(s) vers {target}");
-            foreach (var warning in report.Warnings) Console.Error.WriteLine($"Avertissement : {warning}");
+            var document = DocumentSerializer.Load(source);
+
+            if (flag == export)
+            {
+                var report = PdfExporter.Export(document, target);
+                Console.WriteLine($"{report.PageCount} page(s) exportée(s) vers {target}");
+                foreach (var warning in report.Warnings) Console.Error.WriteLine($"Avertissement : {warning}");
+            }
+            else
+            {
+                DocumentSerializer.Save(document, target);
+                Console.WriteLine($"Document réécrit vers {target}");
+            }
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Échec de l'export : {ex.Message}");
+            Console.Error.WriteLine($"Échec : {ex.Message}");
             exitCode = 1;
         }
 

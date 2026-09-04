@@ -13,11 +13,15 @@ dotnet run --project MyPublisher                    # document vierge
 dotnet run --project MyPublisher -- mon-doc.mypub   # ouvre un document
 ```
 
-Export PDF sans interface, pour un script ou une chaîne d'intégration :
+Sans interface, pour un script ou une chaîne d'intégration :
 
 ```bash
-dotnet run --project MyPublisher -- mon-doc.mypub --export sortie.pdf
+dotnet run --project MyPublisher -- mon-doc.mypub --export sortie.pdf   # exporte un PDF
+dotnet run --project MyPublisher -- mon-doc.mypub --resave copie.mypub  # relit et réécrit
 ```
+
+La réécriture ne sert pas à l'usage courant : elle donne prise au contrôle de
+non-régression, qui vérifie qu'un document relu puis réécrit rend le même JSON.
 
 ## Interface
 
