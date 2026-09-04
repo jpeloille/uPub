@@ -22,7 +22,7 @@ public partial class Document : ObservableObject
     /// migré à la lecture (<see cref="Services.FormatMigrations"/>) ; un fichier plus
     /// récent est refusé, plutôt que lu de travers.
     /// </summary>
-    public const int CurrentFormatVersion = 2;
+    public const int CurrentFormatVersion = 3;
 
     /// <summary>Version du format de fichier, telle que lue puis migrée.</summary>
     [JsonPropertyOrder(10)]

@@ -363,9 +363,21 @@
                                               ItemsSource="{Binding #Root.((vm:MainWindowViewModel)DataContext).TextAlignments}"
                                               SelectedItem="{Binding Align}"/>
 
-                                    <TextBlock Classes="field" Text="Marge intérieure (pt)" Margin="0,8,0,2"/>
-                                    <NumericUpDown FormatString="0.#" Increment="1" Minimum="0"
-                                                   Value="{Binding Padding, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
+                                    <TextBlock Classes="field" Text="Marges intérieures (pt)" Margin="0,8,0,2"/>
+                                    <Grid ColumnDefinitions="*,8,*" RowDefinitions="Auto,Auto,Auto,Auto">
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Classes="field" Text="Gauche"/>
+                                        <TextBlock Grid.Row="0" Grid.Column="2" Classes="field" Text="Droite"/>
+                                        <NumericUpDown Grid.Row="1" Grid.Column="0" FormatString="0.#" Increment="1" Minimum="0"
+                                                       Value="{Binding PaddingLeft, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
+                                        <NumericUpDown Grid.Row="1" Grid.Column="2" FormatString="0.#" Increment="1" Minimum="0"
+                                                       Value="{Binding PaddingRight, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
+                                        <TextBlock Grid.Row="2" Grid.Column="0" Classes="field" Text="Haute"/>
+                                        <TextBlock Grid.Row="2" Grid.Column="2" Classes="field" Text="Basse"/>
+                                        <NumericUpDown Grid.Row="3" Grid.Column="0" FormatString="0.#" Increment="1" Minimum="0"
+                                                       Value="{Binding PaddingTop, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
+                                        <NumericUpDown Grid.Row="3" Grid.Column="2" FormatString="0.#" Increment="1" Minimum="0"
+                                                       Value="{Binding PaddingBottom, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
+                                    </Grid>
 
                                     <TextBlock Classes="field" Text="Couleur" Margin="0,8,0,2"/>
                                     <ColorPicker HorizontalAlignment="Left"

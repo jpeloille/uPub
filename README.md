@@ -32,8 +32,9 @@ Scripts/controle.sh --enregistrer   # remplace le relevé de référence, après
 
 Quatre vérifications : `Samples/exemple-bulletin.mypub` se relit, se réécrit au
 caractère près, et son export PDF donne le même nombre de pages et les mêmes
-avertissements que le relevé de `Scripts/reference.txt` ; puis sa version 1, figée
-dans `Scripts/fixtures/`, s'ouvre encore et se migre en un point fixe. C'est un filet,
+avertissements que le relevé de `Scripts/reference.txt` ; puis chacune de ses
+versions passées, figées dans `Scripts/fixtures/` — une par version du format —
+s'ouvre encore et se migre en un point fixe. C'est un filet,
 pas une stratégie de test : il tient la chaîne ouvrir → enregistrer → exporter, celle
 dont tout le reste dépend, et le passé qu'on s'est engagé à relire.
 
@@ -57,8 +58,8 @@ la barre du haut regroupe les commandes du document : fichier, annulation, zoom.
 
 - Documents multi-pages, formats A3 à Legal, portrait ou paysage, marges réglables.
 - Blocs de texte (police système, corps, gras, italique, alignement dont justifié,
-  interligne, marge intérieure, couleur), images (trois modes de cadrage) et
-  formes (rectangle, ellipse).
+  interligne, marges intérieures réglées côté par côté, couleur), images (trois
+  modes de cadrage) et formes (rectangle, ellipse).
 - Tout bloc — texte, image, forme, groupe — porte un fond, avec son opacité, et un
   contour : épaisseur, trait continu, tirets ou points, angles arrondis. Encadrer
   une image d'un filet ne demande donc plus de lui superposer une forme.
@@ -134,10 +135,11 @@ superposition exact.
 
 ## Format de fichier
 
-`.mypub` est du JSON indenté, versionné par `FormatVersion` (aujourd'hui 2). Un
+`.mypub` est du JSON indenté, versionné par `FormatVersion` (aujourd'hui 3). Un
 fichier d'une version antérieure est migré à l'ouverture — la version 1 nommait
-`Background` le fond des blocs de texte, il s'appelle `Fill` partout depuis — et un
-fichier d'une version plus récente est refusé plutôt que lu de travers. Chaque bloc
+`Background` le fond des blocs de texte, il s'appelle `Fill` partout depuis ; la
+version 2 n'avait qu'une marge intérieure, il y en a quatre — et un fichier d'une
+version plus récente est refusé plutôt que lu de travers. Chaque bloc
 porte un discriminant `$kind` (`text`, `image`, `shape`, `group`). Un groupe contient ses blocs
 en coordonnées relatives à son coin supérieur gauche, écrits après sa géométrie — le
 rendu et l'export composent les deux repères. Les images sont référencées par chemin

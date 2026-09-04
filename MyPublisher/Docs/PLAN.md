@@ -42,13 +42,13 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **C3** | Sélection multiple, puis groupement | **100 %** | C3a sélection · C3b alignement et répartition · C3c groupe persistant |
 | **C4** | Champs | 0 % | N'a d'intérêt qu'avec les modèles de B1 |
 | **C5** | Remplissage riche et cohérence visuelle | 0 % | C5a fond de page · C5b jeux de couleurs · C5c dégradés — C5a et C5c débloqués par C1 |
-| **C6** | Marges intérieures par côté | 0 % | La mécanique de migration existe depuis C1 : ne coûte plus qu'un numéro de version et son étape |
+| **C6** | Marges intérieures par côté | **100 %** | Quatre marges sur le bloc de texte ; `FormatVersion` 3 |
 | **C7** | Bibliothèque de blocs | 0 % | Débloqué depuis C3a |
 | **D** | Moteur de composition | — | Décision non ouverte ; à rouvrir quand A, B et C sont livrées |
 
-**Par phase** — P : 3 sur 3 · A : 0 sur 7 · B : 0 sur 5 · C : 2 sur 7 · D : non planifié.
+**Par phase** — P : 3 sur 3 · A : 0 sur 7 · B : 0 sur 5 · C : 3 sur 7 · D : non planifié.
 
-Soit **5 postes sur 22**. C'est un compte de postes et non d'effort : C3 pesait à lui
+Soit **6 postes sur 22**. C'est un compte de postes et non d'effort : C3 pesait à lui
 seul plus que toute la phase A, et les préalables ne produisaient aucune fonctionnalité.
 Le tableau dit ce qui est clos, pas ce qui reste à peiner.
 
@@ -434,6 +434,20 @@ piège, hormis la migration de format — à grouper avec C1 pour ne payer la mi
 qu'une fois.
 
 *Recette* : un texte décalé de 12 pt à gauche seulement, à l'écran comme au PDF.
+
+*Fait le 5 septembre 2026*, après C1 et non avec lui : la mécanique de migration
+posée par C1 rendait le groupage sans objet, le poste n'a coûté qu'un numéro de
+version et son étape. `PaddingLeft`, `PaddingTop`, `PaddingRight`, `PaddingBottom`
+sur le bloc de texte, et `Padding` d'un seul tenant pour la vue et l'export — la
+liaison XAML n'a pas changé, seul son convertisseur. `FormatVersion` passe à 3 ; un
+fichier ancien reçoit quatre marges égales à son unique et s'affiche comme avant. Le
+contrôle relit désormais une version passée par numéro de format : la version 2 de
+l'exemple rejoint la version 1 dans `Scripts/fixtures/`.
+
+Vérifié en mesurant l'encre : trois blocs du même texte, sans marge, avec 12 pt à
+gauche seulement, avec 20 pt en haut seulement, rendus des deux côtés à deux pixels
+par point — les décalages mesurés sont ceux demandés, à gauche sans bouger en haut, et
+l'écran et l'export concordent.
 
 ### C7 — Bibliothèque de blocs *(fiche 20)*
 

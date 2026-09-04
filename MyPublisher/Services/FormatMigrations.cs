@@ -25,6 +25,7 @@ public static class FormatMigrations
         }
 
         if (version < 2) ToVersion2(root);
+        if (version < 3) ToVersion3(root);
 
         root["FormatVersion"] = Document.CurrentFormatVersion;
     }
@@ -46,6 +47,27 @@ public static class FormatMigrations
             var background = frame["Background"];
             frame.Remove("Background");
             frame["Fill"] = background;
+        }
+    }
+
+    /// <summary>
+    /// Version 3 : la marge intérieure unique du bloc de texte devient quatre marges,
+    /// une par côté. Un fichier ancien les reçoit toutes égales à l'ancienne valeur : il
+    /// s'affiche comme avant.
+    /// </summary>
+    private static void ToVersion3(JsonObject root)
+    {
+        foreach (var frame in AllFrames(root))
+        {
+            if (frame["$kind"]?.GetValue<string>() != "text") continue;
+            if (!frame.ContainsKey("Padding")) continue;
+
+            var padding = frame["Padding"]?.GetValue<double>() ?? 0;
+            frame.Remove("Padding");
+            frame["PaddingLeft"] = padding;
+            frame["PaddingTop"] = padding;
+            frame["PaddingRight"] = padding;
+            frame["PaddingBottom"] = padding;
         }
     }
 

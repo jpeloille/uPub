@@ -177,10 +177,10 @@ public static class PdfExporter
         var brush = ParseBrush(text.Foreground) ?? XBrushes.Black;
 
         var box = new XRect(
-            text.X + text.Padding,
-            text.Y + text.Padding,
-            Math.Max(1, text.Width - 2 * text.Padding),
-            Math.Max(1, text.Height - 2 * text.Padding));
+            text.X + text.PaddingLeft,
+            text.Y + text.PaddingTop,
+            Math.Max(1, text.Width - text.PaddingLeft - text.PaddingRight),
+            Math.Max(1, text.Height - text.PaddingTop - text.PaddingBottom));
 
         var formatter = new XTextFormatter(gfx)
         {

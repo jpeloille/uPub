@@ -57,8 +57,8 @@ public static class Conv
     public static readonly FuncValueConverter<string?, FontFamily> Font =
         new(name => string.IsNullOrWhiteSpace(name) ? FontFamily.Default : new FontFamily(name));
 
-    public static readonly FuncValueConverter<double, Thickness> Pad =
-        new(points => new Thickness(points));
+    public static readonly FuncValueConverter<Insets, Thickness> Pad =
+        new(insets => new Thickness(insets.Left, insets.Top, insets.Right, insets.Bottom));
 
     /// <summary>Motif du trait, en multiples de l'épaisseur ; null laisse le trait continu.</summary>
     public static readonly FuncValueConverter<StrokeStyle, AvaloniaList<double>?> Dash =

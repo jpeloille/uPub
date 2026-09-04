@@ -46,6 +46,13 @@ public readonly record struct Extent(double Left, double Top, double Right, doub
 }
 
 /// <summary>
+/// Marges intérieures d'un bloc de texte, côté par côté, en points. Le modèle les
+/// stocke une à une pour que le panneau les lie séparément ; la vue et l'export les
+/// consomment d'un seul tenant, sous cette forme.
+/// </summary>
+public readonly record struct Insets(double Left, double Top, double Right, double Bottom);
+
+/// <summary>
 /// Bloc positionné sur une page. Toutes les coordonnées sont en points, l'origine
 /// est le coin supérieur gauche de la page, l'axe Y descend (comme en PDF).
 /// Ce modèle ne référence aucun type Avalonia : il est partagé tel quel par le
@@ -380,10 +387,32 @@ public partial class TextFrame : Frame
     [property: JsonPropertyOrder(180)]
     private double _lineHeight = 1.25;
 
-    /// <summary>Marge intérieure du bloc, en points.</summary>
+    /// <summary>
+    /// Marges intérieures du bloc, en points, une par côté. Quatre valeurs et non une :
+    /// un texte qui doit respirer à gauche d'un filet n'a pas à s'écarter aussi du haut.
+    /// </summary>
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Padding))]
     [property: JsonPropertyOrder(190)]
-    private double _padding = 4;
+    private double _paddingLeft = 4;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Padding))]
+    [property: JsonPropertyOrder(200)]
+    private double _paddingTop = 4;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Padding))]
+    [property: JsonPropertyOrder(210)]
+    private double _paddingRight = 4;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Padding))]
+    [property: JsonPropertyOrder(220)]
+    private double _paddingBottom = 4;
+
+    /// <summary>Les quatre marges d'un seul tenant, pour la vue et l'export.</summary>
+    [JsonIgnore] public Insets Padding => new(PaddingLeft, PaddingTop, PaddingRight, PaddingBottom);
 
     /// <summary>Édition en cours : état transitoire d'interface, jamais sérialisé.</summary>
     [ObservableProperty]
@@ -400,7 +429,8 @@ public partial class TextFrame : Frame
         {
             Text = Text, FontFamily = FontFamily, FontSize = FontSize, Bold = Bold,
             Italic = Italic, Foreground = Foreground, Align = Align,
-            LineHeight = LineHeight, Padding = Padding
+            LineHeight = LineHeight, PaddingLeft = PaddingLeft, PaddingTop = PaddingTop,
+            PaddingRight = PaddingRight, PaddingBottom = PaddingBottom
         };
         CopyBaseTo(c);
         return c;
