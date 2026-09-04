@@ -11,6 +11,49 @@ vient d'atterrir, `ImageFrame` n'a ni fond ni bordure, `ShapeFrame` garde `Fill`
 
 ---
 
+## Suivi
+
+Où en est chaque poste. Une seule règle pour la colonne d'avancement : un poste ne passe
+à 100 % que lorsque **sa recette est jouée et que le contrôle P2 passe**. Entre les deux,
+on écrit ce qui est fait plutôt qu'un pourcentage inventé — un poste à moitié écrit n'est
+pas un poste à moitié livré. La colonne se met à jour dans le commit qui clôt le poste.
+
+*Dernière mise à jour : 5 septembre 2026.*
+
+| Poste | Intitulé | Avancement | Où ça en est |
+|---|---|:---:|---|
+| **P0** | Nom du remplissage | **100 %** | `Fill` retenu et daté ; le renommage lui-même appartient à C1 |
+| **P1** | Dépôt sous git | **100 %** | Branche `main`, commit initial `cc098e0` |
+| **P2** | Contrôle de non-régression | **100 %** | `Scripts/controle.sh`, référence dans `Scripts/reference.txt` |
+| **A1** | Poignée de rotation | 0 % | La rotation est déjà partout ; il manque la neuvième poignée |
+| **A2** | Signaler le débordement du texte | 0 % | Le poste le plus important de la phase : on livre encore un PDF amputé sans le dire |
+| **A3** | Chemins d'images relatifs | 0 % | — |
+| **A4** | Superposition : raccourcis et glisser-déposer | 0 % | Les quatre commandes existent, et portent la sélection multiple depuis C3a |
+| **A5** | Formats de page | 0 % | Le modèle accepte déjà des dimensions libres |
+| **A6** | Taille du bloc dans la barre d'état | 0 % | — |
+| **A7** | Alignement vertical du texte | 0 % | — |
+| **B1** | Modèles | 0 % | Le poste le plus rentable du plan, et il ne dépend de rien |
+| **B2** | Importer un fichier texte | 0 % | — |
+| **B3** | Imprimer | 0 % | — |
+| **B4** | Archive `.mypubz` | 0 % | — |
+| **B5** | Avertir sur les substitutions de polices | 0 % | — |
+| **C1** | Fond et bordure au niveau de `Frame` | 0 % | Décision de nommage acquise en P0 ; porte aussi le passage de `FormatVersion` à 2 |
+| **C2** | Repères | 0 % | C2a grille de composition · C2b règles et repères libres |
+| **C3** | Sélection multiple, puis groupement | **100 %** | C3a sélection · C3b alignement et répartition · C3c groupe persistant |
+| **C4** | Champs | 0 % | N'a d'intérêt qu'avec les modèles de B1 |
+| **C5** | Remplissage riche et cohérence visuelle | 0 % | C5a fond de page · C5b jeux de couleurs · C5c dégradés — C5a et C5c attendent C1 |
+| **C6** | Marges intérieures par côté | 0 % | À grouper avec C1, pour ne payer la migration de format qu'une fois |
+| **C7** | Bibliothèque de blocs | 0 % | Débloqué depuis C3a |
+| **D** | Moteur de composition | — | Décision non ouverte ; à rouvrir quand A, B et C sont livrées |
+
+**Par phase** — P : 3 sur 3 · A : 0 sur 7 · B : 0 sur 5 · C : 1 sur 7 · D : non planifié.
+
+Soit **4 postes sur 22**. C'est un compte de postes et non d'effort : C3 pesait à lui
+seul plus que toute la phase A, et les préalables ne produisaient aucune fonctionnalité.
+Le tableau dit ce qui est clos, pas ce qui reste à peiner.
+
+---
+
 ## P — Préalables
 
 Deux choses à faire **avant** la phase C, pas après. Elles ne produisent aucune
@@ -446,6 +489,10 @@ par l'usage des modèles de B1, si le besoin est réel.
 
 ## Récapitulatif
 
+Ce que chaque phase contient et ce qui la bloque. L'avancement, lui, se lit dans le
+[tableau de suivi](#suivi) en tête : deux tableaux qui portent la même information
+finissent toujours par se contredire.
+
 | Phase | Postes | Nature | Bloquée par |
 |---|---|---|---|
 | **P** | P0 décision de nommage · P1 git · P2 contrôle | préalables | — |
@@ -456,4 +503,5 @@ par l'usage des modèles de B1, si le besoin est réel.
 
 Trois postes à faire en premier si l'on ne devait en retenir que trois : **A2**
 (ne plus livrer un PDF amputé en silence), **B1** (les modèles, qui rendent visible tout
-le reste), **P0** (trancher le nom pendant que cela ne coûte encore rien).
+le reste), **P0** (trancher le nom pendant que cela ne coûte encore rien). Le troisième
+est fait depuis le 5 septembre 2026 ; les deux autres restent en tête de liste.
