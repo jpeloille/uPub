@@ -22,26 +22,40 @@ public enum ShapeKind { Rectangle, Ellipse }
 [JsonDerivedType(typeof(ShapeFrame), "shape")]
 public abstract partial class Frame : ObservableObject
 {
-    [ObservableProperty] private string _name = "";
+    // L'ordre d'écriture est explicite d'un bout à l'autre du modèle. Sans lui, le
+    // sérialiseur le déduit des classes partielles qu'engendre [ObservableProperty] :
+    // les propriétés propres au type sortaient avant les coordonnées, et le titre du
+    // document après ses pages. Un format qui se relit se lit dans l'ordre où on
+    // pense — le bloc d'abord, ses réglages ensuite. Les rangs vont de dix en dix :
+    // remonter une propriété d'une classe à l'autre n'oblige pas à tout renuméroter.
+    [ObservableProperty]
+    [property: JsonPropertyOrder(10)]
+    private string _name = "";
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(Right))]
+    [property: JsonPropertyOrder(20)]
     private double _x;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(Bottom))]
+    [property: JsonPropertyOrder(30)]
     private double _y;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(Right))]
+    [property: JsonPropertyOrder(40)]
     private double _width = 200;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(Bottom))]
+    [property: JsonPropertyOrder(50)]
     private double _height = 100;
 
     /// <summary>Rotation en degrés, sens horaire, autour du centre du bloc.</summary>
-    [ObservableProperty] private double _rotation;
+    [ObservableProperty]
+    [property: JsonPropertyOrder(60)]
+    private double _rotation;
 
     [JsonIgnore] public double Right => X + Width;
     [JsonIgnore] public double Bottom => Y + Height;
@@ -104,16 +118,30 @@ public abstract partial class Frame : ObservableObject
 
 public partial class TextFrame : Frame
 {
-    [ObservableProperty] private string _text = "";
-    [ObservableProperty] private string _fontFamily = "DejaVu Sans";
+    [ObservableProperty]
+    [property: JsonPropertyOrder(100)]
+    private string _text = "";
+
+    [ObservableProperty]
+    [property: JsonPropertyOrder(110)]
+    private string _fontFamily = "DejaVu Sans";
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(AbsoluteLineHeight))]
+    [property: JsonPropertyOrder(120)]
     private double _fontSize = 11;
 
-    [ObservableProperty] private bool _bold;
-    [ObservableProperty] private bool _italic;
-    [ObservableProperty] private string _foreground = "#FF1A1A1A";
+    [ObservableProperty]
+    [property: JsonPropertyOrder(130)]
+    private bool _bold;
+
+    [ObservableProperty]
+    [property: JsonPropertyOrder(140)]
+    private bool _italic;
+
+    [ObservableProperty]
+    [property: JsonPropertyOrder(150)]
+    private string _foreground = "#FF1A1A1A";
 
     /// <summary>
     /// Fond du bloc, en #AARRGGBB. Null signifie « aucun fond » : ce qui passe sous le
@@ -124,6 +152,7 @@ public partial class TextFrame : Frame
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasBackground))]
     [NotifyPropertyChangedFor(nameof(BackgroundColor))]
+    [property: JsonPropertyOrder(160)]
     private string? _background;
 
     /// <summary>
@@ -133,15 +162,20 @@ public partial class TextFrame : Frame
     /// </summary>
     private string _lastBackground = "#FFFFFFFF";
 
-    [ObservableProperty] private TextAlign _align = TextAlign.Left;
+    [ObservableProperty]
+    [property: JsonPropertyOrder(170)]
+    private TextAlign _align = TextAlign.Left;
 
     /// <summary>Interligne exprimé en multiple du corps.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(AbsoluteLineHeight))]
+    [property: JsonPropertyOrder(180)]
     private double _lineHeight = 1.25;
 
     /// <summary>Marge intérieure du bloc, en points.</summary>
-    [ObservableProperty] private double _padding = 4;
+    [ObservableProperty]
+    [property: JsonPropertyOrder(190)]
+    private double _padding = 4;
 
     /// <summary>Édition en cours : état transitoire d'interface, jamais sérialisé.</summary>
     [ObservableProperty]
@@ -209,8 +243,13 @@ public partial class TextFrame : Frame
 
 public partial class ImageFrame : Frame
 {
-    [ObservableProperty] private string _path = "";
-    [ObservableProperty] private ImageFit _fit = ImageFit.Uniform;
+    [ObservableProperty]
+    [property: JsonPropertyOrder(100)]
+    private string _path = "";
+
+    [ObservableProperty]
+    [property: JsonPropertyOrder(110)]
+    private ImageFit _fit = ImageFit.Uniform;
 
     [JsonIgnore] public override string Kind => "Image";
 
@@ -227,12 +266,24 @@ public partial class ShapeFrame : Frame
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsRectangle))]
     [NotifyPropertyChangedFor(nameof(IsEllipse))]
+    [property: JsonPropertyOrder(100)]
     private ShapeKind _shape = ShapeKind.Rectangle;
 
-    [ObservableProperty] private string? _fill = "#FF9DC3E6";
-    [ObservableProperty] private string? _stroke = "#FF2E5C8A";
-    [ObservableProperty] private double _strokeThickness = 1;
-    [ObservableProperty] private double _cornerRadius;
+    [ObservableProperty]
+    [property: JsonPropertyOrder(110)]
+    private string? _fill = "#FF9DC3E6";
+
+    [ObservableProperty]
+    [property: JsonPropertyOrder(120)]
+    private string? _stroke = "#FF2E5C8A";
+
+    [ObservableProperty]
+    [property: JsonPropertyOrder(130)]
+    private double _strokeThickness = 1;
+
+    [ObservableProperty]
+    [property: JsonPropertyOrder(140)]
+    private double _cornerRadius;
 
     [JsonIgnore] public bool IsRectangle => Shape == ShapeKind.Rectangle;
     [JsonIgnore] public bool IsEllipse => Shape == ShapeKind.Ellipse;
