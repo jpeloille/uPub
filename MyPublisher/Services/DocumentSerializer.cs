@@ -1,4 +1,5 @@
 using System.IO;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using MyPublisher.Models;
@@ -17,7 +18,13 @@ public static class DocumentSerializer
     {
         WriteIndented = true,
         Converters = { new JsonStringEnumConverter() },
-        DefaultIgnoreCondition = JsonIgnoreCondition.Never
+        DefaultIgnoreCondition = JsonIgnoreCondition.Never,
+
+        // L'encodeur par défaut échappe tout ce qui n'est pas ASCII, plus l'apostrophe :
+        // un texte français ressort en « l\u0027unit\u00E9 », illisible dans un format
+        // dont l'intérêt est justement de se relire. Il n'y a ici aucun rendu HTML à
+        // protéger — le JSON part dans un fichier — donc on écrit les caractères tels quels.
+        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
     };
 
     public static string ToJson(Document document) => JsonSerializer.Serialize(document, Options);
