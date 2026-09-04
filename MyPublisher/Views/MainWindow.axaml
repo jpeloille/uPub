@@ -145,8 +145,22 @@
                 <MenuItem Header="_Reculer" Command="{Binding SendBackwardCommand}"/>
                 <MenuItem Header="Arrière-p_lan" Command="{Binding SendToBackCommand}"/>
                 <Separator/>
+                <MenuItem Header="Aligner à _gauche" Command="{Binding AlignLeftCommand}"/>
                 <MenuItem Header="Centrer _horizontalement" Command="{Binding AlignCentreHorizontallyCommand}"/>
+                <MenuItem Header="Aligner à _droite" Command="{Binding AlignRightCommand}"/>
+                <MenuItem Header="Aligner en _haut" Command="{Binding AlignTopCommand}"/>
                 <MenuItem Header="Centrer _verticalement" Command="{Binding AlignCentreVerticallyCommand}"/>
+                <MenuItem Header="Aligner en _bas" Command="{Binding AlignBottomCommand}"/>
+                <Separator/>
+                <MenuItem Header="Répartir hori_zontalement" Command="{Binding DistributeHorizontallyCommand}"/>
+                <MenuItem Header="Répartir vertica_lement" Command="{Binding DistributeVerticallyCommand}"/>
+                <Separator/>
+                <!-- Le repère de l'alignement, posé une fois pour toutes les commandes
+                     ci-dessus : la zone de composition, ou la page — et, page décochée,
+                     les blocs entre eux dès qu'ils sont plusieurs. -->
+                <MenuItem Header="Par rapport aux mar_ges" ToggleType="CheckBox"
+                          IsChecked="{Binding AlignToMargins}"/>
+                <Separator/>
                 <MenuItem Header="Ajuster aux _marges" Command="{Binding FitToMarginsCommand}"/>
             </MenuItem>
 

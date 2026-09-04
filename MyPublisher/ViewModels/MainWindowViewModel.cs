@@ -79,6 +79,14 @@ public partial class MainWindowViewModel : ViewModelBase
 
     [ObservableProperty] private bool _isLandscape;
 
+    /// <summary>
+    /// Repère de l'alignement. Publisher pose explicitement la question sous le nom
+    /// « Relative to Margin Guides » ; MyPublisher la posait sans le dire, en centrant
+    /// par rapport à la page alors que l'ajustement voisin travaillait sur les marges.
+    /// Par défaut la zone de composition : c'est elle qu'on compose.
+    /// </summary>
+    [ObservableProperty] private bool _alignToMargins = true;
+
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CursorLabel))]
     private double _cursorX;
@@ -296,9 +304,17 @@ public partial class MainWindowViewModel : ViewModelBase
         BringForwardCommand.NotifyCanExecuteChanged();
         SendBackwardCommand.NotifyCanExecuteChanged();
         SendToBackCommand.NotifyCanExecuteChanged();
+        AlignLeftCommand.NotifyCanExecuteChanged();
         AlignCentreHorizontallyCommand.NotifyCanExecuteChanged();
+        AlignRightCommand.NotifyCanExecuteChanged();
+        AlignTopCommand.NotifyCanExecuteChanged();
         AlignCentreVerticallyCommand.NotifyCanExecuteChanged();
+        AlignBottomCommand.NotifyCanExecuteChanged();
+        DistributeHorizontallyCommand.NotifyCanExecuteChanged();
+        DistributeVerticallyCommand.NotifyCanExecuteChanged();
         FitToMarginsCommand.NotifyCanExecuteChanged();
+
+        OnPropertyChanged(nameof(CanDistribute));
     }
 
     // ---------------------------------------------------------------- historique
@@ -696,23 +712,117 @@ public partial class MainWindowViewModel : ViewModelBase
         CommitEdit();
     }
 
-    /// <summary>Centre le bloc sur la page.</summary>
-    [RelayCommand(CanExecute = nameof(HasSingleSelection))]
-    private void AlignCentreHorizontally()
+    // ---------------------------------------------------------------- alignement
+
+    /// <summary>
+    /// Sur quoi les blocs s'alignent. Trois cas, et le premier tranche : si l'on aligne
+    /// par rapport aux marges, c'est la zone de composition. Sinon, plusieurs blocs
+    /// s'alignent entre eux — sur ce que la sélection occupe — et un bloc seul, qui n'a
+    /// rien à quoi se comparer, s'aligne sur la page.
+    /// </summary>
+    private Extent AlignmentReference()
     {
-        if (SingleSelected is not { } frame) return;
-        BeginEdit();
-        frame.X = (Document.PageWidth - frame.Width) / 2;
-        CommitEdit();
+        if (AlignToMargins)
+        {
+            return new Extent(
+                Document.MarginLeft, Document.MarginTop,
+                Document.PageWidth - Document.MarginRight,
+                Document.PageHeight - Document.MarginBottom);
+        }
+
+        if (Selection.Count > 1)
+        {
+            return Extent.Union(Selection.Select(frame => frame.Extent)) ?? default;
+        }
+
+        return new Extent(0, 0, Document.PageWidth, Document.PageHeight);
     }
 
-    [RelayCommand(CanExecute = nameof(HasSingleSelection))]
-    private void AlignCentreVertically()
+    /// <summary>
+    /// Déplace chaque bloc de l'écart que dicte son empreinte face au repère. On
+    /// raisonne sur l'empreinte et non sur X et Y : un bloc tourné s'aligne sur ce
+    /// qu'il occupe, pas sur son cadre non tourné.
+    /// </summary>
+    private void AlignEach(Func<Extent, Extent, (double Dx, double Dy)> shift, string label)
     {
-        if (SingleSelected is not { } frame) return;
+        if (Selection.Count == 0) return;
+
+        var reference = AlignmentReference();
+
         BeginEdit();
-        frame.Y = (Document.PageHeight - frame.Height) / 2;
+        foreach (var frame in Selection)
+        {
+            var (dx, dy) = shift(frame.Extent, reference);
+            frame.X += dx;
+            frame.Y += dy;
+        }
+
         CommitEdit();
+        Status = label;
+    }
+
+    [RelayCommand(CanExecute = nameof(HasSelection))]
+    private void AlignLeft() => AlignEach((f, r) => (r.Left - f.Left, 0), "Alignés à gauche");
+
+    [RelayCommand(CanExecute = nameof(HasSelection))]
+    private void AlignCentreHorizontally() =>
+        AlignEach((f, r) => (r.CenterX - f.CenterX, 0), "Centrés horizontalement");
+
+    [RelayCommand(CanExecute = nameof(HasSelection))]
+    private void AlignRight() => AlignEach((f, r) => (r.Right - f.Right, 0), "Alignés à droite");
+
+    [RelayCommand(CanExecute = nameof(HasSelection))]
+    private void AlignTop() => AlignEach((f, r) => (0, r.Top - f.Top), "Alignés en haut");
+
+    [RelayCommand(CanExecute = nameof(HasSelection))]
+    private void AlignCentreVertically() =>
+        AlignEach((f, r) => (0, r.CenterY - f.CenterY), "Centrés verticalement");
+
+    [RelayCommand(CanExecute = nameof(HasSelection))]
+    private void AlignBottom() => AlignEach((f, r) => (0, r.Bottom - f.Bottom), "Alignés en bas");
+
+    /// <summary>Répartir demande trois blocs : deux extrêmes et au moins un à placer entre eux.</summary>
+    public bool CanDistribute => Selection.Count > 2;
+
+    [RelayCommand(CanExecute = nameof(CanDistribute))]
+    private void DistributeHorizontally() => Distribute(horizontal: true);
+
+    [RelayCommand(CanExecute = nameof(CanDistribute))]
+    private void DistributeVertically() => Distribute(horizontal: false);
+
+    /// <summary>
+    /// Égalise les intervalles entre blocs, les deux extrêmes restant où ils sont. Ce
+    /// sont bien les blancs qu'on égalise, et non les centres : des blocs de largeurs
+    /// différentes à centres réguliers laissent des blancs irréguliers, ce qui est ce
+    /// que l'œil voit.
+    /// </summary>
+    private void Distribute(bool horizontal)
+    {
+        if (Selection.Count < 3) return;
+
+        var ordered = Selection
+            .Select(frame => (Frame: frame, Extent: frame.Extent))
+            .OrderBy(item => horizontal ? item.Extent.Left : item.Extent.Top)
+            .ToList();
+
+        var first = ordered[0].Extent;
+        var last = ordered[^1].Extent;
+        var span = horizontal ? last.Right - first.Left : last.Bottom - first.Top;
+        var occupied = ordered.Sum(item => horizontal ? item.Extent.Width : item.Extent.Height);
+        var gap = (span - occupied) / (ordered.Count - 1);
+
+        BeginEdit();
+        var cursor = horizontal ? first.Left : first.Top;
+        foreach (var (frame, extent) in ordered)
+        {
+            if (horizontal) frame.X += cursor - extent.Left;
+            else frame.Y += cursor - extent.Top;
+
+            cursor += (horizontal ? extent.Width : extent.Height) + gap;
+        }
+
+        CommitEdit();
+        Status = horizontal ? "Répartis horizontalement" : "Répartis verticalement";
     }
 
     /// <summary>Un bloc à lui seul dans la zone de composition : sans objet à plusieurs.</summary>

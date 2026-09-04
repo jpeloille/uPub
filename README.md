@@ -64,7 +64,11 @@ la barre du haut regroupe les commandes du document : fichier, annulation, zoom.
   redimensionnement par huit poignées, aimantation sur les marges, les bords et
   l'axe médian de la page.
 - Édition du texte directement sur la page (double-clic).
-- Ordre de superposition, alignement, ajustement aux marges.
+- Ordre de superposition ; alignement (gauche, centre, droite, haut, milieu, bas) et
+  répartition d'une sélection ; ajustement aux marges. L'alignement se fait par
+  rapport à la zone de composition, ou — case *Disposition ▸ Par rapport aux marges*
+  décochée — par rapport à la page pour un bloc seul et aux blocs entre eux dès
+  qu'ils sont plusieurs.
 - Annulation / rétablissement sur 60 pas, couvrant aussi bien les gestes à la
   souris que les champs du panneau de propriétés.
 - Enregistrement au format `.mypub` (JSON lisible) et export PDF.
