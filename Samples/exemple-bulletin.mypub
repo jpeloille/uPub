@@ -7,6 +7,12 @@
   "MarginTop": 56.69,
   "MarginRight": 56.69,
   "MarginBottom": 56.69,
+  "ColumnCount": 1,
+  "ColumnSpacing": 0,
+  "RowCount": 1,
+  "RowSpacing": 0,
+  "BaselineSpacing": 0,
+  "BaselineOffset": 0,
   "Pages": [
     {
       "Name": "Page 1",

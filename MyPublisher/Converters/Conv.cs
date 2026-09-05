@@ -60,6 +60,14 @@ public static class Conv
     public static readonly FuncValueConverter<Insets, Thickness> Pad =
         new(insets => new Thickness(insets.Left, insets.Top, insets.Right, insets.Bottom));
 
+    /// <summary>Épaisseur d'un repère : une ligne de base se pose plus légèrement.</summary>
+    public static readonly FuncValueConverter<bool, double> GuideWeight =
+        new(isBaseline => isBaseline ? 0.2 : 0.4);
+
+    /// <summary>Teinte d'un repère : le bleu des marges, pâli pour les lignes de base.</summary>
+    public static readonly FuncValueConverter<bool, IBrush> GuideTint =
+        new(isBaseline => new SolidColorBrush(Color.Parse(isBaseline ? "#FFD3E4F4" : "#FF7FB2E5")));
+
     /// <summary>Motif du trait, en multiples de l'épaisseur ; null laisse le trait continu.</summary>
     public static readonly FuncValueConverter<StrokeStyle, AvaloniaList<double>?> Dash =
         new(style => Frame.DashPattern(style) is { } pattern ? new AvaloniaList<double>(pattern) : null);

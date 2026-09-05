@@ -38,7 +38,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **B4** | Archive `.mypubz` | 0 % | — |
 | **B5** | Avertir sur les substitutions de polices | 0 % | — |
 | **C1** | Fond et bordure au niveau de `Frame` | **100 %** | Fond, contour, trait, arrondi et opacité sur tout bloc ; `FormatVersion` 2, migration à l'ouverture |
-| **C2** | Repères | 0 % | C2a grille de composition · C2b règles et repères libres |
+| **C2** | Repères | 50 % | C2a **fait** : colonnes, lignes, grille de ligne de base · C2b règles et repères libres, à faire |
 | **C3** | Sélection multiple, puis groupement | **100 %** | C3a sélection · C3b alignement et répartition · C3c groupe persistant |
 | **C4** | Champs | **100 %** | Folio, nombre de pages, date, coordonnées et logo ; les coordonnées attendent B1 pour servir vraiment |
 | **C5** | Remplissage riche et cohérence visuelle | 0 % | C5a fond de page · C5b jeux de couleurs · C5c dégradés — C5a et C5c débloqués par C1 |
@@ -46,9 +46,9 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **C7** | Bibliothèque de blocs | 0 % | Débloqué depuis C3a |
 | **D** | Moteur de composition | — | Décision non ouverte ; à rouvrir quand A, B et C sont livrées |
 
-**Par phase** — P : 3 sur 3 · A : 0 sur 7 · B : 0 sur 5 · C : 4 sur 7 · D : non planifié.
+**Par phase** — P : 3 sur 3 · A : 0 sur 7 · B : 0 sur 5 · C : 4,5 sur 7 · D : non planifié.
 
-Soit **7 postes sur 22**. C'est un compte de postes et non d'effort : C3 pesait à lui
+Soit **7,5 postes sur 22**. C'est un compte de postes et non d'effort : C3 pesait à lui
 seul plus que toute la phase A, et les préalables ne produisaient aucune fonctionnalité.
 Le tableau dit ce qui est clos, pas ce qui reste à peiner.
 
@@ -343,6 +343,28 @@ tant qu'il manque, l'aimantation ne sert qu'aux positions décidées d'avance.
 
 *Recette* : composer trois colonnes, y aligner quatre blocs sans les positionner au
 chiffre ; les repères n'apparaissent pas dans le PDF.
+
+*C2a fait le 5 septembre 2026.* Six réglages sur le document — colonnes, gouttière,
+lignes, espacement, pas et décalage de ligne de base — et quatre listes calculées : ce
+qui se trace, et ce sur quoi on s'aimante. Le pas des lignes de base se règle en points
+et non en millimètres, comme la fiche 05 y insiste : il se cale sur le corps du texte.
+`SnapEdge` reçoit désormais les repères du document au lieu d'un tableau de cinq écrit
+sur place ; le geste, lui, n'a pas changé. `FormatVersion` reste à 3, six propriétés
+facultatives dont les défauts signifient « aucune grille ».
+
+Recette jouée à la souris, pointeur synthétisé sur la vraie couche de saisie : quatre
+blocs lâchés à des endroits différents à moins de 4 pt du bord de la deuxième colonne
+s'y posent tous exactement, et `Alt` désarme bien l'aimantation. Les repères tracés sont
+relus dans l'arbre visuel. Pour le PDF, le même document exporté avec la grille la plus
+dense qu'on puisse régler — 77 repères — et sans grille donne deux images identiques au
+pixel près.
+
+*Trouvé au passage*, hors périmètre du poste mais corrigé : le convertisseur
+millimètres arrondissait à deux décimales, et la liaison étant à double sens, la valeur
+arrondie revenait dans le modèle. Une gouttière de 12 pt devenait 11,99 pt à la seule
+ouverture du document, sans geste ni pas d'annulation — et il en allait de même de
+toute position ou taille ne tombant pas sur la grille du centième de millimètre.
+L'affichage est arrondi par le champ, qui ne touche pas à la valeur.
 
 ### C3 — Sélection multiple, puis groupement *(fiches 16, 22)*
 

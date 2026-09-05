@@ -180,6 +180,8 @@
             </MenuItem>
 
             <MenuItem Header="_Affichage">
+                <MenuItem Header="_Repères" ToggleType="CheckBox" IsChecked="{Binding ShowGuides}"/>
+                <Separator/>
                 <MenuItem Header="Zoom _avant" Command="{Binding ZoomInCommand}"/>
                 <MenuItem Header="Zoom a_rrière" Command="{Binding ZoomOutCommand}"/>
                 <MenuItem Header="Taille _réelle" Command="{Binding ZoomResetCommand}"/>
@@ -283,6 +285,37 @@
                                        Value="{Binding Document.MarginTop, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
                         <NumericUpDown Grid.Row="3" Grid.Column="2" FormatString="0.#" Increment="1"
                                        Value="{Binding Document.MarginBottom, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
+                    </Grid>
+
+                    <TextBlock Classes="section" Text="GRILLE"/>
+                    <TextBlock Text="Les repères de composition ne s'impriment pas ; l'aimantation s'y accroche."
+                               FontSize="11" Foreground="#FF8A929E" TextWrapping="Wrap" Margin="0,0,0,6"/>
+                    <Grid ColumnDefinitions="*,8,*" RowDefinitions="Auto,Auto,Auto,Auto">
+                        <TextBlock Grid.Row="0" Grid.Column="0" Classes="field" Text="Colonnes"/>
+                        <TextBlock Grid.Row="0" Grid.Column="2" Classes="field" Text="Gouttière (mm)"/>
+                        <NumericUpDown Grid.Row="1" Grid.Column="0" FormatString="0" Increment="1"
+                                       Minimum="1" Maximum="24"
+                                       Value="{Binding Document.ColumnCount}"/>
+                        <NumericUpDown Grid.Row="1" Grid.Column="2" FormatString="0.#" Increment="1" Minimum="0"
+                                       Value="{Binding Document.ColumnSpacing, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
+                        <TextBlock Grid.Row="2" Grid.Column="0" Classes="field" Text="Lignes"/>
+                        <TextBlock Grid.Row="2" Grid.Column="2" Classes="field" Text="Espacement (mm)"/>
+                        <NumericUpDown Grid.Row="3" Grid.Column="0" FormatString="0" Increment="1"
+                                       Minimum="1" Maximum="24"
+                                       Value="{Binding Document.RowCount}"/>
+                        <NumericUpDown Grid.Row="3" Grid.Column="2" FormatString="0.#" Increment="1" Minimum="0"
+                                       Value="{Binding Document.RowSpacing, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
+                    </Grid>
+
+                    <!-- Les lignes de base se règlent en points, et non en millimètres :
+                         elles se calent sur le corps du texte, qui est typographique. -->
+                    <Grid ColumnDefinitions="*,8,*" RowDefinitions="Auto,Auto" Margin="0,6,0,0">
+                        <TextBlock Grid.Row="0" Grid.Column="0" Classes="field" Text="Ligne de base (pt)"/>
+                        <TextBlock Grid.Row="0" Grid.Column="2" Classes="field" Text="Décalage (pt)"/>
+                        <NumericUpDown Grid.Row="1" Grid.Column="0" FormatString="0.#" Increment="1" Minimum="0"
+                                       Value="{Binding Document.BaselineSpacing, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
+                        <NumericUpDown Grid.Row="1" Grid.Column="2" FormatString="0.#" Increment="1" Minimum="0"
+                                       Value="{Binding Document.BaselineOffset, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
                     </Grid>
 
                     <TextBlock Classes="section" Text="BLOC"

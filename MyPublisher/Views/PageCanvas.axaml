@@ -29,6 +29,15 @@
             <Setter Property="Canvas.Top" Value="{Binding Y}"/>
         </Style>
 
+        <!-- Même mécanique pour les repères : c'est le ContentPresenter qui porte la
+             position, une abscisse pour les verticaux, une ordonnée pour les autres. -->
+        <Style Selector="ItemsControl.verticalGuides ContentPresenter" x:DataType="models:GuideLine">
+            <Setter Property="Canvas.Left" Value="{Binding Position}"/>
+        </Style>
+        <Style Selector="ItemsControl.horizontalGuides ContentPresenter" x:DataType="models:GuideLine">
+            <Setter Property="Canvas.Top" Value="{Binding Position}"/>
+        </Style>
+
         <!-- Fond et contour d'un bloc : deux rectangles qui prennent le contenu en
              sandwich, le fond dessous, le contour dessus — un filet posé sur une image
              passe sur son bord et non sous elle, et l'export trace dans le même ordre.
@@ -196,14 +205,52 @@
                                Background="White"
                                ClipToBounds="True">
 
-                            <Canvas>
-                                <Rectangle Canvas.Left="{Binding Document.MarginLeft}"
-                                           Canvas.Top="{Binding Document.MarginTop}"
-                                           Width="{Binding Document.MarginBoxWidth}"
-                                           Height="{Binding Document.MarginBoxHeight}"
-                                           Stroke="#FF7FB2E5" StrokeThickness="0.4"
-                                           StrokeDashArray="6,4" IsHitTestVisible="False"/>
-                            </Canvas>
+                            <!-- Repères : zone de marges, colonnes, lignes, lignes de base.
+                                 Ils ne sont dessinés que là — l'export ne les connaît pas,
+                                 et c'est ce qui garantit qu'ils ne s'impriment jamais. -->
+                            <Panel IsVisible="{Binding ShowGuides}" IsHitTestVisible="False">
+                                <Canvas>
+                                    <Rectangle Canvas.Left="{Binding Document.MarginLeft}"
+                                               Canvas.Top="{Binding Document.MarginTop}"
+                                               Width="{Binding Document.MarginBoxWidth}"
+                                               Height="{Binding Document.MarginBoxHeight}"
+                                               Stroke="#FF7FB2E5" StrokeThickness="0.4"
+                                               StrokeDashArray="6,4"/>
+                                </Canvas>
+
+                                <ItemsControl Classes="verticalGuides" ItemsSource="{Binding Document.VerticalGridLines}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <Canvas/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate DataType="models:GuideLine">
+                                            <Rectangle Width="0.4"
+                                                       Height="{Binding #Board.((vm:MainWindowViewModel)DataContext).Document.PageHeight}"
+                                                       Fill="#FF7FB2E5"/>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <ItemsControl Classes="horizontalGuides" ItemsSource="{Binding Document.HorizontalGridLines}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <Canvas/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate DataType="models:GuideLine">
+                                            <!-- Une ligne de base se pose au dixième de point et
+                                                 s'efface : il y en a des dizaines par page, elles
+                                                 guident sans devoir se voir. -->
+                                            <Rectangle Width="{Binding #Board.((vm:MainWindowViewModel)DataContext).Document.PageWidth}"
+                                                       Height="{Binding IsBaseline, Converter={x:Static conv:Conv.GuideWeight}}"
+                                                       Fill="{Binding IsBaseline, Converter={x:Static conv:Conv.GuideTint}}"/>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </Panel>
 
                             <!-- La classe « frames » vaut pour ce canevas comme pour celui
                                  d'un groupe : c'est elle que vise le style de position. -->

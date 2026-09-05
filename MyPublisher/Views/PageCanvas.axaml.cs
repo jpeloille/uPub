@@ -535,13 +535,13 @@ public partial class PageCanvas : UserControl
             var document = _vm.Document;
             var tolerance = SnapPixels / Scale;
 
+            // Les repères sont ceux du document : bords, marges, milieu, et la grille de
+            // composition quand il y en a une. Le tableau s'allonge, le geste ne change pas.
             dx = SnapEdge(_moveExtent.Left + dx, _moveExtent.Width, tolerance,
-                [0, document.MarginLeft, document.PageWidth / 2,
-                 document.PageWidth - document.MarginRight, document.PageWidth]) - _moveExtent.Left;
+                document.VerticalGuides) - _moveExtent.Left;
 
             dy = SnapEdge(_moveExtent.Top + dy, _moveExtent.Height, tolerance,
-                [0, document.MarginTop, document.PageHeight / 2,
-                 document.PageHeight - document.MarginBottom, document.PageHeight]) - _moveExtent.Top;
+                document.HorizontalGuides) - _moveExtent.Top;
         }
 
         foreach (var (frame, startX, startY) in _moveStart)
@@ -555,7 +555,7 @@ public partial class PageCanvas : UserControl
     /// Aimante l'un des trois bords du bloc (début, milieu, fin) sur le repère le
     /// plus proche, si l'écart reste sous la tolérance.
     /// </summary>
-    private static double SnapEdge(double position, double size, double tolerance, double[] guides)
+    private static double SnapEdge(double position, double size, double tolerance, IReadOnlyList<double> guides)
     {
         var best = position;
         var bestDistance = tolerance;

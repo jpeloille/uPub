@@ -82,6 +82,13 @@ public partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty] private bool _isLandscape;
 
     /// <summary>
+    /// Affichage des repères — marges et grille. Réglage de vue et non du document :
+    /// il sert à juger la page telle qu'elle sera imprimée, or les repères ne
+    /// s'impriment jamais.
+    /// </summary>
+    [ObservableProperty] private bool _showGuides = true;
+
+    /// <summary>
     /// Repère de l'alignement. Publisher pose explicitement la question sous le nom
     /// « Relative to Margin Guides » ; MyPublisher la posait sans le dire, en centrant
     /// par rapport à la page alors que l'ajustement voisin travaillait sur les marges.

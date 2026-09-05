@@ -76,8 +76,11 @@ la barre du haut regroupe les commandes du document : fichier, annulation, zoom.
   d'une pièce — le redimensionnement met les blocs du groupe à la même échelle. Un
   bloc d'un groupe ne se sélectionne pas directement : on dissocie pour le retoucher.
 - Sélection d'un bloc ou de plusieurs (`Ctrl` + clic), déplacement d'ensemble,
-  redimensionnement par huit poignées, aimantation sur les marges, les bords et
-  l'axe médian de la page.
+  redimensionnement par huit poignées.
+- Grille de composition : colonnes et lignes avec leur gouttière, grille de ligne de
+  base réglée en points. L'aimantation s'y accroche comme aux marges, aux bords et à
+  l'axe médian de la page. Les repères ne s'impriment pas, et *Affichage ▸ Repères*
+  les efface de l'écran.
 - Édition du texte directement sur la page (double-clic).
 - Ordre de superposition ; alignement (gauche, centre, droite, haut, milieu, bas) et
   répartition d'une sélection ; ajustement aux marges. L'alignement se fait par
