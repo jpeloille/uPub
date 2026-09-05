@@ -130,6 +130,8 @@
                 <MenuItem Header="_Supprimer" InputGesture="Delete" Command="{Binding DeleteSelectedCommand}"/>
                 <Separator/>
                 <MenuItem Header="_Tout sélectionner" InputGesture="Ctrl+A" Command="{Binding SelectAllCommand}"/>
+                <Separator/>
+                <MenuItem Header="_Informations professionnelles…" Click="OnEditBusinessInfo"/>
             </MenuItem>
 
             <MenuItem Header="_Insertion">
@@ -338,7 +340,7 @@
 
                                     <TextBlock Classes="field" Text="Contenu"/>
                                     <ComboBox HorizontalAlignment="Stretch"
-                                              ItemsSource="{Binding #Root.((vm:MainWindowViewModel)DataContext).FieldOptions}"
+                                              ItemsSource="{Binding #Root.((vm:MainWindowViewModel)DataContext).TextFieldOptions}"
                                               SelectedValue="{Binding Field}"
                                               SelectedValueBinding="{Binding Kind}">
                                         <ComboBox.ItemTemplate>
@@ -427,7 +429,25 @@
                                 <StackPanel>
                                     <TextBlock Classes="section" Text="IMAGE"/>
                                     <TextBlock Text="{Binding Path}" TextWrapping="Wrap" FontSize="11"
-                                               Foreground="#FF8A929E"/>
+                                               Foreground="#FF8A929E"
+                                               IsVisible="{Binding !HasField}"/>
+
+                                    <TextBlock Classes="field" Text="Source" Margin="0,8,0,2"/>
+                                    <ComboBox HorizontalAlignment="Stretch"
+                                              ItemsSource="{Binding #Root.((vm:MainWindowViewModel)DataContext).ImageFieldOptions}"
+                                              SelectedValue="{Binding Field}"
+                                              SelectedValueBinding="{Binding Kind}">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate DataType="models:FieldOption">
+                                                <TextBlock Text="{Binding Label}"/>
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                    <TextBlock Text="L'image vient du jeu de coordonnées : elle change avec lui, et suit celui qui ouvre le document."
+                                               IsVisible="{Binding HasField}"
+                                               FontSize="11" Foreground="#FF8A929E"
+                                               TextWrapping="Wrap" Margin="0,4,0,0"/>
+
                                     <TextBlock Classes="field" Text="Cadrage" Margin="0,8,0,2"/>
                                     <ComboBox HorizontalAlignment="Stretch"
                                               ItemsSource="{Binding #Root.((vm:MainWindowViewModel)DataContext).ImageFits}"

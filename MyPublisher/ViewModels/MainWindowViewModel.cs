@@ -185,15 +185,37 @@ public partial class MainWindowViewModel : ViewModelBase
     public IReadOnlyList<StrokeStyle> StrokeStyles { get; } =
         [StrokeStyle.Solid, StrokeStyle.Dashed, StrokeStyle.Dotted];
 
-    public IReadOnlyList<FieldOption> FieldOptions { get; } =
-        Enum.GetValues<FieldKind>().Select(kind => new FieldOption(kind, FieldResolver.Label(kind))).ToList();
+    private static IReadOnlyList<FieldOption> OptionsWhere(Func<FieldKind, bool> suits) =>
+        Enum.GetValues<FieldKind>().Where(suits)
+            .Select(kind => new FieldOption(kind, FieldResolver.Label(kind))).ToList();
+
+    /// <summary>Ce qu'un bloc de texte peut afficher ; le logo est réservé aux images.</summary>
+    public IReadOnlyList<FieldOption> TextFieldOptions { get; } = OptionsWhere(FieldResolver.SuitsText);
+
+    public IReadOnlyList<FieldOption> ImageFieldOptions { get; } = OptionsWhere(FieldResolver.SuitsImage);
 
     /// <summary>
-    /// De quoi résoudre les champs de la page affichée. La page courante et le nombre
-    /// de pages en font partie : il se renouvelle donc à chaque changement de l'un ou
-    /// de l'autre, et les folios de l'écran suivent.
+    /// Les jeux de coordonnées de l'utilisateur, relus au démarrage. Ils ne sont pas
+    /// dans le document : un même document affiche les coordonnées de qui l'ouvre.
     /// </summary>
-    public FieldContext FieldContext => new(CurrentPageNumber, Document.Pages.Count, DateTime.Now);
+    public BusinessInfoStore Contacts { get; private set; } = BusinessInfoStore.Load();
+
+    /// <summary>
+    /// De quoi résoudre les champs de la page affichée : où l'on est dans le document,
+    /// quand, et pour le compte de qui. Il se renouvelle à chaque changement de page,
+    /// de nombre de pages ou de jeu de coordonnées, et les champs de l'écran suivent.
+    /// </summary>
+    public FieldContext FieldContext =>
+        new(CurrentPageNumber, Document.Pages.Count, DateTime.Now, Contacts.Active);
+
+    /// <summary>Adopte les jeux qu'un dialogue vient de valider, et rafraîchit les champs.</summary>
+    public void ApplyContacts(BusinessInfoStore contacts)
+    {
+        Contacts = contacts;
+        OnPropertyChanged(nameof(Contacts));
+        OnPropertyChanged(nameof(FieldContext));
+        Status = $"Coordonnées : {Contacts.Active.DisplayName}";
+    }
 
     /// <summary>Facteur points -> pixels écran, zoom inclus. Le seul endroit qui mélange les deux unités.</summary>
     public double RenderScale => Zoom * Units.PointToDip;
@@ -497,7 +519,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public void ExportPdf(string path)
     {
-        var report = PdfExporter.Export(Document, path);
+        var report = PdfExporter.Export(Document, path, Contacts.Active);
         Status = report.Warnings.Count == 0
             ? $"PDF exporté : {Path.GetFileName(path)} ({report.PageCount} page(s))"
             : $"PDF exporté avec {report.Warnings.Count} avertissement(s) : {report.Warnings[0]}";

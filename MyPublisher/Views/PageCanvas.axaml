@@ -84,8 +84,17 @@
                 <Rectangle Classes="frameFill"/>
                 <!-- Repère visible tant qu'aucune image n'est chargée. -->
                 <Rectangle Stroke="#FFB0B0B0" StrokeThickness="0.5" StrokeDashArray="4,3"/>
-                <Image Source="{Binding Path, Converter={x:Static conv:Conv.Image}}"
-                       Stretch="{Binding Fit, Converter={x:Static conv:Conv.Fit}}"/>
+                <!-- Même découpage que pour le texte : le chemin passe par le résolveur,
+                     ce qui permet à un bloc de porter le logo du jeu de coordonnées. -->
+                <Image Stretch="{Binding Fit, Converter={x:Static conv:Conv.Fit}}">
+                    <Image.Source>
+                        <MultiBinding Converter="{x:Static conv:FieldToImage.Instance}">
+                            <Binding Path="Path"/>
+                            <Binding Path="Field"/>
+                            <Binding Path="#Board.((vm:MainWindowViewModel)DataContext).FieldContext"/>
+                        </MultiBinding>
+                    </Image.Source>
+                </Image>
                 <Rectangle Classes="frameStroke"/>
             </Panel>
         </DataTemplate>

@@ -57,8 +57,13 @@ la barre du haut regroupe les commandes du document : fichier, annulation, zoom.
 ## Ce que l'application sait faire
 
 - Documents multi-pages, formats A3 à Legal, portrait ou paysage, marges réglables.
-- Champs : un bloc de texte peut afficher son numéro de page, le nombre de pages ou
-  la date au lieu d'un texte saisi. Le folio se numérote seul, à l'écran comme au PDF.
+- Champs : un bloc de texte peut afficher son numéro de page, le nombre de pages, la
+  date ou une coordonnée professionnelle au lieu d'un texte saisi ; un bloc image peut
+  afficher le logo. Le folio se numérote seul, à l'écran comme au PDF.
+- Informations professionnelles (*Édition ▸ Informations professionnelles…*) : des jeux
+  de coordonnées nommés — nom, fonction, société, adresse, téléphone, devise, logo —
+  saisis une fois et réinjectés dans tous les blocs qui portent le champ correspondant.
+  Plusieurs jeux coexistent, on bascule de l'un à l'autre.
 - Blocs de texte (police système, corps, gras, italique, alignement dont justifié,
   interligne, marges intérieures réglées côté par côté, couleur), images (trois
   modes de cadrage) et formes (rectangle, ellipse).
@@ -135,6 +140,14 @@ et non par le test de survol des blocs. Les contrôles internes (image, zone de 
 n'interceptent donc jamais le pointeur, et les blocs sont testés dans l'ordre de
 superposition exact.
 
+## Où sont rangés les réglages
+
+Le document contient ce qu'on compose ; les **coordonnées professionnelles** n'en font
+pas partie. Elles vivent dans `~/.config/MyPublisher/informations.json`, parce qu'elles
+suivent la personne et non le fichier : un document envoyé à un collègue affiche les
+coordonnées de ce collègue, ce qui est précisément l'intérêt d'un modèle. Rien n'y est
+écrit tant qu'on n'a pas validé le dialogue.
+
 ## Format de fichier
 
 `.mypub` est du JSON indenté, versionné par `FormatVersion` (aujourd'hui 3). Un
@@ -143,9 +156,10 @@ fichier d'une version antérieure est migré à l'ouverture — la version 1 nom
 version 2 n'avait qu'une marge intérieure, il y en a quatre — et un fichier d'une
 version plus récente est refusé plutôt que lu de travers. Chaque bloc
 porte un discriminant `$kind` (`text`, `image`, `shape`, `group`) et, pour un texte, un `Field`
-éventuel : renseigné, il fait calculer le contenu à l'affichage plutôt que de lire le
-texte saisi — lequel reste écrit dans le fichier et se retrouve intact si l'on retire
-le champ. Un groupe contient ses blocs
+éventuel — de même pour un bloc image, dont le champ ne peut valoir que le logo.
+Renseigné, il fait calculer le contenu à l'affichage plutôt que de lire le texte saisi
+ou le chemin — lesquels restent écrits dans le fichier et se retrouvent intacts si l'on
+retire le champ. Un groupe contient ses blocs
 en coordonnées relatives à son coin supérieur gauche, écrits après sa géométrie — le
 rendu et l'export composent les deux repères. Les images sont référencées par chemin
 absolu : déplacer un document sans ses images casse les liens.

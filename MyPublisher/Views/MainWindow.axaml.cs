@@ -166,6 +166,28 @@ public partial class MainWindow : Window
 
     private void OnQuit(object? sender, RoutedEventArgs e) => Close();
 
+    /// <summary>
+    /// Ouvre les jeux de coordonnées. Le dialogue travaille sur une copie : il ne rend
+    /// un magasin que si l'utilisateur a validé, et c'est seulement alors qu'on écrit.
+    /// </summary>
+    private async void OnEditBusinessInfo(object? sender, RoutedEventArgs e)
+    {
+        if (Vm is not { } vm) return;
+
+        var dialog = new BusinessInfoWindow { DataContext = new BusinessInfoViewModel(vm.Contacts) };
+        if (await dialog.ShowDialog<BusinessInfoStore?>(this) is not { } saved) return;
+
+        try
+        {
+            saved.Save();
+            vm.ApplyContacts(saved);
+        }
+        catch (Exception ex)
+        {
+            vm.Status = $"Coordonnées non enregistrées : {ex.Message}";
+        }
+    }
+
     // ---------------------------------------------------------------- propriétés
 
     private void OnPropertyPanelGotFocus(object? sender, GotFocusEventArgs e)

@@ -17,7 +17,12 @@ public sealed record ExportReport(int PageCount, IReadOnlyList<string> Warnings)
 /// </summary>
 public static class PdfExporter
 {
-    public static ExportReport Export(Document document, string path)
+    /// <summary>
+    /// Écrit le PDF. Les coordonnées sont passées par l'appelant et non lues ici : elles
+    /// appartiennent à l'utilisateur, pas au document, et l'export ne doit pas dépendre
+    /// d'un réglage qu'il irait chercher lui-même.
+    /// </summary>
+    public static ExportReport Export(Document document, string path, BusinessInfo? contact = null)
     {
         FontconfigFontResolver.EnsureInstalled();
 
@@ -36,7 +41,7 @@ public static class PdfExporter
         for (var index = 0; index < document.Pages.Count; index++)
         {
             var page = document.Pages[index];
-            var context = new FieldContext(index + 1, document.Pages.Count, now);
+            var context = new FieldContext(index + 1, document.Pages.Count, now, contact ?? new BusinessInfo());
             var pdfPage = pdf.AddPage();
             pdfPage.Width = XUnit.FromPoint(document.PageWidth);
             pdfPage.Height = XUnit.FromPoint(document.PageHeight);
@@ -84,7 +89,7 @@ public static class PdfExporter
                 switch (frame)
                 {
                     case TextFrame text: DrawText(gfx, text, context); break;
-                    case ImageFrame image: DrawImage(gfx, image, warnings); break;
+                    case ImageFrame image: DrawImage(gfx, image, warnings, context); break;
                     case GroupFrame group: DrawChildren(gfx, group, warnings, context); break;
                 }
             }
@@ -205,15 +210,20 @@ public static class PdfExporter
         formatter.DrawString(content, font, brush, box, XStringFormats.TopLeft);
     }
 
-    private static void DrawImage(XGraphics gfx, ImageFrame frame, List<string> warnings)
+    private static void DrawImage(XGraphics gfx, ImageFrame frame, List<string> warnings, FieldContext context)
     {
-        if (string.IsNullOrWhiteSpace(frame.Path) || !File.Exists(frame.Path))
+        // Un bloc à champ tire son chemin du jeu de coordonnées ; les autres du leur.
+        var source = FieldResolver.Resolve(frame.Field, frame.Path, context);
+
+        if (string.IsNullOrWhiteSpace(source) || !File.Exists(source))
         {
-            warnings.Add($"Image introuvable : {frame.Path}");
+            warnings.Add(frame.HasField && string.IsNullOrWhiteSpace(source)
+                ? $"{frame.DisplayName} : aucun logo dans le jeu de coordonnées."
+                : $"Image introuvable : {source}");
             return;
         }
 
-        using var image = XImage.FromFile(frame.Path);
+        using var image = XImage.FromFile(source);
         var target = FitRect(frame, image.PixelWidth, image.PixelHeight);
 
         // Un cadrage en « remplir » déborde du bloc : on découpe au bloc.

@@ -106,3 +106,23 @@ public sealed class FieldToText : IMultiValueConverter
         return FieldResolver.Resolve(field, literal, context);
     }
 }
+
+/// <summary>
+/// Image réellement affichée par un bloc : celle de son chemin, ou le logo du jeu de
+/// coordonnées quand le bloc porte le champ correspondant. Même découpage que
+/// <see cref="FieldToText"/>, et le même résolveur.
+/// </summary>
+public sealed class FieldToImage : IMultiValueConverter
+{
+    public static readonly FieldToImage Instance = new();
+
+    public object? Convert(IList<object?> values, Type targetType, object? parameter, CultureInfo culture)
+    {
+        var literal = values.Count > 0 && values[0] is string path ? path : "";
+        var resolved = values.Count >= 3 && values[1] is FieldKind field && values[2] is FieldContext context
+            ? FieldResolver.Resolve(field, literal, context)
+            : literal;
+
+        return string.IsNullOrWhiteSpace(resolved) ? null : BitmapCache.Get(resolved);
+    }
+}

@@ -460,11 +460,22 @@ public partial class ImageFrame : Frame
     [property: JsonPropertyOrder(110)]
     private ImageFit _fit = ImageFit.Uniform;
 
+    /// <summary>
+    /// Champ éventuel — le logo du jeu de coordonnées actif. Renseigné, il fournit le
+    /// chemin de l'image à la place de <see cref="Path"/>, qui garde sa valeur.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasField))]
+    [property: JsonPropertyOrder(120)]
+    private FieldKind _field = FieldKind.None;
+
+    [JsonIgnore] public bool HasField => Field != FieldKind.None;
+
     [JsonIgnore] public override string Kind => "Image";
 
     public override Frame Clone()
     {
-        var c = new ImageFrame { Path = Path, Fit = Fit };
+        var c = new ImageFrame { Path = Path, Fit = Fit, Field = Field };
         CopyBaseTo(c);
         return c;
     }

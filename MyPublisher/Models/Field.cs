@@ -14,14 +14,33 @@ public enum FieldKind
     None,
     PageNumber,
     PageCount,
-    Date
+    Date,
+
+    // Informations professionnelles : le contenu vient du jeu de coordonnées actif,
+    // qui est un réglage de l'application et non une donnée du document.
+    ContactName,
+    ContactTitle,
+    ContactOrganisation,
+    ContactAddress,
+    ContactPhone,
+    ContactTagline,
+
+    /// <summary>Chemin du logo. Sur un bloc image, pas sur un bloc de texte.</summary>
+    ContactLogo
 }
 
 /// <summary>
 /// Ce qu'il faut savoir pour résoudre un champ : où l'on est dans le document, et
 /// quand. Un contexte par page à l'export, un pour la page courante à l'écran.
 /// </summary>
-public sealed record FieldContext(int PageNumber, int PageCount, DateTime Date);
+public sealed record FieldContext(int PageNumber, int PageCount, DateTime Date, BusinessInfo Contact)
+{
+    /// <summary>Contexte sans coordonnées, pour ce qui n'en a pas besoin.</summary>
+    public FieldContext(int pageNumber, int pageCount, DateTime date)
+        : this(pageNumber, pageCount, date, new BusinessInfo())
+    {
+    }
+}
 
 /// <summary>
 /// Résolution des champs. Fonction pure, appelée telle quelle par le rendu écran et
@@ -44,6 +63,15 @@ public static class FieldResolver
         FieldKind.PageNumber => context.PageNumber.ToString(CultureInfo.InvariantCulture),
         FieldKind.PageCount => context.PageCount.ToString(CultureInfo.InvariantCulture),
         FieldKind.Date => context.Date.ToString("d MMMM yyyy", Language),
+
+        FieldKind.ContactName => context.Contact.Name,
+        FieldKind.ContactTitle => context.Contact.Title,
+        FieldKind.ContactOrganisation => context.Contact.Organisation,
+        FieldKind.ContactAddress => context.Contact.Address,
+        FieldKind.ContactPhone => context.Contact.Phone,
+        FieldKind.ContactTagline => context.Contact.Tagline,
+        FieldKind.ContactLogo => context.Contact.LogoPath,
+
         _ => literal
     };
 
@@ -53,8 +81,25 @@ public static class FieldResolver
         FieldKind.PageNumber => "Numéro de page",
         FieldKind.PageCount => "Nombre de pages",
         FieldKind.Date => "Date du jour",
+        FieldKind.ContactName => "Coordonnées — nom",
+        FieldKind.ContactTitle => "Coordonnées — fonction",
+        FieldKind.ContactOrganisation => "Coordonnées — société",
+        FieldKind.ContactAddress => "Coordonnées — adresse",
+        FieldKind.ContactPhone => "Coordonnées — téléphone",
+        FieldKind.ContactTagline => "Coordonnées — devise",
+        FieldKind.ContactLogo => "Coordonnées — logo",
         _ => "Aucun — texte saisi"
     };
+
+    /// <summary>
+    /// Les champs qu'un bloc de texte peut porter : tous sauf le logo, qui est une
+    /// image et n'aurait à afficher qu'un chemin de fichier.
+    /// </summary>
+    public static bool SuitsText(FieldKind field) => field != FieldKind.ContactLogo;
+
+    /// <summary>Ce qu'un bloc image peut porter : rien, ou le logo du jeu actif.</summary>
+    public static bool SuitsImage(FieldKind field) =>
+        field is FieldKind.None or FieldKind.ContactLogo;
 }
 
 /// <summary>Un champ et son libellé, tels que la liste du panneau les présente.</summary>

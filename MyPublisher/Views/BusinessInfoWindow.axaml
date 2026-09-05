@@ -1,0 +1,89 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:MyPublisher.ViewModels"
+        xmlns:models="using:MyPublisher.Models"
+        x:Class="MyPublisher.Views.BusinessInfoWindow"
+        x:DataType="vm:BusinessInfoViewModel"
+        Title="Informations professionnelles"
+        Width="480" Height="620"
+        WindowStartupLocation="CenterOwner">
+
+    <Window.Styles>
+        <Style Selector="TextBlock.field">
+            <Setter Property="Margin" Value="0,8,0,2"/>
+            <Setter Property="Foreground" Value="#FF5A6472"/>
+        </Style>
+    </Window.Styles>
+
+    <DockPanel Margin="14">
+
+        <!-- Les boutons d'abord dans l'ordre du DockPanel : ils gardent leur place en
+             bas quelle que soit la hauteur des champs. -->
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal"
+                    HorizontalAlignment="Right" Margin="0,12,0,0">
+            <Button Content="Annuler" Click="OnCancel" MinWidth="90"/>
+            <Button Content="Enregistrer" Click="OnSave" MinWidth="110" Margin="8,0,0,0"
+                    IsDefault="True"/>
+        </StackPanel>
+
+        <StackPanel DockPanel.Dock="Top">
+            <TextBlock Text="Ces coordonnées ne sont pas enregistrées dans le document : elles suivent votre poste. Un bloc qui porte un champ « Coordonnées » affiche celles du jeu actif."
+                       TextWrapping="Wrap" FontSize="11" Foreground="#FF8A929E" Margin="0,0,0,10"/>
+
+            <TextBlock Classes="field" Text="Jeu de coordonnées" Margin="0,0,0,2"/>
+            <Grid ColumnDefinitions="*,8,Auto,4,Auto">
+                <ComboBox Grid.Column="0" HorizontalAlignment="Stretch"
+                          ItemsSource="{Binding Sets}"
+                          SelectedItem="{Binding Selected}">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate DataType="models:BusinessInfo">
+                            <TextBlock Text="{Binding DisplayName}"/>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+                <Button Grid.Column="2" Content="Nouveau" Command="{Binding AddSetCommand}"/>
+                <Button Grid.Column="4" Content="Supprimer" Command="{Binding RemoveSetCommand}"/>
+            </Grid>
+        </StackPanel>
+
+        <ScrollViewer>
+            <ContentControl Content="{Binding Selected}">
+                <ContentControl.DataTemplates>
+                    <DataTemplate DataType="models:BusinessInfo">
+                        <StackPanel>
+                            <TextBlock Classes="field" Text="Nom du jeu"/>
+                            <TextBox Text="{Binding SetName}"/>
+
+                            <TextBlock Classes="field" Text="Nom"/>
+                            <TextBox Text="{Binding Name}"/>
+
+                            <TextBlock Classes="field" Text="Fonction"/>
+                            <TextBox Text="{Binding Title}"/>
+
+                            <TextBlock Classes="field" Text="Société"/>
+                            <TextBox Text="{Binding Organisation}"/>
+
+                            <TextBlock Classes="field" Text="Adresse"/>
+                            <TextBox Text="{Binding Address}" AcceptsReturn="True" TextWrapping="Wrap"
+                                     Height="70" VerticalContentAlignment="Top"/>
+
+                            <TextBlock Classes="field" Text="Téléphone, télécopie, courriel"/>
+                            <TextBox Text="{Binding Phone}" AcceptsReturn="True" TextWrapping="Wrap"
+                                     Height="70" VerticalContentAlignment="Top"/>
+
+                            <TextBlock Classes="field" Text="Devise"/>
+                            <TextBox Text="{Binding Tagline}"/>
+
+                            <TextBlock Classes="field" Text="Logo"/>
+                            <Grid ColumnDefinitions="*,8,Auto,4,Auto">
+                                <TextBox Grid.Column="0" Text="{Binding LogoPath}"/>
+                                <Button Grid.Column="2" Content="Choisir…" Click="OnChooseLogo"/>
+                                <Button Grid.Column="4" Content="Retirer" Click="OnRemoveLogo"/>
+                            </Grid>
+                        </StackPanel>
+                    </DataTemplate>
+                </ContentControl.DataTemplates>
+            </ContentControl>
+        </ScrollViewer>
+    </DockPanel>
+</Window>

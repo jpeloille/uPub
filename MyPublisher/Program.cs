@@ -59,7 +59,9 @@ sealed class Program
 
             if (flag == export)
             {
-                var report = PdfExporter.Export(document, target);
+                // Les mêmes coordonnées qu'à l'écran : un export scripté doit rendre
+                // exactement ce que l'application aurait produit.
+                var report = PdfExporter.Export(document, target, BusinessInfoStore.Load().Active);
                 Console.WriteLine($"{report.PageCount} page(s) exportée(s) vers {target}");
                 foreach (var warning in report.Warnings) Console.Error.WriteLine($"Avertissement : {warning}");
             }

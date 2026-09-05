@@ -40,15 +40,15 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **C1** | Fond et bordure au niveau de `Frame` | **100 %** | Fond, contour, trait, arrondi et opacité sur tout bloc ; `FormatVersion` 2, migration à l'ouverture |
 | **C2** | Repères | 0 % | C2a grille de composition · C2b règles et repères libres |
 | **C3** | Sélection multiple, puis groupement | **100 %** | C3a sélection · C3b alignement et répartition · C3c groupe persistant |
-| **C4** | Champs | 0 % | N'a d'intérêt qu'avec les modèles de B1 |
+| **C4** | Champs | **100 %** | Folio, nombre de pages, date, coordonnées et logo ; les coordonnées attendent B1 pour servir vraiment |
 | **C5** | Remplissage riche et cohérence visuelle | 0 % | C5a fond de page · C5b jeux de couleurs · C5c dégradés — C5a et C5c débloqués par C1 |
 | **C6** | Marges intérieures par côté | **100 %** | Quatre marges sur le bloc de texte ; `FormatVersion` 3 |
 | **C7** | Bibliothèque de blocs | 0 % | Débloqué depuis C3a |
 | **D** | Moteur de composition | — | Décision non ouverte ; à rouvrir quand A, B et C sont livrées |
 
-**Par phase** — P : 3 sur 3 · A : 0 sur 7 · B : 0 sur 5 · C : 3 sur 7 · D : non planifié.
+**Par phase** — P : 3 sur 3 · A : 0 sur 7 · B : 0 sur 5 · C : 4 sur 7 · D : non planifié.
 
-Soit **6 postes sur 22**. C'est un compte de postes et non d'effort : C3 pesait à lui
+Soit **7 postes sur 22**. C'est un compte de postes et non d'effort : C3 pesait à lui
 seul plus que toute la phase A, et les préalables ne produisaient aucune fonctionnalité.
 Le tableau dit ce qui est clos, pas ce qui reste à peiner.
 
@@ -406,6 +406,27 @@ Trois usages pour un seul investissement :
 
 *Recette* : un folio posé sur un modèle se numérote seul sur huit pages, à l'écran et
 dans le PDF.
+
+*Fait le 5 septembre 2026*, en deux temps.
+
+- **C4a** — le mécanisme, et ses trois usages immédiats : numéro de page, nombre de
+  pages, date. Un `Field` facultatif sur le bloc de texte, résolu par une fonction pure
+  que l'écran et l'export appellent tous deux ; le contexte vient du contrôle, un bloc
+  ignorant sur quelle page il se trouve. Le texte saisi reste sous le champ et se
+  retrouve intact quand on le retire.
+- **C4b** — les informations professionnelles : des jeux nommés rangés dans
+  `~/.config/MyPublisher/`, pas dans le document, avec le logo sur un bloc image.
+
+La date est écrite en français quel que soit le poste et les nombres sans séparateur de
+milliers : le PDF est le livrable, il ne doit pas changer de sens selon qui l'exporte.
+`FormatVersion` reste à 3, une propriété facultative se lisant sans migration.
+
+Recette jouée sur un document ordinaire de huit pages, les modèles de B1 n'existant pas
+encore : c'est le folio qu'elle éprouve, et il se numérote seul de 1 à 8 à l'écran comme
+dans le PDF — relu par `pdftotext` —, y compris posé dans un groupe. **La moitié
+« coordonnées » du poste, elle, attend bien B1 pour servir à quelque chose** : le plan
+le disait, et c'est toujours vrai. Ce qui est acquis, c'est qu'elle n'aura rien à
+attendre le jour où les modèles arriveront.
 
 ### C5 — Remplissage riche et cohérence visuelle *(fiches 09, 01)*
 
