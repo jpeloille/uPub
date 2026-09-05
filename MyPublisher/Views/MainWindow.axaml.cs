@@ -38,6 +38,14 @@ public partial class MainWindow : Window
 
         DataContextChanged += (_, _) => AttachViewModel();
         AttachViewModel();
+
+        // Le catalogue s'ouvre au démarrage, comme dans Publisher — sauf si un document
+        // a été passé en argument : on ne demande pas ce qu'il faut ouvrir à quelqu'un
+        // qui vient de le dire.
+        Opened += async (_, _) =>
+        {
+            if (Vm?.FilePath is null) await ChooseTemplateAsync();
+        };
     }
 
     private MainWindowViewModel? Vm => DataContext as MainWindowViewModel;
@@ -59,6 +67,39 @@ public partial class MainWindow : Window
     }
 
     // ---------------------------------------------------------------- fichiers
+
+    private async void OnNew(object? sender, RoutedEventArgs e) => await ChooseTemplateAsync();
+
+    /// <summary>
+    /// Propose le catalogue et donne suite au choix. Renoncer ne touche à rien : le
+    /// document en cours reste ce qu'il est.
+    /// </summary>
+    private async Task ChooseTemplateAsync()
+    {
+        if (Vm is not { } vm) return;
+
+        var dialog = new TemplateChooserWindow
+        {
+            DataContext = new TemplateChooserViewModel(TemplateStore.Load())
+        };
+
+        if (await dialog.ShowDialog<TemplateChoice?>(this) is not { } choice) return;
+
+        if (choice.IsBlank)
+        {
+            vm.NewDocumentCommand.Execute(null);
+            return;
+        }
+
+        try
+        {
+            vm.StartFromTemplate(choice.Path!);
+        }
+        catch (Exception ex)
+        {
+            vm.Status = $"Modèle illisible : {ex.Message}";
+        }
+    }
 
     private async void OnOpen(object? sender, RoutedEventArgs e)
     {
@@ -235,6 +276,7 @@ public partial class MainWindow : Window
         {
             switch (e.Key)
             {
+                case Key.N: OnNew(this, e); e.Handled = true; return;
                 case Key.O: OnOpen(this, e); e.Handled = true; return;
                 case Key.S: OnSave(this, e); e.Handled = true; return;
                 case Key.E: OnExportPdf(this, e); e.Handled = true; return;

@@ -38,6 +38,22 @@ s'ouvre encore et se migre en un point fixe. C'est un filet,
 pas une stratégie de test : il tient la chaîne ouvrir → enregistrer → exporter, celle
 dont tout le reste dépend, et le passé qu'on s'est engagé à relire.
 
+## Partir d'un modèle
+
+Au démarrage et sur `Ctrl+N`, MyPublisher propose un catalogue : bulletin trois
+colonnes, dépliant trois volets, carte de visite, affiche A3 — ou la page blanche.
+
+Un modèle n'est rien d'autre qu'un document : les fichiers vivent dans `Templates/`,
+à côté du binaire, et s'ouvrent, se retouchent et se réenregistrent comme n'importe
+quel `.mypub`. En ajouter un, c'est y déposer un fichier.
+
+Partir d'un modèle le charge **sans reprendre son chemin** : `Ctrl+S` propose donc
+*Enregistrer sous*, et le modèle d'origine ne peut pas être écrasé par mégarde.
+
+Les modèles se servent des fonctions que l'application offre déjà — grille de
+composition, repères de pli, folio automatique, coordonnées professionnelles — ce
+qui est aussi le seul moyen de les rendre visibles : une page blanche n'apprend rien.
+
 ## Interface
 
 L'espace de travail se lit de gauche à droite : liste des **pages** et des **blocs**,
@@ -98,7 +114,7 @@ la barre du haut regroupe les commandes du document : fichier, annulation, zoom.
 
 | Raccourci | Action |
 |---|---|
-| `Ctrl+N` / `Ctrl+O` / `Ctrl+S` | Nouveau / Ouvrir / Enregistrer |
+| `Ctrl+N` / `Ctrl+O` / `Ctrl+S` | Nouveau (catalogue de modèles) / Ouvrir / Enregistrer |
 | `Ctrl+E` | Exporter en PDF |
 | `Ctrl+Z` / `Ctrl+Y` | Annuler / Rétablir |
 | `Ctrl+D` | Dupliquer la sélection |
@@ -147,6 +163,9 @@ n'interceptent donc jamais le pointeur, et les blocs sont testés dans l'ordre d
 superposition exact.
 
 ## Où sont rangés les réglages
+
+Les **modèles** sont dans `Templates/`, à côté du binaire — ce sont des `.mypub`
+ordinaires, qu'on peut ajouter ou corriger sans recompiler.
 
 Le document contient ce qu'on compose ; les **coordonnées professionnelles** n'en font
 pas partie. Elles vivent dans `~/.config/MyPublisher/informations.json`, parce qu'elles

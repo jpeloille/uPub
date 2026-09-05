@@ -10,6 +10,11 @@
     <ItemGroup>
         
         <AvaloniaResource Include="Assets\**"/>
+
+        <!-- Les modèles sont des documents ordinaires, livrés à côté du binaire plutôt
+             qu'embarqués dans l'assemblage : on peut ainsi en ajouter, en retirer ou en
+             corriger un sans recompiler. -->
+        <Content Include="Templates\**" CopyToOutputDirectory="PreserveNewest"/>
     </ItemGroup>
 
     <ItemGroup>

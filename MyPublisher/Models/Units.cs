@@ -31,5 +31,22 @@ public sealed record PageSize(string Name, double Width, double Height)
 
     public static IReadOnlyList<PageSize> All { get; } = [A3, A4, A5, Letter, Legal];
 
+    /// <summary>
+    /// Le format du catalogue qui correspond à ces dimensions, dans un sens ou dans
+    /// l'autre ; nul pour un format libre. La tolérance d'un point absorbe les valeurs
+    /// arrondies qu'on trouve dans les fichiers.
+    /// </summary>
+    public static PageSize? Match(double width, double height)
+    {
+        var shortSide = System.Math.Min(width, height);
+        var longSide = System.Math.Max(width, height);
+        foreach (var size in All)
+        {
+            if (System.Math.Abs(size.Width - shortSide) < 1 && System.Math.Abs(size.Height - longSide) < 1) return size;
+        }
+
+        return null;
+    }
+
     public override string ToString() => $"{Name} ({Units.PointsToMm(Width):0} × {Units.PointsToMm(Height):0} mm)";
 }

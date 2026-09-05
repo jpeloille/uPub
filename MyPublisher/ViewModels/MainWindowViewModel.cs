@@ -127,11 +127,7 @@ public partial class MainWindowViewModel : ViewModelBase
         try
         {
             IsLandscape = Document.PageWidth > Document.PageHeight;
-
-            var shortSide = Math.Min(Document.PageWidth, Document.PageHeight);
-            var longSide = Math.Max(Document.PageWidth, Document.PageHeight);
-            SelectedPageSize = PageSize.All.FirstOrDefault(size =>
-                Math.Abs(size.Width - shortSide) < 1 && Math.Abs(size.Height - longSide) < 1);
+            SelectedPageSize = PageSize.Match(Document.PageWidth, Document.PageHeight);
         }
         finally
         {
@@ -503,9 +499,24 @@ public partial class MainWindowViewModel : ViewModelBase
         Status = "Nouveau document";
     }
 
-    public void LoadFrom(string path)
+    public void LoadFrom(string path) =>
+        Adopt(DocumentSerializer.Load(path), path, $"Ouvert : {Path.GetFileName(path)}");
+
+    /// <summary>
+    /// Démarre un document neuf à partir d'un modèle. Tout se passe comme à l'ouverture,
+    /// sauf le chemin : il reste vide, si bien que « Enregistrer » propose « Enregistrer
+    /// sous » et que le modèle ne peut pas être écrasé par mégarde. C'est toute la
+    /// différence entre ouvrir un modèle et partir de lui.
+    /// </summary>
+    public void StartFromTemplate(string path)
     {
-        Document = DocumentSerializer.Load(path);
+        var document = DocumentSerializer.Load(path);
+        Adopt(document, null, $"Nouveau document d'après « {document.Title} »");
+    }
+
+    private void Adopt(Document document, string? path, string status)
+    {
+        Document = document;
         if (Document.Pages.Count == 0) Document.Pages.Add(new Page { Name = "Page 1" });
         CurrentPage = Document.Pages[0];
         SetSelection([]);
@@ -516,7 +527,7 @@ public partial class MainWindowViewModel : ViewModelBase
         SyncPageSetup();
         NotifyPageList();
         NotifyHistory();
-        Status = $"Ouvert : {Path.GetFileName(path)}";
+        Status = status;
     }
 
     public void SaveTo(string path)

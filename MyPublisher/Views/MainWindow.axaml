@@ -19,7 +19,6 @@
     </Design.DataContext>
 
     <Window.KeyBindings>
-        <KeyBinding Gesture="Ctrl+N" Command="{Binding NewDocumentCommand}"/>
         <KeyBinding Gesture="Ctrl+Z" Command="{Binding UndoCommand}"/>
         <KeyBinding Gesture="Ctrl+Y" Command="{Binding RedoCommand}"/>
         <KeyBinding Gesture="Ctrl+Shift+Z" Command="{Binding RedoCommand}"/>
@@ -111,7 +110,7 @@
 
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="_Fichier">
-                <MenuItem Header="_Nouveau" InputGesture="Ctrl+N" Command="{Binding NewDocumentCommand}"/>
+                <MenuItem Header="_Nouveau…" InputGesture="Ctrl+N" Click="OnNew"/>
                 <Separator/>
                 <MenuItem Header="_Ouvrir…" InputGesture="Ctrl+O" Click="OnOpen"/>
                 <MenuItem Header="_Enregistrer" InputGesture="Ctrl+S" Click="OnSave"/>
@@ -199,7 +198,7 @@
         <Border DockPanel.Dock="Top" Background="#FFF3F4F6" BorderBrush="#FFD9DDE3"
                 BorderThickness="0,0,0,1" Padding="8,6">
             <StackPanel Orientation="Horizontal">
-                <Button Classes="tool" Content="Nouveau" Command="{Binding NewDocumentCommand}"/>
+                <Button Classes="tool" Content="Nouveau…" Click="OnNew"/>
                 <Button Classes="tool" Content="Ouvrir…" Click="OnOpen"/>
                 <Button Classes="tool" Content="Enregistrer" Click="OnSave"/>
                 <Button Classes="tool" Content="Exporter en PDF" Click="OnExportPdf"/>

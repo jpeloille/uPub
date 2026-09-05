@@ -32,7 +32,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **A5** | Formats de page | 0 % | Le modèle accepte déjà des dimensions libres |
 | **A6** | Taille du bloc dans la barre d'état | 0 % | — |
 | **A7** | Alignement vertical du texte | 0 % | — |
-| **B1** | Modèles | 0 % | Le poste le plus rentable du plan, et il ne dépend de rien |
+| **B1** | Modèles | **100 %** | Catalogue au démarrage et sur `Ctrl+N` ; quatre modèles composés dans `Templates/` |
 | **B2** | Importer un fichier texte | 0 % | — |
 | **B3** | Imprimer | 0 % | — |
 | **B4** | Archive `.mypubz` | 0 % | — |
@@ -46,9 +46,9 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **C7** | Bibliothèque de blocs | 0 % | Débloqué depuis C3a |
 | **D** | Moteur de composition | — | Décision non ouverte ; à rouvrir quand A, B et C sont livrées |
 
-**Par phase** — P : 3 sur 3 · A : 0 sur 7 · B : 0 sur 5 · C : 5 sur 7 · D : non planifié.
+**Par phase** — P : 3 sur 3 · A : 0 sur 7 · B : 1 sur 5 · C : 5 sur 7 · D : non planifié.
 
-Soit **8 postes sur 22**. C'est un compte de postes et non d'effort : C3 pesait à lui
+Soit **9 postes sur 22**. C'est un compte de postes et non d'effort : C3 pesait à lui
 seul plus que toute la phase A, et les préalables ne produisaient aucune fonctionnalité.
 Le tableau dit ce qui est clos, pas ce qui reste à peiner.
 
@@ -249,6 +249,37 @@ carte de visite, affiche.
 
 *Recette* : `Ctrl+N`, choisir « dépliant », modifier un texte, enregistrer — le fichier
 d'origine est intact.
+
+*Fait le 5 septembre 2026.* Les trois pièces annoncées, et rien de plus : un dossier
+`Templates/` livré à côté du binaire, un catalogue au démarrage et sur `Ctrl+N`, et
+l'ouverture en copie — le document est chargé sans son chemin, si bien qu'« Enregistrer »
+propose « Enregistrer sous ». Aucune ligne n'a été ajoutée au modèle de données : un
+modèle est un `.mypub` ordinaire, lu par le même code que les documents de l'utilisateur.
+
+Quatre modèles composés : bulletin trois colonnes sur deux pages, dépliant trois volets,
+carte de visite, affiche A3. Ils se servent de ce que les postes précédents ont apporté —
+grille et lignes de base (C2a), repères de pli (C2b), folio et date (C4a), coordonnées et
+logo (C4b), groupes (C3c), fond et contour (C1). C'est la contrepartie annoncée : la
+moitié « coordonnées » de C4 sert enfin à quelque chose, et une carte de visite dont les
+neuf blocs sont des champs se remplit toute seule.
+
+*Écart assumé* : les vignettes sont un schéma et non un rendu. À cent cinquante pixels de
+large, un A4 réduit son corps de onze points à deux pixels — un rendu fidèle ne montrerait
+qu'une bouillie grise. Ce qu'on choisit dans un catalogue, c'est une structure ; c'est
+donc elle qu'on dessine, le texte en filets et l'image en cadre barré. Cela évite au
+passage un troisième moteur de rendu, alors que tout l'équilibre du projet tient à ce que
+l'écran et l'export partagent le modèle sans couche intermédiaire.
+
+Recette jouée : partir du dépliant, vérifier qu'aucun chemin n'est repris, modifier le
+titre de couverture, enregistrer ailleurs — le fichier du modèle est intact octet pour
+octet, et la copie porte bien la modification. Les quatre modèles s'exportent sans un
+avertissement.
+
+*Trouvé au passage*, et corrigé avant : l'application suivait la variante de thème du
+système alors que sa palette est écrite en clair ; sur un bureau sombre, champs et menus
+sortaient sombres au milieu de panneaux clairs. Corrigé aussi, dans ce poste : un bloc
+image sans chemin est un emplacement qui attend son image — c'est ainsi qu'un modèle
+réserve sa place — et non une image perdue ; il ne se signale donc plus à l'export.
 
 C'est aussi le seul moyen de rendre visibles les fonctions **déjà présentes** :
 l'aimantation, les modes de cadrage d'image, la justification. Un utilisateur qui

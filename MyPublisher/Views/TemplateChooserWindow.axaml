@@ -1,0 +1,53 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:MyPublisher.ViewModels"
+        xmlns:services="using:MyPublisher.Services"
+        xmlns:views="using:MyPublisher.Views"
+        x:Class="MyPublisher.Views.TemplateChooserWindow"
+        x:DataType="vm:TemplateChooserViewModel"
+        Title="Nouveau document"
+        Width="720" Height="620"
+        WindowStartupLocation="CenterOwner">
+
+    <DockPanel Margin="16">
+
+        <StackPanel DockPanel.Dock="Top" Margin="0,0,0,12">
+            <TextBlock Text="Partir d'un modèle" FontSize="18" FontWeight="SemiBold"/>
+            <TextBlock Text="Un modèle est un document ordinaire : vous le modifiez et l'enregistrez sous le nom de votre choix. Le modèle d'origine n'est jamais écrasé."
+                       FontSize="11" Foreground="#FF8A929E" TextWrapping="Wrap" Margin="0,4,0,0"/>
+            <TextBlock Text="Aucun modèle installé : seule la page blanche est proposée."
+                       IsVisible="{Binding !HasTemplates}"
+                       FontSize="11" Foreground="#FFB05A2E" TextWrapping="Wrap" Margin="0,6,0,0"/>
+        </StackPanel>
+
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal"
+                    HorizontalAlignment="Right" Margin="0,12,0,0">
+            <Button Content="Annuler" Click="OnCancel" MinWidth="90"/>
+            <Button Content="Créer" Click="OnCreate" MinWidth="110" Margin="8,0,0,0" IsDefault="True"/>
+        </StackPanel>
+
+        <ListBox ItemsSource="{Binding Choices}" SelectedItem="{Binding Selected}"
+                 Background="Transparent" BorderThickness="0">
+            <ListBox.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <WrapPanel/>
+                </ItemsPanelTemplate>
+            </ListBox.ItemsPanel>
+            <ListBox.ItemTemplate>
+                <DataTemplate DataType="services:TemplateChoice">
+                    <!-- Double-clic : on choisit et on part, comme dans un sélecteur de fichiers. -->
+                    <StackPanel Width="150" Margin="4" DoubleTapped="OnChoiceDoubleTapped">
+                        <Border Background="#FFF7F8FA" BorderBrush="#FFE3E6EA" BorderThickness="1"
+                                Padding="8" Height="150">
+                            <views:TemplatePreview Document="{Binding Document}"/>
+                        </Border>
+                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" Margin="0,6,0,0"
+                                   TextWrapping="Wrap"/>
+                        <TextBlock Text="{Binding Summary}" FontSize="11" Foreground="#FF8A929E"
+                                   TextWrapping="Wrap"/>
+                    </StackPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+    </DockPanel>
+</Window>

@@ -18,7 +18,20 @@ namespace MyPublisher.Converters;
 public static class Conv
 {
     public static readonly FuncValueConverter<string?, IBrush?> Brush =
-        new(value => string.IsNullOrWhiteSpace(value) ? null : TryBrush(value));
+        new(ToBrush);
+
+    /// <summary>
+    /// Une couleur du modèle en pinceau Avalonia ; null pour une couleur absente ou
+    /// illisible. Publique parce que la vignette des modèles la dessine en code, sans
+    /// passer par une liaison.
+    /// </summary>
+    public static IBrush? ToBrush(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return null;
+        return HexColor.TryParse(value, out var a, out var r, out var g, out var b)
+            ? new SolidColorBrush(Color.FromArgb(a, r, g, b))
+            : null;
+    }
 
     public static readonly FuncValueConverter<bool, FontWeight> Weight =
         new(bold => bold ? FontWeight.Bold : FontWeight.Normal);
@@ -82,17 +95,6 @@ public static class Conv
     public static readonly FuncValueConverter<double, string> Percent =
         new(ratio => (ratio * 100).ToString("0", CultureInfo.CurrentCulture) + " %");
 
-    private static IBrush? TryBrush(string value)
-    {
-        try
-        {
-            return new SolidColorBrush(Color.Parse(value));
-        }
-        catch (FormatException)
-        {
-            return null;
-        }
-    }
 }
 
 /// <summary>

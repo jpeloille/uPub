@@ -215,11 +215,18 @@ public static class PdfExporter
         // Un bloc à champ tire son chemin du jeu de coordonnées ; les autres du leur.
         var source = FieldResolver.Resolve(frame.Field, frame.Path, context);
 
-        if (string.IsNullOrWhiteSpace(source) || !File.Exists(source))
+        if (string.IsNullOrWhiteSpace(source))
         {
-            warnings.Add(frame.HasField && string.IsNullOrWhiteSpace(source)
-                ? $"{frame.DisplayName} : aucun logo dans le jeu de coordonnées."
-                : $"Image introuvable : {source}");
+            // Un bloc image sans chemin est un emplacement qui attend son image — c'est
+            // ainsi que les modèles réservent leur place — et non une image perdue. Il
+            // ne se signale que s'il attendait un logo qu'on n'a pas renseigné.
+            if (frame.HasField) warnings.Add($"{frame.DisplayName} : aucun logo dans le jeu de coordonnées.");
+            return;
+        }
+
+        if (!File.Exists(source))
+        {
+            warnings.Add($"Image introuvable : {source}");
             return;
         }
 
