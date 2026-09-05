@@ -4,6 +4,7 @@
              xmlns:models="using:MyPublisher.Models"
              xmlns:conv="using:MyPublisher.Converters"
              x:Class="MyPublisher.Views.PageCanvas"
+             x:Name="Board"
              x:DataType="vm:MainWindowViewModel"
              Focusable="True">
 
@@ -103,8 +104,11 @@
                 <Panel ClipToBounds="True">
                     <!-- Affichage et saisie sont deux contrôles distincts : le TextBlock
                          donne le contrôle typographique, le TextBox l'édition et le caret. -->
+                    <!-- Le texte affiché passe par le résolveur de champs : littéral tant
+                         qu'aucun champ n'est posé, calculé sinon. Le contexte vient du
+                         contrôle et non du bloc — un bloc ignore sur quelle page il est,
+                         et c'est très bien ainsi. -->
                     <TextBlock IsVisible="{Binding !IsEditing}"
-                               Text="{Binding Text}"
                                FontFamily="{Binding FontFamily, Converter={x:Static conv:Conv.Font}}"
                                FontSize="{Binding FontSize}"
                                FontWeight="{Binding Bold, Converter={x:Static conv:Conv.Weight}}"
@@ -113,7 +117,15 @@
                                TextAlignment="{Binding Align, Converter={x:Static conv:Conv.Align}}"
                                LineHeight="{Binding AbsoluteLineHeight}"
                                Padding="{Binding Padding, Converter={x:Static conv:Conv.Pad}}"
-                               TextWrapping="Wrap"/>
+                               TextWrapping="Wrap">
+                        <TextBlock.Text>
+                            <MultiBinding Converter="{x:Static conv:FieldToText.Instance}">
+                                <Binding Path="Text"/>
+                                <Binding Path="Field"/>
+                                <Binding Path="#Board.((vm:MainWindowViewModel)DataContext).FieldContext"/>
+                            </MultiBinding>
+                        </TextBlock.Text>
+                    </TextBlock>
                     <TextBox IsVisible="{Binding IsEditing}"
                              Text="{Binding Text, Mode=TwoWay}"
                              FontFamily="{Binding FontFamily, Converter={x:Static conv:Conv.Font}}"

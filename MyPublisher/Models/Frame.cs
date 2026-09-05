@@ -414,6 +414,19 @@ public partial class TextFrame : Frame
     /// <summary>Les quatre marges d'un seul tenant, pour la vue et l'export.</summary>
     [JsonIgnore] public Insets Padding => new(PaddingLeft, PaddingTop, PaddingRight, PaddingBottom);
 
+    /// <summary>
+    /// Champ éventuel. Renseigné, il fait calculer le texte affiché au lieu de le lire
+    /// dans <see cref="Text"/> — qui garde pour autant sa valeur, pour la retrouver
+    /// intacte le jour où l'on retire le champ.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasField))]
+    [property: JsonPropertyOrder(230)]
+    private FieldKind _field = FieldKind.None;
+
+    /// <summary>Le texte de ce bloc est calculé : il ne se saisit pas sur la page.</summary>
+    [JsonIgnore] public bool HasField => Field != FieldKind.None;
+
     /// <summary>Édition en cours : état transitoire d'interface, jamais sérialisé.</summary>
     [ObservableProperty]
     [property: JsonIgnore]
@@ -430,7 +443,7 @@ public partial class TextFrame : Frame
             Text = Text, FontFamily = FontFamily, FontSize = FontSize, Bold = Bold,
             Italic = Italic, Foreground = Foreground, Align = Align,
             LineHeight = LineHeight, PaddingLeft = PaddingLeft, PaddingTop = PaddingTop,
-            PaddingRight = PaddingRight, PaddingBottom = PaddingBottom
+            PaddingRight = PaddingRight, PaddingBottom = PaddingBottom, Field = Field
         };
         CopyBaseTo(c);
         return c;

@@ -335,8 +335,28 @@
                             <DataTemplate DataType="models:TextFrame">
                                 <StackPanel>
                                     <TextBlock Classes="section" Text="TEXTE"/>
+
+                                    <TextBlock Classes="field" Text="Contenu"/>
+                                    <ComboBox HorizontalAlignment="Stretch"
+                                              ItemsSource="{Binding #Root.((vm:MainWindowViewModel)DataContext).FieldOptions}"
+                                              SelectedValue="{Binding Field}"
+                                              SelectedValueBinding="{Binding Kind}">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate DataType="models:FieldOption">
+                                                <TextBlock Text="{Binding Label}"/>
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+
+                                    <!-- Le texte saisi reste là sous le champ, et se retrouve
+                                         intact quand on repasse à « Aucun ». -->
                                     <TextBox Text="{Binding Text}" AcceptsReturn="True" TextWrapping="Wrap"
-                                             Height="110" VerticalContentAlignment="Top"/>
+                                             Height="110" VerticalContentAlignment="Top" Margin="0,4,0,0"
+                                             IsEnabled="{Binding !HasField}"/>
+                                    <TextBlock Text="Le contenu est calculé à l'affichage et à l'export ; il ne se saisit pas sur la page."
+                                               IsVisible="{Binding HasField}"
+                                               FontSize="11" Foreground="#FF8A929E"
+                                               TextWrapping="Wrap" Margin="0,4,0,0"/>
 
                                     <TextBlock Classes="field" Text="Police" Margin="0,8,0,2"/>
                                     <ComboBox HorizontalAlignment="Stretch" MaxDropDownHeight="320"

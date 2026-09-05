@@ -29,15 +29,21 @@ public static class PdfExporter
         pdf.Info.Title = document.Title;
         pdf.Info.Creator = "MyPublisher";
 
-        foreach (var page in document.Pages)
+        // Une seule lecture de l'horloge : toutes les pages d'un même export portent
+        // la même date, même si le document est long à écrire.
+        var now = DateTime.Now;
+
+        for (var index = 0; index < document.Pages.Count; index++)
         {
+            var page = document.Pages[index];
+            var context = new FieldContext(index + 1, document.Pages.Count, now);
             var pdfPage = pdf.AddPage();
             pdfPage.Width = XUnit.FromPoint(document.PageWidth);
             pdfPage.Height = XUnit.FromPoint(document.PageHeight);
 
             using var gfx = XGraphics.FromPdfPage(pdfPage);
 
-            foreach (var frame in page.Frames) DrawFrame(gfx, frame, warnings);
+            foreach (var frame in page.Frames) DrawFrame(gfx, frame, warnings, context);
         }
 
         var pageCount = pdf.PageCount;
@@ -51,7 +57,7 @@ public static class PdfExporter
     /// avant la translation, si bien que celle d'un groupe se compose avec celle de
     /// chacun de ses blocs sans qu'aucun calcul n'ait à les combiner.
     /// </summary>
-    private static void DrawFrame(XGraphics gfx, Frame frame, List<string> warnings)
+    private static void DrawFrame(XGraphics gfx, Frame frame, List<string> warnings, FieldContext context)
     {
         var state = gfx.Save();
         if (frame.Rotation != 0)
@@ -77,9 +83,9 @@ public static class PdfExporter
             {
                 switch (frame)
                 {
-                    case TextFrame text: DrawText(gfx, text); break;
+                    case TextFrame text: DrawText(gfx, text, context); break;
                     case ImageFrame image: DrawImage(gfx, image, warnings); break;
-                    case GroupFrame group: DrawChildren(gfx, group, warnings); break;
+                    case GroupFrame group: DrawChildren(gfx, group, warnings, context); break;
                 }
             }
             catch (Exception ex)
@@ -93,13 +99,13 @@ public static class PdfExporter
         gfx.Restore(state);
     }
 
-    private static void DrawChildren(XGraphics gfx, GroupFrame group, List<string> warnings)
+    private static void DrawChildren(XGraphics gfx, GroupFrame group, List<string> warnings, FieldContext context)
     {
         // La translation ne vaut que pour les enfants : le contour du groupe, tracé
         // ensuite, est en coordonnées de page comme son fond.
         var state = gfx.Save();
         gfx.TranslateTransform(group.X, group.Y);
-        foreach (var child in group.Children) DrawFrame(gfx, child, warnings);
+        foreach (var child in group.Children) DrawFrame(gfx, child, warnings, context);
         gfx.Restore(state);
     }
 
@@ -165,9 +171,12 @@ public static class PdfExporter
         return pen;
     }
 
-    private static void DrawText(XGraphics gfx, TextFrame text)
+    private static void DrawText(XGraphics gfx, TextFrame text, FieldContext context)
     {
-        if (string.IsNullOrEmpty(text.Text)) return;
+        // Le contenu passe par le résolveur de champs, celui-là même que l'écran
+        // appelle : un folio vu à l'écran est le folio imprimé.
+        var content = FieldResolver.Resolve(text.Field, text.Text, context);
+        if (string.IsNullOrEmpty(content)) return;
 
         var style = XFontStyleEx.Regular;
         if (text.Bold) style |= XFontStyleEx.Bold;
@@ -193,7 +202,7 @@ public static class PdfExporter
             }
         };
 
-        formatter.DrawString(text.Text, font, brush, box, XStringFormats.TopLeft);
+        formatter.DrawString(content, font, brush, box, XStringFormats.TopLeft);
     }
 
     private static void DrawImage(XGraphics gfx, ImageFrame frame, List<string> warnings)

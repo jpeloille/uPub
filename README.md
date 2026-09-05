@@ -57,6 +57,8 @@ la barre du haut regroupe les commandes du document : fichier, annulation, zoom.
 ## Ce que l'application sait faire
 
 - Documents multi-pages, formats A3 à Legal, portrait ou paysage, marges réglables.
+- Champs : un bloc de texte peut afficher son numéro de page, le nombre de pages ou
+  la date au lieu d'un texte saisi. Le folio se numérote seul, à l'écran comme au PDF.
 - Blocs de texte (police système, corps, gras, italique, alignement dont justifié,
   interligne, marges intérieures réglées côté par côté, couleur), images (trois
   modes de cadrage) et formes (rectangle, ellipse).
@@ -140,7 +142,10 @@ fichier d'une version antérieure est migré à l'ouverture — la version 1 nom
 `Background` le fond des blocs de texte, il s'appelle `Fill` partout depuis ; la
 version 2 n'avait qu'une marge intérieure, il y en a quatre — et un fichier d'une
 version plus récente est refusé plutôt que lu de travers. Chaque bloc
-porte un discriminant `$kind` (`text`, `image`, `shape`, `group`). Un groupe contient ses blocs
+porte un discriminant `$kind` (`text`, `image`, `shape`, `group`) et, pour un texte, un `Field`
+éventuel : renseigné, il fait calculer le contenu à l'affichage plutôt que de lire le
+texte saisi — lequel reste écrit dans le fichier et se retrouve intact si l'on retire
+le champ. Un groupe contient ses blocs
 en coordonnées relatives à son coin supérieur gauche, écrits après sa géométrie — le
 rendu et l'export composent les deux repères. Les images sont référencées par chemin
 absolu : déplacer un document sans ses images casse les liens.

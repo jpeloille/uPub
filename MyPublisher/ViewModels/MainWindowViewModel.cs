@@ -29,10 +29,12 @@ public partial class MainWindowViewModel : ViewModelBase
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(PageCountLabel))]
+    [NotifyPropertyChangedFor(nameof(FieldContext))]
     private Document _document = Document.CreateDefault();
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CurrentPageNumber))]
+    [NotifyPropertyChangedFor(nameof(FieldContext))]
     private Page? _currentPage;
 
     /// <summary>
@@ -182,6 +184,16 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public IReadOnlyList<StrokeStyle> StrokeStyles { get; } =
         [StrokeStyle.Solid, StrokeStyle.Dashed, StrokeStyle.Dotted];
+
+    public IReadOnlyList<FieldOption> FieldOptions { get; } =
+        Enum.GetValues<FieldKind>().Select(kind => new FieldOption(kind, FieldResolver.Label(kind))).ToList();
+
+    /// <summary>
+    /// De quoi résoudre les champs de la page affichée. La page courante et le nombre
+    /// de pages en font partie : il se renouvelle donc à chaque changement de l'un ou
+    /// de l'autre, et les folios de l'écran suivent.
+    /// </summary>
+    public FieldContext FieldContext => new(CurrentPageNumber, Document.Pages.Count, DateTime.Now);
 
     /// <summary>Facteur points -> pixels écran, zoom inclus. Le seul endroit qui mélange les deux unités.</summary>
     public double RenderScale => Zoom * Units.PointToDip;
@@ -996,6 +1008,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private void NotifyPageList()
     {
         OnPropertyChanged(nameof(PageCountLabel));
+        OnPropertyChanged(nameof(FieldContext));
         OnPropertyChanged(nameof(CanDeletePage));
         OnPropertyChanged(nameof(CurrentPageNumber));
         DeletePageCommand.NotifyCanExecuteChanged();

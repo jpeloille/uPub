@@ -645,6 +645,14 @@ public partial class PageCanvas : UserControl
     {
         if (_editing is not null) return;
 
+        // Un bloc à champ affiche une valeur calculée : la saisir sur la page
+        // reviendrait à modifier un texte qu'on ne voit pas.
+        if (frame.HasField)
+        {
+            if (_vm is not null) _vm.Status = "Ce bloc affiche un champ ; son contenu se règle dans le panneau.";
+            return;
+        }
+
         _vm?.BeginEdit();
         _editing = frame;
         frame.IsEditing = true;

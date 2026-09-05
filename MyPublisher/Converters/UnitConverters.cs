@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using Avalonia;
 using Avalonia.Data;
@@ -79,5 +80,29 @@ public sealed class EnumToBool : IValueConverter
         return name is not null && Enum.IsDefined(targetType, name)
             ? Enum.Parse(targetType, name)
             : BindingOperations.DoNothing;
+    }
+}
+
+/// <summary>
+/// Texte réellement affiché par un bloc : le littéral, ou la valeur du champ quand il
+/// y en a un. Trois entrées — le texte, le champ, le contexte — parce que les deux
+/// premières changent avec le bloc et la troisième avec la page courante. La résolution
+/// elle-même est celle du modèle, la même que l'export appelle.
+/// </summary>
+public sealed class FieldToText : IMultiValueConverter
+{
+    public static readonly FieldToText Instance = new();
+
+    public object? Convert(IList<object?> values, Type targetType, object? parameter, CultureInfo culture)
+    {
+        // Pendant la mise en place des liaisons, une valeur peut manquer : on rend alors
+        // le littéral s'il est là, plutôt qu'un texte calculé de travers.
+        var literal = values.Count > 0 && values[0] is string text ? text : "";
+        if (values.Count < 3 || values[1] is not FieldKind field || values[2] is not FieldContext context)
+        {
+            return literal;
+        }
+
+        return FieldResolver.Resolve(field, literal, context);
     }
 }
