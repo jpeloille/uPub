@@ -12,13 +12,20 @@ namespace MyPublisher.Converters;
 /// <summary>
 /// Le modèle est en points, mais l'utilisateur compose en millimètres : la
 /// conversion est bidirectionnelle et se fait au plus près du champ de saisie.
+///
+/// La valeur n'est pas arrondie au passage. Elle l'était, à deux décimales, et cela
+/// suffisait à altérer le document : la liaison étant à double sens, la valeur
+/// arrondie revenait aussitôt dans le modèle, si bien qu'une gouttière de 12 pt —
+/// 4,2333 mm — devenait 11,99 pt à la seule ouverture du document, sans geste ni
+/// pas d'annulation. L'affichage est arrondi là où il doit l'être, par le
+/// « FormatString » du champ, qui ne touche pas à la valeur.
 /// </summary>
 public sealed class PointsToMillimetres : IValueConverter
 {
     public static readonly PointsToMillimetres Instance = new();
 
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
-        value is double points ? (decimal)Math.Round(Units.PointsToMm(points), 2) : null;
+        value is double points ? (decimal)Units.PointsToMm(points) : null;
 
     public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => value switch
     {
