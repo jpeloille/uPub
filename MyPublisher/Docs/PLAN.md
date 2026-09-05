@@ -38,7 +38,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **B4** | Archive `.mypubz` | 0 % | — |
 | **B5** | Avertir sur les substitutions de polices | 0 % | — |
 | **C1** | Fond et bordure au niveau de `Frame` | **100 %** | Fond, contour, trait, arrondi et opacité sur tout bloc ; `FormatVersion` 2, migration à l'ouverture |
-| **C2** | Repères | 50 % | C2a **fait** : colonnes, lignes, grille de ligne de base · C2b règles et repères libres, à faire |
+| **C2** | Repères | **100 %** | C2a grille de composition · C2b règles graduées et repères libres |
 | **C3** | Sélection multiple, puis groupement | **100 %** | C3a sélection · C3b alignement et répartition · C3c groupe persistant |
 | **C4** | Champs | **100 %** | Folio, nombre de pages, date, coordonnées et logo ; les coordonnées attendent B1 pour servir vraiment |
 | **C5** | Remplissage riche et cohérence visuelle | 0 % | C5a fond de page · C5b jeux de couleurs · C5c dégradés — C5a et C5c débloqués par C1 |
@@ -46,9 +46,9 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **C7** | Bibliothèque de blocs | 0 % | Débloqué depuis C3a |
 | **D** | Moteur de composition | — | Décision non ouverte ; à rouvrir quand A, B et C sont livrées |
 
-**Par phase** — P : 3 sur 3 · A : 0 sur 7 · B : 0 sur 5 · C : 4,5 sur 7 · D : non planifié.
+**Par phase** — P : 3 sur 3 · A : 0 sur 7 · B : 0 sur 5 · C : 5 sur 7 · D : non planifié.
 
-Soit **7,5 postes sur 22**. C'est un compte de postes et non d'effort : C3 pesait à lui
+Soit **8 postes sur 22**. C'est un compte de postes et non d'effort : C3 pesait à lui
 seul plus que toute la phase A, et les préalables ne produisaient aucune fonctionnalité.
 Le tableau dit ce qui est clos, pas ce qui reste à peiner.
 
@@ -359,7 +359,29 @@ relus dans l'arbre visuel. Pour le PDF, le même document exporté avec la grill
 dense qu'on puisse régler — 77 repères — et sans grille donne deux images identiques au
 pixel près.
 
-*Trouvé au passage*, hors périmètre du poste mais corrigé : le convertisseur
+*C2b fait le 5 septembre 2026.* Deux règles graduées en millimètres bordent la planche
+et défilent avec elle — une graduation tombe donc exactement en face de la position
+qu'elle annonce, sans avoir à suivre le défilement à la main. Publisher les fixe au bord
+de la fenêtre ; les adosser à la page coûte moins cher et ne se trompe jamais.
+
+Les repères libres sont portés par le document et non par la page, comme dans Publisher :
+un repère sert à tenir un alignement d'une page à l'autre. On les pose en glissant depuis
+une règle ou par le menu, on les déplace sur la page, on les retire en les ramenant
+au-delà du bord. Ils s'aimantent eux-mêmes sur la grille, ce qui permet d'en poser un
+exactement sur un bord de colonne, et leur position exacte se saisit dans le panneau —
+c'est l'équivalent du dialogue « Format Ruler Guides », au même endroit que le reste des
+réglages du document.
+
+Recette jouée à la souris, pointeur synthétisé sur les vraies règles et la vraie couche
+de saisie : poser, aimanter, désarmer par Alt, reprendre, retirer hors page, et un bloc
+qui vient se poser exactement sur un repère choisi. Le tout est annulable. Deux exports
+du même document, avec et sans repères, donnent deux images identiques au pixel près.
+
+*À noter* : une position posée à la souris ne vaut que ce que vaut le pointeur —
+Avalonia rend des positions en pixels entiers, soit 0,75 pt à 100 % de zoom. Ce qui est
+exact, ce sont les positions aimantées, qui sortent de la table des repères.
+
+*Trouvé au passage lors de C2a*, hors périmètre du poste mais corrigé : le convertisseur
 millimètres arrondissait à deux décimales, et la liaison étant à double sens, la valeur
 arrondie revenait dans le modèle. Une gouttière de 12 pt devenait 11,99 pt à la seule
 ouverture du document, sans geste ni pas d'annulation — et il en allait de même de

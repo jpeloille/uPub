@@ -13,6 +13,8 @@
   "RowSpacing": 0,
   "BaselineSpacing": 0,
   "BaselineOffset": 0,
+  "VerticalRulerGuides": [],
+  "HorizontalRulerGuides": [],
   "Pages": [
     {
       "Name": "Page 1",

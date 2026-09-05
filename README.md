@@ -79,8 +79,11 @@ la barre du haut regroupe les commandes du document : fichier, annulation, zoom.
   redimensionnement par huit poignées.
 - Grille de composition : colonnes et lignes avec leur gouttière, grille de ligne de
   base réglée en points. L'aimantation s'y accroche comme aux marges, aux bords et à
-  l'axe médian de la page. Les repères ne s'impriment pas, et *Affichage ▸ Repères*
-  les efface de l'écran.
+  l'axe médian de la page.
+- Règles graduées bordant la planche, et repères libres posés où l'on veut : on les
+  glisse depuis une règle, on les déplace, on les retire en les ramenant hors de la
+  page, et l'aimantation s'y accroche. Aucun repère ne s'imprime ; *Affichage ▸
+  Repères* et *Règles* les effacent de l'écran.
 - Édition du texte directement sur la page (double-clic).
 - Ordre de superposition ; alignement (gauche, centre, droite, haut, milieu, bas) et
   répartition d'une sélection ; ajustement aux marges. L'alignement se fait par
@@ -157,20 +160,25 @@ coordonnées de ce collègue, ce qui est précisément l'intérêt d'un modèle.
 fichier d'une version antérieure est migré à l'ouverture — la version 1 nommait
 `Background` le fond des blocs de texte, il s'appelle `Fill` partout depuis ; la
 version 2 n'avait qu'une marge intérieure, il y en a quatre — et un fichier d'une
-version plus récente est refusé plutôt que lu de travers. Chaque bloc
-porte un discriminant `$kind` (`text`, `image`, `shape`, `group`) et, pour un texte, un `Field`
-éventuel — de même pour un bloc image, dont le champ ne peut valoir que le logo.
-Renseigné, il fait calculer le contenu à l'affichage plutôt que de lire le texte saisi
-ou le chemin — lesquels restent écrits dans le fichier et se retrouvent intacts si l'on
-retire le champ. Un groupe contient ses blocs
-en coordonnées relatives à son coin supérieur gauche, écrits après sa géométrie — le
-rendu et l'export composent les deux repères. Les images sont référencées par chemin
-absolu : déplacer un document sans ses images casse les liens.
+version plus récente est refusé plutôt que lu de travers.
+
+Le document porte le format de page, les marges, la grille de composition et les
+repères libres — ces derniers sont communs à toutes les pages, comme dans Publisher.
+Chaque bloc porte un discriminant `$kind` (`text`, `image`, `shape`, `group`) et, pour
+un texte, un `Field` éventuel — de même pour un bloc image, dont le champ ne peut valoir
+que le logo. Renseigné, il fait calculer le contenu à l'affichage plutôt que de lire le
+texte saisi ou le chemin, lesquels restent écrits dans le fichier et se retrouvent
+intacts si l'on retire le champ.
+
+Un groupe contient ses blocs en coordonnées relatives à son coin supérieur gauche,
+écrits après sa géométrie — le rendu et l'export composent les deux repères. Les images
+sont référencées par chemin absolu : déplacer un document sans ses images casse les
+liens.
 
 ## Limites connues
 
 - Pas de chaînage du texte entre blocs : un texte trop long est coupé au bloc.
-- Pas de pages maîtres ni de repères personnalisés.
+- Pas de pages maîtres.
 - Les images sont liées, pas embarquées dans le `.mypub`.
 - Pas de gestion des couleurs CMJN ni de fond perdu : l'export est en RVB.
 - Le format `.pub` de Microsoft Publisher n'est ni lu ni écrit (format fermé).

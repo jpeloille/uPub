@@ -171,6 +171,13 @@
                           IsChecked="{Binding AlignToMargins}"/>
                 <Separator/>
                 <MenuItem Header="Ajuster aux _marges" Command="{Binding FitToMarginsCommand}"/>
+                <Separator/>
+                <MenuItem Header="Repères de rè_gle">
+                    <MenuItem Header="Ajouter un repère _horizontal" Command="{Binding AddHorizontalRulerGuideCommand}"/>
+                    <MenuItem Header="Ajouter un repère _vertical" Command="{Binding AddVerticalRulerGuideCommand}"/>
+                    <Separator/>
+                    <MenuItem Header="_Effacer tous les repères" Command="{Binding ClearRulerGuidesCommand}"/>
+                </MenuItem>
             </MenuItem>
 
             <MenuItem Header="_Page">
@@ -181,6 +188,7 @@
 
             <MenuItem Header="_Affichage">
                 <MenuItem Header="_Repères" ToggleType="CheckBox" IsChecked="{Binding ShowGuides}"/>
+                <MenuItem Header="Rè_gles" ToggleType="CheckBox" IsChecked="{Binding ShowRulers}"/>
                 <Separator/>
                 <MenuItem Header="Zoom _avant" Command="{Binding ZoomInCommand}"/>
                 <MenuItem Header="Zoom a_rrière" Command="{Binding ZoomOutCommand}"/>
@@ -317,6 +325,48 @@
                         <NumericUpDown Grid.Row="1" Grid.Column="2" FormatString="0.#" Increment="1" Minimum="0"
                                        Value="{Binding Document.BaselineOffset, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
                     </Grid>
+
+                    <TextBlock Classes="section" Text="REPÈRES DE RÈGLE"/>
+                    <TextBlock Text="Glissez depuis une règle pour en poser un ; ramenez-le hors de la page pour l'enlever."
+                               FontSize="11" Foreground="#FF8A929E" TextWrapping="Wrap" Margin="0,0,0,6"/>
+                    <StackPanel Orientation="Horizontal">
+                        <Button Content="Vertical" Command="{Binding AddVerticalRulerGuideCommand}" Margin="0,0,4,0"/>
+                        <Button Content="Horizontal" Command="{Binding AddHorizontalRulerGuideCommand}" Margin="0,0,4,0"/>
+                        <Button Content="Effacer" Command="{Binding ClearRulerGuidesCommand}"/>
+                    </StackPanel>
+
+                    <!-- La position exacte se saisit ici : c'est l'équivalent du dialogue
+                         « Format Ruler Guides » de Publisher, mais au même endroit que le
+                         reste des réglages du document. -->
+                    <ItemsControl ItemsSource="{Binding Document.VerticalRulerGuides}" Margin="0,6,0,0">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="models:RulerGuide">
+                                <Grid ColumnDefinitions="Auto,6,*,4,Auto" Margin="0,2">
+                                    <TextBlock Grid.Column="0" Classes="field" Text="X (mm)" Margin="0"/>
+                                    <NumericUpDown Grid.Column="2" FormatString="0.##" Increment="1"
+                                                   Value="{Binding Position, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
+                                    <Button Grid.Column="4" Content="✕"
+                                            Command="{Binding #Root.((vm:MainWindowViewModel)DataContext).RemoveRulerGuideCommand}"
+                                            CommandParameter="{Binding}"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <ItemsControl ItemsSource="{Binding Document.HorizontalRulerGuides}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="models:RulerGuide">
+                                <Grid ColumnDefinitions="Auto,6,*,4,Auto" Margin="0,2">
+                                    <TextBlock Grid.Column="0" Classes="field" Text="Y (mm)" Margin="0"/>
+                                    <NumericUpDown Grid.Column="2" FormatString="0.##" Increment="1"
+                                                   Value="{Binding Position, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
+                                    <Button Grid.Column="4" Content="✕"
+                                            Command="{Binding #Root.((vm:MainWindowViewModel)DataContext).RemoveRulerGuideCommand}"
+                                            CommandParameter="{Binding}"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
 
                     <TextBlock Classes="section" Text="BLOC"
                                IsVisible="{Binding HasSingleSelection}"/>

@@ -3,6 +3,7 @@
              xmlns:vm="using:MyPublisher.ViewModels"
              xmlns:models="using:MyPublisher.Models"
              xmlns:conv="using:MyPublisher.Converters"
+             xmlns:views="using:MyPublisher.Views"
              x:Class="MyPublisher.Views.PageCanvas"
              x:Name="Board"
              x:DataType="vm:MainWindowViewModel"
@@ -35,6 +36,12 @@
             <Setter Property="Canvas.Left" Value="{Binding Position}"/>
         </Style>
         <Style Selector="ItemsControl.horizontalGuides ContentPresenter" x:DataType="models:GuideLine">
+            <Setter Property="Canvas.Top" Value="{Binding Position}"/>
+        </Style>
+        <Style Selector="ItemsControl.verticalRulerGuides ContentPresenter" x:DataType="models:RulerGuide">
+            <Setter Property="Canvas.Left" Value="{Binding Position}"/>
+        </Style>
+        <Style Selector="ItemsControl.horizontalRulerGuides ContentPresenter" x:DataType="models:RulerGuide">
             <Setter Property="Canvas.Top" Value="{Binding Position}"/>
         </Style>
 
@@ -187,9 +194,30 @@
                   HorizontalScrollBarVisibility="Auto"
                   VerticalScrollBarVisibility="Auto">
 
-        <!-- La planche est centrée tant qu'elle tient dans la fenêtre, sinon elle défile. -->
+        <!-- La planche est centrée tant qu'elle tient dans la fenêtre, sinon elle défile.
+             Les règles bordent la page et défilent avec elle : c'est ce qui garantit
+             qu'une graduation tombe exactement en face de la position qu'elle annonce,
+             sans avoir à suivre le défilement à la main. -->
         <Panel Name="Stage" Margin="40" HorizontalAlignment="Center" VerticalAlignment="Center">
-            <Border Background="White" BoxShadow="0 6 28 0 #70000000">
+            <Grid ColumnDefinitions="Auto,Auto" RowDefinitions="Auto,Auto">
+
+                <Border Grid.Row="0" Grid.Column="0" Background="#FFF3F4F6"
+                        BorderBrush="#FFD9DDE3" BorderThickness="0,0,1,1"
+                        IsVisible="{Binding ShowRulers}"/>
+
+                <views:Ruler Grid.Row="0" Grid.Column="1" Name="TopRuler"
+                             Orientation="Horizontal"
+                             IsVisible="{Binding ShowRulers}"
+                             PageLength="{Binding Document.PageWidth}"
+                             Scale="{Binding RenderScale}"/>
+
+                <views:Ruler Grid.Row="1" Grid.Column="0" Name="LeftRuler"
+                             Orientation="Vertical"
+                             IsVisible="{Binding ShowRulers}"
+                             PageLength="{Binding Document.PageHeight}"
+                             Scale="{Binding RenderScale}"/>
+
+            <Border Grid.Row="1" Grid.Column="1" Background="White" BoxShadow="0 6 28 0 #70000000">
 
                 <!-- Trois couches superposées et exactement alignées :
                      la page mise à l'échelle, la couche de poignées, la couche de saisie. -->
@@ -250,6 +278,38 @@
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
+
+                                <!-- Repères libres, d'un vert franc : ce sont les seuls
+                                     que l'utilisateur a posés lui-même, ils doivent se
+                                     distinguer de la grille qu'il a réglée. -->
+                                <ItemsControl Classes="verticalRulerGuides" ItemsSource="{Binding Document.VerticalRulerGuides}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <Canvas/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate DataType="models:RulerGuide">
+                                            <Rectangle Width="0.5"
+                                                       Height="{Binding #Board.((vm:MainWindowViewModel)DataContext).Document.PageHeight}"
+                                                       Fill="#FF2F9E5E"/>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <ItemsControl Classes="horizontalRulerGuides" ItemsSource="{Binding Document.HorizontalRulerGuides}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <Canvas/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate DataType="models:RulerGuide">
+                                            <Rectangle Width="{Binding #Board.((vm:MainWindowViewModel)DataContext).Document.PageWidth}"
+                                                       Height="0.5" Fill="#FF2F9E5E"/>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
                             </Panel>
 
                             <!-- La classe « frames » vaut pour ce canevas comme pour celui
@@ -272,6 +332,7 @@
                     <Border Name="InputLayer" Background="Transparent"/>
                 </Panel>
             </Border>
+            </Grid>
         </Panel>
     </ScrollViewer>
 </UserControl>

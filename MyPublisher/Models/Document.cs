@@ -14,6 +14,26 @@ namespace MyPublisher.Models;
 /// </summary>
 public sealed record GuideLine(double Position, bool IsBaseline);
 
+/// <summary>
+/// Repère libre, posé où l'utilisateur veut. C'est le seul mécanisme qui permette
+/// d'aligner sur une position qu'il a choisie lui-même : la grille et les marges, elles,
+/// sont des positions décidées d'avance. Porté par le document et non par la page, comme
+/// dans Publisher — un repère sert à tenir un alignement d'une page à l'autre.
+///
+/// Une classe plutôt qu'un simple nombre : la position se modifie, à la souris comme au
+/// champ numérique, et la liaison a besoin d'un objet à qui parler.
+/// </summary>
+public partial class RulerGuide : ObservableObject
+{
+    public RulerGuide()
+    {
+    }
+
+    public RulerGuide(double position) => Position = position;
+
+    [ObservableProperty] private double _position;
+}
+
 public partial class Page : ObservableObject
 {
     [ObservableProperty]
@@ -127,6 +147,14 @@ public partial class Document : ObservableObject
     [property: JsonPropertyOrder(95)]
     private double _baselineOffset;
 
+    /// <summary>Repères libres verticaux, en abscisses.</summary>
+    [JsonPropertyOrder(96)]
+    public ObservableCollection<RulerGuide> VerticalRulerGuides { get; set; } = [];
+
+    /// <summary>Repères libres horizontaux, en ordonnées.</summary>
+    [JsonPropertyOrder(97)]
+    public ObservableCollection<RulerGuide> HorizontalRulerGuides { get; set; } = [];
+
     [JsonPropertyOrder(100)]
     public ObservableCollection<Page> Pages { get; set; } = [];
 
@@ -182,11 +210,17 @@ public partial class Document : ObservableObject
     ];
 
     /// <summary>Abscisses sur lesquelles un bloc s'aimante : bords, marges, milieu, colonnes.</summary>
+    /// <summary>
+    /// Ces deux listes sont relues à chaque déplacement du pointeur plutôt que mises en
+    /// cache : un repère qu'on vient de poser doit valoir aussitôt, sans qu'on ait à
+    /// prévenir qui que ce soit du changement.
+    /// </summary>
     [JsonIgnore]
     public IReadOnlyList<double> VerticalGuides =>
     [
         0, MarginLeft, PageWidth / 2, PageWidth - MarginRight, PageWidth,
-        .. Bands(MarginLeft, MarginBoxWidth, ColumnCount, ColumnSpacing)
+        .. Bands(MarginLeft, MarginBoxWidth, ColumnCount, ColumnSpacing),
+        .. VerticalRulerGuides.Select(guide => guide.Position)
     ];
 
     [JsonIgnore]
@@ -194,7 +228,8 @@ public partial class Document : ObservableObject
     [
         0, MarginTop, PageHeight / 2, PageHeight - MarginBottom, PageHeight,
         .. Bands(MarginTop, MarginBoxHeight, RowCount, RowSpacing),
-        .. Baselines()
+        .. Baselines(),
+        .. HorizontalRulerGuides.Select(guide => guide.Position)
     ];
 
     /// <summary>

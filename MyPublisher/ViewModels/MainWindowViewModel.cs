@@ -88,6 +88,9 @@ public partial class MainWindowViewModel : ViewModelBase
     /// </summary>
     [ObservableProperty] private bool _showGuides = true;
 
+    /// <summary>Affichage des règles graduées bordant la planche.</summary>
+    [ObservableProperty] private bool _showRulers = true;
+
     /// <summary>
     /// Repère de l'alignement. Publisher pose explicitement la question sous le nom
     /// « Relative to Margin Guides » ; MyPublisher la posait sans le dire, en centrant
@@ -984,6 +987,56 @@ public partial class MainWindowViewModel : ViewModelBase
         frame.Width = Document.MarginBoxWidth;
         frame.Height = Document.MarginBoxHeight;
         CommitEdit();
+    }
+
+    // ---------------------------------------------------------------- repères libres
+
+    /// <summary>
+    /// Pose un repère au milieu de la page. C'est la variante au menu du glisser depuis
+    /// la règle : même résultat, sans souris, et le repère se déplace ensuite pareil.
+    /// </summary>
+    [RelayCommand]
+    private void AddVerticalRulerGuide() => AddRulerGuide(vertical: true);
+
+    [RelayCommand]
+    private void AddHorizontalRulerGuide() => AddRulerGuide(vertical: false);
+
+    private void AddRulerGuide(bool vertical)
+    {
+        BeginEdit();
+        var guides = vertical ? Document.VerticalRulerGuides : Document.HorizontalRulerGuides;
+        guides.Add(new RulerGuide((vertical ? Document.PageWidth : Document.PageHeight) / 2));
+        ShowGuides = true;
+        CommitEdit();
+        Status = vertical ? "Repère vertical posé" : "Repère horizontal posé";
+    }
+
+    [RelayCommand]
+    private void RemoveRulerGuide(RulerGuide? guide)
+    {
+        if (guide is null) return;
+
+        BeginEdit();
+        if (!Document.VerticalRulerGuides.Remove(guide)) Document.HorizontalRulerGuides.Remove(guide);
+        CommitEdit();
+        Status = "Repère retiré";
+    }
+
+    [RelayCommand]
+    private void ClearRulerGuides()
+    {
+        var total = Document.VerticalRulerGuides.Count + Document.HorizontalRulerGuides.Count;
+        if (total == 0)
+        {
+            Status = "Aucun repère à effacer";
+            return;
+        }
+
+        BeginEdit();
+        Document.VerticalRulerGuides.Clear();
+        Document.HorizontalRulerGuides.Clear();
+        CommitEdit();
+        Status = total == 1 ? "Repère effacé" : $"{total} repères effacés";
     }
 
     // ---------------------------------------------------------------- pages

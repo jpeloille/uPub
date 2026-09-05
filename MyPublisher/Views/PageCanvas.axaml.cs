@@ -30,10 +30,11 @@ public partial class PageCanvas : UserControl
     /// <summary>Poignées dans l'ordre horaire, à 45° d'intervalle : l'index sert aussi au choix du curseur.</summary>
     private enum Anchor { NorthWest, North, NorthEast, East, SouthEast, South, SouthWest, West }
 
-    private enum DragMode { None, Move, Resize, Create }
+    private enum DragMode { None, Move, Resize, Create, Guide }
 
     private const double HandleSize = 9;      // pixels écran
     private const double HandleGrab = 7;      // rayon de préhension, pixels écran
+    private const double GuideGrab = 4;       // un repère est un trait : on le saisit de près
     private const double SnapPixels = 6;      // tolérance d'aimantation, pixels écran
     /// <summary>
     /// Taille minimale d'un bloc. Le panneau de propriétés saisit en millimètres :
@@ -54,6 +55,8 @@ public partial class PageCanvas : UserControl
     private static readonly Cursor ArrowCursor = new(StandardCursorType.Arrow);
 
     private static readonly Cursor DrawCursor = new(StandardCursorType.Cross);
+    private static readonly Cursor VerticalGuideCursor = new(StandardCursorType.SizeWestEast);
+    private static readonly Cursor HorizontalGuideCursor = new(StandardCursorType.SizeNorthSouth);
 
     /// <summary>
     /// Un contour par bloc sélectionné, créés à la demande et gardés sous les poignées.
@@ -86,6 +89,10 @@ public partial class PageCanvas : UserControl
     /// <summary>Aucun bloc tourné dans la sélection : l'aimantation a des bords à offrir.</summary>
     private bool _moveSnappable;
 
+    /// <summary>Repère en cours de pose ou de déplacement, et l'axe qu'il barre.</summary>
+    private RulerGuide? _draggedGuide;
+    private bool _draggedGuideIsVertical;
+
     public PageCanvas()
     {
         InitializeComponent();
@@ -113,6 +120,18 @@ public partial class PageCanvas : UserControl
             IsVisible = false
         };
         Overlay.Children.Add(_preview);
+
+        // Les règles reçoivent les mêmes gestes que la planche : glisser depuis l'une
+        // d'elles pose un repère, et la capture du pointeur fait que la suite du geste
+        // leur revient même quand il passe au-dessus de la page.
+        TopRuler.PointerPressed += OnRulerPressed;
+        LeftRuler.PointerPressed += OnRulerPressed;
+        TopRuler.PointerMoved += OnPointerMoved;
+        LeftRuler.PointerMoved += OnPointerMoved;
+        TopRuler.PointerReleased += OnPointerReleased;
+        LeftRuler.PointerReleased += OnPointerReleased;
+        TopRuler.Cursor = VerticalGuideCursor;
+        LeftRuler.Cursor = HorizontalGuideCursor;
 
         InputLayer.PointerPressed += OnPointerPressed;
         InputLayer.PointerMoved += OnPointerMoved;
@@ -350,6 +369,16 @@ public partial class PageCanvas : UserControl
             return;
         }
 
+        // Un repère passe avant les blocs : il est fin, on ne l'attrape qu'en le visant,
+        // et c'est le seul moyen de le reprendre une fois posé.
+        if (HitGuide(page) is var (guide, vertical) && guide is not null)
+        {
+            BeginGuideDrag(guide, vertical);
+            e.Pointer.Capture(InputLayer);
+            e.Handled = true;
+            return;
+        }
+
         // Ordre de superposition : le dernier bloc dessiné est le premier candidat.
         var hit = _vm.CurrentPage.Frames.LastOrDefault(f => f.HitTest(page.X, page.Y));
         var additive = e.KeyModifiers.HasFlag(KeyModifiers.Control) ||
@@ -425,6 +454,12 @@ public partial class PageCanvas : UserControl
             return;
         }
 
+        if (_mode == DragMode.Guide)
+        {
+            ApplyGuideMove(page, e.KeyModifiers);
+            return;
+        }
+
         if (_mode == DragMode.Move)
         {
             ApplyMove(page, e.KeyModifiers);
@@ -451,6 +486,12 @@ public partial class PageCanvas : UserControl
         if (mode == DragMode.Create)
         {
             FinishCreate(e.GetPosition(Surface));
+            return;
+        }
+
+        if (mode == DragMode.Guide)
+        {
+            FinishGuideDrag();
             return;
         }
 
@@ -516,8 +557,118 @@ public partial class PageCanvas : UserControl
             return;
         }
 
+        if (HitGuide(page) is var (guide, vertical) && guide is not null)
+        {
+            InputLayer.Cursor = vertical ? VerticalGuideCursor : HorizontalGuideCursor;
+            return;
+        }
+
         var over = _vm?.CurrentPage?.Frames.LastOrDefault(f => f.HitTest(page.X, page.Y));
         InputLayer.Cursor = over is null ? ArrowCursor : MoveCursor;
+    }
+
+    // ---------------------------------------------------------------- repères libres
+
+    /// <summary>
+    /// Le repère le plus proche du point, s'il est à portée. Les repères cachés ne se
+    /// saisissent pas : on ne doit pas attraper ce qu'on ne voit pas.
+    /// </summary>
+    private (RulerGuide? Guide, bool Vertical) HitGuide(Point page)
+    {
+        if (_vm is null || !_vm.ShowGuides) return (null, false);
+
+        var tolerance = GuideGrab / Scale;
+
+        foreach (var guide in _vm.Document.VerticalRulerGuides)
+        {
+            if (Math.Abs(guide.Position - page.X) <= tolerance) return (guide, true);
+        }
+
+        foreach (var guide in _vm.Document.HorizontalRulerGuides)
+        {
+            if (Math.Abs(guide.Position - page.Y) <= tolerance) return (guide, false);
+        }
+
+        return (null, false);
+    }
+
+    /// <summary>Un geste parti d'une règle pose un repère neuf, qu'on traîne aussitôt.</summary>
+    private void OnRulerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (_vm is null || sender is not Ruler ruler) return;
+        if (!e.GetCurrentPoint(ruler).Properties.IsLeftButtonPressed) return;
+
+        Focus();
+
+        var vertical = ruler.Orientation == Avalonia.Layout.Orientation.Horizontal;
+        var page = ToPageCoordinates(e.GetPosition(Surface));
+        var guide = new RulerGuide(vertical ? page.X : page.Y);
+
+        BeginGuideDrag(guide, vertical);
+        (vertical ? _vm.Document.VerticalRulerGuides : _vm.Document.HorizontalRulerGuides).Add(guide);
+
+        // Poser un repère n'a d'intérêt que si on les voit ; le geste les rallume.
+        _vm.ShowGuides = true;
+
+        e.Pointer.Capture(ruler);
+        e.Handled = true;
+    }
+
+    private void BeginGuideDrag(RulerGuide guide, bool vertical)
+    {
+        _mode = DragMode.Guide;
+        _draggedGuide = guide;
+        _draggedGuideIsVertical = vertical;
+        _vm?.BeginEdit();
+    }
+
+    /// <summary>
+    /// Suit le pointeur, en s'aimantant sur les autres repères — marges, grille,
+    /// colonnes — pour qu'on puisse poser un repère exactement sur un bord de colonne.
+    /// Le repère traîné est écarté des candidats, sans quoi il s'accrocherait à
+    /// lui-même et ne bougerait plus.
+    /// </summary>
+    private void ApplyGuideMove(Point page, KeyModifiers modifiers)
+    {
+        if (_draggedGuide is null || _vm is null) return;
+
+        var target = _draggedGuideIsVertical ? page.X : page.Y;
+
+        if (!modifiers.HasFlag(KeyModifiers.Alt))
+        {
+            var current = _draggedGuide.Position;
+            var candidates = (_draggedGuideIsVertical
+                    ? _vm.Document.VerticalGuides
+                    : _vm.Document.HorizontalGuides)
+                .Where(value => Math.Abs(value - current) > 1e-9)
+                .ToList();
+
+            target = SnapEdge(target, 0, SnapPixels / Scale, candidates);
+        }
+
+        _draggedGuide.Position = target;
+    }
+
+    /// <summary>
+    /// Ferme le geste. Un repère lâché hors de la page est retiré : c'est le moyen de
+    /// s'en débarrasser, en le ramenant d'où il vient.
+    /// </summary>
+    private void FinishGuideDrag()
+    {
+        if (_draggedGuide is not null && _vm is not null)
+        {
+            var limit = _draggedGuideIsVertical ? _vm.Document.PageWidth : _vm.Document.PageHeight;
+            if (_draggedGuide.Position < 0 || _draggedGuide.Position > limit)
+            {
+                (_draggedGuideIsVertical
+                    ? _vm.Document.VerticalRulerGuides
+                    : _vm.Document.HorizontalRulerGuides).Remove(_draggedGuide);
+                _vm.Status = "Repère retiré";
+            }
+        }
+
+        _draggedGuide = null;
+        _vm?.CommitEdit();
     }
 
     // ---------------------------------------------------------------- déplacement
