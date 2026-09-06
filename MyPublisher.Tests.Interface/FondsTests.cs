@@ -1,7 +1,9 @@
 using System;
+using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
+using Avalonia.VisualTree;
 using MyPublisher.Models;
 using Xunit;
 
@@ -94,6 +96,41 @@ public class FondsTests
 
     private static int Bleu(string couleur) =>
         HexColor.TryParse(couleur, out _, out _, out _, out var b) ? b : -1;
+
+    // -------------------------------------------------------------- le panneau
+
+    [AvaloniaFact]
+    public void Le_panneau_offre_les_champs_du_degrade_dun_bloc()
+    {
+        // Un gabarit manquant ne lève rien : le panneau afficherait le nom de la classe
+        // et les champs seraient simplement absents. On vérifie donc qu'un contrôle du
+        // panneau a bien pris le dégradé pour contexte.
+        var degrade = new GradientFill("#FFFF0000", "#FF0000FF", 30);
+        var bloc = new ShapeFrame { X = 40, Y = 40, Width = 200, Height = 100, Fill = degrade };
+        var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(bloc));
+
+        vm.Selected = bloc;
+        Rendu.Battre();
+
+        Assert.Contains(
+            fenetre.GetVisualDescendants().OfType<Control>(),
+            c => ReferenceEquals(c.DataContext, degrade));
+    }
+
+    [AvaloniaFact]
+    public void Le_panneau_offre_les_champs_du_fond_de_page()
+    {
+        var fond = new TintFill("#FF336699", 40);
+        var document = Rendu.Feuille();
+        document.Background = fond;
+        var (fenetre, _) = Rendu.Ouvrir(document);
+
+        Rendu.Battre();
+
+        Assert.Contains(
+            fenetre.GetVisualDescendants().OfType<Control>(),
+            c => ReferenceEquals(c.DataContext, fond));
+    }
 
     // -------------------------------------------------------------- rafraîchissement
 

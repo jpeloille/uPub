@@ -117,6 +117,7 @@ public partial class Document : ObservableObject
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasBackground))]
     [NotifyPropertyChangedFor(nameof(BackgroundKind))]
+    [NotifyPropertyChangedFor(nameof(BackgroundIsSolid))]
     [NotifyPropertyChangedFor(nameof(BackgroundColor))]
     [property: JsonPropertyOrder(85)]
     private FillBrush? _background;
@@ -154,6 +155,9 @@ public partial class Document : ObservableObject
         }
     }
 
+    /// <summary>Le fond de page est-il un aplat ; voir <see cref="Frame.FillIsSolid"/>.</summary>
+    [JsonIgnore] public bool BackgroundIsSolid => Background is SolidFill;
+
     /// <summary>La couleur du fond de page quand il est uni ; voir <see cref="Frame.FillColor"/>.</summary>
     [JsonIgnore]
     public string BackgroundColor
@@ -190,6 +194,7 @@ public partial class Document : ObservableObject
 
         OnPropertyChanged(nameof(Background));
         OnPropertyChanged(nameof(BackgroundColor));
+        OnPropertyChanged(nameof(BackgroundIsSolid));
     }
 
     [JsonPropertyOrder(100)]

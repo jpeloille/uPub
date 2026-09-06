@@ -152,6 +152,7 @@ public abstract partial class Frame : ObservableObject
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasFill))]
     [NotifyPropertyChangedFor(nameof(FillKind))]
+    [NotifyPropertyChangedFor(nameof(FillIsSolid))]
     [NotifyPropertyChangedFor(nameof(FillColor))]
     [NotifyPropertyChangedFor(nameof(FillOpacity))]
     [property: JsonPropertyOrder(70)]
@@ -225,6 +226,13 @@ public abstract partial class Frame : ObservableObject
             Fill = _lastOfKind[(int)value] ?? FillBrush.Neuf(value, _lastFill);
         }
     }
+
+    /// <summary>
+    /// Le fond est-il un aplat : c'est la seule sorte dont la couleur se règle sur le
+    /// bloc lui-même, les trois autres ayant leurs propres champs. Le panneau s'en sert
+    /// pour ne montrer que ce qui a un effet.
+    /// </summary>
+    [JsonIgnore] public bool FillIsSolid => Fill is SolidFill;
 
     /// <summary>
     /// Teinte présentée au sélecteur de couleur, toujours définie même quand le bloc
@@ -328,6 +336,7 @@ public abstract partial class Frame : ObservableObject
         OnPropertyChanged(nameof(Fill));
         OnPropertyChanged(nameof(FillColor));
         OnPropertyChanged(nameof(FillOpacity));
+        OnPropertyChanged(nameof(FillIsSolid));
     }
 
     partial void OnStrokeChanged(string? value)

@@ -111,6 +111,71 @@
         </Style>
     </Window.Styles>
 
+    <!-- Les champs de chaque sorte de remplissage, déclarés une fois pour toutes. Le fond
+         d'un bloc et le fond de page les partagent : deux copies auraient dérivé, et
+         c'est le genre d'écart qui ne se voit qu'en ouvrant les deux panneaux côte à
+         côte. L'aplat, lui, se règle par la couleur du porteur — le sélecteur ne peut
+         pas être branché sur le remplissage lui-même, il renvoie ce qu'il lit dès qu'il
+         s'affiche. -->
+    <Window.DataTemplates>
+
+        <!-- L'aplat n'a rien à montrer ici : sa couleur et son opacité se règlent sur le
+             porteur, juste au-dessus. Le gabarit existe pour que le sélecteur de sorte
+             ne laisse pas voir un nom de classe. -->
+        <DataTemplate DataType="models:SolidFill">
+            <Panel/>
+        </DataTemplate>
+
+        <DataTemplate DataType="models:GradientFill">
+            <StackPanel>
+                <TextBlock Classes="field" Text="Première couleur" Margin="0,6,0,2"/>
+                <ColorPicker HorizontalAlignment="Left"
+                             Color="{Binding From, Converter={x:Static conv:HexToColor.Instance}}"/>
+                <TextBlock Classes="field" Text="Seconde couleur" Margin="0,6,0,2"/>
+                <ColorPicker HorizontalAlignment="Left"
+                             Color="{Binding To, Converter={x:Static conv:HexToColor.Instance}}"/>
+                <TextBlock Classes="field" Text="Angle (°)" Margin="0,6,0,2"/>
+                <!-- Zéro va de gauche à droite, 90 de haut en bas : l'axe Y descend,
+                     comme en PDF. Les quatre ombrages de Publisher — horizontal,
+                     vertical, deux diagonales — sont 0, 90, 45 et 315. -->
+                <NumericUpDown FormatString="0" Increment="15" Minimum="0" Maximum="360"
+                               Value="{Binding Angle, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
+            </StackPanel>
+        </DataTemplate>
+
+        <DataTemplate DataType="models:ImageFill">
+            <StackPanel>
+                <TextBlock Text="{Binding Path}" TextWrapping="Wrap" FontSize="11"
+                           Foreground="#FF8A929E" Margin="0,6,0,0"/>
+                <Button Content="Choisir une image…" Margin="0,4,0,0"
+                        Click="OnChooseFillImage"/>
+                <TextBlock Classes="field" Text="Cadrage" Margin="0,6,0,2"/>
+                <ComboBox HorizontalAlignment="Stretch"
+                          ItemsSource="{Binding #Root.((vm:MainWindowViewModel)DataContext).ImageFits}"
+                          SelectedItem="{Binding Fit}"/>
+                <TextBlock Classes="field" Text="Rotation (°)" Margin="0,6,0,2"/>
+                <!-- Le quart de tour que Publisher pose sur une image de remplissage :
+                     une des cinq d'ATA 21 le porte, et sans lui elle arrive couchée. -->
+                <NumericUpDown FormatString="0" Increment="90" Minimum="0" Maximum="270"
+                               Value="{Binding Rotation, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
+            </StackPanel>
+        </DataTemplate>
+
+        <DataTemplate DataType="models:TintFill">
+            <StackPanel>
+                <TextBlock Classes="field" Text="Couleur de base" Margin="0,6,0,2"/>
+                <ColorPicker HorizontalAlignment="Left"
+                             Color="{Binding Color, Converter={x:Static conv:HexToColor.Instance}}"/>
+                <TextBlock Classes="field" Text="Teinte (%)" Margin="0,6,0,2"/>
+                <!-- Cent, c'est la couleur de base ; en dessous on va vers le blanc,
+                     au-dessus vers le noir. -->
+                <NumericUpDown FormatString="0" Increment="10" Minimum="0" Maximum="200"
+                               Value="{Binding Percent, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
+            </StackPanel>
+        </DataTemplate>
+
+    </Window.DataTemplates>
+
     <DockPanel>
 
         <Menu DockPanel.Dock="Top">
@@ -299,6 +364,28 @@
                         <NumericUpDown Grid.Row="3" Grid.Column="2" FormatString="0.#" Increment="1"
                                        Value="{Binding Document.MarginBottom, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
                     </Grid>
+
+                    <!-- Le fond de page, réglé une fois pour toutes les pages, comme le
+                         fait « Format ▸ Background » de Publisher : un fond change
+                         l'allure de la publication entière. Il emprunte les mêmes
+                         gabarits que le fond d'un bloc. -->
+                    <CheckBox Content="Fond de page" Margin="0,10,0,0"
+                              IsChecked="{Binding Document.HasBackground}"/>
+                    <StackPanel IsEnabled="{Binding Document.HasBackground}">
+                        <TextBlock Classes="field" Text="Sorte de fond" Margin="0,4,0,2"/>
+                        <ComboBox HorizontalAlignment="Stretch"
+                                  ItemsSource="{Binding FillKinds}"
+                                  SelectedItem="{Binding Document.BackgroundKind}"/>
+                        <StackPanel IsVisible="{Binding Document.BackgroundIsSolid}">
+                            <ColorPicker HorizontalAlignment="Left" Margin="0,6,0,0"
+                                         Color="{Binding Document.BackgroundColor, Converter={x:Static conv:HexToColor.Instance}}"/>
+                        </StackPanel>
+                        <ContentControl Content="{Binding Document.Background}"/>
+                    </StackPanel>
+                    <TextBlock Text="Sans fond, la page reste blanche. Le fond ne déborde pas : il s'arrête au format de page."
+                               IsVisible="{Binding !Document.HasBackground}"
+                               FontSize="11" Foreground="#FF8A929E"
+                               TextWrapping="Wrap" Margin="0,4,0,0"/>
 
                     <TextBlock Classes="section" Text="GRILLE"/>
                     <TextBlock Text="Les repères de composition ne s'impriment pas ; l'aimantation s'y accroche."
@@ -730,11 +817,24 @@
 
                                     <CheckBox Content="Appliquer un fond" IsChecked="{Binding HasFill}"/>
                                     <StackPanel IsEnabled="{Binding HasFill}">
-                                        <ColorPicker HorizontalAlignment="Left" Margin="0,2,0,0"
-                                                     Color="{Binding FillColor, Converter={x:Static conv:HexToColor.Instance}}"/>
-                                        <TextBlock Classes="field" Text="Opacité du fond (%)" Margin="0,6,0,2"/>
-                                        <NumericUpDown FormatString="0" Increment="5" Minimum="0" Maximum="100"
-                                                       Value="{Binding FillOpacity, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
+                                        <TextBlock Classes="field" Text="Sorte de fond" Margin="0,4,0,2"/>
+                                        <ComboBox HorizontalAlignment="Stretch"
+                                                  ItemsSource="{Binding #Root.((vm:MainWindowViewModel)DataContext).FillKinds}"
+                                                  SelectedItem="{Binding FillKind}"/>
+                                        <!-- L'aplat se règle ici et non dans le gabarit du
+                                             remplissage : le sélecteur de couleur renvoie ce
+                                             qu'il lit dès qu'il s'affiche, et il ne doit
+                                             écrire que si le fond est bien un aplat. -->
+                                        <StackPanel IsVisible="{Binding FillIsSolid}">
+                                            <ColorPicker HorizontalAlignment="Left" Margin="0,6,0,0"
+                                                         Color="{Binding FillColor, Converter={x:Static conv:HexToColor.Instance}}"/>
+                                            <TextBlock Classes="field" Text="Opacité du fond (%)" Margin="0,6,0,2"/>
+                                            <NumericUpDown FormatString="0" Increment="5" Minimum="0" Maximum="100"
+                                                           Value="{Binding FillOpacity, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
+                                        </StackPanel>
+                                        <!-- Le dégradé, l'image et la teinte, par les gabarits
+                                             que le fond de page partage. -->
+                                        <ContentControl Content="{Binding Fill}"/>
                                     </StackPanel>
                                     <TextBlock Text="Sans fond, ce qui passe sous le bloc reste visible."
                                                IsVisible="{Binding !HasFill}"
