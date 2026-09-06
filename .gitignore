@@ -13,3 +13,6 @@ ecart-page*.png
 
 # Verrou de Scripts/eprouver-le-juge.sh
 .juge-en-cours
+
+# Copies de travail des agents
+.claude/
