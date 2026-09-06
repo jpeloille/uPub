@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using MyPublisher.Models;
 using PdfSharp.Drawing;
 using PdfSharp.Drawing.Layout;
@@ -35,6 +36,11 @@ public static class PdfExporter
 
         var warnings = new List<string>();
 
+        // Avant les pages, et non pendant : la barre d'état ne montre que le premier
+        // avertissement, et une flèche de procédure d'urgence remplacée par une lettre
+        // passe avant une image manquante.
+        AvertirSurLesPolices(document, warnings);
+
         // Pas de « using » ici : PDFsharp invalide le document lors du Save et
         // lève une exception si on tente ensuite de le libérer.
         var pdf = new PdfDocument();
@@ -61,6 +67,85 @@ public static class PdfExporter
         var pageCount = pdf.PageCount;
         pdf.Save(path);
         return new ExportReport(pageCount, warnings);
+    }
+
+    /// <summary>
+    /// Confronte les polices que le document demande à celles que la machine rendra,
+    /// et signale les écarts.
+    ///
+    /// Pourquoi une passe sur le modèle plutôt qu'un relevé pris pendant le dessin :
+    /// PDFsharp garde en cache la résolution d'une police pour toute la durée du
+    /// processus et n'appelle donc le résolveur qu'une fois par famille. Un relevé pris
+    /// au vol serait complet au premier export et vide au second — or l'application
+    /// exporte plusieurs fois de suite, et c'est justement le deuxième export qu'on
+    /// envoie à l'imprimeur. Cette passe-ci ne dépend que du document.
+    ///
+    /// Un avertissement par police et non par bloc : les fiches ATR portent 119
+    /// fragments en Wingdings, qui feraient 119 lignes disant la même chose. C'est la
+    /// police qui est substituée, pas le bloc — comme « Image introuvable » nomme le
+    /// fichier et non le cadre qui l'affiche.
+    /// </summary>
+    private static void AvertirSurLesPolices(Document document, List<string> warnings)
+    {
+        // La paire demandée/employée, et non le libellé : le romain et le gras d'une
+        // même famille absente tombent souvent sur le même substitut, et ne valent
+        // alors qu'un avertissement.
+        var vues = new HashSet<(string, string)>();
+
+        foreach (var bloc in Blocs(document).OfType<TextFrame>())
+        {
+            foreach (var (police, gras, italique) in Polices(bloc))
+            {
+                if (string.IsNullOrWhiteSpace(police)) continue;
+
+                var resolution = FontconfigFontResolver.Resoudre(police, gras, italique);
+                if (resolution.Exacte) continue;
+                if (!vues.Add((resolution.Demandee, resolution.Employee))) continue;
+
+                warnings.Add(resolution.Employee.Length == 0
+                    ? $"Police introuvable : « {resolution.Demandee} » — aucune police sur cette machine."
+                    : $"Police substituée : « {resolution.Demandee} » demandée, "
+                      + $"« {resolution.Employee} » employée ({resolution.Motif}).");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Les polices qu'un bloc de texte demande : la sienne, et celle de chacun de ses
+    /// fragments — une propriété nulle sur un fragment voulant dire « comme le bloc ».
+    ///
+    /// On les lit sur le modèle et non sur le texte réellement composé. Un fragment
+    /// hors des bornes du texte, ou un bloc portant un champ, fait ainsi un
+    /// avertissement de trop plutôt qu'un de moins. Le déséquilibre est voulu : une
+    /// police annoncée à tort est du bruit, une flèche de procédure d'urgence
+    /// silencieusement remplacée par une lettre ne l'est pas.
+    /// </summary>
+    private static IEnumerable<(string Police, bool Gras, bool Italique)> Polices(TextFrame bloc)
+    {
+        yield return (bloc.FontFamily, bloc.Bold, bloc.Italic);
+
+        foreach (var fragment in bloc.Spans)
+        {
+            yield return (
+                fragment.FontFamily ?? bloc.FontFamily,
+                fragment.Bold ?? bloc.Bold,
+                fragment.Italic ?? bloc.Italic);
+        }
+    }
+
+    /// <summary>Tous les blocs du document, groupes traversés.</summary>
+    private static IEnumerable<Frame> Blocs(Document document) =>
+        document.Pages.SelectMany(page => page.Frames).SelectMany(Descendance);
+
+    private static IEnumerable<Frame> Descendance(Frame frame)
+    {
+        yield return frame;
+
+        if (frame is not GroupFrame groupe) yield break;
+        foreach (var enfant in groupe.Children)
+        {
+            foreach (var descendant in Descendance(enfant)) yield return descendant;
+        }
     }
 
     /// <summary>
