@@ -302,7 +302,7 @@ public static class PdfExporter
     /// entière avant que rien d'autre ne soit tracé.
     /// </summary>
     private static void DrawBackground(XGraphics gfx, Document document, List<string> warnings) =>
-        Remplir(gfx, document.Background,
+        RemplirOuSignaler(gfx, document.Background,
             new Pourtour(new XRect(0, 0, document.PageWidth, document.PageHeight), false, 0),
             warnings, "Fond de page");
 
@@ -312,13 +312,35 @@ public static class PdfExporter
     /// alpha nul, ne pose rien du tout et laisse voir ce qui est dessous.
     /// </summary>
     private static void DrawFill(XGraphics gfx, Frame frame, List<string> warnings) =>
-        Remplir(gfx, frame.Fill, Contour(frame), warnings, frame.DisplayName);
+        RemplirOuSignaler(gfx, frame.Fill, Contour(frame), warnings, frame.DisplayName);
 
     /// <summary>
     /// Pose un remplissage dans un pourtour. Trois des quatre sortes se ramènent à un
     /// pinceau ; l'image, elle, se dessine — PDFsharp n'a pas de pinceau d'image — et
     /// c'est le pourtour qui lui sert alors de découpe.
     /// </summary>
+    /// <summary>
+    /// Pose un remplissage, et ne laisse jamais son échec emporter l'export.
+    ///
+    /// Depuis C5c, un remplissage peut ouvrir un fichier — et un fichier illisible levait
+    /// jusqu'ici hors de toute garde : l'export s'arrêtait, aucun PDF n'était écrit,
+    /// alors que la MÊME image posée en bloc image ne valait qu'un avertissement, et que
+    /// l'écran, lui, encaissait. Trouvé par la relecture de C5. Le remède est celui que
+    /// le reste du fichier applique déjà : signaler, et laisser le bloc en place.
+    /// </summary>
+    private static void RemplirOuSignaler(
+        XGraphics gfx, FillBrush? fill, Pourtour pourtour, List<string> warnings, string nom)
+    {
+        try
+        {
+            Remplir(gfx, fill, pourtour, warnings, nom);
+        }
+        catch (Exception ex)
+        {
+            warnings.Add($"{nom} : fond non dessiné — {ex.Message}");
+        }
+    }
+
     private static void Remplir(
         XGraphics gfx, FillBrush? fill, Pourtour pourtour, List<string> warnings, string nom)
     {

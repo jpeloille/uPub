@@ -293,6 +293,56 @@ ont trouvé, et ce qui en a été fait.
   composés. Un fragment entièrement recouvert par un autre est signalé quand même.
 
 
+
+### Ce que la relecture adversariale du 7 septembre 2026 a trouvé
+
+Cinq postes livrés par cinq agents, cinq relecteurs lancés contre eux. Deux des
+trouvailles portaient sur **l'import du poste R5**, et étaient les plus lourdes.
+
+**Corrigé aussitôt**
+
+- **La marque de paragraphe de Publisher fabriquait une ligne vide fantôme.** libmspub
+  rend le terminateur de paragraphe comme du texte — un `insertText (\r)` à la fin de
+  chaque paragraphe — et l'import le gardait. À l'intérieur d'un bloc, il se collait au
+  saut de ligne suivant en `\r\n` que la composition normalise : le défaut ne se voyait
+  pas. Mais celui du **dernier** paragraphe n'avait rien derrière lui et devenait une
+  ligne comptée dans la hauteur. Les **vingt-sept blocs** des deux documents finissaient
+  ainsi. Conséquence mesurée : **cinq débordements signalés sur ATA 21, tous faux** —
+  il n'en reste aucun — et vingt-deux sur les fiches, ramenés à douze. Quatre blocs
+  portaient un marqueur rouge alors que rien n'y était coupé.
+
+  *Ce que cela emportait avec soi* : la recette de A2 avait été bâtie sur ces
+  débordements-là, et le poste A7 justifiait sa borne de calage par un bloc dont les
+  « 26,86 pt composés » comptaient la ligne fantôme. La recette affirme désormais
+  l'inverse — qu'aucun bloc d'ATA 21 ne déborde — et c'est ce contrôle-là qui tomberait
+  si la ligne revenait.
+
+- **Deux blocs d'ATA 21 sont tournés d'un quart de tour, et l'import les posait droits.**
+  Le relevé écrit `librevenge:rotate: 90.0000in` — des degrés affublés d'une unité de
+  longueur, que le convertisseur de points aurait lus 6 480. La rotation est portée, et
+  la recette la compte.
+
+- **Un remplissage par image illisible arrêtait tout l'export.** Depuis C5c, un
+  remplissage peut ouvrir un fichier, et il le faisait hors de toute garde : aucun PDF
+  n'était écrit, alors que la même image posée en bloc image ne valait qu'un
+  avertissement et que l'écran l'encaissait. La règle du dépôt est constante — signaler
+  et continuer — et le fond la suit désormais.
+
+- **Un bloc de texte vide reste un bloc.** Retombée du premier correctif : un bloc des
+  fiches ne portait que sa marque de paragraphe, et se retrouvait vide donc écarté. La
+  source en compte dix-huit ; l'import en rendait dix-sept.
+
+**Consigné, non corrigé**
+
+- La découpe d'un remplissage par image n'est mesurée nulle part : le document de
+  recette de C5 ne porte que des rectangles à angles droits, et un sabotage de la
+  découpe traverse toute la vérification.
+- La recette de A6 emploie une fabrique de blocs qui évite le cas réel — même défaut
+  que celui relevé sur R2 la veille, et la consigne le nommait pourtant.
+- L'écran rentre son filet dans le bloc là où l'export le centre sur le bord.
+- Le seuil de rupture de colonne reste évalué sur deux mesures (voir plus haut).
+
+
 ### P0 — Une décision à prendre tout de suite
 
 **Le nom du remplissage.** `ShapeFrame.Fill` et `TextFrame.Background` désignent la même

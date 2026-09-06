@@ -134,63 +134,41 @@ fi
 
 if [ "$reel" = 1 ]; then
 
-# « Overheat Protection » : 82,13 pt de bloc pour 90,78 pt composés. Le nombre est
-# celui du document, pas un nombre choisi.
-attendu="Page 1 · Overheat Protection : le texte déborde du bloc de 8,6 pt"
-if ! grep -qF "$attendu" "$travail/ata.txt"; then
-    echo "ÉCHEC : l'export ne signale pas le débordement d'« Overheat Protection »." >&2
-    grep 'déborde' "$travail/ata.txt" >&2 || echo "    (aucun avertissement de débordement)" >&2
-    exit 1
-fi
-echo "    $attendu"
-
-# Et il se tait sur les deux blocs qui ne dépassent que dans leur marge basse : leur
-# texte compose 1,5 pt de plus que sa zone, et les 2,88 pt de « fo:padding-bottom »
-# le reçoivent. Rien n'est coupé — les signaler serait crier au loup. La même règle est
-# éprouvée plus bas sur le document de la recette, où la police est celle du dépôt.
-for muet in "The aircraft uses external air" "Air inlets location"; do
-    if grep -F "déborde" "$travail/ata.txt" | grep -qF "$muet"; then
-        echo "ÉCHEC : « $muet » ne dépasse que dans sa marge basse, rien n'y est coupé." >&2
-        exit 1
-    fi
-done
-echo "    silence sur les deux blocs que leur marge intérieure basse absorbe"
-
-# Deux blocs portent le même nom, un par page : sans le préfixe de page, les deux
-# avertissements seraient indiscernables.
-if [ "$(grep -c 'ATA 21 - Air conditioning : le texte déborde' "$travail/ata.txt")" != 2 ] ||
-   ! grep -q "^Avertissement : Page 2 · ATA 21 - Air conditioning : le texte déborde" "$travail/ata.txt"; then
-    echo "ÉCHEC : les deux blocs homonymes ne sont pas désignés séparément." >&2
+# ATA 21 ne déborde NULLE PART, et c'est le contrôle.
+#
+# Cette recette affirmait d'abord le contraire : cinq blocs signalés, dont « Overheat
+# Protection » à 8,6 pt. Les cinq étaient faux. libmspub rend la marque de paragraphe
+# de Publisher comme du texte — un « insertText (\r) » à la fin de chaque paragraphe —
+# et l'import la gardait : celle du dernier paragraphe, n'ayant rien derrière elle,
+# devenait une ligne vide fantôme qui comptait dans la hauteur. Les vingt-sept blocs
+# des deux documents réels finissaient ainsi.
+#
+# Le poste R5 écarte désormais ce \r. Plus aucun bloc d'ATA 21 ne déborde, et quatre
+# blocs ont perdu le marqueur rouge qu'ils portaient à tort. Si la ligne fantôme
+# revenait, ce contrôle-ci tomberait le premier.
+deborde=$(grep -c 'déborde du bloc' "$travail/ata.txt" || true)
+if [ "$deborde" != 0 ]; then
+    echo "ÉCHEC : ATA 21 ne doit déborder nulle part, $deborde bloc(s) signalé(s)." >&2
     grep 'déborde' "$travail/ata.txt" >&2
+    echo "    La marque de paragraphe de Publisher est-elle revenue dans le texte ?" >&2
     exit 1
 fi
-echo "    les deux blocs homonymes se distinguent par leur page"
+echo "    aucun débordement — la ligne fantôme de la marque de paragraphe est écartée"
 
-echo "  ATA 21 — ce que le PDF en montre :"
+# Les deux blocs tournés d'un quart de tour arrivent tournés. L'import les posait
+# droits sans un mot ; c'est la relecture de A1 qui l'a relevé.
+tournes=$(python3 -c "
+import json, sys
+d = json.load(open('$travail/ata.mypub'))
+print(sum(1 for p in d['Pages'] for f in p['Frames'] if f.get('Rotation')))
+")
+if [ "$tournes" != 2 ]; then
+    echo "ÉCHEC : ATA 21 porte deux blocs tournés, $tournes retrouvé(s)." >&2
+    exit 1
+fi
+echo "    les deux blocs tournés d'un quart de tour le sont encore"
 
-cp "$travail/ata.pdf" "$travail/ata-p1.pdf"
-rendre "$travail/ata.mypub" 1 "$travail/ata-p1"
-
-# « Overheat Protection » : x 36, y 571,82, 523,27 × 82,13 — donc bas à 653,95. Sans
-# rognage, les 8,6 pt qui dépassent posent de l'encre entre 655 et 672. Rien d'autre
-# n'occupe cette bande : c'est le dernier bloc de la page.
-for cote in ecran pdf; do
-    dedans="$(noir "$travail/ata-p1-$cote.png" 36 630 523 23)"
-    dessous="$(noir "$travail/ata-p1-$cote.png" 36 655 523 17)"
-
-    if [ "$dedans" -lt 500 ]; then
-        echo "ÉCHEC ($cote) : le bas du bloc « Overheat Protection » ne porte pas de texte." >&2
-        echo "La mesure suivante ne prouverait alors rien." >&2
-        exit 1
-    fi
-
-    verifier "$cote — encre sous le bloc trop plein (px)" "$dessous" 0 20
-    echo "  ($cote — encre dans le bas du bloc : $dedans px, la mesure n'est pas à vide)"
-done
-
-fi   # fin des mesures qui dépendent de Calibri
-
-# ---------------------------------------------------- 2. le document de la recette
+fi
 
 echo "  Document de la recette :"
 
@@ -356,4 +334,4 @@ done
 if [ "$fautifs" != 0 ]; then exit 1; fi
 echo "  aucun des documents livrés ne déborde"
 
-echo "A2/A7 : débordement signalé sur ATA 21, calages mesurés au PDF, rognage vérifié des deux côtés."
+echo "A2/A7 : ATA 21 ne déborde nulle part, calages mesurés au PDF, rognage vérifié des deux côtés."

@@ -430,4 +430,45 @@ public class ImportPubTests
 
         Assert.Single(document.Pages);
     }
+
+    [Fact]
+    public void La_marque_de_paragraphe_de_Publisher_ne_fabrique_pas_de_ligne_vide()
+    {
+        // libmspub rend la marque de paragraphe de Publisher comme du TEXTE : chaque
+        // paragraphe se termine par un « insertText (\r) ». Or la structure des
+        // paragraphes nous vient déjà de « openParagraph ». Gardé, ce \r fait doublon —
+        // et celui du dernier paragraphe, n'ayant rien derrière lui, devient une ligne
+        // vide fantôme qui compte dans la hauteur.
+        //
+        // Les vingt-sept blocs des deux documents réels finissent ainsi. Quatre des cinq
+        // débordements signalés sur ATA 21 en venaient, et quatre blocs portaient un
+        // marqueur rouge alors que rien n'y était coupé.
+        const string RC = "\r";
+        var document = Importer($"""
+            {UnePage}
+                startTextObject (svg:height: 1.0000in, svg:width: 4.0000in, svg:x: 0.0000in, svg:y: 0.0000in)
+                  openParagraph ()
+                    openSpan()
+                      insertText (Premier)
+                    closeSpan
+                    openSpan()
+                      insertText ({RC})
+                    closeSpan
+                  closeParagraph
+                  openParagraph ()
+                    openSpan()
+                      insertText (Second)
+                    closeSpan
+                    openSpan()
+                      insertText ({RC})
+                    closeSpan
+                  closeParagraph
+                endTextObject
+            """);
+
+        var bloc = Assert.IsType<TextFrame>(document.Pages[0].Frames.Single());
+        Assert.Equal("Premier\nSecond", bloc.Text);
+        Assert.DoesNotContain('\r', bloc.Text);
+    }
+
 }

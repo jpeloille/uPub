@@ -132,6 +132,22 @@ public static class PubImporter
         return points;
     }
 
+    /// <summary>
+    /// Un angle du relevé, en degrés.
+    ///
+    /// Le relevé l'écrit « librevenge:rotate: 90.0000in » — des degrés affublés d'une
+    /// unité de longueur, parce que le générateur brut n'a qu'un seul format pour les
+    /// nombres. Le passer à <see cref="Points"/> ferait 6 480.
+    /// </summary>
+    private static double Angle(string? valeur)
+    {
+        if (valeur is null) return 0;
+        var nombre = valeur.EndsWith("in", StringComparison.Ordinal) ? valeur[..^2] : valeur;
+        return double.TryParse(nombre, NumberStyles.Float, CultureInfo.InvariantCulture, out var v)
+            ? v
+            : 0;
+    }
+
     private static string? Couleur(string? valeur) =>
         valeur is { Length: 7 } && valeur[0] == '#' ? "#FF" + valeur[1..].ToUpperInvariant() : null;
 
@@ -195,7 +211,19 @@ public static class PubImporter
                 case "openSpan": _styleCourant = Arguments(brut); _debutFragment = _texte.Length; break;
                 case "closeSpan": FinFragment(); break;
 
-                case "insertText": _texte.Append(brut); break;
+                // Le retour chariot est écarté, et c'est décisif. libmspub termine
+                // CHAQUE paragraphe par un « insertText (\r) » : c'est la marque de
+                // paragraphe de Publisher, rendue telle quelle. Or la structure des
+                // paragraphes nous vient déjà de « openParagraph », qui pose son propre
+                // saut de ligne — le \r fait donc doublon. À l'intérieur d'un bloc les
+                // deux se collent en « \r\n » que la composition normalise, et le défaut
+                // ne se voit pas ; mais celui du DERNIER paragraphe n'a rien derrière lui
+                // et devient une ligne vide fantôme.
+                //
+                // Les vingt-sept blocs des deux documents réels finissent par un \r :
+                // quatre des cinq débordements signalés sur ATA 21 étaient donc faux, et
+                // quatre blocs portaient un marqueur rouge alors que rien n'y était coupé.
+                case "insertText": _texte.Append(brut.Replace("\r", "")); break;
                 case "insertTab": _texte.Append('\t'); _tabulations++; break;
                 case "insertLineBreak": _texte.Append('\n'); break;
 
@@ -264,6 +292,9 @@ public static class PubImporter
                 Y = Points(args.GetValueOrDefault("svg:y")),
                 Width = largeur,
                 Height = Points(args.GetValueOrDefault("svg:height")),
+                // Deux blocs d'ATA 21 sont tournés d'un quart de tour ; l'import les
+                // posait droits, sans un mot.
+                Rotation = Angle(args.GetValueOrDefault("librevenge:rotate")),
                 PaddingLeft = Points(args.GetValueOrDefault("fo:padding-left")),
                 PaddingTop = Points(args.GetValueOrDefault("fo:padding-top")),
                 PaddingRight = Points(args.GetValueOrDefault("fo:padding-right")),
@@ -408,8 +439,13 @@ public static class PubImporter
                 _cellule.Text = _bloc.Text;
                 _cellule.Align = _bloc.Align;
             }
-            else if (_bloc.Text.Length > 0 || _bloc.Fill is not null || _bloc.Stroke is not null)
+            else
             {
+                // Le bloc est posé même vide. La source en compte dix-huit sur les
+                // fiches, dont un qui ne portait que sa marque de paragraphe : depuis
+                // que celle-ci est écartée, son texte est vide, et l'écarter à son tour
+                // ferait mentir le compte. Un bloc vide reste un bloc — on peut le
+                // sélectionner et y taper, et c'est ainsi qu'un modèle réserve sa place.
                 Page().Frames.Add(_bloc);
             }
 
@@ -662,6 +698,7 @@ public static class PubImporter
                 Y = Points(args.GetValueOrDefault("svg:y")),
                 Width = Points(args.GetValueOrDefault("svg:width")),
                 Height = Points(args.GetValueOrDefault("svg:height")),
+                Rotation = Angle(args.GetValueOrDefault("librevenge:rotate")),
             };
 
             var largeurs = Largeurs(args.GetValueOrDefault("librevenge:table-columns"));
