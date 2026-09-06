@@ -408,7 +408,7 @@ seule mesure de boîte, les quatre autres par les tests d'interface. Le binaire 
 touché à chaque restauration : `cp -a` rendrait au fichier sa date d'origine et MSBuild
 laisserait vivre le binaire saboté — le piège consigné au poste R3.
 
-#### Trouvé au passage, et corrigé
+#### Trouvé au passage, et corrigé à moitié — la moitié qui nuisait
 
 **Un bloc collé au haut de la page mettait sa poignée sur la règle graduée.** C'est la
 seule poignée qui se pose hors du bloc, donc la seule qui puisse sortir de la planche :
@@ -417,7 +417,15 @@ la couche de saisie s'arrête au bord de la page, et le clic tombait sur `Ruler`
 Les deux règles servent désormais la poignée de rotation avant de poser un repère ; la
 capture leur revient, et elles renvoient déjà la suite du geste aux mêmes gestionnaires.
 Mesuré avant correction sur un bloc posé à 5 pt du haut : rotation 0°, un repère
-vertical de trop.
+vertical de trop ; après : 90°, aucun repère.
+
+**Cela ne vaut que règles affichées, et il faut le dire.** *Affichage ▸ Règles* décoché,
+`Ruler` n'est plus dans l'arbre visuel : le clic tombe alors sur le plan de travail, que
+personne n'écoute, et **ne fait rien**. Mesuré, comme le reste : rotation 0°, aucun
+repère. C'est le cas ci-dessous, moins nuisible que celui qui est corrigé — se tromper
+de geste vaut moins bien que n'en faire aucun — mais il n'est pas supprimé. Le supprimer
+vraiment demanderait d'étendre la couche de saisie au-delà de la page, donc de toucher
+`PageCanvas.axaml`, hors du fichier de ce poste.
 
 #### Choisi sans certitude
 
@@ -437,11 +445,18 @@ en embarquer une image pour un seul geste coûterait plus que ça ne dit.
 
 #### Trouvé et laissé tel quel
 
-**Une poignée qui sort de la page ailleurs que par le haut n'est pas saisissable.** Un
-bloc tourné de 180° et collé au bas de la page met sa poignée sous la planche, où il n'y
-a ni règle ni couche de saisie : le clic ne fait alors rien — et non pas autre chose,
-contrairement au cas corrigé ci-dessus. Le champ du panneau reste. Le traiter demanderait
-d'étendre la couche de saisie au-delà de la page, ce qui déborde de ce poste.
+**Une poignée qui sort de la page là où il n'y a pas de règle n'est pas saisissable.**
+Deux cas : un bloc tourné de 180° et collé au bas de la page met sa poignée sous la
+planche, et un bloc collé au haut la met hors de portée dès que les règles sont
+masquées. Le clic ne fait alors rien — et non pas autre chose, contrairement au cas
+corrigé ci-dessus. Le champ du panneau reste. Le traiter demanderait d'étendre la couche
+de saisie au-delà de la page, donc de toucher `PageCanvas.axaml`, hors du fichier de ce
+poste.
+
+**Le curseur ne change pas au-dessus de la poignée quand elle est sur la règle.**
+`UpdateCursor` n'écrit que sur la couche de saisie ; les règles portent le leur, posé une
+fois pour toutes. On y voit donc la flèche de déplacement de repère alors qu'on
+s'apprête à tourner. Le geste, lui, est le bon.
 
 **Une poignée d'angle déborde de sept pixels au-dessus d'un bloc posé à Y = 0.** Sa zone
 de préhension sort alors de la planche par le haut et retombe sur la règle, qui pose un

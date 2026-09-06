@@ -1,5 +1,4 @@
 using System;
-using System.IO;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
@@ -12,7 +11,6 @@ using Avalonia.VisualTree;
 using MyPublisher.Models;
 using MyPublisher.Services;
 using MyPublisher.ViewModels;
-using MyPublisher.Views;
 using Xunit;
 
 namespace MyPublisher.Tests.Interface;
@@ -115,6 +113,24 @@ public class RotationTests
     }
 
     [AvaloniaFact]
+    public void Une_tige_relie_la_poignee_au_bloc()
+    {
+        // Le README promet « un disque vert au bout d'une tige » ; rien ne prouvait que
+        // la tige se dessine. Le Polyline est arrangé en (0, 0) avec des points en
+        // coordonnées absolues, comme les contours de sélection — un motif qui marche,
+        // mais « qui marche » est exactement ce qu'on croyait de l'invalidation avant
+        // R1. On regarde donc l'image, et non l'arbre visuel : la boîte du Polyline
+        // s'arrête à l'ordonnée nulle, elle ne dit rien de ce qui est peint au-dessus.
+        var (fenetre, _, bloc) = Ouvrir();
+        var poignee = CentrePoignee(fenetre);
+
+        // Entre le bas du disque et le haut du bloc, il ne peut y avoir que la tige.
+        var encre = EncreDansLaBande(fenetre, bloc.X + bloc.Width / 2, poignee.Y + 6, bloc.Y - 2);
+
+        Assert.True(encre > 8, $"la tige ne laisse que {encre} pixels entre le disque et le bloc");
+    }
+
+    [AvaloniaFact]
     public void La_poignee_de_rotation_ne_parait_que_sur_une_selection_dun_seul_bloc()
     {
         var premier = Bloc();
@@ -174,6 +190,11 @@ public class RotationTests
         // qui puisse sortir de la planche. Un bloc posé à 5 pt du haut la met sur la
         // règle graduée, où elle se voyait sans se laisser prendre : le geste posait un
         // repère au lieu de tourner. Il ne faisait pas rien, il faisait autre chose.
+        //
+        // Ce que ce test ne dit pas, et qui est écrit dans PLAN.md : règles masquées, la
+        // poignée retombe sur le plan de travail, que personne n'écoute, et le clic ne
+        // fait plus rien. Moins nuisible, et non corrigé — la couche de saisie s'arrête
+        // au bord de la page, et l'étendre est affaire de gabarit, pas de code-behind.
         var bloc = Bloc();
         bloc.Y = 5;
         var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(bloc));
@@ -317,11 +338,16 @@ public class RotationTests
     }
 
     /// <summary>
-    /// Boîte de l'encre rouge — celle du bloc — dans l'image RÉELLEMENT composée par la
-    /// fenêtre. Le rouge écarte tout ce que la sélection dessine par-dessus : contour
-    /// bleu, poignées blanches, disque vert.
+    /// L'image RÉELLEMENT composée par la fenêtre, avec de quoi la lire : le pas d'une
+    /// ligne, et l'indice de la composante rouge.
+    ///
+    /// Elle sort en RGBA, là où « RenderTargetBitmap » rend du BGRA. Lire l'un pour
+    /// l'autre ne fait échouer aucune lecture : on ne trouve simplement plus une seule
+    /// trace de rouge. On lit donc le format au lieu de le supposer.
     /// </summary>
-    private static (int Largeur, int Hauteur) BoiteRouge(Window fenetre)
+    private sealed record Composee(byte[] Octets, int Pas, int Largeur, int Hauteur, int Rouge);
+
+    private static Composee Image(Window fenetre)
     {
         var image = fenetre.CaptureRenderedFrame()
                     ?? throw new InvalidOperationException("aucune image composée");
@@ -332,34 +358,70 @@ public class RotationTests
             var octets = new byte[verrou.RowBytes * image.PixelSize.Height];
             System.Runtime.InteropServices.Marshal.Copy(verrou.Address, octets, 0, octets.Length);
 
-            // L'image composée sort en RGBA, là où « RenderTargetBitmap » rend du BGRA :
-            // lire l'un pour l'autre ne fait pas échouer le test, il ne trouve simplement
-            // plus une seule trace de rouge. On lit donc le format au lieu de le supposer.
-            var rouge = verrou.Format == PixelFormat.Bgra8888 ? 2 : 0;
-            var bleu = 2 - rouge;
-
-            int gauche = int.MaxValue, haut = int.MaxValue, droite = -1, bas = -1;
-
-            for (var y = 0; y < image.PixelSize.Height; y++)
-            {
-                for (var x = 0; x < image.PixelSize.Width; x++)
-                {
-                    // Rouge franc, peu de vert et peu de bleu.
-                    var i = y * verrou.RowBytes + x * 4;
-                    if (octets[i + rouge] <= 150 || octets[i + bleu] >= 100 || octets[i + 1] >= 100) continue;
-
-                    gauche = Math.Min(gauche, x);
-                    haut = Math.Min(haut, y);
-                    droite = Math.Max(droite, x);
-                    bas = Math.Max(bas, y);
-                }
-            }
-
-            Assert.True(droite >= 0, "aucune encre rouge dans l'image composée");
-
-            // En pixels de l'image composée, et non en points : seules deux mesures
-            // prises de la même façon sont comparées, l'une avant le geste, l'autre après.
-            return (droite - gauche + 1, bas - haut + 1);
+            return new Composee(octets, verrou.RowBytes,
+                image.PixelSize.Width, image.PixelSize.Height,
+                verrou.Format == PixelFormat.Bgra8888 ? 2 : 0);
         }
+    }
+
+    /// <summary>
+    /// Boîte de l'encre rouge — celle du bloc — dans l'image composée. Le rouge écarte
+    /// tout ce que la sélection dessine par-dessus : contour bleu, poignées blanches,
+    /// disque vert et tige.
+    /// </summary>
+    private static (int Largeur, int Hauteur) BoiteRouge(Window fenetre)
+    {
+        var image = Image(fenetre);
+        var bleu = 2 - image.Rouge;
+
+        int gauche = int.MaxValue, haut = int.MaxValue, droite = -1, bas = -1;
+
+        for (var y = 0; y < image.Hauteur; y++)
+        {
+            for (var x = 0; x < image.Largeur; x++)
+            {
+                // Rouge franc, peu de vert et peu de bleu.
+                var i = y * image.Pas + x * 4;
+                if (image.Octets[i + image.Rouge] <= 150 ||
+                    image.Octets[i + bleu] >= 100 ||
+                    image.Octets[i + 1] >= 100) continue;
+
+                gauche = Math.Min(gauche, x);
+                haut = Math.Min(haut, y);
+                droite = Math.Max(droite, x);
+                bas = Math.Max(bas, y);
+            }
+        }
+
+        Assert.True(droite >= 0, "aucune encre rouge dans l'image composée");
+
+        // En pixels de l'image composée, et non en points : seules deux mesures prises
+        // de la même façon sont comparées, l'une avant le geste, l'autre après.
+        return (droite - gauche + 1, bas - haut + 1);
+    }
+
+    /// <summary>
+    /// Pixels non blancs dans une bande verticale étroite, décrite en coordonnées de
+    /// page. Au zoom du banc, une unité de l'image composée vaut un point.
+    /// </summary>
+    private static int EncreDansLaBande(Window fenetre, double x, double haut, double bas)
+    {
+        var origine = Page(fenetre).TranslatePoint(new Point(0, 0), fenetre) ?? new Point(0, 0);
+        var image = Image(fenetre);
+        var trouves = 0;
+
+        for (var ligne = (int)(origine.Y + haut); ligne < (int)(origine.Y + bas); ligne++)
+        {
+            for (var colonne = (int)(origine.X + x) - 3; colonne <= (int)(origine.X + x) + 3; colonne++)
+            {
+                if (ligne < 0 || colonne < 0 || ligne >= image.Hauteur || colonne >= image.Largeur) continue;
+
+                var i = ligne * image.Pas + colonne * 4;
+                if (image.Octets[i] > 200 && image.Octets[i + 1] > 200 && image.Octets[i + 2] > 200) continue;
+                trouves++;
+            }
+        }
+
+        return trouves;
     }
 }

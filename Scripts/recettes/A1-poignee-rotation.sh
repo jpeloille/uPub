@@ -125,8 +125,13 @@ mesurer() {
 pdf="$(mesurer "PDF  " "$travail/pdf.png")"
 ecran="$(mesurer "écran" "$travail/ecran.png")"
 
-# Deux pixels de tolérance : les deux moteurs n'arrondissent pas l'origine de la page
-# au même pixel, et le lissage des bords déplace la coupe d'un pixel.
+# La TAILLE est jugée à deux pixels, la POSITION à quatre, et les deux seuils ne disent
+# pas la même chose. La taille mesure l'angle : deux pixels, c'est le lissage des bords.
+# La position mesure le pivot, et l'écart à corriger y serait énorme — tourner autour du
+# coin supérieur gauche déplace la boîte de 260 pixels. Or les deux moteurs n'arrondissent
+# pas l'origine de la page au même pixel : le relevé donne déjà un pixel d'écart entre
+# l'écran et le PDF, et un seuil à deux ne laisserait qu'un pixel de marge à la prochaine
+# version de Skia ou de poppler — une recette rouge sur du code intact.
 python3 - "$attendu" "$pdf" "$ecran" <<'PY'
 import re, sys
 
@@ -134,13 +139,17 @@ def lire(texte):
     return [int(n) for n in re.findall(r"\d+", texte)]
 
 attendu, pdf, ecran = (lire(a) for a in sys.argv[1:4])
+seuils = (2, 2, 4, 4)   # largeur, hauteur, x, y
+
+def ecarte(gauche, droite):
+    return any(abs(g - d) > seuil for g, d, seuil in zip(gauche, droite, seuils))
 
 for nom, obtenu in (("le PDF", pdf), ("l'écran", ecran)):
-    if any(abs(o - a) > 2 for o, a in zip(obtenu, attendu)):
+    if ecarte(obtenu, attendu):
         sys.exit(f"ÉCHEC : {nom} pose une boîte d'encre {obtenu}, {attendu} attendu — "
                  f"l'angle ou le pivot ne sont pas ceux du document.")
 
-if any(abs(p - e) > 2 for p, e in zip(pdf, ecran)):
+if ecarte(pdf, ecran):
     sys.exit(f"ÉCHEC : l'écran {ecran} et le PDF {pdf} ne tournent pas de la même façon.")
 
 print("  accord : l'écran et le PDF portent le même angle, au pixel près")
