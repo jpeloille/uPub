@@ -251,7 +251,9 @@
                            VerticalAlignment="Center" Width="150" TextAlignment="Right"
                            Text="{Binding FramePositionLabel}"
                            IsVisible="{Binding HasSelection}"/>
-                <TextBlock Grid.Column="3" x:Name="TailleDuBloc" Margin="0,0"
+                <!-- Sans marge à gauche : les 16 de la case de position l'en séparent
+                     déjà, et les deux se lisent comme un couple. -->
+                <TextBlock Grid.Column="3" x:Name="TailleDuBloc" Margin="0"
                            VerticalAlignment="Center" Width="130" TextAlignment="Right"
                            Text="{Binding FrameSizeLabel}"
                            IsVisible="{Binding HasSelection}"/>
