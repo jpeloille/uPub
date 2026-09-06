@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using Avalonia.Media;
@@ -129,14 +130,50 @@ public partial class MainWindowViewModel : ViewModelBase
         _horloge = horloge ?? (() => DateTime.Now);
         CurrentPage = Document.Pages.FirstOrDefault();
         FontFamilies = LoadSystemFonts();
+        // L'initialiseur de champ ne passe pas par OnDocumentChanged : le premier
+        // document s'abonne donc ici, et lui seul.
+        Document.PropertyChanged += OnDocumentPropertyChanged;
         SyncPageSetup();
     }
 
     private readonly Func<DateTime> _horloge;
 
-    /// <summary>Aligne les contrôles de format sur les dimensions réelles du document.</summary>
+    /// <summary>
+    /// Le document se remplace en bloc — ouverture, modèle, page neuve, annulation —
+    /// et l'abonnement doit suivre l'instance courante. Sans le désabonnement, un
+    /// document restauré laisserait derrière lui un abonné vivant ; sans le
+    /// réabonnement, une largeur saisie après une annulation cesserait de mettre le
+    /// sélecteur de format à jour.
+    /// </summary>
+    partial void OnDocumentChanged(Document? oldValue, Document newValue)
+    {
+        if (oldValue is not null) oldValue.PropertyChanged -= OnDocumentPropertyChanged;
+        newValue.PropertyChanged += OnDocumentPropertyChanged;
+    }
+
+    private void OnDocumentPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        // Les dimensions se saisissent aussi en clair, format libre compris : ce sont
+        // elles qui font foi, et le sélecteur de format qui les suit.
+        if (e.PropertyName is nameof(Models.Document.PageWidth) or nameof(Models.Document.PageHeight))
+        {
+            SyncPageSetup();
+        }
+    }
+
+    /// <summary>
+    /// Aligne les contrôles de format sur les dimensions réelles du document.
+    ///
+    /// Une sélection nulle est un état légitime et non une absence de réponse : elle
+    /// dit « format libre », comme la vignette « Create custom page size… » du
+    /// catalogue de Publisher. Ce qu'il ne faut surtout pas en conclure, c'est qu'il
+    /// faille effacer les dimensions — d'où la sortie anticipée de
+    /// <see cref="OnSelectedPageSizeChanged"/>.
+    /// </summary>
     private void SyncPageSetup()
     {
+        if (_syncingPageSetup) return;
+
         _syncingPageSetup = true;
         try
         {
@@ -161,8 +198,11 @@ public partial class MainWindowViewModel : ViewModelBase
         if (_syncingPageSetup || value is null) return;
 
         BeginEdit();
-        Document.PageWidth = IsLandscape ? value.Height : value.Width;
-        Document.PageHeight = IsLandscape ? value.Width : value.Height;
+        ApplyPageSetup(() =>
+        {
+            Document.PageWidth = IsLandscape ? value.Height : value.Width;
+            Document.PageHeight = IsLandscape ? value.Width : value.Height;
+        });
         CommitEdit();
     }
 
@@ -172,8 +212,30 @@ public partial class MainWindowViewModel : ViewModelBase
         if (Document.PageWidth > Document.PageHeight == value) return;
 
         BeginEdit();
-        (Document.PageWidth, Document.PageHeight) = (Document.PageHeight, Document.PageWidth);
+        ApplyPageSetup(() =>
+            (Document.PageWidth, Document.PageHeight) = (Document.PageHeight, Document.PageWidth));
         CommitEdit();
+    }
+
+    /// <summary>
+    /// Change les dimensions de la page sans que le sélecteur de format ne s'en mêle.
+    ///
+    /// Les deux dimensions s'écrivent l'une après l'autre : entre les deux, le document
+    /// porte un format bâtard que personne n'a demandé — largeur d'A4 et hauteur de
+    /// Legal — et le ré-accord du sélecteur rejouerait alors le gestionnaire qui vient
+    /// de l'appeler. Le drapeau couvre donc l'écriture entière et non chaque ligne.
+    /// </summary>
+    private void ApplyPageSetup(Action change)
+    {
+        _syncingPageSetup = true;
+        try
+        {
+            change();
+        }
+        finally
+        {
+            _syncingPageSetup = false;
+        }
     }
 
     /// <summary>Déplace la sélection au clavier ; le pas fin sert au calage précis.</summary>
@@ -274,6 +336,34 @@ public partial class MainWindowViewModel : ViewModelBase
     public string CursorLabel =>
         $"X {Units.PointsToMm(CursorX):0.0} mm   Y {Units.PointsToMm(CursorY):0.0} mm";
 
+    /// <summary>
+    /// Ce que la barre d'état annonce du bloc sélectionné : son coin, et sa taille.
+    ///
+    /// À un seul bloc, ce sont ses X, Y, largeur et hauteur — exactement les quatre
+    /// nombres que le panneau donne à saisir, pour qu'un chiffre lu en bas et un
+    /// chiffre lu à droite ne puissent pas se contredire. À plusieurs, c'est
+    /// l'empreinte de l'ensemble, faute d'un cadre commun à nommer.
+    ///
+    /// La distinction se voit sur un bloc tourné : son empreinte déborde son cadre, et
+    /// c'est bien son cadre qu'on annonce quand il est seul.
+    /// </summary>
+    private Extent? SelectionBox => Selection.Count switch
+    {
+        0 => null,
+        1 => new Extent(
+            Selection[0].X, Selection[0].Y,
+            Selection[0].X + Selection[0].Width, Selection[0].Y + Selection[0].Height),
+        _ => Extent.Union(Selection.Select(frame => frame.Extent)),
+    };
+
+    public string FramePositionLabel => SelectionBox is not { } box
+        ? string.Empty
+        : $"X {Units.PointsToMm(box.Left):0.0}   Y {Units.PointsToMm(box.Top):0.0} mm";
+
+    public string FrameSizeLabel => SelectionBox is not { } box
+        ? string.Empty
+        : $"{Units.PointsToMm(box.Width):0.0} × {Units.PointsToMm(box.Height):0.0} mm";
+
     public string PageCountLabel => $"{Document.Pages.Count} page(s)";
 
     public int CurrentPageNumber =>
@@ -324,7 +414,52 @@ public partial class MainWindowViewModel : ViewModelBase
             _syncingSelection = false;
         }
 
+        WatchSelectionGeometry();
         NotifySelection();
+    }
+
+    /// <summary>
+    /// Blocs dont la barre d'état suit la géométrie.
+    ///
+    /// La liste double <see cref="Selection"/> au lieu de s'y fier : il faut se
+    /// désabonner de ce qu'on quitte, et la collection a déjà été vidée quand on
+    /// l'apprend. C'est le même dédoublement que celui du plan de travail, et pour la
+    /// même raison.
+    /// </summary>
+    private readonly List<Frame> _watchedFrames = [];
+
+    private void WatchSelectionGeometry()
+    {
+        foreach (var frame in _watchedFrames) frame.PropertyChanged -= OnSelectedFrameChanged;
+        _watchedFrames.Clear();
+
+        foreach (var frame in Selection)
+        {
+            _watchedFrames.Add(frame);
+            frame.PropertyChanged += OnSelectedFrameChanged;
+        }
+    }
+
+    /// <summary>
+    /// Pendant un redimensionnement ou un déplacement, le plan de travail écrit la
+    /// géométrie du bloc à chaque mouvement du pointeur et ne prévient personne
+    /// d'autre. Sans cet abonnement, la barre d'état ne se mettrait à jour qu'au
+    /// relâchement — or c'est pendant le geste qu'on la regarde, l'œil étant sur la
+    /// page et non sur le panneau de droite.
+    /// </summary>
+    private void OnSelectedFrameChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(Frame.X) or nameof(Frame.Y)
+            or nameof(Frame.Width) or nameof(Frame.Height) or nameof(Frame.Rotation))
+        {
+            NotifyFrameGeometry();
+        }
+    }
+
+    private void NotifyFrameGeometry()
+    {
+        OnPropertyChanged(nameof(FramePositionLabel));
+        OnPropertyChanged(nameof(FrameSizeLabel));
     }
 
     /// <summary>La sélection dans l'ordre de superposition de la page, du fond vers l'avant.</summary>
@@ -362,6 +497,7 @@ public partial class MainWindowViewModel : ViewModelBase
         OnPropertyChanged(nameof(HasMultipleSelection));
         OnPropertyChanged(nameof(SingleSelected));
         OnPropertyChanged(nameof(SelectionLabel));
+        NotifyFrameGeometry();
 
         DeleteSelectedCommand.NotifyCanExecuteChanged();
         DuplicateSelectedCommand.NotifyCanExecuteChanged();
@@ -781,9 +917,44 @@ public partial class MainWindowViewModel : ViewModelBase
     private void SendBackward() => StepOrder(-1);
 
     /// <summary>
+    /// Remanie la pile de la page, et repose ensuite la sélection que le remaniement
+    /// a fait tomber.
+    ///
+    /// La liste « Blocs (du fond vers l'avant) » est liée à la fois à la collection de
+    /// la page et à l'ancre de sélection. Remuer la collection fait passer la sélection
+    /// de la liste par zéro, et cette remise à zéro redescend dans le modèle de vue par
+    /// la liaison à double sens : le bloc qu'on vient de porter au premier plan cesse
+    /// d'être pris. Le défaut est ancien — il valait déjà pour le menu et la barre
+    /// latérale, et il ne tient pas au moyen employé : déplacer perd la sélection tout
+    /// autant que retirer puis réinsérer. Il ne devient gênant qu'une fois le geste
+    /// atteignable au clavier, où l'on enchaîne les frappes.
+    ///
+    /// On repose la sélection après coup plutôt que d'empêcher la liste de la lâcher :
+    /// c'est elle qui en décide, et rien ne distingue sa remise à zéro d'un clic dans
+    /// le vide. Reposée avant la fermeture de la transaction, pour que l'instantané
+    /// d'annulation garde la sélection qu'on voit et non une sélection vide.
+    /// </summary>
+    private void Restack(Action change)
+    {
+        var selection = Selection.ToList();
+
+        BeginEdit();
+        change();
+        SetSelection(selection);
+        CommitEdit();
+    }
+
+    /// <summary>
     /// Porte la sélection tout devant ou tout derrière. Les blocs pris ensemble
     /// conservent leur ordre relatif : un ensemble monté au premier plan garde
     /// l'aspect qu'il avait.
+    ///
+    /// Par déplacements plutôt que par retraits suivis d'insertions, comme le fait déjà
+    /// <see cref="StepOrder"/> : un retrait sort le bloc de la page, et pendant ce
+    /// temps-là toute relecture de la sélection l'écarterait, celle-ci ne gardant que
+    /// des blocs de la page courante. Vers l'avant on parcourt dans l'ordre, chaque
+    /// bloc allant se poser derrière le précédent ; vers l'arrière on parcourt à
+    /// l'envers, chacun passant devant celui qu'on vient de placer.
     /// </summary>
     private void MoveToEnd(bool front)
     {
@@ -791,41 +962,77 @@ public partial class MainWindowViewModel : ViewModelBase
 
         var frames = CurrentPage.Frames;
         var moving = SelectionInPageOrder();
+        if (!front) moving.Reverse();
 
-        BeginEdit();
-        foreach (var frame in moving) frames.Remove(frame);
-        for (var i = 0; i < moving.Count; i++) frames.Insert(front ? frames.Count : i, moving[i]);
-        CommitEdit();
+        Restack(() =>
+        {
+            foreach (var frame in moving)
+            {
+                var from = frames.IndexOf(frame);
+                if (from >= 0) frames.Move(from, front ? frames.Count - 1 : 0);
+            }
+        });
+    }
+
+    /// <summary>
+    /// Déplace un bloc dans la pile de la page — c'est ce que fait le glisser-déposer
+    /// dans la liste des blocs. <paramref name="target"/> est le rang où le bloc doit
+    /// se trouver une fois posé.
+    ///
+    /// La transaction est ouverte ici, et non par le panneau de propriétés : celui-ci
+    /// n'encadre que ce qui est dans son défilement, et la liste des blocs est de
+    /// l'autre côté de la fenêtre. Sans cela, réordonner ne serait pas annulable.
+    /// </summary>
+    public bool ReorderFrame(Frame frame, int target)
+    {
+        if (CurrentPage is null) return false;
+
+        var frames = CurrentPage.Frames;
+        var from = frames.IndexOf(frame);
+        if (from < 0) return false;
+
+        target = Math.Clamp(target, 0, frames.Count - 1);
+        if (target == from) return false;
+
+        Restack(() => frames.Move(from, target));
+        Status = target > from ? "Bloc avancé" : "Bloc reculé";
+        return true;
     }
 
     /// <summary>
     /// Avance ou recule la sélection d'un rang. On parcourt depuis le côté vers lequel
     /// on va, pour qu'un bloc déjà déplacé n'arrête pas le suivant ; un bloc buté sur un
     /// autre bloc sélectionné ne bouge pas, l'ensemble garde donc sa forme.
+    ///
+    /// Le parcours interroge une copie de la sélection et non la sélection elle-même :
+    /// remuer la collection de la page la vide en cours de route (voir
+    /// <see cref="Restack"/>), et la boucle cesserait alors de reconnaître les blocs
+    /// qu'il lui reste à déplacer.
     /// </summary>
     private void StepOrder(int direction)
     {
         if (CurrentPage is null || Selection.Count == 0) return;
 
         var frames = CurrentPage.Frames;
+        var moving = Selection.ToList();
 
-        BeginEdit();
-        if (direction > 0)
+        Restack(() =>
         {
-            for (var i = frames.Count - 2; i >= 0; i--)
+            if (direction > 0)
             {
-                if (Selection.Contains(frames[i]) && !Selection.Contains(frames[i + 1])) frames.Move(i, i + 1);
+                for (var i = frames.Count - 2; i >= 0; i--)
+                {
+                    if (moving.Contains(frames[i]) && !moving.Contains(frames[i + 1])) frames.Move(i, i + 1);
+                }
             }
-        }
-        else
-        {
-            for (var i = 1; i < frames.Count; i++)
+            else
             {
-                if (Selection.Contains(frames[i]) && !Selection.Contains(frames[i - 1])) frames.Move(i, i - 1);
+                for (var i = 1; i < frames.Count; i++)
+                {
+                    if (moving.Contains(frames[i]) && !moving.Contains(frames[i - 1])) frames.Move(i, i - 1);
+                }
             }
-        }
-
-        CommitEdit();
+        });
     }
 
     // ---------------------------------------------------------------- groupes

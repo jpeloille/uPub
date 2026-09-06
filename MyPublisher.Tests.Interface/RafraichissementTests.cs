@@ -74,19 +74,13 @@ public class RafraichissementTests
     /// image composée, celle que l'utilisateur voit : c'est la seule qui puisse
     /// attraper une invalidation manquante.
     /// </summary>
-    private static byte[] Image(Window fenetre)
-    {
-        var image = fenetre.CaptureRenderedFrame()
-                    ?? throw new InvalidOperationException("aucune image composée");
-
-        using (image)
-        {
-            var pixels = new byte[image.PixelSize.Width * image.PixelSize.Height * 4];
-            using var verrou = image.Lock();
-            System.Runtime.InteropServices.Marshal.Copy(verrou.Address, pixels, 0, pixels.Length);
-            return pixels;
-        }
-    }
+    /// <remarks>
+    /// Le corps est passé dans <see cref="Rendu.Composee"/> au poste A6, qui en avait
+    /// besoin pour éprouver la barre d'état. Le raisonnement ci-dessus est ce qui
+    /// justifie qu'il n'y en ait qu'une copie : deux, et la seconde retombe sur
+    /// « RenderTargetBitmap » sans que personne ne s'en aperçoive.
+    /// </remarks>
+    private static byte[] Image(Window fenetre) => Rendu.Composee(fenetre).Pixels;
 
     [AvaloniaTheory]
     // Les quinze réglages du panneau se ramènent à ces onze-là ; on en éprouve un par

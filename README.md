@@ -81,6 +81,15 @@ L'espace de travail se lit de gauche à droite : liste des **pages** et des **bl
 puis la **planche**, puis les **propriétés** du bloc sélectionné, et enfin la **barre
 d'outils** verticale sur le bord droit.
 
+La liste « Blocs (du fond vers l'avant) » montre la pile de la page, et se laisse
+réordonner en y tirant un bloc — un trait bleu marque où il se posera. Le clavier fait
+la même chose en plus rapide sur les deux extrêmes : `Ctrl+Maj+F` et `Ctrl+Maj+B`.
+
+La **barre d'état** affiche en permanence, à droite, la position du curseur, puis la
+position et la taille du bloc sélectionné. Les deux dernières suivent le geste pendant
+qu'on déplace ou qu'on redimensionne : au moment où l'on tire une poignée, l'œil est
+sur la page et non sur le panneau de propriétés.
+
 Les six premiers boutons de cette barre **arment un outil** : on trace ensuite le cadre
 directement sur la page, à la taille voulue. Un simple clic sans glisser pose le bloc à
 sa taille par défaut. L'outil se désarme tout seul après usage, pour qu'on puisse
@@ -93,7 +102,10 @@ la barre du haut regroupe les commandes du document : fichier, annulation, zoom.
 
 ## Ce que l'application sait faire
 
-- Documents multi-pages, formats A3 à Legal, portrait ou paysage, marges réglables.
+- Documents multi-pages, portrait ou paysage, marges réglables. Neuf formats au
+  catalogue — A3, A4, A5, B4, B5, Executive, Letter, Legal, Tabloid — et, pour tout le
+  reste, une **largeur et une hauteur libres** saisies en millimètres : le sélecteur de
+  format se vide alors, ce sont les dimensions qui font foi.
 - Champs : un bloc de texte peut afficher son numéro de page, le nombre de pages, la
   date ou une coordonnée professionnelle au lieu d'un texte saisi ; un bloc image peut
   afficher le logo. Le folio se numérote seul, à l'écran comme au PDF.
@@ -184,10 +196,11 @@ la barre du haut regroupe les commandes du document : fichier, annulation, zoom.
 |---|---|
 | `Ctrl+N` / `Ctrl+O` / `Ctrl+S` | Nouveau (catalogue de modèles) / Ouvrir / Enregistrer |
 | `Ctrl+E` | Exporter en PDF |
-| `Ctrl+Z` / `Ctrl+Y` | Annuler / Rétablir |
+| `Ctrl+Z` / `Ctrl+Y` (ou `Ctrl+Maj+Z`) | Annuler / Rétablir |
 | `Ctrl+D` | Dupliquer la sélection |
 | `Ctrl+A` | Sélectionner tous les blocs de la page |
 | `Ctrl+Maj+G` / `Ctrl+Maj+H` | Grouper / Dissocier |
+| `Ctrl+Maj+F` / `Ctrl+Maj+B` | Premier plan / Arrière-plan |
 | `Suppr` | Supprimer la sélection |
 | Flèches | Déplacer de 3 pt (`Maj` : 0,5 pt) |
 | `Ctrl` + molette, `Ctrl` `+`/`-`/`0` | Zoom |
