@@ -125,9 +125,22 @@ déterministe, les fonctions pures sorties de la vue, un banc qui rend l'écran 
 recette exécutable par poste — **y compris pour les postes déjà clos** — et un bilan
 machine qui dit ce qui reste ouvert.
 
-*Recette* : saboter volontairement l'aimantation, la composition des rotations de groupe,
-une propriété dans un `Clone()` et une étape de migration — chaque sabotage doit être
-attrapé par une recette nommée.
+*Recette* : saboter volontairement l'aimantation, la mise à l'échelle des groupes, une
+propriété dans un `Clone()` et une étape de migration — chaque sabotage doit être
+attrapé.
+
+*Recette jouée le 6 septembre 2026*, et elle est désormais un script :
+`Scripts/eprouver-le-juge.sh`. Cinq sabotages, cinq attrapés. **Elle a servi dès le
+premier passage** : rien n'attrapait un groupe qui cesse de mettre ses blocs à
+l'échelle. C'était précisément la recette de C3c — jouée à la main en comparant des PDF
+au pixel près, puis jetée. Comblée par `GroupeTests`, qui éprouve aussi qu'un groupe
+réduit à zéro ne déchire pas ses blocs en `NaN`, et que passer du repère de la page à
+celui du groupe puis revenir rend exactement le même point, rotation comprise.
+
+L'exhaustivité de `Clone()` est éprouvée **par réflexion** plutôt qu'en énumérant les
+propriétés à la main — énumérer reproduirait exactement l'oubli qu'on cherche à
+empêcher. Toute propriété qui s'écrit dans le fichier doit survivre à une copie ; celle
+qu'on ajoutera demain est donc couverte le jour où elle est écrite.
 
 *Fait en partie le 6 septembre 2026* — le noyau, le banc et la comparaison.
 `Models` et `Services` ne référençaient déjà aucun type Avalonia : le découpage n'a

@@ -26,9 +26,28 @@ ci-dessous.
 ## Contrôle de non-régression
 
 ```bash
-Scripts/controle.sh                 # sort en 0 tant que rien ne bouge
+Scripts/verifier.sh                 # tests, contrôle, recettes — c'est lui qui fait autorité
+Scripts/controle.sh                 # le seul contrôle de la chaîne d'écriture
 Scripts/controle.sh --enregistrer   # remplace le relevé de référence, après examen
+Scripts/eprouver-le-juge.sh         # sabote le code et vérifie qu'on s'en aperçoit
+Scripts/comparer-rendus.sh doc.mypub 1   # l'écran contre le PDF, à deux pixels par point
 ```
+
+`Scripts/verifier.sh` est l'enveloppe : il enchaîne les tests, le contrôle ci-dessous,
+puis les recettes de chaque poste. Le lancer avant et après un poste, plutôt que le
+contrôle seul, qui ne lance pas les tests.
+
+Deux projets de tests. `MyPublisher.Tests` éprouve le noyau sans plate-forme graphique,
+en quelques centaines de millisecondes. `MyPublisher.Tests.Interface` ouvre la vraie
+fenêtre **sans affichage**, sur Skia, et y synthétise de vrais pointeurs : c'est ainsi
+qu'on vérifie qu'un bloc lâché près d'un bord de colonne s'y aimante, et qu'un
+déplacement annulé rend exactement le document d'avant. `MyPublisher.Banc` fait la même
+chose en ligne de commande, pour les scripts.
+
+`Scripts/eprouver-le-juge.sh` est le contrôle du contrôle : il casse le code une chose à
+la fois — l'aimantation, une propriété perdue à la copie, une étape de migration, la
+mise à l'échelle d'un groupe — et exige que chaque sabotage soit attrapé. Un contrôle
+qu'on n'a jamais vu échouer ne prouve rien.
 
 Quatre vérifications : `Samples/exemple-bulletin.mypub` se relit, se réécrit au
 caractère près, et son export PDF donne le même nombre de pages et les mêmes
