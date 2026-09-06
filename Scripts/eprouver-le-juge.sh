@@ -104,15 +104,15 @@ saboter "un groupe ne met plus ses blocs à l'échelle" \
     'var factor = newSize / oldSize;' \
     'var factor = 1.0;'
 
-saboter "la justification compte les morceaux au lieu des mots" \
+saboter "la justification ne repartit plus le blanc" \
     MyPublisher.Core/Models/Compositeur.cs \
-    'if (texte[i] == \' \' && texte[i + 1] != \' \') blancs++;' \
-    'blancs++;'
+    "var part = manque / blancs;" \
+    "var part = 0.0;"
 
-saboter "l'interligne redevient un multiple du corps" \
+saboter "l interligne redevient un multiple du corps" \
     MyPublisher.Core/Models/Compositeur.cs \
-    'naturelle * (multiple > 0 ? multiple : 1);' \
-    'multiple;'
+    "naturelle * (multiple > 0 ? multiple : 1);" \
+    "multiple;"
 
 echo
 if [ "$trous" = 0 ]; then
