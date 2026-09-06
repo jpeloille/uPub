@@ -31,8 +31,21 @@ if [ -n "$(git status --porcelain)" ]; then
     exit 2
 fi
 
+# Verrou. Ce script écrit dans les sources et les restaure par « git checkout » :
+# quiconque travaillerait dans l'arbre pendant qu'il tourne verrait son travail
+# emporté sans un mot. C'est arrivé une fois, le 6 septembre 2026, à deux fichiers
+# de documentation — et rien ne l'avait signalé.
+verrou="$racine/.juge-en-cours"
+if [ -e "$verrou" ]; then
+    echo "ÉCHEC : une épreuve du juge est déjà en cours ($verrou)." >&2
+    echo "Ce script restaure l'arbre en sortant : deux instances se marcheraient dessus." >&2
+    exit 2
+fi
+touch "$verrou"
+
 restaurer() { git checkout -- . 2>/dev/null || true; }
-trap restaurer EXIT
+nettoyer() { restaurer; rm -f "$verrou"; }
+trap nettoyer EXIT
 
 trous=0
 sabotages=0

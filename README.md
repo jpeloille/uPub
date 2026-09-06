@@ -102,6 +102,11 @@ la barre du haut regroupe les commandes du document : fichier, annulation, zoom.
 - Blocs de texte (police système, corps, gras, italique, alignement dont justifié,
   interligne, marges intérieures réglées côté par côté, couleur), images (trois
   modes de cadrage) et formes (rectangle, ellipse).
+- **Plusieurs styles dans un même bloc** : une portion de texte porte sa propre police,
+  son corps, son gras, son italique, sa couleur, et se pose en indice ou en exposant.
+  L'interligne s'exprime en multiple de la hauteur **naturelle** de la police — « 1,25 »
+  veut dire une fois et quart ce que la police demande, jamais une fois et quart le
+  corps.
 - Tout bloc — texte, image, forme, groupe — porte un fond, avec son opacité, et un
   contour : épaisseur, trait continu, tirets ou points, angles arrondis. Encadrer
   une image d'un filet ne demande donc plus de lui superposer une forme.
@@ -150,6 +155,13 @@ la barre du haut regroupe les commandes du document : fichier, annulation, zoom.
 | `Maj` sur une poignée d'angle | Conserve les proportions |
 
 ## Choix techniques
+
+**L'écran et l'export composent le texte avec la même fonction.** `Compositeur`, dans le
+noyau, découpe le texte en lignes et répartit le blanc d'une ligne justifiée. Il ne
+connaît ni Avalonia ni PDFsharp : la règle à mesurer lui est passée en paramètre, et
+chaque rendu lui passe la sienne. Tant que la découpe appartenait à chacun — Avalonia à
+l'écran, `XTextFormatter` au PDF — rien ne garantissait qu'ils coupent aux mêmes
+endroits, et l'interligne du modèle ne franchissait tout simplement pas l'export.
 
 **Toute la géométrie est en points typographiques (1/72 pouce).** Avalonia raisonne
 en pixels indépendants du périphérique (1/96 pouce) et le PDF en points : modéliser
@@ -216,6 +228,9 @@ liens.
 ## Limites connues
 
 - Pas de chaînage du texte entre blocs : un texte trop long est coupé au bloc.
+- Les fragments de style se lisent, s'écrivent et se rendent, mais ne se saisissent pas
+  encore à la souris : on ne peut pas sélectionner trois mots dans un bloc pour les
+  mettre en gras. Le panneau agit sur le bloc entier.
 - Pas de pages maîtres.
 - Les images sont liées, pas embarquées dans le `.mypub`.
 - Pas de gestion des couleurs CMJN ni de fond perdu : l'export est en RVB.

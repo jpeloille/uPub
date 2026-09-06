@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using MyPublisher.Models;
@@ -178,6 +179,69 @@ public class CompositeurTests
             new StyleSpan { Start = 3, Length = 3, Bold = true })[0];
 
         Assert.Single(ligne.Morceaux);
+    }
+
+
+    // -------------------------------------------------------------- justification
+
+    [Fact]
+    public void Une_ligne_justifiee_va_dun_bord_a_lautre()
+    {
+        // Le trou que l'épreuve du juge a trouvé le 6 septembre 2026 : la comparaison
+        // écran ↔ PDF ne pouvait pas l'attraper, puisque les deux rendus appellent le
+        // même calcul et se trompent donc ensemble. Elle prouve l'accord, pas la
+        // justesse — d'où ce test-ci.
+        var ligne = Composer("un deux trois", 100)[0];
+        var decalages = Compositeur.Decalages(ligne, 100);
+
+        var dernier = ligne.Morceaux[^1];
+        var droite = dernier.X + decalages[^1] + dernier.Largeur;
+
+        Assert.Equal(100, droite, precision: 9);
+    }
+
+    [Fact]
+    public void Le_blanc_se_repartit_egalement_entre_les_mots()
+    {
+        // « un deux trois » : 13 unités d'encre, deux blancs à élargir. Pour aller
+        // à 100, il manque 87, soit 43,5 par blanc.
+        var ligne = Composer("un deux trois", 100)[0];
+        var decalages = Compositeur.Decalages(ligne, 100);
+
+        Assert.Equal(0, decalages[0], precision: 9);
+        Assert.Equal([0, 43.5, 87], decalages.Select(d => Math.Round(d, 9)).ToArray());
+    }
+
+    [Fact]
+    public void Le_blanc_se_repartit_entre_les_mots_et_non_entre_les_morceaux()
+    {
+        // Le piège de R1 : « un deux trois » avec « deux » en gras fait quatre
+        // morceaux — « un », « », « deux », « trois » — mais toujours deux blancs.
+        // Compter les morceaux décalerait le texte à chaque changement de style.
+        var ligne = Composer("un deux trois", 100,
+            new StyleSpan { Start = 3, Length = 4, Bold = true })[0];
+        var decalages = Compositeur.Decalages(ligne, 100);
+
+        Assert.True(ligne.Morceaux.Count > 3, "le fragment doit bien découper la ligne");
+        Assert.Equal(87, decalages[^1], precision: 9);
+        Assert.Equal(2, decalages.Distinct().Count(d => d > 0));
+    }
+
+    [Fact]
+    public void Une_ligne_dun_seul_mot_ne_setire_pas()
+    {
+        var ligne = Composer("seul", 100)[0];
+
+        Assert.All(Compositeur.Decalages(ligne, 100), d => Assert.Equal(0, d));
+    }
+
+    [Fact]
+    public void Une_ligne_deja_trop_large_ne_se_retrecit_pas()
+    {
+        // Un blanc négatif superposerait les mots ; on laisse déborder.
+        var ligne = Composer("un deux trois", 5)[^1];
+
+        Assert.All(Compositeur.Decalages(ligne, 1), d => Assert.Equal(0, d));
     }
 
     // ---------------------------------------------------------------- interligne
