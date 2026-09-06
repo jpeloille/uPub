@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <!-- Les tests d'interface : une vraie fenêtre MyPublisher, sans affichage.
+         Avalonia.Headless monte la plate-forme, Avalonia.Skia rend réellement les
+         pixels (UseHeadlessDrawing = false) et l'on peut synthétiser des pointeurs
+         et des touches sur la vraie couche de saisie.
+
+         C'est ce qui remplace l'outillage monté puis jeté à chaque poste : les
+         recettes de C1, C2a, C2b, C3c et C6 ont toutes été jouées ainsi, et aucune
+         n'est aujourd'hui rejouable. Sur ce poste — session Wayland, captures d'écran
+         noires — c'est aussi la seule façon de voir ce que l'application affiche. -->
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <IsPackable>false</IsPackable>
+        <AvaloniaNameGeneratorIsEnabled>false</AvaloniaNameGeneratorIsEnabled>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1"/>
+        <PackageReference Include="xunit" Version="2.9.3"/>
+        <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5"/>
+        <PackageReference Include="Avalonia.Headless.XUnit" Version="11.3.9"/>
+        <PackageReference Include="Avalonia.Skia" Version="11.3.9"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\MyPublisher\MyPublisher.csproj"/>
+    </ItemGroup>
+
+</Project>

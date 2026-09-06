@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <!-- Le banc : la même application, rendue sans affichage.
+         Il n'est pas livré avec MyPublisher — c'est tout l'intérêt d'un projet à part.
+         L'application expédiée ne doit pas embarquer un moteur de rendu de test dans
+         son répertoire de sortie, à côté de Templates/. -->
+
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net9.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <RootNamespace>MyPublisher.Banc</RootNamespace>
+        <AssemblyName>MyPublisher.Banc</AssemblyName>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Avalonia.Headless" Version="11.3.9"/>
+        <PackageReference Include="Avalonia.Skia" Version="11.3.9"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\MyPublisher\MyPublisher.csproj"/>
+    </ItemGroup>
+
+</Project>

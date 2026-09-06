@@ -18,6 +18,12 @@
     </ItemGroup>
 
     <ItemGroup>
+        <!-- Le modèle et les services vivent à côté, sans Avalonia, pour qu'un hôte de
+             test puisse les charger sans plate-forme graphique. -->
+        <ProjectReference Include="..\MyPublisher.Core\MyPublisher.Core.csproj"/>
+    </ItemGroup>
+
+    <ItemGroup>
         <PackageReference Include="Avalonia" Version="11.3.9"/>
         <PackageReference Include="Avalonia.Desktop" Version="11.3.9"/>
         <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.9"/>
@@ -29,6 +35,5 @@
         </PackageReference>
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.1"/>
         <PackageReference Include="Avalonia.Controls.ColorPicker" Version="11.3.9"/>
-        <PackageReference Include="PdfSharp" Version="6.2.1"/>
     </ItemGroup>
 </Project>

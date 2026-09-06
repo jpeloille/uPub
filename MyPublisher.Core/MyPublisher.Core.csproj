@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <!-- Le noyau : le modèle de document et les services qui l'écrivent, le relisent
+         et l'exportent. Aucune référence à Avalonia — c'est ce qui permet de le
+         charger dans un hôte de test sans plate-forme graphique, et c'est la règle
+         qu'énonce déjà le commentaire en tête de Models/Frame.cs. Le découpage ne
+         déplace aucune ligne de code : il matérialise une séparation que le code
+         respectait déjà. -->
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <RootNamespace>MyPublisher</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!-- ObservableObject, porté par Document et Frame. -->
+        <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.1"/>
+        <!-- L'export PDF est un service du noyau : l'écran et le PDF partagent le
+             même modèle, sans couche intermédiaire susceptible de diverger. -->
+        <PackageReference Include="PdfSharp" Version="6.2.1"/>
+    </ItemGroup>
+
+</Project>

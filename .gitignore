@@ -7,3 +7,6 @@ obj/
 .vs/
 *.user
 *.suo
+
+# Images de diagnostic laissées par Scripts/comparer-rendus.sh en cas d'échec
+ecart-page*.png
