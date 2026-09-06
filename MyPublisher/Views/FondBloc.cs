@@ -3,6 +3,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
+using Avalonia.VisualTree;
 using MyPublisher.Converters;
 using MyPublisher.Models;
 
@@ -56,7 +57,37 @@ public sealed class FondBloc : Control
     private void Suivre(AvaloniaPropertyChangedEventArgs e)
     {
         if (e.OldValue is FillBrush ancien) ancien.PropertyChanged -= SurChangement;
-        if (e.NewValue is FillBrush nouveau) nouveau.PropertyChanged += SurChangement;
+        // Hors de l'arbre visuel, on ne s'abonne pas : c'est l'attachement qui le fera.
+        if (e.NewValue is FillBrush nouveau && this.GetVisualRoot() is not null)
+        {
+            nouveau.PropertyChanged += SurChangement;
+        }
+    }
+
+    /// <summary>
+    /// L'abonnement ne vaut que tant que le contrôle est affiché.
+    ///
+    /// Un remplissage vit bien plus longtemps que le contrôle qui le dessine : changer de
+    /// page reconstruit tous les gabarits, et un contrôle qui ne se désabonnerait pas
+    /// resterait accroché au bloc qu'il n'affiche plus. C'est exactement la fuite trouvée
+    /// au même poste sur les cases d'un tableau, et il n'y avait pas de raison de la
+    /// laisser ici. Mesuré : vingt passages, vingt abonnés.
+    /// </summary>
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        if (Fond is not { } fond) return;
+
+        // Retirer avant d'ajouter : deux attachements sans détachement entre eux ne
+        // doivent pas compter double.
+        fond.PropertyChanged -= SurChangement;
+        fond.PropertyChanged += SurChangement;
+    }
+
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnDetachedFromVisualTree(e);
+        if (Fond is { } fond) fond.PropertyChanged -= SurChangement;
     }
 
     private void SurChangement(object? _, System.ComponentModel.PropertyChangedEventArgs __) =>

@@ -5,6 +5,7 @@ using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.VisualTree;
 using MyPublisher.Models;
+using MyPublisher.Views;
 using Xunit;
 
 namespace MyPublisher.Tests.Interface;
@@ -118,6 +119,30 @@ public class FondsTests
     }
 
     [AvaloniaFact]
+    public void Le_panneau_offre_le_cadrage_dun_remplissage_par_image()
+    {
+        // Ce gabarit-ci est le seul à aller chercher une liste sur le modèle de vue par
+        // « #Root ». Un renvoi qui ne se résoudrait pas ne lève rien : la liste déroulante
+        // du cadrage serait simplement vide, et le bouton qui choisit l'image perdrait le
+        // contexte dont « OnChooseFillImage » a besoin pour savoir quoi renseigner.
+        var image = new ImageFill("/tmp/fond.png");
+        var bloc = new ShapeFrame { X = 40, Y = 40, Width = 200, Height = 100, Fill = image };
+        var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(bloc));
+
+        vm.Selected = bloc;
+        Rendu.Battre();
+
+        var listes = fenetre.GetVisualDescendants().OfType<ComboBox>()
+            .Where(c => ReferenceEquals(c.DataContext, image)).ToList();
+
+        var cadrage = Assert.Single(listes);
+        Assert.Equal(3, cadrage.ItemCount);
+        Assert.Contains(
+            fenetre.GetVisualDescendants().OfType<Button>(),
+            b => ReferenceEquals(b.DataContext, image));
+    }
+
+    [AvaloniaFact]
     public void Le_panneau_offre_les_champs_du_fond_de_page()
     {
         var fond = new TintFill("#FF336699", 40);
@@ -181,6 +206,55 @@ public class FondsTests
         Rendu.Battre();
 
         Assert.NotEqual(avant, Composee(fenetre));
+    }
+
+    [AvaloniaFact]
+    public void Un_fond_dessine_puis_retire_de_la_page_cesse_de_lecouter()
+    {
+        // La même fuite que celle trouvée sur les cases d'un tableau, du côté de l'écran :
+        // un remplissage vit bien plus longtemps que le contrôle qui le dessine, et
+        // changer de page reconstruit tous les gabarits. Sans désabonnement, chaque
+        // passage laisserait un contrôle de plus accroché au fond du bloc.
+        var fond = new SolidFill("#FFAABBCC");
+        var planche = new Panel();
+        var fenetre = new Window { Content = planche, Width = 200, Height = 200 };
+        fenetre.Show();
+
+        for (var i = 0; i < 20; i++)
+        {
+            var controle = new FondBloc { Fond = fond };
+            planche.Children.Add(controle);
+            Rendu.Battre(1);
+            planche.Children.Remove(controle);
+            Rendu.Battre(1);
+        }
+
+        Assert.Equal(0, Abonnes(fond));
+    }
+
+    /// <summary>
+    /// Combien d'objets écoutent cet objet. Le champ de l'événement est privé dans
+    /// « ObservableObject » : on remonte la hiérarchie, « GetField » ne voyant pas les
+    /// champs privés d'un type de base.
+    ///
+    /// Copie de celle du noyau, à dessein : les deux projets de tests ne partagent aucun
+    /// assemblage, et un abonné en trop ne se voit d'aucune autre façon depuis l'extérieur
+    /// d'un événement.
+    /// </summary>
+    private static int Abonnes(object observable)
+    {
+        for (var type = observable.GetType(); type is not null; type = type.BaseType)
+        {
+            var champ = type.GetField("PropertyChanged", System.Reflection.BindingFlags.Instance
+                                                         | System.Reflection.BindingFlags.NonPublic
+                                                         | System.Reflection.BindingFlags.DeclaredOnly);
+            if (champ?.GetValue(observable) is Delegate delegue)
+            {
+                return delegue.GetInvocationList().Length;
+            }
+        }
+
+        return 0;
     }
 
     /// <summary>

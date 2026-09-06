@@ -56,10 +56,10 @@
             "$kind": "solid",
             "Color": "#FF1F3B57"
           },
-          "Stroke": null,
-          "StrokeThickness": 1,
+          "Stroke": "#FFCC0000",
+          "StrokeThickness": 2,
           "StrokeStyle": "Solid",
-          "CornerRadius": 0,
+          "CornerRadius": 10,
           "Shape": "Rectangle"
         },
         {
@@ -96,8 +96,8 @@
             "To": "#FF000000",
             "Angle": 90
           },
-          "Stroke": null,
-          "StrokeThickness": 1,
+          "Stroke": "#FFCC0000",
+          "StrokeThickness": 3,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
           "Shape": "Ellipse"

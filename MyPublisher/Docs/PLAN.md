@@ -887,7 +887,15 @@ et le contrôle d'affichage aussi. Le désabonnement passe par la surcharge à d
 paramètres d'`OnFillChanging` : celle à un seul ne donne pas l'ancienne valeur, et le bloc
 continuerait d'entendre un remplissage qu'il ne porte plus.
 
-**Cet abonnement a lui-même ouvert une fuite, trouvée et refermée.** `TableFrame.CellFrames`
+**Cet abonnement a ouvert deux fuites, l'une et l'autre refermées.** La seconde est du
+côté de l'écran : `FondBloc` s'abonnait au remplissage qu'on lui donnait et ne s'en
+détachait jamais. Changer de page reconstruit tous les gabarits, et chaque passage
+laissait un contrôle de plus accroché au fond d'un bloc qui, lui, survit — vingt passages,
+vingt abonnés, mesuré. L'abonnement suit désormais l'attachement à l'arbre visuel.
+`TexteCompose` porte le même trou depuis R1, sur le bloc au lieu du remplissage ; il est
+signalé plus bas et non corrigé, ce contrôle-là n'étant pas de ce poste.
+
+La première : `TableFrame.CellFrames`
 recalcule ses blocs de texte à chaque lecture et leur *prêtait* le fond de leur case,
 comme il leur prête leurs fragments. Chaque bloc jeté restait alors accroché au fond, qui
 lui survit : vingt lectures, vingt-et-un abonnés — mesuré. Le panneau relisant cette liste
@@ -908,6 +916,21 @@ remplissage, et trois tests vérifient en plus que la copie est profonde : deux 
 d'une duplication doivent pouvoir diverger, et une case neuve ne partage pas le fond de sa
 voisine.
 
+#### Trouvé, non corrigé — hors périmètre
+
+**`TexteCompose` ne se détache jamais du bloc qu'il écoute.** Il s'y abonne depuis la
+correction de R1 — c'est ce qui fait que régler le corps redessine la page — mais rien ne
+défait cet abonnement quand le contrôle quitte l'arbre visuel. Changer de page laisse donc
+un contrôle de plus accroché à chaque bloc de texte. C'est exactement la fuite que ce
+poste vient de refermer sur `FondBloc`, à l'endroit d'à côté, et le remède est le même :
+suivre l'attachement. Non corrigé parce que ce contrôle appartient à R1 et qu'un poste ne
+retouche pas le rendu du texte pour un fond.
+
+**La recette de ce poste demande `pub2raw`**, comme celle de R5, sa moitié utile portant
+sur ATA 21. Un arbre de travail neuf n'a pas de `.outils/` — le dossier n'est pas suivi —
+et la recette échoue alors en le disant, plutôt que de se déclarer verte sur un contrôle
+qu'elle n'a pas fait.
+
 #### Écrit ailleurs, et assumé
 
 **Le fond de la vignette d'un modèle reste un aplat.** `TemplatePreview` donne un dégradé
@@ -924,7 +947,12 @@ Consigné plutôt que tu.
 appel ; ils sont désormais séparés, comme pour les autres blocs, parce qu'un remplissage
 par image ne se pose pas avec un pinceau. Le rendu est le même — remplir puis contourner
 est ce que fait l'opérateur combiné — et la forme hérite au passage des quatre sortes de
-fond.
+fond. Rien ne couvrait ce changement de chemin : le document de recette n'avait aucune
+forme munie d'un contour, et le contrôle P2 compare un compte de pages, pas des pixels.
+L'ellipse y a donc gagné un filet de 3 pt et l'aplat un filet de 2 pt avec un angle
+arrondi de 10 — trois points de mesure de plus, et une vérification que le fond respecte
+l'arrondi, le coin devant laisser passer le fond de page. Retirer le contour des formes à
+l'export met les trois au rouge.
 
 #### Choisi sans certitude
 

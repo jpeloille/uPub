@@ -243,6 +243,16 @@ points = [
     # Hors de l'ellipse, c'est le fond de page qu'on doit voir : un remplissage qui ne
     # serait pas découpé à la forme couvrirait ce point.
     ("hors de l'ellipse",     62, 385, (162, 185, 208), 8),
+    # Les deux contours, et le coin arrondi. Ils ne sont pas décoratifs : jusqu'à C5c,
+    # une forme se traçait d'un seul appel, fond et contour ensemble ; un remplissage par
+    # image ne se posant pas au pinceau, les deux ont été séparés. Ces trois points sont
+    # le seul endroit qui mesure ce changement de chemin — sans eux, une ellipse ou un
+    # angle arrondi qui perdrait son filet passerait le contrôle sans un mot.
+    ("filet de l'ellipse",   290, 380.5, (204,   0,   0), 8),
+    ("filet de l'aplat",   320.5, 140,   (204,   0,   0), 8),
+    # Dans le coin qu'arrondit le bloc, c'est le fond de page qui doit passer : un
+    # arrondi perdu par le fond le peindrait de l'aplat.
+    ("coin arrondi",         321, 101,   (231, 237, 243), 8),
 ]
 
 echec = False
@@ -272,7 +282,12 @@ PY
 # Le filet : la page entière, écran contre PDF. Elle ne sépare pas grand-chose sur des
 # aplats — c'est justement pourquoi les mesures ci-dessus existent — mais elle attrape
 # ce qu'aucune d'elles ne regarde : un fond qui disparaîtrait ailleurs sur la page.
-Scripts/comparer-rendus.sh "$document" 1 1.0 > "$travail/comparaison.txt" 2>&1 || {
+#
+# Le seuil est à 2 % et non à 1 : les deux filets ajoutés au document — celui de
+# l'ellipse surtout, qui est une longue courbe — portent l'écart de 0,08 % à 0,99 %, à
+# eux seuls et sur le seul lissage de leurs bords. Un seuil qui frôlerait la mesure
+# tomberait un jour sur une autre machine, pour rien.
+Scripts/comparer-rendus.sh "$document" 1 2.0 > "$travail/comparaison.txt" 2>&1 || {
     echo "ÉCHEC : l'écran et le PDF divergent sur l'ensemble de la page." >&2
     cat "$travail/comparaison.txt" >&2
     exit 1
