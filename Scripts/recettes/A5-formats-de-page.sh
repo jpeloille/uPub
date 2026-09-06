@@ -49,15 +49,28 @@ document="Samples/recette-formats.mypub"
 binaire="MyPublisher/bin/Debug/net9.0/MyPublisher"
 banc="MyPublisher.Banc/bin/Debug/net9.0/MyPublisher.Banc"
 
+travail="$(mktemp -d)"
+trap 'rm -rf "$travail"' EXIT
+
+# On compile, plutôt que de se contenter de ce qui traîne dans « bin/ ».
+#
+# C'est le piège que R3 a relevé : un binaire périmé survit à une modification des
+# sources, et la recette se déclare verte sur du code qu'elle n'a pas éprouvé. Elle est
+# faite pour être rejouée seule, y compris par quelqu'un qui vient de saboter un
+# fichier ; elle compile donc elle-même, comme « Scripts/controle.sh » depuis P2.
+if ! dotnet build MyPublisher.sln -c Debug --nologo -v q > "$travail/compilation.txt" 2>&1; then
+    echo "ÉCHEC : la compilation ne passe pas." >&2
+    cat "$travail/compilation.txt" >&2
+    exit 1
+fi
+
 for outil in "$binaire" "$banc"; do
     if [ ! -x "$outil" ]; then
-        echo "ÉCHEC : binaire introuvable ($outil). Compiler d'abord." >&2
+        echo "ÉCHEC : binaire introuvable après compilation ($outil)." >&2
+        echo "Le cadriciel cible du .csproj a-t-il changé ?" >&2
         exit 1
     fi
 done
-
-travail="$(mktemp -d)"
-trap 'rm -rf "$travail"' EXIT
 
 echec=0
 
@@ -207,9 +220,9 @@ fi
 # dedans. Choisir un format dans le sélecteur, compter les pas d'annulation, relire ce
 # que le sélecteur affiche : rien de tout cela ne s'obtient d'un shell. Vérifié en
 # faisant échouer les deux côtés séparément — voir l'en-tête.
-attendus=3
+attendus=5
 if ! dotnet test MyPublisher.Tests.Interface/MyPublisher.Tests.Interface.csproj \
-        --no-build --nologo -v q --filter "poste=A5" > "$travail/tests.txt" 2>&1; then
+        --nologo -v q --filter "poste=A5" > "$travail/tests.txt" 2>&1; then
     sed 's/^/    /' "$travail/tests.txt" >&2
     echo "ÉCHEC : le panneau ne tient pas le format libre." >&2
     exit 1

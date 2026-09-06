@@ -33,18 +33,32 @@ export LC_ALL=C
 racine="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$racine"
 
-tests="MyPublisher.Tests.Interface/bin/Debug/net9.0/MyPublisher.Tests.Interface.dll"
-if [ ! -f "$tests" ]; then
-    echo "ÉCHEC : tests d'interface non compilés ($tests). Compiler d'abord." >&2
-    exit 1
-fi
-
 travail="$(mktemp -d)"
 trap 'rm -rf "$travail"' EXIT
 
+# On compile, plutôt que de lancer les tests avec « --no-build ».
+#
+# C'est le piège que R3 a relevé et qu'un « --no-build » réintroduirait : un binaire
+# périmé survit à une modification des sources, et la recette se déclare verte sur du
+# code qu'elle n'a pas éprouvé. Elle est faite pour être rejouée seule, y compris par
+# quelqu'un qui vient de saboter un fichier ; elle doit donc compiler elle-même, comme
+# « Scripts/controle.sh » le fait depuis le poste P2.
+if ! dotnet build MyPublisher.sln -c Debug --nologo -v q > "$travail/compilation.txt" 2>&1; then
+    echo "ÉCHEC : la compilation ne passe pas." >&2
+    cat "$travail/compilation.txt" >&2
+    exit 1
+fi
+
+tests="MyPublisher.Tests.Interface/bin/Debug/net9.0/MyPublisher.Tests.Interface.dll"
+if [ ! -f "$tests" ]; then
+    echo "ÉCHEC : tests d'interface introuvables après compilation ($tests)." >&2
+    echo "Le cadriciel cible du .csproj a-t-il changé ?" >&2
+    exit 1
+fi
+
 attendus=4
 if ! dotnet test MyPublisher.Tests.Interface/MyPublisher.Tests.Interface.csproj \
-        --no-build --nologo -v q --filter "poste=A6" > "$travail/tests.txt" 2>&1; then
+        --nologo -v q --filter "poste=A6" > "$travail/tests.txt" 2>&1; then
     sed 's/^/    /' "$travail/tests.txt" >&2
     echo "ÉCHEC : la barre d'état ne suit pas les gestes." >&2
     exit 1

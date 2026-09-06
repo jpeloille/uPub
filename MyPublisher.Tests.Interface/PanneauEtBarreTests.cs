@@ -143,6 +143,8 @@ public class PanneauEtBarreTests
 
         Assert.Equal(new[] { "A", "B", "C" }, Pile(vm));
 
+        var liste = Trouver<ListBox>(fenetre, "ListeDesBlocs");
+        var trait = Trouver<Rectangle>(fenetre, "TraitDInsertion");
         var depart = DansLaListe(fenetre, 0, 0.5);
         var arrivee = DansLaListe(fenetre, 2, 0.8);
 
@@ -154,8 +156,25 @@ public class PanneauEtBarreTests
         fenetre.MouseDown(depart, MouseButton.Left);
         fenetre.MouseMove(new Point(depart.X, depart.Y + 6), bouton);
         fenetre.MouseMove(arrivee, bouton);
+        Rendu.Battre();
+
+        // Le trait d'insertion est le seul retour que le geste donne : sans lui on
+        // tire à l'aveugle. Il se vérifie PENDANT, et à sa place — sous le troisième
+        // élément, puisque c'est là qu'on lâchera. Un trait qui ne s'allumerait pas,
+        // ou qui s'allumerait ailleurs, laisse pourtant le réordonnancement juste :
+        // rien d'autre ici ne le regarde.
+        Assert.True(trait.IsVisible, "le trait d'insertion ne s'allume pas pendant le glissé");
+
+        var dernier = (Control)liste.ContainerFromIndex(2)!;
+        var basDuDernier = dernier.TranslatePoint(new Point(0, dernier.Bounds.Height), liste)!.Value.Y;
+        Assert.Equal(basDuDernier - 1, Canvas.GetTop(trait), precision: 0);
+
         fenetre.MouseUp(arrivee, MouseButton.Left);
         Rendu.Battre();
+
+        // Et il s'éteint au relâchement : un trait resté allumé désignerait un dépôt
+        // qui n'a plus lieu.
+        Assert.False(trait.IsVisible);
 
         Assert.Equal(new[] { "B", "C", "A" }, Pile(vm));
         // Le bloc déplacé reste celui qu'on regarde, comme dans n'importe quelle liste
@@ -284,6 +303,30 @@ public class PanneauEtBarreTests
         Assert.Equal(
             new[] { "A3", "A4", "A5", "B4", "B5", "Executive", "Letter", "Legal", "Tabloid" },
             formats);
+    }
+
+    [AvaloniaTheory]
+    [Trait("poste", "A5")]
+    [InlineData(3000.0)]
+    [InlineData(5.0)]
+    public void Un_format_hors_des_bornes_du_champ_survit_a_louverture(double millimetres)
+    {
+        // Les bornes des deux champs — 10 et 2 000 mm — sont un garde-fou de saisie et
+        // non du format. Encore faut-il qu'elles ne remontent pas dans le document :
+        // ce sont les premiers « Minimum » et « Maximum » du panneau posés sur une
+        // liaison à double sens vers la géométrie, et C2a a déjà vu un champ altérer
+        // en silence la valeur qu'il affichait. Un `.pub` de bannière — Publisher
+        // monte à 240 pouces — serait sinon redimensionné à la seule ouverture, sans
+        // geste et sans pas d'annulation.
+        var document = Rendu.Feuille();
+        document.PageWidth = Units.MmToPoints(millimetres);
+        document.PageHeight = Units.MmToPoints(millimetres);
+
+        var (_, vm) = Rendu.Ouvrir(document);
+        Rendu.Battre();
+
+        Assert.Equal(Units.MmToPoints(millimetres), vm.Document.PageWidth, precision: 9);
+        Assert.Equal(Units.MmToPoints(millimetres), vm.Document.PageHeight, precision: 9);
     }
 
     // ------------------------------------------------------------- A6 · barre d'état

@@ -506,9 +506,12 @@ différence à elle.
 
 ### A4, A5, A6 — ce que les sabotages ont appris
 
-*6 septembre 2026.* Les trois recettes ont été éprouvées en les faisant échouer, quatorze
-fois. **Douze sabotages attrapés, deux ratés** — et ce sont les deux ratés qui ont
-servi, comme d'habitude.
+*6 septembre 2026.* Les trois recettes ont été éprouvées en les faisant échouer, seize
+fois. **Douze sabotages attrapés tels que les recettes étaient écrites, quatre qui ont
+demandé de réparer le contrôle avant qu'il ne les voie** — et ce sont ces quatre-là qui
+ont servi. Le compte est donné dans ce sens plutôt que dans l'autre : une recette qui
+laisse passer son propre défaut n'est pas verte, elle est aveugle, et l'écrire douze sur
+quatorze reviendrait à s'en dispenser.
 
 | Sabotage | Attrapé par |
 |---|---|
@@ -518,10 +521,12 @@ servi, comme d'habitude.
 | le rang d'insertion toujours nul | recette A4, tests de geste |
 | la sélection non reposée après remaniement | recette A4, trois tests |
 | le seuil de glissement à zéro | recette A4 — **au second essai** |
+| le trait d'insertion jamais allumé | recette A4 — **assertion ajoutée après coup** |
+| le trait d'insertion toujours en tête de liste | recette A4, même assertion |
 | l'export ignorant la hauteur de page | recette A5, quatre mesures sur cinq formats |
 | le sélecteur reposant l'A4 devant un format libre | recette A5, mesure de l'écran |
 | choisir un format ne faisant plus rien | recette A5, tests du panneau |
-| B5 mal mesuré au catalogue | `FormatsDePageTests`, puis recette A5 après correction du test |
+| B5 mal mesuré au catalogue | `FormatsDePageTests`, puis recette A5 — **après correction du test** |
 | l'abonnement à la géométrie du bloc coupé | recette A6, comparaison de pixels |
 | l'abonnement jamais pris | recette A6 |
 | la ligne manquante dans `NotifySelection` | recette A6 — **après réécriture du test** |
@@ -552,6 +557,22 @@ pas lui qui empêche un clic de réordonner la pile, c'est l'arithmétique du ra
 d'insertion. Le test disait le contraire ; il a été réécrit sur ce que le seuil fait
 vraiment.
 
+**Le trait d'insertion n'était éprouvé par rien.** Le test du glissé mesurait l'ordre
+obtenu et l'annulation, sans jamais regarder pendant le geste ; le vider entièrement
+laissait la recette verte. Or c'est le seul retour que le geste donne — sans lui, on
+tire à l'aveugle. Le test l'exige désormais allumé **et à sa place**, entre les deux
+mouvements de pointeur, puis éteint au relâchement ; les deux sabotages
+correspondants tombent.
+
+**Les recettes compilent, elles ne se contentent pas de ce qui traîne dans `bin/`.**
+La première écriture lançait les tests avec `--no-build` et se bornait à vérifier que
+la bibliothèque existait. C'est exactement le piège que R3 a relevé — un binaire périmé
+survit à une modification des sources — reposé dans un script dont la raison d'être est
+d'être rejouable seul, y compris par quelqu'un qui vient de saboter un fichier. Elles
+compilent maintenant elles-mêmes et s'arrêtent sur une compilation cassée, comme
+`Scripts/controle.sh` le fait depuis P2. Vérifié en sabotant une source et en lançant la
+recette **sans** compiler : elle tombe.
+
 **Une correction de comptage, à déclarer.** La ligne « par phase » annonçait « R : 4 sur
 5 » alors que les cinq lignes de la phase R portent 100 % depuis la livraison de R5 ;
 le total de 15 en héritait. Corrigé à 5 et à 19, la présente livraison comprise.
@@ -561,7 +582,17 @@ le total de 15 en héritait. Corrigé à 5 et à 19, la présente livraison comp
 - **Les bornes du format libre sont celles du champ, pas du format.** Le panneau plafonne
   à 10 et 2 000 mm ; un `.mypub` écrit à la main ou importé peut porter n'importe quel
   nombre, et rien ne le ramène. C'est le même parti que le plafond de vingt colonnes de
-  R3 — un garde-fou de saisie — mais il vaut mieux l'avoir écrit.
+  R3 — un garde-fou de saisie. **Vérifié plutôt que supposé** : ce sont les premiers
+  `Minimum` et `Maximum` du panneau posés sur une liaison à double sens vers la
+  géométrie, et C2a a déjà vu un champ altérer en silence la valeur qu'il affichait. Un
+  document de 3 000 mm et un de 5 mm s'ouvrent sans que leur page ne bouge d'un
+  milliardième de point ; deux cas de test le gardent, faute de quoi un `.pub` de
+  bannière — Publisher monte à 240 pouces — serait redimensionné à la seule ouverture.
+- **Le glissé dans la liste ne fait pas défiler celle-ci.** Le rang d'insertion se lit
+  sur les éléments réellement construits, et la liste ne construit que ce qu'elle
+  affiche : sur une page comptant plus de blocs que la liste n'en montre, on ne peut pas
+  tirer le quarantième jusqu'en tête. Le geste reste juste, il est seulement borné à la
+  bande visible. Les raccourcis, eux, ne connaissent pas cette limite.
 - **Les deux cases neuves de la barre d'état disparaissent sans sélection**, ce qui
   décale les cases voisines au moment où l'on sélectionne. Publisher les laisse vides.
   Retenu ainsi pour ne pas montrer deux cases muettes en permanence ; à revoir si le
