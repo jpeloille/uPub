@@ -1,5 +1,11 @@
 # Plan de développement
 
+> **À lire avant ce plan** : [`Documents-reels.md`](Documents-reels.md), relevé des deux
+> documents ATR réellement composés sous Publisher. Les fiches disent ce que Publisher
+> *sait faire* ; ces documents-là disent ce dont on *se sert*. Ils ajoutent quatre postes
+> que ce plan ne prévoyait pas — dont le texte riche, sans lequel aucun des deux ne se
+> reproduit — et ils déclassent le seuil D.
+
 Couche d'exécution posée sur le relevé fonctionnel de
 [`Publisher2007/00-index.md`](Publisher2007/00-index.md) : mêmes priorités, mais
 regroupées en phases, avec les dépendances explicites et un critère de recette par
@@ -45,6 +51,10 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **C5** | Remplissage riche et cohérence visuelle | 0 % | C5a fond de page · C5b jeux de couleurs · C5c dégradés — C5a et C5c débloqués par C1 |
 | **C6** | Marges intérieures par côté | **100 %** | Quatre marges sur le bloc de texte ; `FormatVersion` 3 |
 | **C7** | Bibliothèque de blocs | 0 % | Débloqué depuis C3a |
+| **R1** | Texte riche : fragments de style | 0 % | **Le manque décisif.** 402 fragments sur les deux documents réels ; le bloc n'en porte qu'un |
+| **R2** | Retraits et espacement de paragraphe | 0 % | Retrait négatif (listes à puces), retrait gauche, espace après |
+| **R3** | Colonnes à l'intérieur d'un bloc | 0 % | Posées sur 25 des 27 blocs de texte réels. Autre chose que C2a |
+| **R4** | Interligne : une seule mesure | 0 % | L'écran suit le corps, l'export la police. Tranché : c'est l'export qui a raison |
 | **D** | Moteur de composition | — | Décision non ouverte ; à rouvrir quand A, B et C sont livrées |
 
 **Par phase** — P : 3 sur 3 · A : 0 sur 7 · B : 1 sur 5 · C : 5 sur 7 · D : non planifié.
@@ -169,9 +179,16 @@ différence entre deux et neuf lignes :
 
 L'écran suit `FontSize × LineHeight` ; le PDF ne suit rien. Un réglage offert dans le
 panneau ne franchit donc pas l'export — et le README annonce l'interligne parmi ce que
-l'application sait faire. **Reste à trancher lequel des deux a raison** : Publisher
-appelle « simple » l'interligne naturel de la police, ce que fait le PDF, tandis que le
-modèle dit « multiple du corps », ce que fait l'écran. Les deux ne peuvent pas coexister.
+l'application sait faire.
+
+**Tranché le 6 septembre 2026, par les documents réels** (voir
+[`Documents-reels.md`](Documents-reels.md)) : aucun des deux `.pub` déposés ne porte
+`fo:line-height`. La propriété existe dans libmspub et serait émise si Publisher stockait
+un interligne particulier — les deux documents s'en tiennent donc au défaut de Publisher,
+qui est la **hauteur naturelle de la police**. **C'est l'export qui a raison, et l'écran
+qui a tort.** `LineHeight` doit devenir un multiple de la hauteur naturelle et non du
+corps : à 1, l'écran ne doit rien imposer ; au-delà, il multiplie cette hauteur-là, et
+l'export applique le même multiple à la même mesure.
 
 **En revanche, les deux moteurs coupent aux mêmes mots.** Un paragraphe de sept lignes
 dans un bloc étroit se brise exactement aux mêmes endroits des deux côtés, à deux pixels
