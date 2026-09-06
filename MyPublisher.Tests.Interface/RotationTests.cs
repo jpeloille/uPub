@@ -41,7 +41,7 @@ public class RotationTests
     private static ShapeFrame Bloc() => new()
     {
         Name = "Bandeau", X = 100, Y = 100, Width = 200, Height = 60,
-        Fill = "#FFCC0000", Stroke = null,
+        Fill = new SolidFill("#FFCC0000"), Stroke = null,
     };
 
     private static (Window Fenetre, MainWindowViewModel Vm, ShapeFrame Bloc) Ouvrir()

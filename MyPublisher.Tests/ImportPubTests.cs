@@ -380,13 +380,18 @@ public class ImportPubTests
     public void Ce_que_le_modele_ne_sait_pas_porter_est_dit()
     {
         // Un import muet sur ce qu'il perd est pire qu'un import qui échoue.
+        //
+        // Ce test portait sur l'alignement vertical, puis sur le remplissage par image :
+        // les postes A7 et C5c les ont l'un après l'autre fait entrer dans le modèle, et
+        // l'avertissement a disparu — comme il devait. Il porte maintenant sur un chemin
+        // à plus de deux points, que le modèle ramène à un trait entre ses extrémités.
         var rapport = PubImporter.Importer($"""
             {UnePage}
-                setStyle(draw:fill: bitmap, draw:stroke: none)
-                drawPolygon (svg:points: ((svg:x: 0.0000in, svg:y: 0.0000in), (svg:x: 1.0000in, svg:y: 0.0000in), (svg:x: 1.0000in, svg:y: 1.0000in), (svg:x: 0.0000in, svg:y: 1.0000in)))
+                setStyle(draw:fill: none, draw:stroke: solid, svg:stroke-color: #000000)
+                drawPath (svg:d: ((librevenge:path-action: M, svg:x: 0.0000in, svg:y: 0.0000in), (librevenge:path-action: L, svg:x: 1.0000in, svg:y: 1.0000in), (librevenge:path-action: L, svg:x: 2.0000in, svg:y: 0.0000in)))
             """);
 
-        Assert.Contains(rapport.Warnings, a => a.Contains("Remplissage par image"));
+        Assert.Contains(rapport.Warnings, a => a.Contains("Chemin"));
     }
 
     [Theory]

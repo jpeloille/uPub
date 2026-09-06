@@ -30,7 +30,7 @@ namespace MyPublisher.Tests.Interface;
 public class PanneauEtBarreTests
 {
     private static ShapeFrame Carre(string nom, double x, double y, double cote = 60) =>
-        new() { Name = nom, X = x, Y = y, Width = cote, Height = cote, Fill = "#FFCC0000" };
+        new() { Name = nom, X = x, Y = y, Width = cote, Height = cote, Fill = new SolidFill("#FFCC0000") };
 
     private static Panel Planche(Window fenetre) =>
         fenetre.GetVisualDescendants().OfType<Panel>().First(p => p.Name == "PageRoot");

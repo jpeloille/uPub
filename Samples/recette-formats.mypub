@@ -1,5 +1,5 @@
 {
-  "FormatVersion": 3,
+  "FormatVersion": 4,
   "Title": "Recette A5 — format de page libre",
   "PageWidth": 283.46456692913387,
   "PageHeight": 566.9291338582677,
@@ -7,6 +7,7 @@
   "MarginTop": 28.34645669291339,
   "MarginRight": 28.34645669291339,
   "MarginBottom": 28.34645669291339,
+  "Background": null,
   "ColumnCount": 1,
   "ColumnSpacing": 0,
   "RowCount": 1,
@@ -27,7 +28,10 @@
           "Width": 263.46456692913387,
           "Height": 546.9291338582677,
           "Rotation": 0,
-          "Fill": "#FF9DC3E6",
+          "Fill": {
+            "$kind": "solid",
+            "Color": "#FF9DC3E6"
+          },
           "Stroke": "#FF1A1A1A",
           "StrokeThickness": 1,
           "StrokeStyle": "Solid",
