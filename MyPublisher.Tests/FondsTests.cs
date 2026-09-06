@@ -253,6 +253,49 @@ public class FondsTests
         Assert.Empty(dits);
     }
 
+    [Fact]
+    public void Relire_les_cases_dun_tableau_nempile_pas_dabonnes_sur_leur_fond()
+    {
+        // Le piège que l'abonnement ci-dessus a créé : « CellFrames » reconstruit ses
+        // blocs à chaque lecture, et chaque bloc neuf s'abonnait au fond de sa case —
+        // qui, lui, vit longtemps. Les blocs jetés restaient donc accrochés à lui, par
+        // centaines, et chaque retouche du fond notifiait des blocs que personne ne
+        // dessine plus. Un tableau de C9 se relit à chaque notification du panneau.
+        // On mesure la RÉTENTION et non un compte d'appels : un abonné en trop ne se voit
+        // pas depuis l'extérieur d'un événement, mais il tient son objet en vie.
+        var tableau = new TableFrame();
+        tableau.RowCount = 1;
+        tableau.ColumnCount = 3;
+        tableau.Cells[0].Fill = new SolidFill("#FFEFF2F6");
+
+        for (var i = 0; i < 20; i++) _ = tableau.CellFrames;
+
+        Assert.Equal(1, Abonnes(tableau.Cells[0].Fill!));
+    }
+
+    /// <summary>
+    /// Combien d'objets écoutent cet objet. On lit le champ de l'événement par réflexion :
+    /// un abonné en trop ne se voit d'aucune autre façon depuis l'extérieur, et c'est
+    /// précisément ce qui rend ce genre de fuite silencieuse.
+    /// </summary>
+    private static int Abonnes(object observable)
+    {
+        // Le champ de l'événement est privé dans « ObservableObject » : on remonte la
+        // hiérarchie, « GetField » ne voyant pas les champs privés d'un type de base.
+        for (var type = observable.GetType(); type is not null; type = type.BaseType)
+        {
+            var champ = type.GetField("PropertyChanged", System.Reflection.BindingFlags.Instance
+                                                         | System.Reflection.BindingFlags.NonPublic
+                                                         | System.Reflection.BindingFlags.DeclaredOnly);
+            if (champ?.GetValue(observable) is System.Delegate delegue)
+            {
+                return delegue.GetInvocationList().Length;
+            }
+        }
+
+        return 0;
+    }
+
     // ------------------------------------------------------------------ l'export
 
     [Fact]

@@ -947,13 +947,19 @@ public partial class TableFrame : Frame
                     PaddingTop = CellPadding,
                     PaddingRight = CellPadding,
                     PaddingBottom = CellPadding,
-                    // Le remplissage est prêté, non copié, comme les fragments : ce
-                    // bloc-ci ne vit que le temps d'un rendu et ne modifie rien. Le
-                    // cloner ici allouerait une fois par case à chaque lecture, sur un
-                    // chemin que C9 a déjà trouvé chaud à 40 × 40 cases.
-                    Fill = cellule.Fill,
+                    // Le remplissage est COPIÉ, là où les fragments ci-dessous sont
+                    // prêtés — et la différence n'est pas de goût. Un bloc s'abonne à son
+                    // remplissage depuis C5c, pour se redessiner quand on le modifie sur
+                    // place ; ce bloc-ci ne vit que le temps d'un rendu, mais
+                    // l'abonnement, lui, survivrait. Prêter le fond de la case y
+                    // accrocherait un bloc jeté à chaque lecture de cette liste — vingt
+                    // lectures, vingt-et-un abonnés, mesuré — et le panneau la relit à
+                    // chaque notification. Copier coûte un petit objet par case et rend
+                    // le bloc et son fond ramassables ensemble.
+                    Fill = cellule.Fill?.Clone(),
                     Stroke = cellule.Stroke,
                     StrokeThickness = cellule.StrokeThickness,
+                    // Les fragments, eux, sont prêtés : ils ne portent aucun abonnement.
                     Spans = cellule.Spans,
                 };
 

@@ -887,6 +887,18 @@ et le contrôle d'affichage aussi. Le désabonnement passe par la surcharge à d
 paramètres d'`OnFillChanging` : celle à un seul ne donne pas l'ancienne valeur, et le bloc
 continuerait d'entendre un remplissage qu'il ne porte plus.
 
+**Cet abonnement a lui-même ouvert une fuite, trouvée et refermée.** `TableFrame.CellFrames`
+recalcule ses blocs de texte à chaque lecture et leur *prêtait* le fond de leur case,
+comme il leur prête leurs fragments. Chaque bloc jeté restait alors accroché au fond, qui
+lui survit : vingt lectures, vingt-et-un abonnés — mesuré. Le panneau relisant cette liste
+à chaque notification, la pile montait sans fin, et toucher au fond d'une case notifiait
+des centaines de blocs que plus personne ne dessine. Le fond est donc copié là où les
+fragments restent prêtés, ce qui rend le bloc et son fond ramassables ensemble. La fuite
+ne se voit d'aucune façon depuis l'extérieur d'un événement : le test qui la garde compte
+les abonnés par réflexion. Une première écriture, par référence faible, ne prouvait rien —
+en Debug les variables locales restent vivantes jusqu'au bout de la méthode, et le test
+échouait pareil sans aucun abonné.
+
 **Le test d'exhaustivité de `Clone()` allait cesser de couvrir le fond.** Il découvre les
 propriétés par réflexion et leur donne une valeur ; sa fabrique rend `null` pour tout type
 qu'elle ne sait pas distinguer. `Fill` était une chaîne, donc couvert ; devenu un objet, il
