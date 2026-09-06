@@ -19,6 +19,12 @@
 # On compare donc les repères éteints, ce qui retire la seule différence voulue, et
 # l'on garde de la marge pour le lissage.
 #
+# ATTENTION — sur une page portant du texte, cette comparaison ÉCHOUE aujourd'hui, et
+# c'est une vraie trouvaille, pas un défaut du banc : l'interligne n'est pas appliqué à
+# l'export (cf. MyPublisher/Docs/PLAN.md, poste P3). Formes seules : 0,38 %. Avec le
+# texte : 8 %. C'est pourquoi ce script n'est pas appelé en bloc par verifier.sh, mais
+# recette par recette, avec son document et sa tolérance.
+#
 set -euo pipefail
 
 # Les comparaisons numériques et les formats d'ImageMagick doivent être insensibles

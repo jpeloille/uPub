@@ -25,6 +25,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **P0** | Nom du remplissage | **100 %** | `Fill` retenu et daté ; renommage fait en C1 |
 | **P1** | Dépôt sous git | **100 %** | Branche `main`, commit initial `cc098e0` |
 | **P2** | Contrôle de non-régression | **100 %** | `Scripts/controle.sh`, référence dans `Scripts/reference.txt` |
+| **P3** | Banc de vérification | en cours | Noyau séparé, banc de rendu, comparaison écran ↔ PDF, export déterministe, 20 tests, `Scripts/verifier.sh`. Reste : les recettes des postes clos, et le bilan |
 | **A1** | Poignée de rotation | 0 % | La rotation est déjà partout ; il manque la neuvième poignée |
 | **A2** | Signaler le débordement du texte | 0 % | Le poste le plus important de la phase : on livre encore un PDF amputé sans le dire |
 | **A3** | Chemins d'images relatifs | 0 % | — |
@@ -108,6 +109,90 @@ d'entrée sans interface, `--resave`, et vérifié son utilité dès le premier 
 
 Le contrôle a été éprouvé en le faisant échouer : JSON écarté du sérialiseur, compte de
 pages différent, bloc image au chemin inexistant.
+
+### P3 — Un banc de vérification permanent
+
+P2 tient la chaîne d'écriture, et rien d'autre. Or les recettes de C1, C2a, C2b, C3c et
+C6 ont toutes été jouées avec un outillage monté puis jeté : les mots
+`RenderTargetBitmap`, `pdftoppm` et « pointeur synthétisé » ne se trouvent nulle part
+ailleurs que dans la prose de ce fichier. Aucune de ces recettes n'est rejouable, et
+rien n'arrêterait quelqu'un qui casserait l'aimantation, la composition des rotations
+d'un groupe ou la fidélité écran/export.
+
+Sept pièces : le noyau séparé de l'application (`MyPublisher.Core`), l'export rendu
+déterministe, les fonctions pures sorties de la vue, un banc qui rend l'écran hors champ
+(`MyPublisher.Banc`), la comparaison écran ↔ PDF (`Scripts/comparer-rendus.sh`), une
+recette exécutable par poste — **y compris pour les postes déjà clos** — et un bilan
+machine qui dit ce qui reste ouvert.
+
+*Recette* : saboter volontairement l'aimantation, la composition des rotations de groupe,
+une propriété dans un `Clone()` et une étape de migration — chaque sabotage doit être
+attrapé par une recette nommée.
+
+*Fait en partie le 6 septembre 2026* — le noyau, le banc et la comparaison.
+`Models` et `Services` ne référençaient déjà aucun type Avalonia : le découpage n'a
+déplacé aucune ligne, il a matérialisé une séparation que le code respectait. Le banc
+ouvre la vraie fenêtre sans affichage, sur Skia, et rend la page à deux pixels par
+point — la même échelle que `pdftoppm -r 144`, sans facteur de conversion.
+
+Deux pièges silencieux, tous deux gardés désormais : `PageRoot` est mesuré en points
+mais vit sous la mise à l'échelle du zoom, si bien que le rendre directement dessinait
+son contenu 4/3 trop grand dans une image à la bonne taille — un bandeau de 118 pt
+sortait à 157 pt sans que rien ne le signale ; et un écart **nul** est refusé au même
+titre qu'un écart énorme, puisqu'il voudrait dire qu'on compare une image à elle-même.
+
+#### Ce que le banc a trouvé le jour où il a servi
+
+**L'interligne n'est pas appliqué à l'export.** `AbsoluteLineHeight`
+(`Models/Frame.cs`) n'est lu que par l'écran et par les vignettes du catalogue ;
+`PdfExporter.DrawText` ne le lit jamais et laisse `XTextFormatter` avancer à la hauteur
+naturelle de la police. Mesuré sur un bloc de neuf lignes en DejaVu Sans 12 pt, par
+différence entre deux et neuf lignes :
+
+| Interligne | Avance à l'écran | Avance au PDF |
+|---|---|---|
+| 1,0 | 12,00 pt | 13,93 pt |
+| 1,5 | 18,00 pt | 13,93 pt |
+
+L'écran suit `FontSize × LineHeight` ; le PDF ne suit rien. Un réglage offert dans le
+panneau ne franchit donc pas l'export — et le README annonce l'interligne parmi ce que
+l'application sait faire. **Reste à trancher lequel des deux a raison** : Publisher
+appelle « simple » l'interligne naturel de la police, ce que fait le PDF, tandis que le
+modèle dit « multiple du corps », ce que fait l'écran. Les deux ne peuvent pas coexister.
+
+**En revanche, les deux moteurs coupent aux mêmes mots.** Un paragraphe de sept lignes
+dans un bloc étroit se brise exactement aux mêmes endroits des deux côtés, à deux pixels
+près sur la largeur d'encre. C'est plus favorable que ce que le seuil D redoutait, et
+cela réduit le risque de A7 : une fois l'interligne honoré, la comparaison écran ↔ PDF
+devient un contrôle utilisable même sur une page de texte.
+
+**Conséquence sur l'ordonnancement** : ces trois choses — interligne honoré, débordement
+signalé, alignement vertical — demandent la même passe de composition dans
+`PdfExporter`, et le dépôt tient à ce qu'il n'y ait qu'une seule mesure. Elles forment
+un seul train, l'interligne en tête parce que c'est le seul des trois dont la recette
+échoue déjà.
+
+**Relevé de départ** : formes seules, écran contre PDF, **0,38 %** de pixels différents,
+entièrement sur le lissage des bords. Avec le texte, l'écart monte à 8 % — et c'est
+l'interligne, pas le banc.
+
+**Une dérive mesurée, et sans conséquence.** Sélectionner un bloc fait passer sa
+position par le panneau de propriétés, donc par un aller-retour points ↔ millimètres qui
+rend 100,00000000000007 pour 100. C'est un résidu du correctif de C2a — sept
+centièmes de millième de milliardième de point. Vérifié : il ne salit pas le document,
+n'empile aucun pas d'annulation, et l'annulation d'un déplacement rend exactement l'état
+d'avant le geste. Consigné parce qu'un test d'égalité stricte du JSON bute dessus, et
+qu'il vaut mieux l'avoir écrit une fois que le redécouvrir à chaque poste.
+
+*Fait le 6 septembre 2026, second temps* — l'export est devenu reproductible :
+`--date` fixe la date des champs, `--contacts` désigne les coordonnées, et le modèle de
+vue reçoit les deux plutôt que de lire l'horloge et le `~/.config` de la machine. Au
+passage, le document à ouvrir n'est plus « l'argument qui précède le drapeau » mais le
+premier argument libre : `--date 2026-09-06 --export x.pdf` aurait sinon pris la date
+pour le document. L'aimantation et la taille minimale d'un bloc sont sorties de la vue
+vers `Models/Snap.cs` — la seconde y était déclarée deux fois, sans que rien n'impose
+l'accord. Vingt tests, dont quatre qui jouent de vrais gestes sur la vraie couche de
+saisie, et `Scripts/verifier.sh` qui enchaîne tout ce qui doit passer.
 
 ### P0 — Une décision à prendre tout de suite
 

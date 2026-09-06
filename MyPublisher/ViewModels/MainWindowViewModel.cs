@@ -113,12 +113,26 @@ public partial class MainWindowViewModel : ViewModelBase
     /// </summary>
     private bool _syncingPageSetup;
 
-    public MainWindowViewModel()
+    /// <param name="contacts">
+    /// Jeux de coordonnées, ou <c>null</c> pour relire ceux de l'utilisateur. On les
+    /// passe pour qu'un banc n'aille pas lire — ni écrire — la configuration réelle de
+    /// la machine : un export dépendrait alors d'un fichier hors du dépôt, qu'aucun
+    /// « git status » ne montrerait.
+    /// </param>
+    /// <param name="horloge">
+    /// D'où vient la date des champs, ou <c>null</c> pour l'heure courante. Même raison :
+    /// un document portant un champ de date change tous les jours.
+    /// </param>
+    public MainWindowViewModel(BusinessInfoStore? contacts = null, Func<DateTime>? horloge = null)
     {
+        Contacts = contacts ?? BusinessInfoStore.Load();
+        _horloge = horloge ?? (() => DateTime.Now);
         CurrentPage = Document.Pages.FirstOrDefault();
         FontFamilies = LoadSystemFonts();
         SyncPageSetup();
     }
+
+    private readonly Func<DateTime> _horloge;
 
     /// <summary>Aligne les contrôles de format sur les dimensions réelles du document.</summary>
     private void SyncPageSetup()
@@ -204,7 +218,7 @@ public partial class MainWindowViewModel : ViewModelBase
     /// Les jeux de coordonnées de l'utilisateur, relus au démarrage. Ils ne sont pas
     /// dans le document : un même document affiche les coordonnées de qui l'ouvre.
     /// </summary>
-    public BusinessInfoStore Contacts { get; private set; } = BusinessInfoStore.Load();
+    public BusinessInfoStore Contacts { get; private set; }
 
     /// <summary>
     /// De quoi résoudre les champs de la page affichée : où l'on est dans le document,
@@ -212,7 +226,7 @@ public partial class MainWindowViewModel : ViewModelBase
     /// de nombre de pages ou de jeu de coordonnées, et les champs de l'écran suivent.
     /// </summary>
     public FieldContext FieldContext =>
-        new(CurrentPageNumber, Document.Pages.Count, DateTime.Now, Contacts.Active);
+        new(CurrentPageNumber, Document.Pages.Count, _horloge(), Contacts.Active);
 
     /// <summary>Adopte les jeux qu'un dialogue vient de valider, et rafraîchit les champs.</summary>
     public void ApplyContacts(BusinessInfoStore contacts)
@@ -540,7 +554,9 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public void ExportPdf(string path)
     {
-        var report = PdfExporter.Export(Document, path, Contacts.Active);
+        // La même horloge que celle des champs de l'écran : sans cela, un export lancé
+        // à minuit passé porterait une autre date que ce que la page affiche.
+        var report = PdfExporter.Export(Document, path, Contacts.Active, _horloge());
         Status = report.Warnings.Count == 0
             ? $"PDF exporté : {Path.GetFileName(path)} ({report.PageCount} page(s))"
             : $"PDF exporté avec {report.Warnings.Count} avertissement(s) : {report.Warnings[0]}";

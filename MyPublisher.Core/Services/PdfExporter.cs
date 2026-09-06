@@ -22,7 +22,14 @@ public static class PdfExporter
     /// appartiennent à l'utilisateur, pas au document, et l'export ne doit pas dépendre
     /// d'un réglage qu'il irait chercher lui-même.
     /// </summary>
-    public static ExportReport Export(Document document, string path, BusinessInfo? contact = null)
+    /// <param name="date">
+    /// Date que portent les champs, ou <c>null</c> pour lire l'horloge. Elle se passe
+    /// pour qu'un export soit reproductible : sans elle, tout document portant un champ
+    /// de date produit un PDF différent chaque jour, et aucune comparaison à une
+    /// référence figée n'est possible.
+    /// </param>
+    public static ExportReport Export(
+        Document document, string path, BusinessInfo? contact = null, DateTime? date = null)
     {
         FontconfigFontResolver.EnsureInstalled();
 
@@ -36,7 +43,7 @@ public static class PdfExporter
 
         // Une seule lecture de l'horloge : toutes les pages d'un même export portent
         // la même date, même si le document est long à écrire.
-        var now = DateTime.Now;
+        var now = date ?? DateTime.Now;
 
         for (var index = 0; index < document.Pages.Count; index++)
         {

@@ -39,9 +39,10 @@ public partial class PageCanvas : UserControl
     /// <summary>
     /// Taille minimale d'un bloc. Le panneau de propriétés saisit en millimètres :
     /// les deux plafonds doivent exprimer la même valeur, sinon un bloc réduit à la
-    /// souris serait silencieusement redimensionné par le champ numérique.
+    /// souris serait silencieusement redimensionné par le champ numérique. Elle est
+    /// désormais déclarée une seule fois, dans le modèle.
     /// </summary>
-    private static readonly double MinFrameSize = Units.MmToPoints(2);
+    private static readonly double MinFrameSize = Snap.MinFrameSize;
 
     private static readonly Cursor[] EdgeCursors =
     [
@@ -703,30 +704,12 @@ public partial class PageCanvas : UserControl
     }
 
     /// <summary>
-    /// Aimante l'un des trois bords du bloc (début, milieu, fin) sur le repère le
-    /// plus proche, si l'écart reste sous la tolérance.
+    /// Aimante l'un des trois bords du bloc sur le repère le plus proche. Le calcul
+    /// est dans <see cref="Snap.Edge"/> : il est pur, et c'est lui l'oracle des
+    /// positions exactes — il doit pouvoir être interrogé sans ouvrir de fenêtre.
     /// </summary>
     private static double SnapEdge(double position, double size, double tolerance, IReadOnlyList<double> guides)
-    {
-        var best = position;
-        var bestDistance = tolerance;
-
-        foreach (var guide in guides)
-        {
-            foreach (var offset in new[] { 0.0, size / 2, size })
-            {
-                var candidate = guide - offset;
-                var distance = Math.Abs(candidate - position);
-                if (distance < bestDistance)
-                {
-                    bestDistance = distance;
-                    best = candidate;
-                }
-            }
-        }
-
-        return best;
-    }
+        => Snap.Edge(position, size, tolerance, guides);
 
     // ---------------------------------------------------------------- redimensionnement
 
