@@ -176,9 +176,12 @@ public sealed class FontconfigFontResolver : IFontResolver
             return new ResolutionPolice(famille, famille, fichier, null);
         }
 
+        // Une famille vide n'est pas une police absente : un fichier a bien été trouvé,
+        // et c'est lui qui servira. On le nomme faute de mieux, plutôt que de laisser
+        // l'avertissement annoncer qu'il n'y a plus aucune police sur la machine.
         var noms = Noms(famillesRendues);
-        return new ResolutionPolice(
-            famille, noms.Length > 0 ? noms[0] : "", fichier, "absente de cette machine");
+        var employee = noms.Length > 0 ? noms[0] : Path.GetFileName(fichier);
+        return new ResolutionPolice(famille, employee, fichier, "absente de cette machine");
     }
 
     /// <summary>
