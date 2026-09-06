@@ -100,6 +100,13 @@ public static class Conv
 /// <summary>
 /// Les images sont relues à chaque notification de liaison : sans cache, faire
 /// glisser un bloc image relirait le fichier à chaque image de l'animation.
+///
+/// Le cache est indexé par chemin, et ce que le poste A3 a changé le laisse intact
+/// pour une raison qu'il faut écrire : les chemins relatifs sont résolus **à
+/// l'ouverture**, si bien que ce cache ne voit jamais que des chemins absolus. Si le
+/// modèle avait gardé la forme relue du fichier, deux documents rangés dans deux
+/// dossiers et portant chacun « images/logo.png » se seraient partagé une seule
+/// entrée — la seconde aurait affiché l'image de la première.
 /// </summary>
 internal static class BitmapCache
 {
@@ -107,27 +114,48 @@ internal static class BitmapCache
 
     public static Bitmap? Get(string path)
     {
+        // Deux graphies du même fichier ne font qu'une entrée. Ce n'est pas seulement
+        // une économie : « Invalidate » ne retrouverait pas une entrée rangée sous une
+        // graphie différente de celle qu'on lui donne.
+        var cle = Cle(path);
+
         lock (Cache)
         {
-            if (Cache.TryGetValue(path, out var cached)) return cached;
+            if (Cache.TryGetValue(cle, out var cached)) return cached;
 
             Bitmap? bitmap = null;
             try
             {
-                bitmap = new Bitmap(path);
+                bitmap = new Bitmap(cle);
             }
             catch (Exception)
             {
                 // Fichier absent ou format non géré : le bloc reste vide, sans planter.
             }
 
-            Cache[path] = bitmap;
+            Cache[cle] = bitmap;
             return bitmap;
         }
     }
 
     public static void Invalidate(string path)
     {
-        lock (Cache) Cache.Remove(path);
+        lock (Cache) Cache.Remove(Cle(path));
+    }
+
+    /// <summary>
+    /// Le chemin normalisé. Un chemin illisible — vide, caractères interdits — est laissé
+    /// tel quel : il ne s'ouvrira pas, et c'est « Get » qui le dira, pas ce cache.
+    /// </summary>
+    private static string Cle(string path)
+    {
+        try
+        {
+            return System.IO.Path.GetFullPath(path);
+        }
+        catch (Exception)
+        {
+            return path;
+        }
     }
 }

@@ -84,7 +84,14 @@ sealed class Program
             }
             else
             {
-                DocumentSerializer.Save(document, target);
+                // « --resave » n'est pas un « enregistrer sous » : il réécrit le document
+                // tel qu'il s'écrit CHEZ LUI. Les chemins d'images restent donc rapportés
+                // au dossier de la source, et non à celui du fichier produit — lequel n'a
+                // d'autre destin que d'être recopié par-dessus la source, ce qui est la
+                // procédure de régénération des Samples et des Templates. Relativiser sur
+                // /tmp graverait dans un modèle livré des chemins absolus propres à cette
+                // machine, sans que rien ne le dise.
+                DocumentSerializer.Save(document, target, Path.GetDirectoryName(Path.GetFullPath(source)));
                 Console.WriteLine($"Document réécrit vers {target}");
             }
         }
