@@ -104,13 +104,23 @@ Ce n'est pas C2a. C2a pose des colonnes sur la **page**, comme repères d'aimant
 ici le texte coule en colonnes **à l'intérieur d'un bloc**. Deux fonctions différentes,
 et c'est la seconde qui sert.
 
-### R4 — Les tableaux ne sont pas un supplément, ils sont le document
+### R4 — Les tableaux sont nécessaires, mais bien plus simples qu'annoncé
 
-Les Fiches, c'est **19 tableaux, 51 cellules**, contre 18 blocs de texte. Le poste C9 a
-été inscrit au plan sur la foi d'une ligne de la fiche 02 — « objet tableau et
-AutoShapes » — et rangé en dernier comme second chantier lourd, à titre spéculatif.
+*Rectifié le 6 septembre 2026, après avoir compté au lieu d'estimer.* Un premier
+relevé disait « 19 tableaux, 51 cellules contre 18 blocs de texte : c'est le
+document ». C'était mal lu.
 
-Il n'est pas spéculatif. **Sans tableaux, la moitié du corpus réel n'existe pas.**
+Le compte exact : **19 objets tableau, dont 16 de trois colonnes sur une seule ligne**
+et 3 d'une seule cellule. 51 cellules, mais **16 seulement portent du texte** — et sur
+les 362 insertions de texte du document, 16 sont dans un tableau. L'essentiel du
+contenu vit dans les blocs de texte ordinaires.
+
+Ce sont donc des **bandes à trois cases**, pas des tableaux de données : une ligne,
+trois colonnes, aucune cellule fusionnée, aucun tableau imbriqué. C9 reste
+**nécessaire** — sans lui seize éléments des fiches n'existent pas, et l'import du
+poste R5 n'a nulle part où les mettre — mais il est bien plus petit que « un type de
+bloc entier comparable à celui de Word ». Un bloc `table` portant lignes, colonnes,
+et une cellule = un contenu de texte, suffit.
 
 ---
 
@@ -144,7 +154,8 @@ plus rien.
    aujourd'hui tout document venant de Publisher.
 2. **R1, le texte riche** — sans lui, rien de tout cela ne se reproduit.
 3. **R2, les paragraphes** — retrait négatif et espacement.
-4. **C9, les tableaux** — remonté de la dernière place.
+4. **C9, les tableaux** — remonté de la dernière place, mais réduit à sa taille réelle :
+   des bandes d'une ligne et trois colonnes.
 5. **B5, les substitutions** — remonté, pour la raison ci-dessus.
 6. **R3, les colonnes dans le bloc** · **C5c, remplissage par image**.
 
