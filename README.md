@@ -145,6 +145,10 @@ la barre du haut regroupe les commandes du document : fichier, annulation, zoom.
 - Annulation / rétablissement sur 60 pas, couvrant aussi bien les gestes à la
   souris que les champs du panneau de propriétés.
 - Enregistrement au format `.mypub` (JSON lisible) et export PDF.
+- **L'export dit quelles polices il n'a pas trouvées**, et par quoi il les a
+  remplacées : « Police substituée : « Wingdings » demandée, « DejaVu Sans »
+  employée ». Une substitution muette ne dégrade pas seulement l'allure — sur une
+  fiche de procédure, elle remplace une flèche par une lettre.
 
 ## Raccourcis
 
@@ -201,6 +205,14 @@ intermédiaire susceptible de diverger.
 Linux : sans `FontconfigFontResolver`, l'export échoue dès qu'on demande autre chose
 qu'une police embarquée. On délègue à `fc-match`, qui gère aussi les substitutions
 quand la famille demandée n'existe pas sur la machine.
+
+`fc-match` rendant **toujours** quelque chose, on lui demande la famille en même temps
+que le fichier, et on la confronte à celle qu'on voulait : c'est ce qui permet
+d'avertir. La comparaison cherche le nom demandé **parmi** ceux que fontconfig annonce,
+et non l'égalité des chaînes : fontconfig rend tous les noms d'une même famille d'un
+coup — `DejaVu Sans,DejaVu Sans Condensed` — et l'égalité ferait passer pour substituées
+des dizaines de polices pourtant installées. Un avertissement qui crie au loup ne se lit
+plus.
 
 **Les icônes de la barre d'outils sont tracées à l'échelle 1:1** sur une grille commune
 de 24 unités, avec `Stretch="None"`. Une mise à l'échelle uniforme normaliserait chaque

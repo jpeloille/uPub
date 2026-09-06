@@ -43,7 +43,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **B2** | Importer un fichier texte | 0 % | — |
 | **B3** | Imprimer | 0 % | — |
 | **B4** | Archive `.mypubz` | 0 % | — |
-| **B5** | Avertir sur les substitutions de polices | 0 % | — |
+| **B5** | Avertir sur les substitutions de polices | **100 %** | L'export nomme la police demandée et celle employée ; recette dans `Scripts/recettes/` |
 | **C1** | Fond et bordure au niveau de `Frame` | **100 %** | Fond, contour, trait, arrondi et opacité sur tout bloc ; `FormatVersion` 2, migration à l'ouverture |
 | **C2** | Repères | **100 %** | C2a grille de composition · C2b règles graduées et repères libres |
 | **C3** | Sélection multiple, puis groupement | **100 %** | C3a sélection · C3b alignement et répartition · C3c groupe persistant |
@@ -58,11 +58,11 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **R5** | **Ouvrir un `.pub`** | 0 % | Exigé le 6 septembre 2026. Lecture par `pub2raw` ; ce que l'import restitue mesure l'avancement de R1–R4 et C9 |
 | **D** | Moteur de composition | — | Décision non ouverte ; à rouvrir quand A, B et C sont livrées |
 
-**Par phase** — P : 3 sur 3 · A : 0 sur 7 · B : 1 sur 5 · C : 5 sur 7 · R : 4 sur 5 ·
-D : non planifié. La ligne comptait 22 postes et ignorait la phase R, apparue le
-6 septembre 2026 ; elle la compte désormais.
+**Par phase** — P : 3 sur 4 (P3 en cours) · A : 0 sur 7 · B : 2 sur 5 · C : 5 sur 7 ·
+R : 4 sur 5 · D : non planifié. La ligne comptait 22 postes et ignorait la phase R,
+apparue le 6 septembre 2026 ; elle la compte désormais.
 
-Soit **13 postes sur 27**. C'est un compte de postes et non d'effort : C3 pesait à lui
+Soit **14 postes sur 28**. C'est un compte de postes et non d'effort : C3 pesait à lui
 seul plus que toute la phase A, et les préalables ne produisaient aucune fonctionnalité.
 Le tableau dit ce qui est clos, pas ce qui reste à peiner.
 
@@ -436,6 +436,77 @@ l'écart ; il ne le remonte à personne.
 
 *Recette* : exporter un document demandant une police absente produit un avertissement
 nommant la police demandée et celle réellement employée.
+
+*Fait le 6 septembre 2026.* `fc-match` est désormais interrogé sur le fichier **et** la
+famille, et l'export confronte ce qu'il obtient à ce que le document demandait :
+
+```
+Police substituée : « Verdana Pro Cond SemiBold » demandée, « Noto Sans » employée
+                    (absente de cette machine).
+Police substituée : « Noto Sans CJK JP » demandée, « DejaVu Sans » employée
+                    (collection .ttc, que l'export ne sait pas lire).
+```
+
+Le motif entre parenthèses n'est pas décoratif : sans lui, la seconde ligne serait
+incompréhensible — la police est installée, et pourtant remplacée.
+
+**Un avertissement par police, et non par bloc.** Les fiches ATR portent 119 fragments
+en Wingdings ; un avertissement par bloc en ferait une liste que personne ne lit. C'est
+la police qui est substituée, pas le bloc — comme « Image introuvable » nomme le fichier
+et non le cadre qui l'affiche. Le dédoublonnage porte sur la paire demandée/employée :
+le romain et le gras d'une même famille absente tombant sur le même substitut ne
+valent qu'une ligne, mais s'ils divergent, les deux se disent.
+
+**Le relevé se prend sur le document, pas pendant le dessin.** PDFsharp garde en cache
+la résolution d'une police pour toute la durée du processus et n'appelle donc le
+résolveur qu'une fois par famille : un relevé pris au vol serait complet au premier
+export et **vide au second** — or l'application exporte plusieurs fois de suite, et
+c'est le dernier PDF qu'on envoie. La passe lit les polices sur le modèle : celle du
+bloc, et celle de chacun de ses fragments, groupes traversés. Elle ne peut donc pas
+davantage être cassée par un remaniement de `DrawText`.
+
+#### Ce que le poste a trouvé
+
+**fontconfig rend *tous* les noms d'une famille, séparés par des virgules.** « DejaVu
+Sans Condensed » lui vaut la réponse `DejaVu Sans,DejaVu Sans Condensed`, « Lato
+Semibold » vaut `Lato,Lato Semibold`, et une police coréenne vaut `Malgun Gothic,맑은
+고딕`. Comparer la chaîne entière au nom demandé — ce que la première écriture faisait —
+annonçait une substitution sur **81 polices installées de cette machine**. C'est le seul
+défaut qui aurait tué le poste : un avertissement qui crie au loup sur des polices
+présentes s'apprend à ne plus être lu, et le jour où une flèche de procédure d'urgence
+est vraiment remplacée, personne ne regarde. La comparaison cherche donc le nom demandé
+**parmi** les noms rendus.
+
+Ce cas-là ne s'éprouve qu'avec une police à noms multiples réellement installée. La
+recette et le test vont donc en chercher une sur la machine qui les joue, plutôt que
+d'en écrire une en dur qui n'y serait pas — **et passent leur chemin s'il n'y en a
+aucune**. C'est la seule réserve du poste, et elle est écrite ici plutôt que tue : sur
+cette machine-ci les 81 familles concernées font que le contrôle tourne toujours.
+
+**Un interblocage possible, corrigé au passage** : `RedirectStandardError` était activé
+sans que la sortie d'erreur soit jamais lue, puis `ReadToEnd()` bloquait sur la sortie
+standard. Un `fc-match` qui aurait rempli son tampon d'erreur serait resté bloqué en
+écriture, et l'export avec lui. La sortie d'erreur est maintenant vidée en parallèle.
+
+**Ce qui reste muet** : l'écran. Avalonia substitue de son côté, par son propre
+gestionnaire de polices, et le dire à l'affichage demanderait une seconde mesure, prise
+ailleurs, qui pourrait diverger de celle-ci. Ce que l'utilisateur voit aujourd'hui,
+c'est l'avertissement de l'export, remonté dans la barre d'état à `Ctrl+E` — et il y
+passe **en tête**, la barre ne montrant que le premier.
+
+**Vérifié sur les polices des documents réels** : Calibri, Wingdings et Wingdings 3 se
+résolvent exactement et ne disent rien ; *Verdana Pro Cond SemiBold* se signale. Le
+relevé de `Scripts/reference.txt` n'a pas bougé — les documents du dépôt n'emploient que
+DejaVu Sans et DejaVu Serif.
+
+*Recette jouée*, et éprouvée en la faisant échouer quatre fois : résolveur qui accepte
+tout ce que `fc-match` rend, comparaison par égalité stricte des chaînes, fragments de
+style ignorés, dédoublonnage retiré. Quatre sabotages, quatre attrapés.
+
+Un cinquième a servi : la comparaison de chaînes réécrite **dans** la résolution,
+`Correspond` restant juste mais n'étant plus appelée. Les tests sur chaînes figées ne
+voyaient rien passer — un test qui traverse tout le chemin de résolution avec une
+famille à noms multiples cherchée sur la machine a été ajouté pour cela.
 
 ---
 
