@@ -215,6 +215,33 @@ public partial class MainWindow : Window
         if (files.FirstOrDefault()?.TryGetLocalPath() is { } path) vm.AddImage(path);
     }
 
+    /// <summary>
+    /// Choisit l'image d'un remplissage. Le bouton vit dans le gabarit du remplissage :
+    /// c'est donc son contexte de données qui désigne l'objet à renseigner, et le même
+    /// geste sert au fond d'un bloc comme à celui de la page.
+    ///
+    /// Le pas d'annulation est ouvert et refermé à la main : la transaction du panneau
+    /// suit le focus des champs, et un dialogue de fichier le prend puis le rend.
+    /// </summary>
+    private async void OnChooseFillImage(object? sender, RoutedEventArgs e)
+    {
+        if (Vm is not { } vm) return;
+        if ((sender as Control)?.DataContext is not ImageFill fond) return;
+
+        var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Image de remplissage",
+            AllowMultiple = false,
+            FileTypeFilter = [ImageType]
+        });
+
+        if (files.FirstOrDefault()?.TryGetLocalPath() is not { } path) return;
+
+        vm.BeginEdit();
+        fond.Path = path;
+        vm.CommitEdit();
+    }
+
     private void OnQuit(object? sender, RoutedEventArgs e) => Close();
 
     /// <summary>

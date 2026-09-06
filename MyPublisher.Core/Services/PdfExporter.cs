@@ -61,6 +61,10 @@ public static class PdfExporter
 
             using var gfx = XGraphics.FromPdfPage(pdfPage);
 
+            // Le fond de page passe avant tout : c'est le seul remplissage qui n'est pas
+            // celui d'un bloc, et il doit se retrouver sous le premier d'entre eux.
+            DrawBackground(gfx, document, warnings);
+
             DessinerTous(gfx, page.Frames, warnings, context, $"Page {index + 1}");
         }
 
@@ -224,35 +228,31 @@ public static class PdfExporter
             gfx.TranslateTransform(-frame.CenterX, -frame.CenterY);
         }
 
-        if (frame is ShapeFrame shape)
-        {
-            DrawShape(gfx, shape);
-        }
-        else
-        {
-            // Fond dessous, contenu, contour dessus : un filet posé sur une image
-            // passe sur son bord et non sous elle — c'est aussi l'ordre de l'écran.
-            DrawFill(gfx, frame);
+        // Fond dessous, contenu, contour dessus : un filet posé sur une image passe sur
+        // son bord et non sous elle — c'est aussi l'ordre de l'écran. Une forme n'a pas
+        // de contenu, et suit donc le même chemin sans cas particulier : depuis C5c, le
+        // fond peut être une image, qu'un tracé « fond et contour d'un trait » ne
+        // saurait pas poser.
+        DrawFill(gfx, frame, warnings);
 
-            // Seul le contenu est sous surveillance : une image illisible se signale et
-            // laisse son cadre en place, comme une image manquante laisse le sien.
-            try
+        // Seul le contenu est sous surveillance : une image illisible se signale et
+        // laisse son cadre en place, comme une image manquante laisse le sien.
+        try
+        {
+            switch (frame)
             {
-                switch (frame)
-                {
-                    case TextFrame text: DrawText(gfx, text, context, warnings, repere); break;
-                    case ImageFrame image: DrawImage(gfx, image, warnings, context, repere); break;
-                    case GroupFrame group: DrawChildren(gfx, group, warnings, context, repere); break;
-                    case TableFrame table: DrawTable(gfx, table, warnings, context, repere); break;
-                }
+                case TextFrame text: DrawText(gfx, text, context, warnings, repere); break;
+                case ImageFrame image: DrawImage(gfx, image, warnings, context, repere); break;
+                case GroupFrame group: DrawChildren(gfx, group, warnings, context, repere); break;
+                case TableFrame table: DrawTable(gfx, table, warnings, context, repere); break;
             }
-            catch (Exception ex)
-            {
-                warnings.Add($"{repere} : {ex.Message}");
-            }
-
-            DrawStroke(gfx, frame);
         }
+        catch (Exception ex)
+        {
+            warnings.Add($"{repere} : {ex.Message}");
+        }
+
+        DrawStroke(gfx, frame);
 
         gfx.Restore(state);
     }
@@ -285,33 +285,66 @@ public static class PdfExporter
         gfx.Restore(state);
     }
 
-    /// <summary>Une forme n'a pas de contenu : fond et contour se tracent d'un seul trait.</summary>
-    private static void DrawShape(XGraphics gfx, ShapeFrame shape) =>
-        DrawOutline(gfx, shape, ParseBrush(shape.Fill), MakePen(shape));
+    /// <summary>
+    /// La zone qu'un remplissage doit couvrir, et sa forme. Un bloc, une case ou la page
+    /// entière s'y ramènent, ce qui permet au fond de page d'emprunter exactement le
+    /// chemin de celui d'un bloc.
+    /// </summary>
+    private readonly record struct Pourtour(XRect Rect, bool Ellipse, double Arrondi);
+
+    private static Pourtour Contour(Frame frame) => new(
+        new XRect(frame.X, frame.Y, frame.Width, frame.Height),
+        frame is ShapeFrame { Shape: ShapeKind.Ellipse },
+        frame.CornerRadius);
+
+    /// <summary>
+    /// Le fond de page : le même remplissage que celui d'un bloc, posé sur la page
+    /// entière avant que rien d'autre ne soit tracé.
+    /// </summary>
+    private static void DrawBackground(XGraphics gfx, Document document, List<string> warnings) =>
+        Remplir(gfx, document.Background,
+            new Pourtour(new XRect(0, 0, document.PageWidth, document.PageHeight), false, 0),
+            warnings, "Fond de page");
 
     /// <summary>
     /// Le fond couvre le bloc entier, marge intérieure comprise, et se dessine même sans
-    /// contenu : un bloc vide muni d'un fond est un aplat voulu. ParseBrush rend null pour
-    /// un fond absent comme pour un alpha nul, si bien qu'un bloc sans fond ne pose rien
-    /// du tout et laisse voir ce qui est dessous.
+    /// contenu : un bloc vide muni d'un fond est un aplat voulu. Un fond absent, comme un
+    /// alpha nul, ne pose rien du tout et laisse voir ce qui est dessous.
     /// </summary>
-    private static void DrawFill(XGraphics gfx, Frame frame) =>
-        DrawOutline(gfx, frame, ParseBrush(frame.Fill), null);
-
-    private static void DrawStroke(XGraphics gfx, Frame frame) =>
-        DrawOutline(gfx, frame, null, MakePen(frame));
+    private static void DrawFill(XGraphics gfx, Frame frame, List<string> warnings) =>
+        Remplir(gfx, frame.Fill, Contour(frame), warnings, frame.DisplayName);
 
     /// <summary>
-    /// Trace le pourtour du bloc avec le fond et le contour qu'on lui passe : une ellipse
-    /// pour la forme qui en est une, sinon un rectangle, arrondi s'il l'est.
+    /// Pose un remplissage dans un pourtour. Trois des quatre sortes se ramènent à un
+    /// pinceau ; l'image, elle, se dessine — PDFsharp n'a pas de pinceau d'image — et
+    /// c'est le pourtour qui lui sert alors de découpe.
     /// </summary>
-    private static void DrawOutline(XGraphics gfx, Frame frame, XBrush? brush, XPen? pen)
+    private static void Remplir(
+        XGraphics gfx, FillBrush? fill, Pourtour pourtour, List<string> warnings, string nom)
+    {
+        if (fill is ImageFill image)
+        {
+            RemplirParImage(gfx, image, pourtour, warnings, nom);
+            return;
+        }
+
+        Tracer(gfx, pourtour, Pinceau(fill, pourtour.Rect), null);
+    }
+
+    private static void DrawStroke(XGraphics gfx, Frame frame) =>
+        Tracer(gfx, Contour(frame), null, MakePen(frame));
+
+    /// <summary>
+    /// Trace le pourtour avec le fond et le contour qu'on lui passe : une ellipse pour la
+    /// forme qui en est une, sinon un rectangle, arrondi s'il l'est.
+    /// </summary>
+    private static void Tracer(XGraphics gfx, Pourtour pourtour, XBrush? brush, XPen? pen)
     {
         if (brush is null && pen is null) return;
 
-        var rect = new XRect(frame.X, frame.Y, frame.Width, frame.Height);
+        var rect = pourtour.Rect;
 
-        if (frame is ShapeFrame { Shape: ShapeKind.Ellipse })
+        if (pourtour.Ellipse)
         {
             if (brush is not null && pen is not null) gfx.DrawEllipse(pen, brush, rect);
             else if (brush is not null) gfx.DrawEllipse(brush, rect);
@@ -319,10 +352,10 @@ public static class PdfExporter
             return;
         }
 
-        if (frame.CornerRadius > 0)
+        if (pourtour.Arrondi > 0)
         {
             // PDFsharp attend le diamètre des coins, pas le rayon.
-            var corner = new XSize(frame.CornerRadius * 2, frame.CornerRadius * 2);
+            var corner = new XSize(pourtour.Arrondi * 2, pourtour.Arrondi * 2);
             if (brush is not null && pen is not null) gfx.DrawRoundedRectangle(pen, brush, rect, corner);
             else if (brush is not null) gfx.DrawRoundedRectangle(brush, rect, corner);
             else gfx.DrawRoundedRectangle(pen!, rect, corner);
@@ -332,6 +365,72 @@ public static class PdfExporter
         if (brush is not null && pen is not null) gfx.DrawRectangle(pen, brush, rect);
         else if (brush is not null) gfx.DrawRectangle(brush, rect);
         else gfx.DrawRectangle(pen!, rect);
+    }
+
+    /// <summary>Le pourtour en chemin, pour servir de découpe à un remplissage par image.</summary>
+    private static XGraphicsPath Chemin(Pourtour pourtour)
+    {
+        var chemin = new XGraphicsPath();
+        var rect = pourtour.Rect;
+
+        if (pourtour.Ellipse) chemin.AddEllipse(rect);
+        else if (pourtour.Arrondi > 0)
+        {
+            chemin.AddRoundedRectangle(
+                rect.X, rect.Y, rect.Width, rect.Height, pourtour.Arrondi * 2, pourtour.Arrondi * 2);
+        }
+        else chemin.AddRectangle(rect);
+
+        return chemin;
+    }
+
+    /// <summary>
+    /// Un remplissage par image : découpe au pourtour, quart de tour éventuel, puis
+    /// l'image posée dans le cadre que le modèle a calculé.
+    ///
+    /// La découpe précède la rotation, et ce n'est pas indifférent : c'est le bloc qui
+    /// découpe, et lui ne tourne pas. L'inverse rognerait l'image sur un rectangle
+    /// couché.
+    ///
+    /// Une image absente se signale, comme celle d'un bloc image : ranger les images
+    /// hors du document rend ce cas atteignable sans que le document ait bougé.
+    /// </summary>
+    private static void RemplirParImage(
+        XGraphics gfx, ImageFill fill, Pourtour pourtour, List<string> warnings, string nom)
+    {
+        if (string.IsNullOrWhiteSpace(fill.Path)) return;
+
+        if (!File.Exists(fill.Path))
+        {
+            warnings.Add($"Image de remplissage introuvable : {fill.Path}");
+            return;
+        }
+
+        using var image = XImage.FromFile(fill.Path);
+        var rect = pourtour.Rect;
+        var (x, y, largeur, hauteur) = fill.Cadre(
+            rect.Width, rect.Height, image.PixelWidth, image.PixelHeight);
+
+        var state = gfx.Save();
+        try
+        {
+            gfx.IntersectClip(Chemin(pourtour));
+
+            if (fill.Rotation != 0)
+            {
+                gfx.TranslateTransform(rect.X + rect.Width / 2, rect.Y + rect.Height / 2);
+                gfx.RotateTransform(fill.Rotation);
+                gfx.TranslateTransform(-(rect.X + rect.Width / 2), -(rect.Y + rect.Height / 2));
+            }
+
+            gfx.DrawImage(image, new XRect(rect.X + x, rect.Y + y, largeur, hauteur));
+        }
+        finally
+        {
+            // La découpe ne doit pas survivre : le contour tracé ensuite serait rogné
+            // au bloc, à la moitié de son épaisseur.
+            gfx.Restore(state);
+        }
     }
 
     private static XPen? MakePen(Frame frame)
@@ -574,24 +673,51 @@ public static class PdfExporter
         gfx.DrawImage(image, target);
     }
 
-    /// <summary>Calcule le rectangle de destination selon le mode de cadrage.</summary>
+    /// <summary>
+    /// Le rectangle de destination selon le mode de cadrage. Le calcul lui-même est celui
+    /// du noyau, partagé avec le remplissage par image de C5c : deux copies de cette
+    /// formule ne divergeraient que sur une image dont le rapport ne serait pas celui de
+    /// son cadre, ce qui est exactement le cas intéressant.
+    /// </summary>
     private static XRect FitRect(ImageFrame frame, double pixelWidth, double pixelHeight)
     {
-        if (frame.Fit == ImageFit.Fill || pixelWidth <= 0 || pixelHeight <= 0)
-            return new XRect(frame.X, frame.Y, frame.Width, frame.Height);
-
-        var scaleX = frame.Width / pixelWidth;
-        var scaleY = frame.Height / pixelHeight;
-        var scale = frame.Fit == ImageFit.UniformToFill
-            ? Math.Max(scaleX, scaleY)
-            : Math.Min(scaleX, scaleY);
-
-        var width = pixelWidth * scale;
-        var height = pixelHeight * scale;
+        var (width, height) = Cadrage.Poser(frame.Fit, frame.Width, frame.Height, pixelWidth, pixelHeight);
         return new XRect(
             frame.X + (frame.Width - width) / 2,
             frame.Y + (frame.Height - height) / 2,
             width, height);
+    }
+
+    /// <summary>
+    /// Le pinceau d'un remplissage, pour les trois sortes qui en ont un. Un dégradé lit
+    /// ses extrémités dans le modèle — l'écran lit les mêmes — et une teinte lit la
+    /// couleur qu'il a calculée. L'export ne mélange ni ne projette rien lui-même.
+    /// </summary>
+    /// <remarks>
+    /// Le PDF ne sait pas donner une transparence propre à chaque extrémité d'un dégradé :
+    /// PDFsharp écrit un ombrage axial, dont l'alpha est celui de la page. Un dégradé
+    /// semi-transparent sort donc opaque — écart assumé, consigné plutôt que tu.
+    /// </remarks>
+    private static XBrush? Pinceau(FillBrush? fill, XRect rect) => fill switch
+    {
+        GradientFill degrade => Degrade(degrade, rect),
+        // Une teinte est un aplat : c'est le modèle qui a fait le mélange.
+        { Uniforme: { } couleur } => ParseBrush(couleur),
+        _ => null,
+    };
+
+    private static XBrush? Degrade(GradientFill fill, XRect rect)
+    {
+        var depart = ParseColor(fill.From);
+        var arrivee = ParseColor(fill.To);
+        if (depart is null && arrivee is null) return null;
+
+        var (x0, y0, x1, y1) = fill.Extremites(rect.Width, rect.Height);
+        return new XLinearGradientBrush(
+            new XPoint(rect.X + x0, rect.Y + y0),
+            new XPoint(rect.X + x1, rect.Y + y1),
+            depart ?? arrivee!.Value,
+            arrivee ?? depart!.Value);
     }
 
     private static XBrush? ParseBrush(string? color)

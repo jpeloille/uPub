@@ -118,9 +118,14 @@ public static class DocumentSerializer
 
     /// <summary>
     /// Importe un <c>.pub</c>, avec le relevé de ce qui s'est perdu en route.
+    ///
+    /// Le dépôt d'images est fourni ici et non par l'appelant : c'est le seul endroit qui
+    /// sache qu'on lit un vrai fichier, et <see cref="PubImporter"/> doit rester pur.
+    /// Le paramètre est ouvert pour que les tests et la recette puissent ranger ailleurs.
     /// </summary>
-    public static ImportReport Import(string path) =>
-        PubImporter.Importer(PubReader.Relever(path), Path.GetFileNameWithoutExtension(path));
+    public static ImportReport Import(string path, IDepotImages? depot = null) =>
+        PubImporter.Importer(
+            PubReader.Relever(path), Path.GetFileNameWithoutExtension(path), depot ?? new DepotImages());
 
     // ------------------------------------------------------------- chemins d'images
 

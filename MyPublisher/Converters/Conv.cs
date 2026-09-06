@@ -25,13 +25,30 @@ public static class Conv
     /// illisible. Publique parce que la vignette des modèles la dessine en code, sans
     /// passer par une liaison.
     /// </summary>
-    public static IBrush? ToBrush(string? value)
+    public static IBrush? ToBrush(string? value) =>
+        ToColor(value) is { } couleur ? new SolidColorBrush(couleur) : null;
+
+    /// <summary>
+    /// Une couleur du modèle en couleur Avalonia ; null pour une couleur absente ou
+    /// illisible. Publique parce que le fond d'un bloc en a besoin telle quelle, pour
+    /// poser les deux extrémités d'un dégradé.
+    /// </summary>
+    public static Color? ToColor(string? value)
     {
         if (string.IsNullOrWhiteSpace(value)) return null;
         return HexColor.TryParse(value, out var a, out var r, out var g, out var b)
-            ? new SolidColorBrush(Color.FromArgb(a, r, g, b))
+            ? Color.FromArgb(a, r, g, b)
             : null;
     }
+
+    /// <summary>
+    /// L'image d'un chemin, par le cache ci-dessous. Publique pour le fond d'un bloc,
+    /// qui la dessine en code plutôt que par une liaison — et qui doit passer par le
+    /// même cache, sans quoi faire glisser un bloc au fond illustré relirait le fichier
+    /// à chaque image de l'animation.
+    /// </summary>
+    public static Bitmap? Bitmap(string? path) =>
+        string.IsNullOrWhiteSpace(path) ? null : BitmapCache.Get(path);
 
     public static readonly FuncValueConverter<bool, FontWeight> Weight =
         new(bold => bold ? FontWeight.Bold : FontWeight.Normal);

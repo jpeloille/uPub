@@ -203,7 +203,7 @@ public class TableauTests
         var document = Document.CreateDefault();
         var table = Bande(100, 60, 140);
         table.Cells[1].Spans.Add(new StyleSpan { Start = 0, Length = 4, Bold = true });
-        table.Cells[2].Fill = "#FFEFF2F6";
+        table.Cells[2].Fill = new SolidFill("#FFEFF2F6");
         document.Pages[0].Frames.Add(table);
 
         var json = DocumentSerializer.ToJson(document);

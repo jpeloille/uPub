@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using MyPublisher.Models;
 
@@ -26,6 +28,7 @@ public static class FormatMigrations
 
         if (version < 2) ToVersion2(root);
         if (version < 3) ToVersion3(root);
+        if (version < 4) ToVersion4(root);
 
         root["FormatVersion"] = Document.CurrentFormatVersion;
     }
@@ -69,6 +72,44 @@ public static class FormatMigrations
             frame["PaddingRight"] = padding;
             frame["PaddingBottom"] = padding;
         }
+    }
+
+    /// <summary>
+    /// Version 4 : le remplissage n'est plus une couleur mais un objet discriminé, pour
+    /// que le fichier sache dire un dégradé, une image ou une teinte. Une couleur ancienne
+    /// devient un remplissage uni de cette couleur : le document s'affiche comme avant.
+    ///
+    /// La marche descend dans les groupes ET dans les cases des tableaux. Les cases ne
+    /// sont pas des blocs — elles n'ont pas de <c>$kind</c> — et un parcours qui ne
+    /// suivrait que les blocs laisserait derrière lui des fonds de case en chaîne, que le
+    /// modèle refuserait de relire. C'est le premier poste où la distinction compte.
+    /// </summary>
+    private static void ToVersion4(JsonObject root)
+    {
+        foreach (var frame in AllFrames(root))
+        {
+            Envelopper(frame, "Fill");
+
+            if (frame["Cells"] is not JsonArray cells) continue;
+            foreach (var cell in cells.OfType<JsonObject>()) Envelopper(cell, "Fill");
+        }
+    }
+
+    /// <summary>
+    /// Remplace une couleur par le remplissage uni équivalent. Une valeur nulle ou déjà
+    /// enveloppée est laissée telle quelle : la migration doit pouvoir se rejouer sans
+    /// rien casser, c'est ce que le contrôle P2 exige en la demandant en point fixe.
+    /// </summary>
+    private static void Envelopper(JsonObject porteur, string nom)
+    {
+        if (porteur[nom] is not JsonValue valeur) return;
+        if (valeur.GetValueKind() != JsonValueKind.String) return;
+
+        porteur[nom] = new JsonObject
+        {
+            ["$kind"] = "solid",
+            ["Color"] = valeur.GetValue<string>(),
+        };
     }
 
     /// <summary>Tous les blocs du document, ceux des groupes compris, à toute profondeur.</summary>

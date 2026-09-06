@@ -1,5 +1,5 @@
 {
-  "FormatVersion": 3,
+  "FormatVersion": 4,
   "Title": "Recette C9 - le bloc tableau",
   "PageWidth": 595.28,
   "PageHeight": 841.89,
@@ -7,6 +7,7 @@
   "MarginTop": 56.69,
   "MarginRight": 56.69,
   "MarginBottom": 56.69,
+  "Background": null,
   "ColumnCount": 1,
   "ColumnSpacing": 0,
   "RowCount": 1,
@@ -99,7 +100,10 @@
               "Text": "Vitesse maximale",
               "Spans": [],
               "Align": "Left",
-              "Fill": "#FFEFF2F6",
+              "Fill": {
+                "$kind": "solid",
+                "Color": "#FFEFF2F6"
+              },
               "Stroke": "#FF404040",
               "StrokeThickness": 1
             },
@@ -168,7 +172,10 @@
               "Text": "Vitesse de manoeuvre",
               "Spans": [],
               "Align": "Left",
-              "Fill": "#FFEFF2F6",
+              "Fill": {
+                "$kind": "solid",
+                "Color": "#FFEFF2F6"
+              },
               "Stroke": "#FF404040",
               "StrokeThickness": 1
             },
@@ -237,7 +244,10 @@
               "Text": "Volets sortis",
               "Spans": [],
               "Align": "Left",
-              "Fill": "#FFEFF2F6",
+              "Fill": {
+                "$kind": "solid",
+                "Color": "#FFEFF2F6"
+              },
               "Stroke": "#FF404040",
               "StrokeThickness": 1
             },
@@ -306,7 +316,10 @@
               "Text": "Train sorti",
               "Spans": [],
               "Align": "Left",
-              "Fill": "#FFEFF2F6",
+              "Fill": {
+                "$kind": "solid",
+                "Color": "#FFEFF2F6"
+              },
               "Stroke": "#FF404040",
               "StrokeThickness": 1
             },
@@ -375,7 +388,10 @@
               "Text": "Vent traversier",
               "Spans": [],
               "Align": "Left",
-              "Fill": "#FFEFF2F6",
+              "Fill": {
+                "$kind": "solid",
+                "Color": "#FFEFF2F6"
+              },
               "Stroke": "#FF404040",
               "StrokeThickness": 1
             },
@@ -444,7 +460,10 @@
               "Text": "Altitude maximale",
               "Spans": [],
               "Align": "Left",
-              "Fill": "#FFEFF2F6",
+              "Fill": {
+                "$kind": "solid",
+                "Color": "#FFEFF2F6"
+              },
               "Stroke": "#FF404040",
               "StrokeThickness": 1
             },
@@ -524,7 +543,10 @@
                 }
               ],
               "Align": "Left",
-              "Fill": "#FFEFF2F6",
+              "Fill": {
+                "$kind": "solid",
+                "Color": "#FFEFF2F6"
+              },
               "Stroke": "#FF404040",
               "StrokeThickness": 1
             },
@@ -534,7 +556,10 @@
               "Text": "185 kt",
               "Spans": [],
               "Align": "Left",
-              "Fill": "#FFEFF2F6",
+              "Fill": {
+                "$kind": "solid",
+                "Color": "#FFEFF2F6"
+              },
               "Stroke": "#FF404040",
               "StrokeThickness": 1
             },
@@ -597,7 +622,10 @@
               "Text": "Une seule case, comme trois des dix-neuf tableaux des fiches.",
               "Spans": [],
               "Align": "Center",
-              "Fill": "#FFFDF3D8",
+              "Fill": {
+                "$kind": "solid",
+                "Color": "#FFFDF3D8"
+              },
               "Stroke": "#FF404040",
               "StrokeThickness": 1
             }

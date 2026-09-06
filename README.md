@@ -140,9 +140,15 @@ la barre du haut regroupe les commandes du document : fichier, annulation, zoom.
   bas, qui pose des colonnes sur la *page* comme repères d'aimantation ; ici le texte
   coule d'une colonne à l'autre dans un seul bloc. Ce qui dépasse la dernière colonne
   continue sous le bloc, comme un texte trop long l'a toujours fait.
-- Tout bloc — texte, image, forme, groupe — porte un fond, avec son opacité, et un
-  contour : épaisseur, trait continu, tirets ou points, angles arrondis. Encadrer
-  une image d'un filet ne demande donc plus de lui superposer une forme.
+- Tout bloc — texte, image, forme, groupe — porte un fond et un contour : épaisseur,
+  trait continu, tirets ou points, angles arrondis. Encadrer une image d'un filet ne
+  demande donc plus de lui superposer une forme.
+- **Le fond n'est pas forcément uni** : c'est au choix un aplat avec son opacité, un
+  dégradé de deux couleurs le long d'un angle, une image, ou une teinte dérivée d'une
+  couleur de base. Textures et motifs : non, délibérément.
+- **Fond de page** : le même choix, posé sur la publication entière — panneau
+  *DOCUMENT*. Un dégradé de page se règle en trois gestes et change tout l'air d'un
+  document.
 - Rotation libre de n'importe quel bloc, y compris pour la sélection et le
   redimensionnement. Elle se prend **à la souris**, par une neuvième poignée posée
   au-dessus du bloc — un disque vert au bout d'une tige — ou se saisit au degré près
@@ -177,8 +183,9 @@ la barre du haut regroupe les commandes du document : fichier, annulation, zoom.
   Celles qui vivent ailleurs gardent leur chemin absolu.
 - **Ouverture des documents Microsoft Publisher (`.pub`)** : pages, blocs de texte avec
   leurs fragments de style, retraits et fers par paragraphe, tabulations, tableaux,
-  cadres et traits. L'import dit ce qu'il n'a pas su rendre plutôt que de le perdre en
-  silence.
+  cadres, traits, et les **images posées en remplissage de forme** — c'est ainsi que
+  Publisher illustre, et c'est ainsi que le font les documents à reprendre. L'import dit
+  ce qu'il n'a pas su rendre plutôt que de le perdre en silence.
 - **Un bloc trop plein le dit.** Le texte qui ne tient pas dans son bloc n'est imprimé
   ni à l'écran ni au PDF — c'est ainsi que Publisher se comporte — et le bloc porte
   alors un petit **A rouge** à son coin, comme dans Publisher. L'export le répète et
@@ -227,6 +234,16 @@ son sommet. Aucun des deux rendus n'additionne donc plus de hauteur pour son com
 ce n'est pas une élégance depuis qu'il y a des colonnes : le passage à la colonne
 suivante est un seuil, et un écart de métrique d'un centième de point suffirait à faire
 basculer une ligne d'un côté et pas de l'autre.
+
+**Un remplissage ne se calcule qu'une fois.** Les extrémités d'un dégradé et la couleur
+d'une teinte sont calculées dans le modèle ; l'écran et l'export les lisent, aucun des
+deux ne les refait. Ce n'est pas une élégance mais la seule parade contre une erreur
+qu'aucune vérification ne verrait : une comparaison de l'écran au PDF ne peut pas
+attraper une erreur **partagée**, et elle ne peut pas davantage attraper une erreur qui
+n'existe qu'une fois — les deux rendus s'accordent, et se trompent ensemble. Échanger les
+deux extrémités d'un dégradé trace tous les dégradés du document à l'envers et laisse la
+comparaison des deux rendus au vert, au chiffre près. Ce sont des tests du noyau qui
+épinglent ces valeurs-là.
 
 **Un tableau se rend comme un groupe.** Ses cases ne sont pas dessinées : elles sont
 calculées en blocs de texte, en coordonnées relatives, à partir de ses colonnes, de ses
@@ -286,14 +303,21 @@ coordonnées de ce collègue, ce qui est précisément l'intérêt d'un modèle.
 
 ## Format de fichier
 
-`.mypub` est du JSON indenté, versionné par `FormatVersion` (aujourd'hui 3). Un
+`.mypub` est du JSON indenté, versionné par `FormatVersion` (aujourd'hui 4). Un
 fichier d'une version antérieure est migré à l'ouverture — la version 1 nommait
 `Background` le fond des blocs de texte, il s'appelle `Fill` partout depuis ; la
-version 2 n'avait qu'une marge intérieure, il y en a quatre — et un fichier d'une
-version plus récente est refusé plutôt que lu de travers.
+version 2 n'avait qu'une marge intérieure, il y en a quatre ; la version 3 écrivait
+le fond en couleur, c'est désormais un objet — et un fichier d'une version plus
+récente est refusé plutôt que lu de travers.
 
-Le document porte le format de page, les marges, la grille de composition et les
-repères libres — ces derniers sont communs à toutes les pages, comme dans Publisher.
+Un remplissage porte son propre discriminant `$kind` : `solid` et sa couleur,
+`gradient` et ses deux couleurs avec son angle, `image` et son chemin, `tint` et sa
+couleur de base avec son taux. C'est vrai du fond d'un bloc, de celui d'une case de
+tableau et du fond de page.
+
+Le document porte le format de page, les marges, le fond de page, la grille de
+composition et les repères libres — ces derniers sont communs à toutes les pages,
+comme dans Publisher.
 Un bloc de texte porte deux collections d'écarts à ce qu'il dit pour tout le monde :
 `Spans`, des portions de texte repérées **par position de caractère**, et `Paragraphs`,
 des retraits repérés **par indice de paragraphe**. Le repérage diffère à dessein — un
@@ -347,8 +371,9 @@ partout ailleurs — à l'écran, à l'export — un chemin d'image est absolu.
 - Le format `.pub` se lit mais ne s'écrit pas. La lecture demande `libmspub`
   (`apt install libmspub-tools`) : le format est fermé, et c'est le lecteur qu'emploie
   tout le monde libre. Sans droits d'installation, `Scripts/outils-pub.sh` l'extrait
-  localement. Ne sont pas repris : les remplissages par image et les taquets de
-  tabulation autres que ceux par défaut.
+  localement. Ne sont pas repris : les taquets de tabulation autres que ceux
+  par défaut, et la rotation des formes et des blocs de texte.
+- Pas de textures ni de motifs de remplissage : écartés délibérément.
 
 Ces limites, et une trentaine d'autres écarts fonctionnels, sont détaillées fiche par
 fiche dans [`MyPublisher/Docs/Publisher2007/`](MyPublisher/Docs/Publisher2007/00-index.md),

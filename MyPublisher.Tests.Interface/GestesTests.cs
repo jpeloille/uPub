@@ -74,7 +74,7 @@ public class GestesTests
         var document = Document.CreateDefault();
         bloc = new ShapeFrame
         {
-            Name = "Carré", X = 100, Y = 100, Width = 60, Height = 60, Fill = "#FFCC0000",
+            Name = "Carré", X = 100, Y = 100, Width = 60, Height = 60, Fill = new SolidFill("#FFCC0000"),
         };
         document.Pages[0].Frames.Add(bloc);
         return document;

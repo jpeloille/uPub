@@ -75,6 +75,53 @@ public class CloneTests
         Assert.NotSame(bloc.Paragraphs[0], copie.Paragraphs[0]);
     }
 
+    [Fact]
+    public void Une_copie_de_bloc_emporte_son_remplissage_sans_le_partager()
+    {
+        // L'égalité des deux JSON ci-dessus passerait sur une copie de surface : les deux
+        // blocs porteraient le même objet, qui s'écrit pareil des deux côtés. Ce qu'il
+        // faut éprouver, c'est qu'éclaircir le dégradé de la copie ne touche pas
+        // l'original — et une case de tableau porte le même piège.
+        var bloc = new ShapeFrame { Fill = new GradientFill("#FFAABBCC", "#FF102030", 45) };
+
+        var copie = (ShapeFrame)bloc.Clone();
+        ((GradientFill)copie.Fill!).From = "#FFFFFFFF";
+
+        Assert.NotSame(bloc.Fill, copie.Fill);
+        Assert.Equal("#FFAABBCC", ((GradientFill)bloc.Fill!).From);
+    }
+
+    [Fact]
+    public void Une_copie_de_case_emporte_son_remplissage_sans_le_partager()
+    {
+        var tableau = new TableFrame();
+        tableau.RowCount = 1;
+        tableau.ColumnCount = 2;
+        tableau.Cells[0].Fill = new SolidFill("#FFEFF2F6");
+
+        var copie = (TableFrame)tableau.Clone();
+        ((SolidFill)copie.Cells[0].Fill!).Color = "#FF000000";
+
+        Assert.NotSame(tableau.Cells[0].Fill, copie.Cells[0].Fill);
+        Assert.Equal("#FFEFF2F6", ((SolidFill)tableau.Cells[0].Fill!).Color);
+    }
+
+    [Fact]
+    public void Une_case_neuve_ne_partage_pas_le_fond_de_sa_voisine()
+    {
+        // Une case ajoutée reprend l'aspect de sa voisine depuis C9. Le reprendre par
+        // référence ferait changer les deux ensemble à la première retouche.
+        var tableau = new TableFrame();
+        tableau.RowCount = 1;
+        tableau.ColumnCount = 1;
+        tableau.Cells[0].Fill = new SolidFill("#FFEFF2F6");
+        tableau.ColumnCount = 2;
+
+        ((SolidFill)tableau.Cells[1].Fill!).Color = "#FF000000";
+
+        Assert.Equal("#FFEFF2F6", ((SolidFill)tableau.Cells[0].Fill!).Color);
+    }
+
     /// <summary>
     /// Donne à chaque propriété sérialisée une valeur qui ne soit pas son défaut :
     /// une copie qui oublierait une propriété restée à sa valeur d'origine ne se
@@ -102,6 +149,11 @@ public class CloneTests
         _ when type == typeof(bool) => true,
         _ when type == typeof(string) => $"valeur {index}",
         _ when type.IsEnum => type.GetEnumValues().Cast<object>().Last(),
+        // Le remplissage était une chaîne jusqu'à C5c, et se distinguait donc tout seul.
+        // Devenu un objet, il serait retombé dans le cas « null » ci-dessous : la copie
+        // aurait cessé d'être éprouvée sans qu'aucun test ne change de couleur. C'est
+        // exactement le trou que les collections avaient laissé depuis R1.
+        _ when type == typeof(FillBrush) => new GradientFill($"#FF00{index:X2}00", "#FF102030", index),
         // Les collections d'enfants sont éprouvées séparément, et les types qu'on ne
         // sait pas distinguer sont laissés tels quels plutôt que mal remplis.
         _ => null,

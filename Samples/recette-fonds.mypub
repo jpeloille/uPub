@@ -1,0 +1,108 @@
+{
+  "FormatVersion": 4,
+  "Title": "Recette — fonds",
+  "PageWidth": 595.28,
+  "PageHeight": 841.89,
+  "MarginLeft": 0,
+  "MarginTop": 0,
+  "MarginRight": 0,
+  "MarginBottom": 0,
+  "Background": {
+    "$kind": "gradient",
+    "From": "#FFFFFFFF",
+    "To": "#FF336699",
+    "Angle": 90
+  },
+  "ColumnCount": 1,
+  "ColumnSpacing": 0,
+  "RowCount": 1,
+  "RowSpacing": 0,
+  "BaselineSpacing": 0,
+  "BaselineOffset": 0,
+  "VerticalRulerGuides": [],
+  "HorizontalRulerGuides": [],
+  "Pages": [
+    {
+      "Name": "Page 1",
+      "Frames": [
+        {
+          "$kind": "shape",
+          "Name": "Teinte",
+          "X": 60,
+          "Y": 100,
+          "Width": 200,
+          "Height": 80,
+          "Rotation": 0,
+          "Fill": {
+            "$kind": "tint",
+            "Color": "#FF804020",
+            "Percent": 50
+          },
+          "Stroke": null,
+          "StrokeThickness": 1,
+          "StrokeStyle": "Solid",
+          "CornerRadius": 0,
+          "Shape": "Rectangle"
+        },
+        {
+          "$kind": "shape",
+          "Name": "Uni",
+          "X": 320,
+          "Y": 100,
+          "Width": 200,
+          "Height": 80,
+          "Rotation": 0,
+          "Fill": {
+            "$kind": "solid",
+            "Color": "#FF1F3B57"
+          },
+          "Stroke": "#FFCC0000",
+          "StrokeThickness": 2,
+          "StrokeStyle": "Solid",
+          "CornerRadius": 10,
+          "Shape": "Rectangle"
+        },
+        {
+          "$kind": "shape",
+          "Name": "Dégradé horizontal",
+          "X": 60,
+          "Y": 240,
+          "Width": 460,
+          "Height": 80,
+          "Rotation": 0,
+          "Fill": {
+            "$kind": "gradient",
+            "From": "#FFFF0000",
+            "To": "#FF0000FF",
+            "Angle": 0
+          },
+          "Stroke": null,
+          "StrokeThickness": 1,
+          "StrokeStyle": "Solid",
+          "CornerRadius": 0,
+          "Shape": "Rectangle"
+        },
+        {
+          "$kind": "shape",
+          "Name": "Dégradé vertical dans une ellipse",
+          "X": 60,
+          "Y": 380,
+          "Width": 460,
+          "Height": 160,
+          "Rotation": 0,
+          "Fill": {
+            "$kind": "gradient",
+            "From": "#FF00FF00",
+            "To": "#FF000000",
+            "Angle": 90
+          },
+          "Stroke": "#FFCC0000",
+          "StrokeThickness": 3,
+          "StrokeStyle": "Solid",
+          "CornerRadius": 0,
+          "Shape": "Ellipse"
+        }
+      ]
+    }
+  ]
+}

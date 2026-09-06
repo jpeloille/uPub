@@ -26,6 +26,13 @@ public enum ShapeKind { Rectangle, Ellipse }
 public enum StrokeStyle { Solid, Dashed, Dotted }
 
 /// <summary>
+/// Les quatre sortes de remplissage, telles que le panneau les propose. Une énumération
+/// en plus des quatre classes, parce qu'un sélecteur choisit une valeur et non un type :
+/// c'est elle qui est liée au menu déroulant, et le bloc en tire l'instance.
+/// </summary>
+public enum FillKind { Solid, Gradient, Image, Tint }
+
+/// <summary>
 /// Rectangle englobant en coordonnées page, bords parallèles à la page. C'est la forme
 /// sous laquelle on compare des blocs entre eux — alignement, répartition, aimantation
 /// d'un ensemble — parce qu'un bloc tourné occupe autre chose que son cadre.
@@ -138,18 +145,24 @@ public abstract partial class Frame : ObservableObject
     private double _rotation;
 
     /// <summary>
-    /// Fond du bloc, en #AARRGGBB. Null signifie « aucun fond » : ce qui passe sous le
-    /// bloc reste visible. Un fond blanc, lui, est un aplat opaque qui masque. Les deux
-    /// ne se confondent pas, même posés sur une page blanche — la différence se voit dès
-    /// qu'un bloc passe dessous, et elle est conservée à l'export. Commun à tous les
-    /// blocs : une image ou un texte se remplit comme une forme.
+    /// Fond du bloc. Null signifie « aucun fond » : ce qui passe sous le bloc reste
+    /// visible. Un fond blanc, lui, est un aplat opaque qui masque. Les deux ne se
+    /// confondent pas, même posés sur une page blanche — la différence se voit dès qu'un
+    /// bloc passe dessous, et elle est conservée à l'export. Commun à tous les blocs :
+    /// une image ou un texte se remplit comme une forme.
+    ///
+    /// C'était une chaîne de couleur jusqu'au poste C5c ; c'est désormais un
+    /// <see cref="FillBrush"/>, parce qu'un remplissage par image ne se dit pas en
+    /// #AARRGGBB — et que c'est ainsi que les cinq images d'ATA 21 sont posées.
     /// </summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasFill))]
+    [NotifyPropertyChangedFor(nameof(FillKind))]
+    [NotifyPropertyChangedFor(nameof(FillIsSolid))]
     [NotifyPropertyChangedFor(nameof(FillColor))]
     [NotifyPropertyChangedFor(nameof(FillOpacity))]
     [property: JsonPropertyOrder(70)]
-    private string? _fill;
+    private FillBrush? _fill;
 
     /// <summary>Contour du bloc, en #AARRGGBB ; null pour aucun contour.</summary>
     [ObservableProperty]
@@ -181,6 +194,13 @@ public abstract partial class Frame : ObservableObject
     private string _lastStroke = "#FF1A1A1A";
 
     /// <summary>
+    /// Le dernier remplissage de chaque sorte, pour que changer de sorte puis revenir
+    /// retrouve ses réglages au lieu d'un dégradé neuf. Même courtoisie que
+    /// <see cref="_lastFill"/>, et même statut : jamais sérialisé.
+    /// </summary>
+    private readonly FillBrush?[] _lastOfKind = new FillBrush?[4];
+
+    /// <summary>
     /// Présence d'un fond, telle que la manipule le panneau de propriétés. Décocher
     /// efface le fond sans perdre la teinte, recocher la restitue.
     /// </summary>
@@ -191,9 +211,34 @@ public abstract partial class Frame : ObservableObject
         set
         {
             if (value == HasFill) return;
-            Fill = value ? _lastFill : null;
+            Fill = value ? new SolidFill(_lastFill) : null;
         }
     }
+
+    /// <summary>
+    /// La sorte de remplissage, telle que la choisit le menu déroulant du panneau.
+    /// Changer de sorte remplace l'instance ; on retrouve celle qu'on avait si l'on
+    /// revient. Sans fond, la sorte lue est « uni », qui est ce qu'un fond neuf sera.
+    /// </summary>
+    [JsonIgnore]
+    public FillKind FillKind
+    {
+        get => FillBrush.SorteDe(Fill);
+        set
+        {
+            if (value == FillKind && Fill is not null) return;
+
+            if (Fill is { } ancien) _lastOfKind[(int)FillKind] = ancien;
+            Fill = _lastOfKind[(int)value] ?? FillBrush.Neuf(value, _lastFill);
+        }
+    }
+
+    /// <summary>
+    /// Le fond est-il un aplat : c'est la seule sorte dont la couleur se règle sur le
+    /// bloc lui-même, les trois autres ayant leurs propres champs. Le panneau s'en sert
+    /// pour ne montrer que ce qui a un effet.
+    /// </summary>
+    [JsonIgnore] public bool FillIsSolid => Fill is SolidFill;
 
     /// <summary>
     /// Teinte présentée au sélecteur de couleur, toujours définie même quand le bloc
@@ -201,18 +246,24 @@ public abstract partial class Frame : ObservableObject
     /// lire dès qu'il s'affiche : le brancher directement sur <see cref="Fill"/>
     /// donnerait un fond transparent parasite au premier bloc sélectionné, et la case
     /// « fond » se cocherait d'elle-même. On sépare donc la teinte de sa présence.
+    ///
+    /// Elle ne vaut que pour un fond UNI. Le sélecteur renvoyant ce qu'il lit dès qu'il
+    /// s'affiche, un accesseur qui écrirait dans un fond d'une autre sorte remplacerait
+    /// un dégradé par un aplat à la seule sélection du bloc — le même piège que
+    /// ci-dessus, sous une autre forme. Le dégradé, l'image et la teinte se règlent
+    /// chacun dans leurs propres champs.
     /// </summary>
     [JsonIgnore]
     public string FillColor
     {
-        get => Fill ?? _lastFill;
+        get => (Fill as SolidFill)?.Color ?? _lastFill;
         set
         {
             if (value == FillColor) return;
 
             _lastFill = value;
             // Choisir une teinte ne crée pas un fond : seule la case le fait.
-            if (HasFill) Fill = value;
+            if (Fill is SolidFill uni) uni.Color = value;
             else
             {
                 OnPropertyChanged();
@@ -262,9 +313,36 @@ public abstract partial class Frame : ObservableObject
         }
     }
 
-    partial void OnFillChanged(string? value)
+    /// <summary>
+    /// Le remplissage est un objet, et non plus une chaîne : régler la couleur d'un
+    /// dégradé le modifie SUR PLACE, sans changer l'instance que porte le bloc. Rien
+    /// n'en préviendrait alors ni le panneau ni la page. On s'abonne donc au
+    /// remplissage, comme le tableau s'abonne à ses colonnes depuis C9, et on redit ce
+    /// qui en dépend.
+    ///
+    /// Le désabonnement passe par la surcharge à deux paramètres : celle à un seul ne
+    /// donne pas l'ancienne valeur, et le bloc continuerait d'entendre un remplissage
+    /// qu'il ne porte plus.
+    /// </summary>
+    partial void OnFillChanging(FillBrush? oldValue, FillBrush? newValue)
     {
-        if (value is not null) _lastFill = value;
+        if (oldValue is not null) oldValue.PropertyChanged -= SurRemplissage;
+        if (newValue is not null) newValue.PropertyChanged += SurRemplissage;
+    }
+
+    partial void OnFillChanged(FillBrush? value)
+    {
+        if (value is SolidFill uni) _lastFill = uni.Color;
+    }
+
+    private void SurRemplissage(object? sender, PropertyChangedEventArgs e)
+    {
+        if (Fill is SolidFill uni) _lastFill = uni.Color;
+
+        OnPropertyChanged(nameof(Fill));
+        OnPropertyChanged(nameof(FillColor));
+        OnPropertyChanged(nameof(FillOpacity));
+        OnPropertyChanged(nameof(FillIsSolid));
     }
 
     partial void OnStrokeChanged(string? value)
@@ -377,7 +455,10 @@ public abstract partial class Frame : ObservableObject
         target.Width = Width;
         target.Height = Height;
         target.Rotation = Rotation;
-        target.Fill = Fill;
+        // En profondeur, et non par référence : le remplissage est un objet depuis C5c,
+        // et deux blocs issus d'une duplication doivent pouvoir diverger. Une copie de
+        // surface ferait qu'éclaircir le dégradé de l'un éclaircirait celui de l'autre.
+        target.Fill = Fill?.Clone();
         target.Stroke = Stroke;
         target.StrokeThickness = StrokeThickness;
         target.StrokeStyle = StrokeStyle;
@@ -642,7 +723,7 @@ public partial class ShapeFrame : Frame
     /// </summary>
     public ShapeFrame()
     {
-        Fill = "#FF9DC3E6";
+        Fill = new SolidFill("#FF9DC3E6");
         Stroke = "#FF2E5C8A";
     }
 
@@ -887,11 +968,19 @@ public partial class TableFrame : Frame
                     PaddingTop = CellPadding,
                     PaddingRight = CellPadding,
                     PaddingBottom = CellPadding,
-                    Fill = cellule.Fill,
+                    // Le remplissage est COPIÉ, là où les fragments ci-dessous sont
+                    // prêtés — et la différence n'est pas de goût. Un bloc s'abonne à son
+                    // remplissage depuis C5c, pour se redessiner quand on le modifie sur
+                    // place ; ce bloc-ci ne vit que le temps d'un rendu, mais
+                    // l'abonnement, lui, survivrait. Prêter le fond de la case y
+                    // accrocherait un bloc jeté à chaque lecture de cette liste — vingt
+                    // lectures, vingt-et-un abonnés, mesuré — et le panneau la relit à
+                    // chaque notification. Copier coûte un petit objet par case et rend
+                    // le bloc et son fond ramassables ensemble.
+                    Fill = cellule.Fill?.Clone(),
                     Stroke = cellule.Stroke,
                     StrokeThickness = cellule.StrokeThickness,
-                    // Les fragments sont prêtés, non copiés : ce bloc-ci ne vit que le
-                    // temps d'un rendu et ne modifie rien.
+                    // Les fragments, eux, sont prêtés : ils ne portent aucun abonnement.
                     Spans = cellule.Spans,
                 };
 
@@ -1015,7 +1104,9 @@ public partial class TableFrame : Frame
             Row = ligne,
             Column = colonne,
             Align = voisine?.Align ?? TextAlign.Left,
-            Fill = voisine?.Fill,
+            // Le remplissage de la voisine est copié et non partagé : deux cases qui
+            // portent le même objet changeraient de couleur ensemble.
+            Fill = voisine?.Fill?.Clone(),
             Stroke = voisine?.Stroke,
             StrokeThickness = voisine?.StrokeThickness ?? 1,
         };

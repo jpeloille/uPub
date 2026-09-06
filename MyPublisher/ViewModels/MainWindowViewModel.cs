@@ -270,6 +270,10 @@ public partial class MainWindowViewModel : ViewModelBase
     public IReadOnlyList<StrokeStyle> StrokeStyles { get; } =
         [StrokeStyle.Solid, StrokeStyle.Dashed, StrokeStyle.Dotted];
 
+    /// <summary>Les quatre sortes de remplissage ; le fond d'un bloc et celui de la page.</summary>
+    public IReadOnlyList<FillKind> FillKinds { get; } =
+        [FillKind.Solid, FillKind.Gradient, FillKind.Image, FillKind.Tint];
+
     private static IReadOnlyList<FieldOption> OptionsWhere(Func<FieldKind, bool> suits) =>
         Enum.GetValues<FieldKind>().Where(suits)
             .Select(kind => new FieldOption(kind, FieldResolver.Label(kind))).ToList();

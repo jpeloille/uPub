@@ -1,5 +1,5 @@
 {
-  "FormatVersion": 3,
+  "FormatVersion": 4,
   "Title": "Bulletin trois colonnes",
   "PageWidth": 595.28,
   "PageHeight": 841.89,
@@ -7,6 +7,7 @@
   "MarginTop": 56.69291338582678,
   "MarginRight": 56.69291338582678,
   "MarginBottom": 51.023622047244096,
+  "Background": null,
   "ColumnCount": 3,
   "ColumnSpacing": 12,
   "RowCount": 1,
@@ -27,7 +28,10 @@
           "Width": 595.28,
           "Height": 104,
           "Rotation": 0,
-          "Fill": "#FF1F3B57",
+          "Fill": {
+            "$kind": "solid",
+            "Color": "#FF1F3B57"
+          },
           "Stroke": null,
           "StrokeThickness": 0,
           "StrokeStyle": "Solid",
@@ -42,7 +46,10 @@
           "Width": 595.28,
           "Height": 4,
           "Rotation": 0,
-          "Fill": "#FFF0C674",
+          "Fill": {
+            "$kind": "solid",
+            "Color": "#FFF0C674"
+          },
           "Stroke": null,
           "StrokeThickness": 0,
           "StrokeStyle": "Solid",
@@ -574,7 +581,10 @@
               "Width": 152.63139107611548,
               "Height": 200,
               "Rotation": 0,
-              "Fill": "#FFEDF2F8",
+              "Fill": {
+                "$kind": "solid",
+                "Color": "#FFEDF2F8"
+              },
               "Stroke": "#FF1F3B57",
               "StrokeThickness": 0.75,
               "StrokeStyle": "Solid",

@@ -80,12 +80,18 @@ public partial class TableCell : ObservableObject
     [property: JsonPropertyOrder(50)]
     private TextAlign _align = TextAlign.Left;
 
-    /// <summary>Fond de la case, en #AARRGGBB ; null pour aucun fond.</summary>
+    /// <summary>
+    /// Fond de la case ; null pour aucun fond. Un <see cref="FillBrush"/> comme celui
+    /// d'un bloc, et non une chaîne de couleur : la case est rendue par un bloc de texte
+    /// calculé, qui reçoit ce fond tel quel, et deux façons d'écrire un remplissage dans
+    /// le même fichier rouvriraient exactement l'incohérence que la décision P0 a fermée.
+    /// Le panneau, lui, n'y offre que l'aplat — une bande de trois cases se règle vite.
+    /// </summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasFill))]
     [NotifyPropertyChangedFor(nameof(FillColor))]
     [property: JsonPropertyOrder(60)]
-    private string? _fill;
+    private FillBrush? _fill;
 
     /// <summary>
     /// Contour de la case : c'est lui qui dessine la grille. Chaque case porte le sien
@@ -116,27 +122,51 @@ public partial class TableCell : ObservableObject
         set
         {
             if (value == HasFill) return;
-            Fill = value ? _dernierFond : null;
+            Fill = value ? new SolidFill(_dernierFond) : null;
         }
     }
 
+    /// <summary>
+    /// La couleur du fond de la case, quand il est uni — la seule sorte que le panneau
+    /// offre ici. Un fichier peut en porter une autre : le sélecteur lit alors la teinte
+    /// retenue et n'écrit rien, plutôt que de remplacer en silence un dégradé par un
+    /// aplat au premier affichage du panneau.
+    /// </summary>
     [JsonIgnore]
     public string FillColor
     {
-        get => Fill ?? _dernierFond;
+        get => (Fill as SolidFill)?.Color ?? _dernierFond;
         set
         {
             if (value == FillColor) return;
 
             _dernierFond = value;
-            if (HasFill) Fill = value;
+            if (Fill is SolidFill uni) uni.Color = value;
             else OnPropertyChanged();
         }
     }
 
-    partial void OnFillChanged(string? value)
+    /// <summary>
+    /// Le remplissage se modifie sur place : sans cet abonnement, changer la couleur du
+    /// fond d'une case ne redirait rien au tableau, qui ne redessinerait pas ses cases.
+    /// </summary>
+    partial void OnFillChanging(FillBrush? oldValue, FillBrush? newValue)
     {
-        if (value is not null) _dernierFond = value;
+        if (oldValue is not null) oldValue.PropertyChanged -= SurRemplissage;
+        if (newValue is not null) newValue.PropertyChanged += SurRemplissage;
+    }
+
+    partial void OnFillChanged(FillBrush? value)
+    {
+        if (value is SolidFill uni) _dernierFond = uni.Color;
+    }
+
+    private void SurRemplissage(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (Fill is SolidFill uni) _dernierFond = uni.Color;
+
+        OnPropertyChanged(nameof(Fill));
+        OnPropertyChanged(nameof(FillColor));
     }
 
     /// <summary>Comment le panneau désigne la case. Un rang humain commence à un.</summary>
@@ -147,7 +177,8 @@ public partial class TableCell : ObservableObject
         var copie = new TableCell
         {
             Row = Row, Column = Column, Text = Text, Align = Align,
-            Fill = Fill, Stroke = Stroke, StrokeThickness = StrokeThickness,
+            // Le remplissage est copié en profondeur, comme les fragments ci-dessous.
+            Fill = Fill?.Clone(), Stroke = Stroke, StrokeThickness = StrokeThickness,
         };
 
         // Les fragments sont copiés et non partagés : deux cases issues d'une

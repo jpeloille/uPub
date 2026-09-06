@@ -1,5 +1,5 @@
 {
-  "FormatVersion": 3,
+  "FormatVersion": 4,
   "Title": "Exemple — bulletin",
   "PageWidth": 595.28,
   "PageHeight": 841.89,
@@ -7,6 +7,7 @@
   "MarginTop": 56.69,
   "MarginRight": 56.69,
   "MarginBottom": 56.69,
+  "Background": null,
   "ColumnCount": 1,
   "ColumnSpacing": 0,
   "RowCount": 1,
@@ -27,7 +28,10 @@
           "Width": 595.28,
           "Height": 118,
           "Rotation": 0,
-          "Fill": "#FF1F3B57",
+          "Fill": {
+            "$kind": "solid",
+            "Color": "#FF1F3B57"
+          },
           "Stroke": null,
           "StrokeThickness": 0,
           "StrokeStyle": "Solid",
@@ -42,7 +46,10 @@
           "Width": 595.28,
           "Height": 3,
           "Rotation": 0,
-          "Fill": "#FFF0C674",
+          "Fill": {
+            "$kind": "solid",
+            "Color": "#FFF0C674"
+          },
           "Stroke": null,
           "StrokeThickness": 0,
           "StrokeStyle": "Solid",
@@ -242,7 +249,10 @@
           "Width": 150,
           "Height": 150,
           "Rotation": 0,
-          "Fill": "#FFF0C674",
+          "Fill": {
+            "$kind": "solid",
+            "Color": "#FFF0C674"
+          },
           "Stroke": "#FFD9A93F",
           "StrokeThickness": 1.5,
           "StrokeStyle": "Solid",
@@ -294,7 +304,10 @@
           "Width": 481.9,
           "Height": 62,
           "Rotation": 0,
-          "Fill": "#FFEDF3F9",
+          "Fill": {
+            "$kind": "solid",
+            "Color": "#FFEDF3F9"
+          },
           "Stroke": "#FF9DB9D2",
           "StrokeThickness": 1,
           "StrokeStyle": "Solid",
@@ -346,7 +359,10 @@
           "Width": 481.9,
           "Height": 0.8,
           "Rotation": 0,
-          "Fill": "#FFC8CDD4",
+          "Fill": {
+            "$kind": "solid",
+            "Color": "#FFC8CDD4"
+          },
           "Stroke": null,
           "StrokeThickness": 0,
           "StrokeStyle": "Solid",
@@ -440,7 +456,10 @@
           "Width": 90,
           "Height": 2.5,
           "Rotation": 0,
-          "Fill": "#FF1F3B57",
+          "Fill": {
+            "$kind": "solid",
+            "Color": "#FF1F3B57"
+          },
           "Stroke": null,
           "StrokeThickness": 0,
           "StrokeStyle": "Solid",
@@ -492,7 +511,10 @@
           "Width": 481.9,
           "Height": 112,
           "Rotation": 0,
-          "Fill": "#FF1F3B57",
+          "Fill": {
+            "$kind": "solid",
+            "Color": "#FF1F3B57"
+          },
           "Stroke": null,
           "StrokeThickness": 0,
           "StrokeStyle": "Solid",
@@ -655,7 +677,10 @@
           "Width": 481.9,
           "Height": 0.8,
           "Rotation": 0,
-          "Fill": "#FFC8CDD4",
+          "Fill": {
+            "$kind": "solid",
+            "Color": "#FFC8CDD4"
+          },
           "Stroke": null,
           "StrokeThickness": 0,
           "StrokeStyle": "Solid",

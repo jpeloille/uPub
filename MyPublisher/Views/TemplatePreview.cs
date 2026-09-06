@@ -79,6 +79,23 @@ public class TemplatePreview : Control
     }
 
     /// <summary>
+    /// L'aplat qui représente un remplissage dans une vignette.
+    ///
+    /// La vignette est un schéma et non un rendu — c'est l'écart que B1 a assumé, texte
+    /// en filets et image en cadre barré — et il n'y a pas de raison de le rouvrir pour
+    /// les remplissages riches : un dégradé de cent cinquante pixels de large ne se
+    /// distingue pas de sa couleur de départ, et embarquer ici un troisième moteur de
+    /// rendu serait la régression que tout l'équilibre du projet cherche à éviter. Un
+    /// dégradé se donne donc par sa première couleur, une image par un gris neutre.
+    /// </summary>
+    private static string? Aplat(FillBrush? fill) => fill switch
+    {
+        GradientFill degrade => degrade.From,
+        ImageFill => "#FFD5DAE1",
+        _ => fill?.Uniforme,
+    };
+
+    /// <summary>
     /// Dessine un bloc dans le repère de la page. Récursif comme le reste : un groupe
     /// translate le repère et redescend.
     /// </summary>
@@ -92,7 +109,7 @@ public class TemplatePreview : Control
                 Matrix.CreateTranslation(frame.CenterX, frame.CenterY));
 
         var rect = new Rect(frame.X, frame.Y, frame.Width, frame.Height);
-        var fill = Conv.ToBrush(frame.Fill);
+        var fill = Conv.ToBrush(Aplat(frame.Fill));
         var stroke = Conv.ToBrush(frame.Stroke);
         var pen = stroke is null || frame.StrokeThickness <= 0
             ? null
