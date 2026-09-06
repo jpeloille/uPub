@@ -72,22 +72,30 @@ if grep -q "Remplissage par image perdu" "$travail/import.txt" "$travail/import-
     exit 1
 fi
 
-python3 - "$travail/ata21.mypub" <<'PY'
+python3 - "$travail/ata21.mypub" "$travail/cadre.txt" <<'PY'
 import json, os, sys
 
 document = json.load(open(sys.argv[1], encoding="utf-8"))
 fonds = []
+cadres = []
 
-def parcours(bloc):
+def parcours(bloc, page):
     fond = bloc.get("Fill")
     if isinstance(fond, dict) and fond.get("$kind") == "image":
         fonds.append(fond)
+        if fond.get("Rotation"):
+            cadres.append((page, bloc["X"], bloc["Y"], bloc["Width"], bloc["Height"]))
     for enfant in bloc.get("Children", []):
-        parcours(enfant)
+        parcours(enfant, page)
 
-for page in document["Pages"]:
+for numero, page in enumerate(document["Pages"], start=1):
     for bloc in page["Frames"]:
-        parcours(bloc)
+        parcours(bloc, numero)
+
+# Le cadre de l'image tournée, que l'étape suivante ira mesurer sur les deux rendus.
+with open(sys.argv[2], "w", encoding="utf-8") as sortie:
+    for cadre in cadres:
+        print(*cadre, file=sortie)
 
 echec = False
 print(f"    remplissages par image   source    5   importé {len(fonds):>4}")
@@ -135,6 +143,59 @@ for champs in lignes:
         echec = True
     print(f"    image {champs[3]:>5} x {champs[4]:<5} posée à {x:>5.0f} x {y:<5.0f} ppi"
           f"   écart {ecart:5.1f} %{marque}")
+
+sys.exit(1 if echec else 0)
+PY
+
+# Le compte de définitions ci-dessus dit qu'aucune image n'est ÉTIRÉE de travers. Il ne
+# dit pas qu'elle a TOURNÉ : une image posée dans un cadre couché mais non tournée garde
+# une échelle uniforme, et se fait simplement rogner. Ce qui sépare les deux, c'est
+# qu'une image tournée remplit son cadre du haut en bas, tandis que la même sans quart de
+# tour n'en occupe que la bande centrale — ici 219 pt sur 376, soit 78 pt de blanc en
+# haut et autant en bas. On mesure donc jusqu'où l'encre monte et descend dans le cadre,
+# des deux côtés.
+page="$(cut -d' ' -f1 "$travail/cadre.txt")"
+pdftoppm -r 144 -f "$page" -l "$page" -png -singlefile "$travail/ata21.pdf" "$travail/ata21-pdf"
+"$banc" rendre "$travail/ata21.mypub" --sortie "$travail/ata21-ecran.png" \
+        --page "$page" --pixels-par-point 2 --sans-reperes > /dev/null
+
+python3 - "$travail/cadre.txt" "$travail/ata21-pdf.png" "$travail/ata21-ecran.png" <<'PY'
+import sys
+from PIL import Image
+
+cadres = [l.split() for l in open(sys.argv[1], encoding="utf-8") if l.strip()]
+_, x, y, largeur, hauteur = (float(v) for v in cadres[0])
+
+echec = False
+marges = {}
+for nom, chemin in (("PDF", sys.argv[2]), ("écran", sys.argv[3])):
+    image = Image.open(chemin).convert("L")
+    cadre = image.crop(tuple(round(v * 2) for v in (x, y, x + largeur, y + hauteur)))
+    pixels = cadre.load()
+    lignes = [j for j in range(cadre.height)
+              if any(pixels[i, j] < 200 for i in range(cadre.width))]
+
+    if not lignes:
+        print(f"    {nom} : aucune encre dans le cadre de l'image tournée", file=sys.stderr)
+        echec = True
+        continue
+
+    haut, bas = lignes[0] / 2, (cadre.height - 1 - lignes[-1]) / 2
+    marges[nom] = (haut, bas)
+    marque = "" if max(haut, bas) <= 15 else "   <- L'IMAGE NE REMPLIT PAS SON CADRE"
+    if max(haut, bas) > 15:
+        echec = True
+    print(f"    image tournée, {nom:5} : encre à {haut:5.1f} pt du haut et {bas:5.1f} pt du bas"
+          f" (cadre de {hauteur:.0f} pt){marque}")
+
+# Et les deux rendus doivent s'accorder : la rotation est appliquée deux fois, une par
+# moteur, et c'est le seul endroit du poste où les deux écritures peuvent diverger.
+if len(marges) == 2:
+    ecart = max(abs(a - b) for a, b in zip(marges["PDF"], marges["écran"]))
+    if ecart > 3:
+        print(f"    l'écran et le PDF ne posent pas l'image au même endroit ({ecart:.1f} pt)",
+              file=sys.stderr)
+        echec = True
 
 sys.exit(1 if echec else 0)
 PY
