@@ -33,9 +33,10 @@ namespace MyPublisher.Tests.Interface;
 public class RotationTests
 {
     /// <summary>
-    /// Le bloc de mesure : 200 × 60 pt en (100, 100), donc de centre (200, 130). Sans
-    /// contour, pour que la boîte d'encre soit exactement celle du bloc — la recette
-    /// la mesure au pixel dans les deux rendus.
+    /// Le bloc de mesure : 200 × 60 pt en (100, 100), donc de centre (200, 130) — sauf
+    /// là où un test le déplace exprès, pour mettre sa poignée hors de la planche. Sans
+    /// contour, pour que la boîte d'encre soit exactement celle du bloc — la recette la
+    /// mesure au pixel dans les deux rendus.
     /// </summary>
     private static ShapeFrame Bloc() => new()
     {
@@ -158,8 +159,10 @@ public class RotationTests
         // c'est un quart de tour dans le sens des aiguilles.
         Tourner(fenetre, new Point(bloc.X + bloc.Width / 2 + 200, bloc.Y + bloc.Height / 2));
 
-        // Un angle posé à la souris ne vaut que ce que vaut le pointeur — Avalonia rend
-        // des positions en pixels entiers. L'exactitude, elle, se joue sous Maj.
+        // Mesuré exact sur cette machine — le banc ne rabote pas la position du
+        // pointeur. La marge est pour celles qui l'arrondissent au pixel, ce que C2b a
+        // relevé : « une position posée à la souris ne vaut que ce que vaut le
+        // pointeur ». L'exactitude, elle, se joue sous Maj.
         Assert.InRange(bloc.Rotation, 89, 91);
 
         // Tourner ne déplace ni ne redimensionne : le pivot est le centre du bloc, et
