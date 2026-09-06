@@ -21,7 +21,9 @@ dotnet run --project MyPublisher -- mon-doc.mypub --resave copie.mypub  # relit 
 ```
 
 La réécriture ne sert pas à l'usage courant : elle donne prise au contrôle
-ci-dessous.
+ci-dessous. Ce n'est pas un « enregistrer sous » — elle réécrit le document tel qu'il
+s'écrit **chez lui**, chemins d'images compris, la copie n'ayant d'autre destin que
+d'être recopiée par-dessus l'original.
 
 ## Contrôle de non-régression
 
@@ -151,6 +153,9 @@ la barre du haut regroupe les commandes du document : fichier, annulation, zoom.
 - Annulation / rétablissement sur 60 pas, couvrant aussi bien les gestes à la
   souris que les champs du panneau de propriétés.
 - Enregistrement au format `.mypub` (JSON lisible) et export PDF.
+- **Un dossier de travail se déplace sans casser ses images** : les images rangées à
+  côté du document — ou sous son dossier — y sont référencées relativement à lui.
+  Celles qui vivent ailleurs gardent leur chemin absolu.
 - **Ouverture des documents Microsoft Publisher (`.pub`)** : pages, blocs de texte avec
   leurs fragments de style, retraits et fers par paragraphe, tabulations, tableaux,
   cadres et traits. L'import dit ce qu'il n'a pas su rendre plutôt que de le perdre en
@@ -279,9 +284,14 @@ Un groupe contient ses blocs en coordonnées relatives à son coin supérieur ga
 écrits après sa géométrie — le rendu et l'export composent les deux repères. Un tableau
 suit la même règle : ses colonnes et ses lignes sont écrites après sa taille, et ses
 cases sont repérées par leur ligne et leur colonne, si bien qu'un tableau dont la
-plupart des cases sont vides n'écrit que celles qui disent quelque chose. Les images
-sont référencées par chemin absolu : déplacer un document sans ses images casse les
-liens.
+plupart des cases sont vides n'écrit que celles qui disent quelque chose.
+
+**Une image rangée sous le dossier du document y est référencée en relatif** —
+`images/plan.png` — et une image rangée ailleurs garde son chemin absolu. Déplacer un
+dossier de travail avec son `.mypub` et ses images ne casse donc plus rien. Un chemin
+qui remonterait par `..` est écarté : il se casserait au premier déplacement, ce qui est
+justement ce qu'on évite. La résolution a lieu à l'**ouverture**, une fois pour toutes :
+partout ailleurs — à l'écran, à l'export — un chemin d'image est absolu.
 
 ## Limites connues
 
@@ -303,7 +313,8 @@ liens.
   entre deux pages : ce sont des bandes de cases, ce dont les documents à reprendre ont
   besoin, et rien de plus.
 - Pas de pages maîtres.
-- Les images sont liées, pas embarquées dans le `.mypub`.
+- Les images sont liées, pas embarquées dans le `.mypub`. Un dossier déplacé d'un
+  bloc emporte les siennes ; un document envoyé seul arrive sans elles.
 - Pas de gestion des couleurs CMJN ni de fond perdu : l'export est en RVB.
 - Le format `.pub` se lit mais ne s'écrit pas. La lecture demande `libmspub`
   (`apt install libmspub-tools`) : le format est fermé, et c'est le lecteur qu'emploie

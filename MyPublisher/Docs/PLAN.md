@@ -24,7 +24,7 @@ Où en est chaque poste. Une seule règle pour la colonne d'avancement : un post
 on écrit ce qui est fait plutôt qu'un pourcentage inventé — un poste à moitié écrit n'est
 pas un poste à moitié livré. La colonne se met à jour dans le commit qui clôt le poste.
 
-*Dernière mise à jour : 6 septembre 2026.*
+*Dernière mise à jour : 6 septembre 2026 (A3).*
 
 | Poste | Intitulé | Avancement | Où ça en est |
 |---|---|:---:|---|
@@ -34,7 +34,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **P3** | Banc de vérification | en cours | Noyau séparé, banc de rendu, comparaison écran ↔ PDF, export déterministe, 20 tests, `Scripts/verifier.sh`. Reste : les recettes des postes clos, et le bilan |
 | **A1** | Poignée de rotation | 0 % | La rotation est déjà partout ; il manque la neuvième poignée |
 | **A2** | Signaler le débordement du texte | 0 % | Le poste le plus important de la phase : on livre encore un PDF amputé sans le dire |
-| **A3** | Chemins d'images relatifs | 0 % | — |
+| **A3** | Chemins d'images relatifs | **100 %** | Relatif sous le dossier du document, absolu ailleurs ; résolu à l'ouverture. `FormatVersion` reste à 3 |
 | **A4** | Superposition : raccourcis et glisser-déposer | 0 % | Les quatre commandes existent, et portent la sélection multiple depuis C3a |
 | **A5** | Formats de page | 0 % | Le modèle accepte déjà des dimensions libres |
 | **A6** | Taille du bloc dans la barre d'état | 0 % | — |
@@ -59,11 +59,11 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **R5** | **Ouvrir un `.pub`** | **100 %** | Lecture déléguée à libmspub. Les deux documents ATR s'ouvrent objet pour objet, sans perdre un style |
 | **D** | Moteur de composition | — | Décision non ouverte ; à rouvrir quand A, B et C sont livrées |
 
-**Par phase** — P : 3 sur 4 (P3 en cours) · A : 0 sur 7 · B : 2 sur 5 · C : 6 sur 8 ·
+**Par phase** — P : 3 sur 4 (P3 en cours) · A : 1 sur 7 · B : 2 sur 5 · C : 6 sur 8 ·
 R : 4 sur 5 · D : non planifié. La ligne comptait 22 postes et ignorait la phase R,
 apparue le 6 septembre 2026 ; elle la compte désormais.
 
-Soit **15 postes sur 29**. Le tableau ne porte pas encore les onze postes que l'audit
+Soit **16 postes sur 29**. Le tableau ne porte pas encore les onze postes que l'audit
 des fiches a fait apparaître le 6 septembre 2026 — A8 à A15, B6, B7, C8 — et qui sont au
 périmètre : ils y entreront quand ils seront spécifiés. C'est un compte de postes et non
 d'effort : C3 pesait à lui
@@ -375,6 +375,125 @@ supprime un risque — livrer un PDF amputé sans le savoir.
 dossier du document ; en absolu sinon. À l'ouverture, résoudre les deux.
 
 *Recette* : déplacer un dossier contenant un `.mypub` et ses images ne casse plus rien.
+
+*Fait le 6 septembre 2026.* La règle est celle du plan, à la lettre : relatif sous le
+dossier du document, absolu ailleurs, et les deux se relisent. Un chemin qui remonterait
+par `..` est écarté et reste absolu — il se casserait au premier déplacement, ce qui est
+exactement ce que le poste répare. Le « sous le dossier » se mesure par
+`Path.GetRelativePath` et non par un préfixe de chaîne : `…/notice` et
+`…/notice-images` partagent le préfixe sans que le second soit dans le premier.
+
+**La résolution a lieu à l'ouverture, une fois pour toutes.** C'est le choix qui commande
+tout le reste. Passé `FromJson`, le modèle ne porte que des chemins absolus : ni la
+liaison de l'écran, ni l'export, ni le cache d'images n'ont à savoir qu'un chemin relatif
+existe, et aucun d'eux n'a changé d'une ligne. Le poste tient donc entier dans
+`DocumentSerializer`, et il n'ajoute **aucune propriété au modèle** — ni `Clone()`, ni le
+test d'exhaustivité par réflexion, ni `NotifySelection()` n'entrent en jeu.
+
+**Le dossier est un paramètre de l'écriture comme de la lecture, et son absence a un
+sens précis** : les chemins passent alors tels quels, ni relativisés ni résolus. C'est ce
+qui règle le piège du poste. `MainWindowViewModel.Capture` sérialise le document à chaque
+geste et `Restore` le relit — tous deux **sans dossier**, donc l'aller-retour est
+l'identité sur les chemins, quelle que soit leur forme. Un geste annulé ne peut pas
+déplacer une image. La demi-mesure serait mortelle : un instantané qui relativiserait
+sans que la restauration résolve rendrait le chemin relatif *en mémoire*, où il se
+résoudrait ensuite sur le dossier courant du processus — l'image disparaîtrait de la page
+sans qu'aucun geste ne l'ait touchée. C'est le cinquième sabotage ci-dessous, et il est
+attrapé.
+
+Ce dossier facultatif appelle un garde-fou, et c'est un invariant plutôt qu'un test :
+**`DocumentSerializer.Save` est le seul endroit du dépôt qui écrive un `.mypub` sur le
+disque**. Les deux seuls appels qui ne passent pas de dossier — l'instantané de
+l'historique et sa comparaison — ne touchent aucun fichier. Un second écrivain, l'archive
+du poste B4 par exemple, devra passer le sien : sans quoi il graverait des chemins
+absolus sans que rien n'échoue, le contrôle ne portant sur aucun document à image. La
+consigne est écrite là où on la lira, sur `Save`.
+
+**La réécriture n'est pas un « enregistrer sous ».** `--resave` rapporte les chemins au
+dossier de la **source** et non à celui du fichier produit. Ce n'est pas une commodité :
+c'est la procédure de régénération des `Samples/` et des `Templates/` — `--resave /tmp/x`
+puis recopie par-dessus l'original — et sous une sémantique d'« enregistrer sous » elle
+graverait dans un modèle livré le chemin absolu de la machine qui l'a régénéré, en
+silence. Le vrai « enregistrer sous », lui, relativise bien sur le nouveau dossier ; il
+est éprouvé par un test du noyau, l'application n'ayant pas de mode sans interface pour
+ce geste-là. Conséquence assumée : un modèle qui porterait une image relative, ouvert en
+copie et enregistré ailleurs, écrit cette image en absolu — ce qui est juste, elle vit
+bien ailleurs.
+
+**Le cache d'images de `Conv.cs` n'a pas eu à suivre, et c'est le résultat qui compte.**
+Il est statique, indexé par chemin, et son `Invalidate` n'est appelé par personne : si le
+modèle avait gardé la forme relue du fichier, deux documents rangés dans deux dossiers et
+portant chacun `images/logo.png` se seraient partagé une seule entrée, le second
+affichant l'image du premier. La résolution à l'ouverture ferme ce cas ; la clé est en
+outre normalisée, sans quoi `Invalidate` ne retrouverait pas une entrée rangée sous une
+autre graphie. Ce raisonnement est une affirmation sur du code : un test d'interface en
+fait une mesure, avec deux documents et deux images du même nom dans un seul processus.
+
+`FormatVersion` **reste à 3**, et c'est le seul endroit où l'on aurait pu choisir
+autrement. Un fichier ancien ne porte que des chemins absolus et s'ouvre inchangé : rien
+à migrer. Mais un fichier neuf portant un chemin relatif, ouvert par un binaire
+antérieur, verrait ce chemin résolu sur le dossier courant du processus et perdrait le
+lien **sans rien dire**, là où un numéro plus grand l'aurait fait refuser avec son
+numéro. Un seul chemin y mène — enregistrer avec cette version, puis rouvrir avec une
+plus ancienne, c'est-à-dire régresser de binaire — et c'est ce qui rend le choix
+défendable plutôt que seulement permis. L'asymétrie est réelle ; elle est écrite ici
+plutôt que tue.
+
+*Recette jouée*, et elle est un script : `Scripts/recettes/A3-chemins-images.sh`. Un
+atelier avec un `.mypub`, une image sous son dossier et une image au-dehors ; le dossier
+est déplacé pour de bon — `mv`, l'ancien chemin n'existe plus — et le document s'ouvre
+encore. Ce qui est mesuré n'est pas l'absence d'un avertissement mais **la couleur des
+deux aplats relevée dans la page rendue**, au centre de chaque bloc : un export qui ne se
+plaint de rien peut très bien avoir dessiné un trou. La forme écrite est vérifiée des
+deux côtés — `images/plan.png` d'une part, le chemin absolu de l'autre — et la recette
+finit par une contre-épreuve : déplacer le dossier de l'image du dehors doit la casser.
+Sans elle, le passage précédent pourrait tenir sur un export qui ne dit jamais rien.
+
+La recette a été éprouvée en la faisant échouer, six fois : l'écriture qui ne relativise
+plus, la lecture qui ne résout plus, `--resave` rendu à la sémantique d'« enregistrer
+sous », le garde-fou du `..` retiré, l'instantané d'annulation qui relativise sans que la
+restauration résolve, et le cache indexé sur le nom du fichier. **Six sabotages, six
+attrapés** — quatre par la recette, trois par les tests du noyau, quatre par ceux de
+l'interface. Deux ne sont attrapés que par les tests d'interface, et ce sont les deux
+qu'on ne voit pas venir : l'annulation et le cache. Un seul n'est attrapé que par la
+recette, `--resave` — le contrôle de non-régression, lui, ne le verrait pas, aucun
+document du dépôt ne portant d'image.
+
+#### Ce que le poste a trouvé
+
+**Les documents ATR ne portent aucune image liée**, et il faut le dire plutôt que de
+laisser croire que la recette a évité le sujet. Les cinq PNG d'ATA 21 sont des
+remplissages de forme (`draw:fill: bitmap`) que l'import de R5 ne reprend pas — le relevé
+le dit, le README le répète. Il n'y a donc pas de valeur réelle à reprendre ici comme
+R2 et R3 ont pu le faire : ce que la recette reproduit est le **geste** réel que la
+fiche 21 désigne comme le cas de casse le plus fréquent, « j'ai déplacé mon dossier de
+travail », joué littéralement.
+
+**Une couleur symétrique est un mauvais témoin.** Le premier test d'interface relevait le
+magenta, dont le rouge et le bleu sont égaux : il passait alors même que la lecture des
+pixels inversait les deux voies. C'est le cyan qui l'a dit — la trame composée par
+`CaptureRenderedFrame` est en RGBA et non en BGRA. Une heure perdue, et une leçon qui
+vaut au-delà de ce poste : un témoin invariant par l'erreur qu'on cherche ne mesure rien.
+
+**L'écriture passe désormais par l'arbre JSON** plutôt que par la sérialisation directe —
+réécrire un chemin sur le bloc lui-même notifierait la liaison et ferait relire l'image à
+l'écran, et laisserait le document modifié si l'écriture échouait ensuite. Vérifié avant
+de bâtir dessus : à dossier absent, l'arbre rend **exactement** le même texte que la
+sérialisation directe, dérives d'arrondi et caractères non-ASCII compris. Les dix
+`.mypub` livrés — six exemples, quatre modèles — se réécrivent au caractère près, et
+aucun n'a eu à être régénéré : le poste n'ajoute aucune propriété au fichier.
+
+#### Trouvé et laissé tel quel
+
+**Le cache d'images retient aussi les échecs, et pour toujours.** Une image absente à
+l'ouverture est mémorisée comme telle pour la durée du processus : la remettre en place
+puis rouvrir le document laisse le bloc vide, et rien ne le dit. `Invalidate` existe
+précisément pour cela et personne ne l'appelle. Hors périmètre — c'est un défaut
+antérieur au poste, que le poste ne touche pas — mais il attend son correctif, et
+l'ouverture d'un document en serait le bon endroit.
+
+**Un `.mypubz` reste nécessaire** : ce poste traite le dossier déplacé, pas le document
+envoyé seul. C'est le poste B4, et la fiche 21 les distinguait déjà.
 
 ### A4 — Ordre de superposition : raccourcis et glisser-déposer *(fiche 15)*
 
