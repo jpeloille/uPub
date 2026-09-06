@@ -11,9 +11,7 @@
 #
 # Ce qu'elle éprouve :
 #
-#   1. sur ATA 21 : l'export nomme les blocs qui débordent, chiffre de combien, et se
-#      TAIT sur les deux blocs dont le texte ne dépasse que dans la marge intérieure
-#      basse — un avertissement qui crie au loup ne se lit plus ;
+#   1. sur ATA 21 : l'export nomme les blocs qui débordent et chiffre de combien ;
 #   2. sur ATA 21 toujours : le PDF ne dessine plus rien sous un bloc trop plein, comme
 #      l'écran ne le fait pas, et les deux mesures concordent ;
 #   3. sur le document de la recette : les trois calages verticaux sont mesurés dans le
@@ -24,7 +22,18 @@
 #      qu'on rogne, pas la zone ;
 #   5. le rognage tourne avec le bloc, et il ne survit pas au texte : le filet de 2 pt
 #      d'un bloc trop plein est entier des deux côtés ;
-#   6. aucun document livré par le dépôt ne déborde.
+#   6. le texte qui ne dépasse que dans la marge intérieure basse ne se signale PAS —
+#      un avertissement qui crie au loup ne se lit plus, et c'est le cas de deux des
+#      neuf blocs d'ATA 21 ;
+#   7. aucun document livré par le dépôt ne déborde.
+#
+# Les nombres d'ATA 21 sont ceux que **Calibri** donne : c'est la police du document, et
+# elle est présente sur la machine qui a écrit cette recette. Ailleurs, fontconfig rend
+# autre chose, le texte ne compose plus à la même hauteur, et ces nombres-là ne veulent
+# plus rien dire. La recette le voit à l'avertissement de substitution que l'export émet
+# déjà (poste B5), et passe son chemin en le disant plutôt que d'inventer un échec. Ce
+# qu'elle éprouve alors, elle l'éprouve sur son propre document, en DejaVu Sans — dont
+# tout le reste du banc dépend déjà.
 #
 # Pourquoi le rognage se mesure sur des IMAGES et jamais sur « pdftotext » : un chemin
 # de découpe PDF cache le texte, il ne le retire pas du flux. « pdftotext » le trouve
@@ -113,6 +122,18 @@ fi
 
 echo "  ATA 21 — ce que l'export en dit :"
 
+# La police du document est-elle bien celle que la machine emploie ? L'export le dit
+# déjà, poste B5. Sinon, tout ce qui suit mesurerait la police de substitution.
+if grep -q 'Police substituée : « Calibri »' "$travail/ata.txt"; then
+    echo "    Calibri est substituée sur cette machine : les mesures d'ATA 21 sont passées."
+    echo "    (le reste de la recette les éprouve en DejaVu Sans, sur son propre document)"
+    reel=0
+else
+    reel=1
+fi
+
+if [ "$reel" = 1 ]; then
+
 # « Overheat Protection » : 82,13 pt de bloc pour 90,78 pt composés. Le nombre est
 # celui du document, pas un nombre choisi.
 attendu="Page 1 · Overheat Protection : le texte déborde du bloc de 8,6 pt"
@@ -125,7 +146,8 @@ echo "    $attendu"
 
 # Et il se tait sur les deux blocs qui ne dépassent que dans leur marge basse : leur
 # texte compose 1,5 pt de plus que sa zone, et les 2,88 pt de « fo:padding-bottom »
-# le reçoivent. Rien n'est coupé — les signaler serait crier au loup.
+# le reçoivent. Rien n'est coupé — les signaler serait crier au loup. La même règle est
+# éprouvée plus bas sur le document de la recette, où la police est celle du dépôt.
 for muet in "The aircraft uses external air" "Air inlets location"; do
     if grep -F "déborde" "$travail/ata.txt" | grep -qF "$muet"; then
         echo "ÉCHEC : « $muet » ne dépasse que dans sa marge basse, rien n'y est coupé." >&2
@@ -166,6 +188,8 @@ for cote in ecran pdf; do
     echo "  ($cote — encre dans le bas du bloc : $dedans px, la mesure n'est pas à vide)"
 done
 
+fi   # fin des mesures qui dépendent de Calibri
+
 # ---------------------------------------------------- 2. le document de la recette
 
 echo "  Document de la recette :"
@@ -182,8 +206,14 @@ fi
 # Quatre blocs débordent, et quatre seulement : le témoin de même taille et les trois
 # blocs de calage tiennent. Un marqueur posé sur tous les blocs passerait sans ce
 # compte-là.
-declare -a trop=("Trop plein" "Milieu qui deborde" "Haut qui deborde" "Trop plein pivote")
-declare -a tiennent=("Temoin qui tient" "Calage haut" "Calage milieu" "Calage bas" "Retrait pendant")
+declare -a trop=("Trop plein" "Milieu qui deborde" "Haut qui deborde" "Trop plein pivote"
+                 "Marge basse depassee")
+# « Marge basse absorbe » est le cas d'ATA 21 porté sur une police que le dépôt possède :
+# quatre lignes de 12,80 pt dans une zone de 50, soit 1,22 pt de trop, que les 3 pt de
+# marge intérieure basse reçoivent. Rien n'est coupé, rien ne doit être dit. Son jumeau
+# « Marge basse depassee », de trois points plus court, sort du bloc d'autant et se dit.
+declare -a tiennent=("Temoin qui tient" "Calage haut" "Calage milieu" "Calage bas"
+                     "Retrait pendant" "Marge basse absorbe")
 
 for nom in "${trop[@]}"; do
     if ! grep -qF "Page 1 · $nom : le texte déborde du bloc" "$travail/recette.txt"; then
@@ -200,7 +230,7 @@ for nom in "${tiennent[@]}"; do
 done
 
 compte="$(grep -c 'déborde du bloc' "$travail/recette.txt" || true)"
-verifier "blocs signalés (sur neuf)" "$compte" 4 0
+verifier "blocs signalés (sur onze)" "$compte" 5 0
 
 # --- le calage vertical, MESURÉ dans le PDF.
 #
@@ -247,7 +277,7 @@ verifier "milieu qui déborde : cale en haut, comme son jumeau (pt)" \
 # 59,57. Retrait gauche 13,896 et retrait de première ligne −15,718 posent la première
 # ligne à 57,748 — soit 1,822 pt à GAUCHE de sa zone, et 1,058 pt à l'intérieur du
 # bloc. Les lignes suivantes rentrent à 73,466.
-verifier "retrait pendant : 1re ligne, hors de la zone (pt)" "$(fer Ooooo)" 57.748 0.05
+verifier "retrait pendant : 1re ligne, hors de la zone (pt)" "$(fer Nnnnn)" 57.748 0.05
 verifier "retrait pendant : lignes suivantes (pt)"           "$(fer suivantes)" 73.466 0.05
 
 # --- le rognage, sur les images.

@@ -508,6 +508,16 @@ Un bloc **pivoté de 20°** porte le même débordement : le découpage est pos�
 courant, donc il tourne avec le bloc, et une découpe restée en coordonnées de page ne se
 verrait sur aucun autre document du dépôt.
 
+**Les nombres d'ATA 21 sont ceux que Calibri donne**, et Calibri est présente sur la
+machine qui a écrit cette recette — le poste B5 l'avait déjà relevé. Ailleurs, fontconfig
+rend autre chose, le texte ne compose plus à la même hauteur, et ces nombres-là ne veulent
+plus rien dire ; la recette le voit à l'avertissement de substitution que l'export émet
+déjà et passe son chemin en le disant. Ce serait un filet troué si le reste en dépendait :
+la règle de la marge intérieure basse — celle qui vaut à ATA 21 son silence — est donc
+éprouvée une seconde fois sur le document de la recette, en DejaVu Sans, sur une paire de
+blocs qui ne diffèrent que de trois points de hauteur. Le passage à vide a été joué : la
+recette reste verte, et n'éprouve alors plus rien qu'elle ne prouve ailleurs.
+
 La recette a été éprouvée en la faisant échouer, sept fois : le découpage retiré, le
 découpage posé sur la zone de texte au lieu du bloc, le découpage survivant au texte, le
 calage vertical oublié à l'export, l'avertissement supprimé, le calage non borné, et le
@@ -534,6 +544,14 @@ moins muet.
 **Un tableau ne porte pas de calage vertical.** Ses cases naissent calées en haut, et rien
 ne le règle : `TableFrame` a une police, un corps et une marge, pas de fer vertical. Le
 relevé n'en demande aucun.
+
+**`TextFrame.AbsoluteLineHeight` vaut encore `FontSize × LineHeight`.** C'est l'ancienne
+sémantique, celle que R4 a remplacée par un multiple de la hauteur naturelle. Aucun des
+deux rendus ne la lit — ils passent tous deux par `Compositeur.Avance` —, mais les
+vignettes du catalogue (`TemplatePreview`) s'en servent encore, et elle ment du même écart
+de 16 % qui a fait déborder le document de référence. B1 assume déjà que la vignette est
+un schéma et non un rendu, si bien que rien ne se voit ; c'est la même forme que la
+découverte sur le filet — une propriété survivante d'une sémantique changée ailleurs.
 
 ### A3 — Chemins d'images relatifs *(fiche 21)*
 
