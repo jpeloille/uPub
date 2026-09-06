@@ -247,6 +247,12 @@ public class GestesTests
         Assert.Equal(300, Math.Round(cases[1].Position.X));
         // Les colonnes font la taille du bloc : l'élargir de 80 pt élargit le tableau.
         Assert.Equal(380, table.Width);
+
+        // La grille passe par un autre chemin — le panneau écrit le contour de toutes
+        // les cases à la fois — et retombe sur le même abonnement.
+        table.HasGrid = false;
+        Battre();
+        Assert.All(Cases(fenetre), c => Assert.Null(c.Case.Bloc!.Stroke));
     }
 
     [AvaloniaFact]

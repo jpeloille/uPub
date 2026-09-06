@@ -112,6 +112,26 @@ public class TableauTests
     }
 
     [Fact]
+    public void Ajouter_une_ligne_cree_une_case_par_colonne_et_reprend_son_habillage()
+    {
+        // Le chemin qu'on suit en composant une fiche : une bande encadrée, puis une
+        // ligne de plus. Les cases neuves n'ont pas de voisine sur leur propre ligne —
+        // elle n'existe pas encore — et vont donc chercher celle d'à côté.
+        var table = Bande(100, 60, 140);
+
+        table.RowCount = 2;
+
+        Assert.Equal(2, table.Rows.Count);
+        Assert.Equal(6, table.Cells.Count);
+        Assert.Equal(60, table.Height);
+        Assert.All(table.Cells, cellule => Assert.Equal("#FF404040", cellule.Stroke));
+        Assert.Equal([(0, 0), (0, 1), (0, 2), (1, 0), (1, 1), (1, 2)],
+            table.Cells.Select(c => (c.Row, c.Column)));
+        // La ligne neuve reprend la hauteur de celles qui l'entourent.
+        Assert.Equal(30, table.Rows[1].Height);
+    }
+
+    [Fact]
     public void Retirer_une_colonne_emporte_ses_cases()
     {
         var table = Bande(100, 60, 140);
