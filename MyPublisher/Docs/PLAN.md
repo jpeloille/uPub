@@ -473,8 +473,13 @@ annonçait une substitution sur **81 polices installées de cette machine**. C'e
 défaut qui aurait tué le poste : un avertissement qui crie au loup sur des polices
 présentes s'apprend à ne plus être lu, et le jour où une flèche de procédure d'urgence
 est vraiment remplacée, personne ne regarde. La comparaison cherche donc le nom demandé
-**parmi** les noms rendus. La recette va chercher une de ces familles-là sur la machine
-qui la joue, plutôt que d'en écrire une en dur.
+**parmi** les noms rendus.
+
+Ce cas-là ne s'éprouve qu'avec une police à noms multiples réellement installée. La
+recette et le test vont donc en chercher une sur la machine qui les joue, plutôt que
+d'en écrire une en dur qui n'y serait pas — **et passent leur chemin s'il n'y en a
+aucune**. C'est la seule réserve du poste, et elle est écrite ici plutôt que tue : sur
+cette machine-ci les 81 familles concernées font que le contrôle tourne toujours.
 
 **Un interblocage possible, corrigé au passage** : `RedirectStandardError` était activé
 sans que la sortie d'erreur soit jamais lue, puis `ReadToEnd()` bloquait sur la sortie
@@ -495,6 +500,11 @@ DejaVu Sans et DejaVu Serif.
 *Recette jouée*, et éprouvée en la faisant échouer quatre fois : résolveur qui accepte
 tout ce que `fc-match` rend, comparaison par égalité stricte des chaînes, fragments de
 style ignorés, dédoublonnage retiré. Quatre sabotages, quatre attrapés.
+
+Un cinquième a servi : la comparaison de chaînes réécrite **dans** la résolution,
+`Correspond` restant juste mais n'étant plus appelée. Les tests sur chaînes figées ne
+voyaient rien passer — un test qui traverse tout le chemin de résolution avec une
+famille à noms multiples cherchée sur la machine a été ajouté pour cela.
 
 ---
 

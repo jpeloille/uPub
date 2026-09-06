@@ -70,6 +70,25 @@ public class PolicesTests
     }
 
     [Fact]
+    public void Une_famille_aux_noms_multiples_se_resout_sans_ecart()
+    {
+        // Les cas ci-dessus éprouvent « Correspond » sur des chaînes figées, ce qui
+        // laisse passer une régression où « Match » cesserait de l'appeler pour
+        // comparer les chaînes lui-même : les polices du dépôt n'ont qu'un nom, et
+        // rien ne s'en apercevrait. Celui-ci va donc chercher sur la machine une
+        // famille que fontconfig annonce sous plusieurs noms, et traverse tout le
+        // chemin de résolution.
+        var famille = FamilleAuxNomsMultiples();
+
+        // Machine sans police à noms multiples : il n'y a rien à éprouver ici, et
+        // inventer un échec ne dirait rien de vrai. La recette du poste fait la même
+        // réserve, et le dit.
+        if (famille is null) return;
+
+        Assert.True(FontconfigFontResolver.Resoudre(famille, false, false).Exacte, famille);
+    }
+
+    [Fact]
     public void Une_police_absente_nomme_celle_qui_la_remplace()
     {
         var resolution = FontconfigFontResolver.Resoudre(Absente, false, false);
@@ -160,6 +179,61 @@ public class PolicesTests
     }
 
     // ------------------------------------------------------------------ outillage
+
+    /// <summary>
+    /// Une police installée que fontconfig annonce sous plusieurs noms — « DejaVu
+    /// Sans,DejaVu Sans Condensed » —, rendue par le second de ces noms ; ou
+    /// <c>null</c> si la machine n'en porte aucune.
+    ///
+    /// On la cherche au lieu de l'écrire en dur : celles qui existent ici ne sont pas
+    /// celles qui existeront ailleurs, et un test qui exige une police précise échoue
+    /// pour une raison qui n'est pas celle qu'il éprouve.
+    /// </summary>
+    private static string? FamilleAuxNomsMultiples()
+    {
+        foreach (var ligne in Fontconfig("fc-list", "-f", "%{family}\n").Split('\n'))
+        {
+            var noms = ligne.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+            if (noms.Length < 2) continue;
+
+            // On redemande au système, sans passer par le code sous test : la police
+            // doit vraiment être là, et dans un fichier que l'export sait lire — une
+            // collection .ttc est installée et pourtant substituée.
+            var rendu = Fontconfig("fc-match", "-f", "%{family}\n%{file}", $"{noms[1]}:weight=80:slant=0");
+            var lignes = rendu.Split('\n');
+            if (lignes.Length < 2) continue;
+            if (lignes[1].Trim().EndsWith(".ttc", StringComparison.OrdinalIgnoreCase)) continue;
+
+            var rendues = lignes[0].Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+            if (rendues.Contains(noms[1])) return noms[1];
+        }
+
+        return null;
+    }
+
+    private static string Fontconfig(string outil, params string[] arguments)
+    {
+        try
+        {
+            var demarrage = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = outil, RedirectStandardOutput = true, UseShellExecute = false
+            };
+            foreach (var argument in arguments) demarrage.ArgumentList.Add(argument);
+
+            using var process = System.Diagnostics.Process.Start(demarrage);
+            if (process is null) return "";
+
+            var sortie = process.StandardOutput.ReadToEnd();
+            process.WaitForExit(5000);
+            return sortie;
+        }
+        catch (Exception)
+        {
+            // Machine sans fontconfig : l'appelant traitera cela comme « aucune police ».
+            return "";
+        }
+    }
 
     private static TextFrame Bloc(string police) => new()
     {
