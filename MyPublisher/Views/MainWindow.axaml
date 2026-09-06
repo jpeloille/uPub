@@ -483,6 +483,30 @@
                                                        Value="{Binding PaddingBottom, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
                                     </Grid>
 
+                                    <!-- Les colonnes du BLOC, où le texte coule de l'une à
+                                         l'autre — à ne pas confondre avec celles du
+                                         document, plus bas dans le panneau DOCUMENT, qui
+                                         sont des repères d'aimantation posés sur la page.
+                                         Deux fonctions différentes sous le même mot. -->
+                                    <TextBlock Classes="field" Text="Colonnes du bloc" Margin="0,8,0,2"/>
+                                    <Grid ColumnDefinitions="*,8,*" RowDefinitions="Auto,Auto">
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Classes="field" Text="Nombre"/>
+                                        <TextBlock Grid.Row="0" Grid.Column="2" Classes="field" Text="Gouttière (pt)"/>
+                                        <!-- Minimum à un : zéro ou moins ne veut rien dire, et
+                                             la composition qui s'en défend le ferait alors en
+                                             silence. Le maximum est un garde-fou du panneau et
+                                             non du format — au-delà, les colonnes sont plus
+                                             étroites qu'un mot. -->
+                                        <NumericUpDown Grid.Row="1" Grid.Column="0" x:Name="NombreDeColonnes"
+                                                       FormatString="0" Increment="1" Minimum="1" Maximum="20"
+                                                       Value="{Binding Columns}"/>
+                                        <NumericUpDown Grid.Row="1" Grid.Column="2" FormatString="0.##" Increment="1" Minimum="0"
+                                                       Value="{Binding ColumnGap, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
+                                    </Grid>
+                                    <TextBlock Text="Le texte remplit la première colonne jusqu'au bas du bloc, puis passe à la suivante."
+                                               FontSize="11" Foreground="#FF8A929E"
+                                               TextWrapping="Wrap" Margin="0,4,0,0"/>
+
                                     <!-- Retraits et espacement valent pour tout le bloc. Les
                                          écarts paragraphe par paragraphe se lisent et
                                          s'écrivent dans le fichier, mais ne se règlent pas

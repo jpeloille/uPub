@@ -65,6 +65,7 @@ public sealed class TexteCompose : Control
         if (Bloc is not { } bloc || string.IsNullOrEmpty(Contenu)) return;
 
         var largeur = Math.Max(1, Bounds.Width - bloc.PaddingLeft - bloc.PaddingRight);
+        var hauteur = Math.Max(1, Bounds.Height - bloc.PaddingTop - bloc.PaddingBottom);
         var metriques = new MetriquesAvalonia();
         var commun = new StyleEffectif(
             bloc.FontFamily, bloc.FontSize, bloc.Bold, bloc.Italic, bloc.Foreground, 0);
@@ -78,25 +79,22 @@ public sealed class TexteCompose : Control
         var ecarts = Contenu == bloc.Text ? bloc.Paragraphs : (IReadOnlyList<ParagraphSpan>)[];
 
         var lignes = Compositeur.Composer(
-            Contenu, fragments, commun, ecarts, bloc.Paragraph, largeur, metriques);
-
-        var haut = bloc.PaddingTop;
+            Contenu, fragments, commun, ecarts, bloc.Paragraph,
+            largeur, hauteur, bloc.Colonnage, bloc.LineHeight, metriques);
 
         foreach (var ligne in lignes)
         {
-            // L'espace avant le paragraphe s'ajoute avant de poser la ligne, celui
-            // d'après une fois l'avance faite. Le même ordre qu'à l'export : l'inverser
-            // d'un côté décalerait tout ce qui suit.
-            haut += ligne.EspaceAvant;
-
-            var avance = Compositeur.Avance(ligne.Naturelle, bloc.LineHeight);
-
+            // Rien ne se cumule ici : la ligne porte son ordonnée dans sa colonne, et
+            // l'espace avant le paragraphe y est déjà entré. C'est la composition qui a
+            // décidé où passer d'une colonne à l'autre, et il ne faut pas deux endroits
+            // pour en décider.
             if (ligne.Morceaux.Count > 0)
             {
                 var justifiee = bloc.Align == TextAlign.Justify && !ligne.FinDeParagraphe;
-                // Le retrait déplace le bord gauche de la ligne ; « Disponible » est ce
-                // qui reste entre les deux retraits. C'est cette largeur-là, et non
-                // celle du bloc, qui cale un centrage ou un fer à droite.
+                // Le retrait déplace le bord gauche de la ligne, gouttières comprises ;
+                // « Disponible » est ce qui reste entre les deux retraits, dans sa
+                // colonne. C'est cette largeur-là, et non celle du bloc, qui cale un
+                // centrage ou un fer à droite.
                 var gauche = bloc.PaddingLeft + ligne.Retrait;
                 var origine = justifiee ? gauche : bloc.Align switch
                 {
@@ -120,7 +118,8 @@ public sealed class TexteCompose : Control
                     montee = Math.Max(montee, metriques.Montee(morceau.Style));
                 }
 
-                var ligneDeBase = haut + (avance - ligne.Naturelle) / 2 + montee;
+                var ligneDeBase = bloc.PaddingTop + ligne.Haut
+                                  + (ligne.Avance - ligne.Naturelle) / 2 + montee;
 
                 for (var m = 0; m < ligne.Morceaux.Count; m++)
                 {
@@ -136,8 +135,6 @@ public sealed class TexteCompose : Control
                     contexte.DrawText(rendu, new Point(origine + morceau.X + decalages[m], y));
                 }
             }
-
-            haut += avance + ligne.EspaceApres;
         }
     }
 

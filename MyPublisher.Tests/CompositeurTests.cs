@@ -23,14 +23,36 @@ public class CompositeurTests
     private static readonly StyleEffectif Commun =
         new("Police", 1, Bold: false, Italic: false, "#FF000000", 0);
 
+    /// <summary>
+    /// Un bloc d'une seule colonne et assez haut pour tout prendre : le cas de tous les
+    /// documents écrits avant R3, celui sur lequel portent les tests qui précèdent la
+    /// section « colonnes ».
+    /// </summary>
+    private static readonly Colonnage UneColonne = new(1, 0);
+
+    private const double Haute = 1_000_000;
+
     private static IReadOnlyList<LigneComposee> Composer(
         string texte, double largeur, params StyleSpan[] fragments) =>
-        Compositeur.Composer(texte, fragments, Commun, [], default, largeur, new ChasseFixe());
+        Compositeur.Composer(texte, fragments, Commun, [], default,
+            largeur, Haute, UneColonne, 1, new ChasseFixe());
 
     /// <summary>La même chose, avec des réglages de paragraphe plutôt que de style.</summary>
     private static IReadOnlyList<LigneComposee> Composer(
         string texte, double largeur, ParagrapheEffectif commun, params ParagraphSpan[] ecarts) =>
-        Compositeur.Composer(texte, [], Commun, ecarts, commun, largeur, new ChasseFixe());
+        Compositeur.Composer(texte, [], Commun, ecarts, commun,
+            largeur, Haute, UneColonne, 1, new ChasseFixe());
+
+    /// <summary>
+    /// Un bloc en colonnes. La hauteur et la largeur sont toujours données distinctes
+    /// dans les tests qui suivent : deux <c>double</c> voisins s'intervertissent en
+    /// silence, et une hauteur prise pour une largeur donnerait un texte plausible.
+    /// </summary>
+    private static IReadOnlyList<LigneComposee> Composer(
+        string texte, double largeur, double hauteur, Colonnage colonnes,
+        ParagrapheEffectif commun = default, double interligne = 1) =>
+        Compositeur.Composer(texte, [], Commun, [], commun,
+            largeur, hauteur, colonnes, interligne, new ChasseFixe());
 
     private static string[] Textes(string texte, double largeur, params StyleSpan[] fragments) =>
         Composer(texte, largeur, fragments).Select(l => l.Texte).ToArray();
@@ -277,7 +299,7 @@ public class CompositeurTests
             new StyleSpan { Start = 6, Length = 4, FontSize = 4 });
 
         // Une ligne à 4, une ligne à 1, interligne 1 : cinq unités.
-        Assert.Equal(5, Compositeur.Hauteur(lignes, 1), precision: 9);
+        Assert.Equal(5, Compositeur.Hauteur(lignes), precision: 9);
     }
 
     // ----------------------------------------------- retraits et espacement (R2)
@@ -401,7 +423,7 @@ public class CompositeurTests
         // Fiches, par exemple.
         var lignes = Composer("un\ndeux", 100, Reglage(apres: 5));
 
-        Assert.Equal(12, Compositeur.Hauteur(lignes, 1), precision: 9);
+        Assert.Equal(12, Compositeur.Hauteur(lignes), precision: 9);
     }
 
     [Fact]
@@ -467,5 +489,190 @@ public class CompositeurTests
 
         Assert.Equal(["un", "deux", "trois"], lignes.Select(l => l.Texte));
         Assert.All(lignes, l => Assert.Equal(1, l.Disponible));
+    }
+
+    // ------------------------------------------------- colonnes du bloc (R3)
+
+    /// <summary>
+    /// Trois colonnes dans un bloc large de 34, gouttière 2 : (34 − 2×2) / 3 = 10 par
+    /// colonne, et le pas d'un bord gauche au suivant vaut 12. Les nombres sont choisis
+    /// pour tomber juste avec la règle à mesurer factice — un caractère, une unité — de
+    /// sorte que chaque attente ci-dessous s'écrive et se relise à la main.
+    ///
+    /// La hauteur ne vaut jamais la largeur : intervertir les deux dans un des deux
+    /// rendus donnerait un texte plausible, et c'est exactement le genre de faute qu'une
+    /// comparaison écran ↔ PDF ne voit pas.
+    /// </summary>
+    private static readonly Colonnage Trois = new(3, 2);
+
+    [Fact]
+    public void Une_seule_colonne_compose_exactement_comme_avant()
+    {
+        // Le cas de tous les documents du dépôt, gouttière comprise : elle ne sert pas
+        // à une colonne, et ne doit donc rien changer. C'est la promesse de
+        // non-régression du poste, prise à sa racine.
+        var sans = Composer("un deux trois quatre cinq", 10, 3, new Colonnage(1, 0));
+        var avec = Composer("un deux trois quatre cinq", 10, 3, new Colonnage(1, 7));
+
+        Assert.Equal(
+            sans.Select(l => (l.Texte, l.Retrait, l.Disponible, l.Colonne, l.Haut)),
+            avec.Select(l => (l.Texte, l.Retrait, l.Disponible, l.Colonne, l.Haut)));
+
+        // Et le texte continue de descendre au-delà des trois unités de hauteur, comme
+        // il le faisait avant ce poste : rien n'est tronqué.
+        Assert.All(sans, l => Assert.Equal(0, l.Colonne));
+        Assert.Equal([0, 1, 2, 3], sans.Select(l => l.Haut));
+    }
+
+    [Fact]
+    public void La_largeur_disponible_est_celle_dune_colonne()
+    {
+        var lignes = Composer("un deux trois quatre", 34, 100, Trois);
+
+        Assert.All(lignes, l => Assert.Equal(10, l.Disponible));
+        // Dix unités, donc « un deux » (7) tient et « un deux trois » (13) non.
+        Assert.Equal(["un deux", "trois", "quatre"], lignes.Select(l => l.Texte));
+    }
+
+    [Fact]
+    public void Le_texte_remplit_une_colonne_puis_passe_a_la_suivante()
+    {
+        // Six lignes d'une unité chacune, deux unités de hauteur : deux lignes par
+        // colonne. La sixième tombe dans la troisième colonne, la dernière.
+        var lignes = Composer("a\nb\nc\nd\ne\nf", 34, 2, Trois);
+
+        Assert.Equal([0, 0, 1, 1, 2, 2], lignes.Select(l => l.Colonne));
+        Assert.Equal([0, 1, 0, 1, 0, 1], lignes.Select(l => l.Haut));
+    }
+
+    [Fact]
+    public void La_colonne_porte_la_ligne_jusqua_sa_gouttiere()
+    {
+        // Le retrait de la ligne comprend le pas de sa colonne : 0, 12, 24. Un rendu
+        // n'a donc rien à ajouter, et ne peut pas ajouter autre chose que l'autre.
+        var lignes = Composer("a\nb\nc\nd\ne\nf", 34, 2, Trois);
+
+        Assert.Equal([0, 0, 12, 12, 24, 24], lignes.Select(l => l.Retrait));
+    }
+
+    [Fact]
+    public void Le_retrait_de_paragraphe_sajoute_au_pas_de_la_colonne()
+    {
+        // Le retrait est compté dans la colonne, puis la colonne le décale : 12 + 3.
+        // L'ordre importe — décaler d'abord rognerait la largeur disponible du pas.
+        var lignes = Composer("a\nb\nc\nd", 34, 2, Trois, Reglage(gauche: 3));
+
+        Assert.Equal([3, 3, 15, 15], lignes.Select(l => l.Retrait));
+        Assert.All(lignes, l => Assert.Equal(7, l.Disponible));
+    }
+
+    [Fact]
+    public void Ce_qui_depasse_la_derniere_colonne_continue_vers_le_bas()
+    {
+        // Huit lignes pour trois colonnes de deux : les deux dernières débordent sous
+        // la troisième colonne au lieu d'être tronquées. Tronquer livrerait un PDF
+        // amputé sans le dire — c'est le poste A2, et il n'est pas écrit.
+        var lignes = Composer("a\nb\nc\nd\ne\nf\ng\nh", 34, 2, Trois);
+
+        Assert.Equal([0, 0, 1, 1, 2, 2, 2, 2], lignes.Select(l => l.Colonne));
+        Assert.Equal([0, 1, 0, 1, 0, 1, 2, 3], lignes.Select(l => l.Haut));
+    }
+
+    [Fact]
+    public void Une_ligne_plus_haute_que_la_colonne_garde_la_sienne()
+    {
+        // Sans garde-fou, une ligne qui ne tient nulle part traverserait toutes les
+        // colonnes sans rien écrire dans aucune. Deux lignes, hauteur d'une demie :
+        // chacune prend une colonne, aucune n'est sautée.
+        var lignes = Composer("a\nb", 34, 0.5, Trois);
+
+        Assert.Equal([0, 1], lignes.Select(l => l.Colonne));
+        Assert.Equal([0, 0], lignes.Select(l => l.Haut));
+    }
+
+    [Fact]
+    public void Une_hauteur_nulle_ne_disperse_pas_le_texte()
+    {
+        // Un bloc plus petit que ses marges intérieures rend une hauteur nulle ou
+        // négative. Rompre à chaque ligne éparpillerait le texte sur toutes les
+        // colonnes : on ne rompt pas du tout, et le bloc reste lisible.
+        var lignes = Composer("a\nb\nc\nd", 34, 0, Trois);
+
+        Assert.All(lignes, l => Assert.Equal(0, l.Colonne));
+        Assert.Equal([0, 1, 2, 3], lignes.Select(l => l.Haut));
+    }
+
+    [Fact]
+    public void Un_nombre_de_colonnes_absurde_vaut_une_colonne()
+    {
+        // Un import ou un fichier écrit à la main peut porter zéro, ou un nombre
+        // négatif. Le document doit rester lisible.
+        foreach (var nombre in new[] { 0, -3 })
+        {
+            var lignes = Composer("un deux trois", 10, 3, new Colonnage(nombre, 2));
+
+            Assert.All(lignes, l => Assert.Equal(0, l.Colonne));
+            Assert.All(lignes, l => Assert.Equal(10, l.Disponible));
+        }
+    }
+
+    [Fact]
+    public void Une_gouttiere_plus_large_que_le_bloc_ne_fait_pas_boucler_la_decoupe()
+    {
+        var lignes = Composer("un deux trois", 10, 100, new Colonnage(3, 40));
+
+        Assert.Equal(["un", "deux", "trois"], lignes.Select(l => l.Texte));
+        Assert.All(lignes, l => Assert.Equal(1, l.Disponible));
+    }
+
+    [Fact]
+    public void Lespace_avant_sapplique_aussi_en_tete_de_colonne()
+    {
+        // Choisi sans mesure, comme l'espace avant du premier paragraphe du bloc en R2 :
+        // le relevé des deux .pub ne porte aucun fo:margin-top. Ce qui compte est que
+        // les deux cas soient tranchés une fois, et de la même façon.
+        var lignes = Composer("a\nb\nc\nd", 34, 4, Trois, Reglage(avant: 1));
+
+        Assert.Equal([0, 0, 1, 1], lignes.Select(l => l.Colonne));
+        Assert.Equal([1, 3, 1, 3], lignes.Select(l => l.Haut));
+    }
+
+    [Fact]
+    public void Une_ligne_coupee_par_une_colonne_reste_justifiable()
+    {
+        // Une ligne que la rupture de colonne sépare de la suite de son paragraphe
+        // n'est pas la dernière de ce paragraphe : elle se justifie encore, et sur la
+        // largeur de sa colonne. La croire finie la laisserait courte au bas d'une
+        // colonne, seule ligne du bloc à ne pas atteindre le bord.
+        var lignes = Composer("un deux trois quatre", 34, 1, Trois);
+
+        Assert.Equal([0, 1, 2], lignes.Select(l => l.Colonne));
+        Assert.Equal([false, false, true], lignes.Select(l => l.FinDeParagraphe));
+        Assert.All(lignes, l => Assert.Equal(10, l.Disponible));
+    }
+
+    [Fact]
+    public void La_hauteur_reclamee_est_celle_de_la_colonne_la_plus_remplie()
+    {
+        // Et non la somme des colonnes : un bloc de trois colonnes pleines réclame la
+        // hauteur d'une seule. C'est ce que A2 aura à comparer à celle du bloc.
+        var lignes = Composer("a\nb\nc\nd\ne", 34, 2, Trois);
+
+        Assert.Equal(2, Compositeur.Hauteur(lignes), precision: 9);
+    }
+
+    [Fact]
+    public void Linterligne_deplace_la_rupture_de_colonne()
+    {
+        // La rupture se décide sur l'avance, pas sur le corps : le même texte dans le
+        // même bloc tient à deux lignes par colonne à interligne 1, et à une seule à
+        // interligne 2. Un rendu qui appliquerait un autre interligne que celui de la
+        // composition dessinerait des colonnes coupées ailleurs qu'il ne les remplit.
+        var serre = Composer("a\nb\nc", 34, 2, Trois, interligne: 1);
+        var large = Composer("a\nb\nc", 34, 2, Trois, interligne: 2);
+
+        Assert.Equal([0, 0, 1], serre.Select(l => l.Colonne));
+        Assert.Equal([0, 1, 2], large.Select(l => l.Colonne));
+        Assert.All(large, l => Assert.Equal(2, l.Avance));
     }
 }

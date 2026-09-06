@@ -210,31 +210,30 @@ public static class PdfExporter
         var metriques = new MetriquesPdf(gfx);
         var commun = Commun(text);
         var lignes = Compositeur.Composer(
-            content, fragments, commun, ecarts, text.Paragraph, box.Width, metriques);
+            content, fragments, commun, ecarts, text.Paragraph,
+            box.Width, box.Height, text.Colonnage, text.LineHeight, metriques);
         if (lignes.Count == 0) return;
-
-        // L'interligne supplémentaire se répartit de part et d'autre de la ligne et
-        // non entièrement en dessous : convention typographique, celle de CSS et celle
-        // d'Avalonia. Sans ce demi-interligne, l'écran et le PDF décalaient de 2 pt à
-        // interligne 1,25 — assez pour que les deux rendus ne se superposent plus.
-        var haut = box.Top;
 
         foreach (var ligne in lignes)
         {
-            // L'espace avant le paragraphe s'ajoute avant de poser la ligne, celui
-            // d'après une fois l'avance faite. Le même ordre qu'à l'écran : l'inverser
-            // d'un côté décalerait tout ce qui suit.
-            haut += ligne.EspaceAvant;
-
-            var avance = Compositeur.Avance(ligne.Naturelle, text.LineHeight);
-            var ligneDeBase = haut + (avance - ligne.Naturelle) / 2 + Montee(ligne, metriques);
+            // Rien ne se cumule ici : la ligne porte son ordonnée dans sa colonne, et
+            // l'espace avant le paragraphe y est déjà entré. Cumuler de ce côté et de
+            // celui de l'écran remettrait en jeu, à chaque ligne, l'accord des deux.
+            //
+            // L'interligne supplémentaire se répartit de part et d'autre de la ligne et
+            // non entièrement en dessous : convention typographique, celle de CSS et celle
+            // d'Avalonia. Sans ce demi-interligne, l'écran et le PDF décalaient de 2 pt à
+            // interligne 1,25 — assez pour que les deux rendus ne se superposent plus.
+            var ligneDeBase = box.Top + ligne.Haut
+                              + (ligne.Avance - ligne.Naturelle) / 2 + Montee(ligne, metriques);
 
             if (ligne.Morceaux.Count > 0)
             {
                 var justifiee = text.Align == TextAlign.Justify && !ligne.FinDeParagraphe;
-                // Le retrait déplace le bord gauche de la ligne ; « Disponible » est ce
-                // qui reste entre les deux retraits. C'est cette largeur-là, et non
-                // celle du bloc, qui cale un centrage ou un fer à droite.
+                // Le retrait déplace le bord gauche de la ligne, gouttières comprises ;
+                // « Disponible » est ce qui reste entre les deux retraits, dans sa
+                // colonne. C'est cette largeur-là, et non celle du bloc, qui cale un
+                // centrage ou un fer à droite.
                 var gauche = box.Left + ligne.Retrait;
                 var origine = justifiee ? gauche : text.Align switch
                 {
@@ -266,8 +265,6 @@ public static class PdfExporter
                         new XPoint(origine + morceau.X + decalages[m], y));
                 }
             }
-
-            haut += avance + ligne.EspaceApres;
         }
     }
 

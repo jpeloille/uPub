@@ -53,6 +53,31 @@ public readonly record struct Extent(double Left, double Top, double Right, doub
 public readonly record struct Insets(double Left, double Top, double Right, double Bottom);
 
 /// <summary>
+/// Le découpage d'un bloc de texte en colonnes : leur nombre et la gouttière qui les
+/// sépare, en points. Un nombre et une distance dans le même type parce qu'ils ne se
+/// lisent jamais l'un sans l'autre, et parce que deux <c>double</c> voisins dans une
+/// liste de paramètres se laissent intervertir sans que rien ne le dise.
+///
+/// C'est le pendant, pour le bloc, de <c>fo:column-count</c> et <c>fo:column-gap</c>.
+/// À ne pas confondre avec les colonnes du document (poste C2a), qui sont des repères
+/// d'aimantation posés sur la page : ici le texte coule d'une colonne à l'autre à
+/// l'intérieur d'un seul bloc.
+/// </summary>
+public readonly record struct Colonnage(int Nombre, double Gouttiere)
+{
+    /// <summary>
+    /// Largeur d'une colonne dans un bloc large de <paramref name="largeur"/>. Une
+    /// gouttière plus large que le bloc rendrait une largeur négative : on laisse un
+    /// point plutôt que de refuser de composer, même règle qu'un retrait trop grand.
+    /// </summary>
+    public double Largeur(double largeur) =>
+        Math.Max(1, (largeur - (Math.Max(1, Nombre) - 1) * Gouttiere) / Math.Max(1, Nombre));
+
+    /// <summary>D'un bord gauche de colonne au suivant.</summary>
+    public double Pas(double largeur) => Largeur(largeur) + Gouttiere;
+}
+
+/// <summary>
 /// Bloc positionné sur une page. Toutes les coordonnées sont en points, l'origine
 /// est le coin supérieur gauche de la page, l'axe Y descend (comme en PDF).
 /// Ce modèle ne référence aucun type Avalonia : il est partagé tel quel par le
@@ -478,12 +503,41 @@ public partial class TextFrame : Frame
     public ObservableCollection<ParagraphSpan> Paragraphs { get; set; } = [];
 
     /// <summary>
+    /// Nombre de colonnes à l'intérieur du bloc (<c>fo:column-count</c>). Une seule est
+    /// le cas de tous les documents écrits jusqu'ici, et compose exactement comme avant :
+    /// c'est pourquoi cette addition ne demande aucune migration et laisse
+    /// <c>FormatVersion</c> à 3.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Colonnage))]
+    [property: JsonPropertyOrder(300)]
+    private int _columns = 1;
+
+    /// <summary>
+    /// Gouttière entre deux colonnes, en points (<c>fo:column-gap</c>). Sans effet tant
+    /// que le bloc n'a qu'une colonne.
+    ///
+    /// La valeur par défaut est celle que portent les neuf blocs d'ATA 21 : 0,0787 in,
+    /// soit 2 mm exactement, soit 5,67 pt — le défaut métrique de Publisher, qu'il pose
+    /// sur toute zone de texte qu'on crée. Zéro aurait aussi bien fait l'affaire pour la
+    /// non-régression, la gouttière ne servant pas à une colonne ; mais elle aurait fait
+    /// se toucher les colonnes le jour où l'on passe le nombre à deux.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Colonnage))]
+    [property: JsonPropertyOrder(310)]
+    private double _columnGap = 5.67;
+
+    /// <summary>
     /// Les cinq réglages d'un seul tenant, pour la composition — comme
     /// <see cref="Padding"/> pour les marges.
     /// </summary>
     [JsonIgnore]
     public ParagrapheEffectif Paragraph =>
         new(IndentLeft, IndentRight, IndentFirstLine, SpaceBefore, SpaceAfter);
+
+    /// <summary>Le découpage en colonnes d'un seul tenant, pour la composition.</summary>
+    [JsonIgnore] public Colonnage Colonnage => new(Columns, ColumnGap);
 
     /// <summary>Le texte de ce bloc est calculé : il ne se saisit pas sur la page.</summary>
     [JsonIgnore] public bool HasField => Field != FieldKind.None;
@@ -506,7 +560,8 @@ public partial class TextFrame : Frame
             LineHeight = LineHeight, PaddingLeft = PaddingLeft, PaddingTop = PaddingTop,
             PaddingRight = PaddingRight, PaddingBottom = PaddingBottom, Field = Field,
             IndentLeft = IndentLeft, IndentRight = IndentRight,
-            IndentFirstLine = IndentFirstLine, SpaceBefore = SpaceBefore, SpaceAfter = SpaceAfter
+            IndentFirstLine = IndentFirstLine, SpaceBefore = SpaceBefore, SpaceAfter = SpaceAfter,
+            Columns = Columns, ColumnGap = ColumnGap
         };
         // Les fragments comme les écarts de paragraphe sont copiés et non partagés :
         // deux blocs issus d'une duplication doivent pouvoir diverger.

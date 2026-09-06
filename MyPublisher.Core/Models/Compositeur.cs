@@ -20,20 +20,30 @@ public readonly record struct Morceau(string Texte, StyleEffectif Style, double 
 /// largeur du bloc.
 ///
 /// <paramref name="Retrait"/> est l'abscisse où la ligne commence, comptée depuis le
-/// bord gauche de la zone de texte ; <paramref name="Disponible"/> ce qui lui reste
-/// jusqu'au bord droit. Les deux sont calculés ici, une fois, et non dans chacun des
-/// deux rendus : la cible d'une ligne justifiée, d'un fer à droite ou d'un centrage
-/// est cette largeur-là et non celle du bloc. C'est le point où l'écran et l'export
-/// auraient divergé le plus facilement, et sans que rien ne le signale — ils se
+/// bord gauche de la zone de texte, **gouttières comprises** : une ligne de la deuxième
+/// colonne porte déjà le pas qui l'y amène. <paramref name="Disponible"/> est ce qui lui
+/// reste jusqu'au bord droit de **sa** colonne. Les deux sont calculés ici, une fois, et
+/// non dans chacun des deux rendus : la cible d'une ligne justifiée, d'un fer à droite ou
+/// d'un centrage est cette largeur-là et non celle du bloc. C'est le point où l'écran et
+/// l'export auraient divergé le plus facilement, et sans que rien ne le signale — ils se
 /// seraient trompés ensemble.
 ///
 /// <paramref name="EspaceAvant"/> et <paramref name="EspaceApres"/> ne portent que sur
 /// la première et la dernière ligne du paragraphe : les lignes du milieu valent zéro,
 /// si bien qu'un rendu peut les ajouter sans se demander où il en est.
+///
+/// <paramref name="Colonne"/>, <paramref name="Haut"/> et <paramref name="Avance"/>
+/// achèvent de poser la ligne : sa colonne, l'ordonnée de son sommet **dans cette
+/// colonne** — espace avant déjà consommé — et de combien la suivante descend. Les trois
+/// viennent d'ici pour la même raison que le retrait : le passage d'une colonne à l'autre
+/// se décide sur une hauteur cumulée, et deux rendus qui la cumuleraient chacun de son
+/// côté finiraient par ne pas couper au même endroit. Un rendu n'a donc plus rien à
+/// additionner ; il lit.
 /// </summary>
 public readonly record struct LigneComposee(
     IReadOnlyList<Morceau> Morceaux, double Largeur, double Naturelle, bool FinDeParagraphe,
-    double Retrait, double Disponible, double EspaceAvant, double EspaceApres)
+    double Retrait, double Disponible, double EspaceAvant, double EspaceApres,
+    int Colonne, double Haut, double Avance)
 {
     public string Texte => string.Concat(Morceaux.Select(m => m.Texte));
 }
@@ -68,24 +78,45 @@ public static class Compositeur
     }
 
     /// <summary>
-    /// Compose un bloc : découpe le texte selon ses fragments de style, puis répartit
-    /// les morceaux en lignes qui tiennent dans <paramref name="largeur"/>, retraits de
-    /// paragraphe déduits.
+    /// Compose un bloc : découpe le texte selon ses fragments de style, répartit les
+    /// morceaux en lignes qui tiennent dans une colonne, retraits de paragraphe déduits,
+    /// puis range ces lignes dans les colonnes du bloc.
     ///
-    /// Les cinq paramètres de contenu sont ce que le bloc dit — le style commun et ses
-    /// écarts, les réglages de paragraphe communs et les leurs — et les deux derniers
-    /// ce que la page impose. Aucun n'est facultatif : un paramètre à valeur par défaut
-    /// serait exactement le moyen pour un des deux rendus de garder l'ancien
+    /// Les cinq premiers paramètres sont ce que le bloc dit — le style commun et ses
+    /// écarts, les réglages de paragraphe communs et les leurs — et les quatre suivants
+    /// ce que sa géométrie impose. Aucun n'est facultatif : un paramètre à valeur par
+    /// défaut serait exactement le moyen pour un des deux rendus de garder l'ancien
     /// comportement sans que rien ne l'annonce, et c'est ce que R1 a été écrit pour
     /// empêcher.
+    ///
+    /// <paramref name="hauteur"/> et <paramref name="interligne"/> n'étaient pas
+    /// nécessaires tant qu'un bloc n'avait qu'une colonne : ils le deviennent parce que
+    /// le passage à la colonne suivante est une décision verticale, et qu'on ne la prend
+    /// qu'en sachant de combien chaque ligne descend.
+    ///
+    /// Ce qui dépasse la **dernière** colonne continue vers le bas, hors du bloc, comme
+    /// un texte trop long le fait aujourd'hui dans un bloc d'une seule colonne. Rien
+    /// n'est tronqué : couper ici livrerait un PDF amputé sans le dire, ce que le poste
+    /// A2 est justement chargé d'empêcher, et il n'est pas écrit. La règle « une seule
+    /// colonne » devient ainsi un cas particulier de la règle générale, et non un chemin
+    /// de code à part — c'est ce qui garantit qu'aucun document existant ne bouge. Ce
+    /// qu'il faudra à A2 est déjà là : la dernière ligne porte son <c>Haut</c> et son
+    /// <c>Avance</c> dans sa colonne, et <see cref="Hauteur"/> en fait la somme.
     /// </summary>
     public static IReadOnlyList<LigneComposee> Composer(
         string texte, IReadOnlyList<StyleSpan> fragments, StyleEffectif commun,
         IReadOnlyList<ParagraphSpan> ecarts, ParagrapheEffectif communParagraphe,
-        double largeur, IMetriques metriques)
+        double largeur, double hauteur, Colonnage colonnes, double interligne,
+        IMetriques metriques)
     {
         var lignes = new List<LigneComposee>();
         if (string.IsNullOrEmpty(texte)) return lignes;
+
+        // Le texte est composé une fois pour la largeur d'UNE colonne : toutes ont la
+        // même, la découpe ne dépend donc pas de celle où la ligne atterrira. C'est ce
+        // qui permet de ranger les lignes en colonnes dans une seconde passe, sans
+        // toucher au renvoi à la ligne.
+        var largeurColonne = colonnes.Largeur(largeur);
 
         // Un mot porte son style ; c'est l'unité que la découpe déplace d'une ligne
         // à l'autre. Un mot que deux fragments se partagent devient deux unités
@@ -104,7 +135,7 @@ public static class Compositeur
         var paragraphe = 0;
         var premiereLigne = true;
         var retrait = 0.0;
-        var disponible = largeur;
+        var disponible = largeurColonne;
         Cadrer();
 
         // Le cadre de la ligne à venir. Il change deux fois : au passage à la ligne,
@@ -117,7 +148,7 @@ public static class Compositeur
             // Une largeur nulle ou négative — un retrait plus large que le bloc — ferait
             // renvoyer à la ligne un mot qui n'y tiendrait pas davantage. On laisse un
             // point plutôt que de refuser de composer.
-            disponible = Math.Max(1, largeur - retrait - reglage.IndentRight);
+            disponible = Math.Max(1, largeurColonne - retrait - reglage.IndentRight);
         }
 
         ParagrapheEffectif Reglage() => reglages[Math.Min(paragraphe, reglages.Count - 1)];
@@ -149,11 +180,14 @@ public static class Compositeur
 
             var reglage = Reglage();
 
+            // Colonne, hauteur et avance restent à zéro : c'est la seconde passe qui les
+            // pose, une fois qu'on sait combien chaque ligne mesure.
             lignes.Add(new LigneComposee(
                 [.. courante], largeurCourante, naturelle, finDeParagraphe,
                 retrait, disponible,
                 premiereLigne ? reglage.SpaceBefore : 0,
-                finDeParagraphe ? reglage.SpaceAfter : 0));
+                finDeParagraphe ? reglage.SpaceAfter : 0,
+                Colonne: 0, Haut: 0, Avance: 0));
 
             courante.Clear();
             largeurCourante = 0;
@@ -199,7 +233,65 @@ public static class Compositeur
             lignes[i] = lignes[i] with { Morceaux = morceaux };
         }
 
+        Ranger(lignes, largeur, hauteur, colonnes, interligne);
         return lignes;
+    }
+
+    /// <summary>
+    /// Range les lignes composées dans les colonnes du bloc : chacune reçoit sa colonne,
+    /// l'ordonnée de son sommet dans cette colonne, son avance, et le pas qui la porte
+    /// jusqu'à sa gouttière.
+    ///
+    /// La règle est celle qu'on lit : on remplit une colonne tant que la ligne suivante y
+    /// tient, et on passe à la suivante sinon — quitte à couper un paragraphe en deux,
+    /// puisque c'est ce que veut dire « le texte coule ». Trois garde-fous, chacun contre
+    /// une faute qui ne se verrait pas :
+    ///
+    /// une colonne vide ne se quitte jamais, sinon une ligne plus haute que la colonne
+    /// traverserait le bloc entier en n'écrivant nulle part ; une hauteur nulle ou
+    /// négative — un bloc plus petit que ses marges — ne fait rompre aucune colonne,
+    /// sinon chaque ligne partirait dans la sienne ; et la dernière colonne ne rompt
+    /// pas, ce qui rend au bloc d'une seule colonne exactement le comportement qu'il
+    /// avait avant ce poste, sans chemin de code séparé.
+    /// </summary>
+    private static void Ranger(
+        List<LigneComposee> lignes, double largeur, double hauteur, Colonnage colonnes,
+        double interligne)
+    {
+        var derniere = Math.Max(1, colonnes.Nombre) - 1;
+        var pas = colonnes.Pas(largeur);
+
+        var colonne = 0;
+        var haut = 0.0;
+
+        for (var i = 0; i < lignes.Count; i++)
+        {
+            var ligne = lignes[i];
+            var avance = Avance(ligne.Naturelle, interligne);
+
+            if (colonne < derniere && haut > 0 && hauteur > 0
+                && haut + ligne.EspaceAvant + avance > hauteur)
+            {
+                colonne++;
+                haut = 0;
+            }
+
+            // L'espace avant s'applique même en tête de colonne, comme il s'applique au
+            // premier paragraphe du bloc. Choisi sans mesure — le relevé des deux .pub ne
+            // porte aucun fo:margin-top —, mais choisi une fois pour les deux cas plutôt
+            // que deux fois différemment.
+            haut += ligne.EspaceAvant;
+
+            lignes[i] = ligne with
+            {
+                Colonne = colonne,
+                Haut = haut,
+                Avance = avance,
+                Retrait = ligne.Retrait + colonne * pas,
+            };
+
+            haut += avance + ligne.EspaceApres;
+        }
     }
 
     private readonly record struct Unite(string Texte, StyleEffectif Style, bool FinDeLigne);
@@ -325,14 +417,21 @@ public static class Compositeur
     }
 
     /// <summary>
-    /// Hauteur totale d'un texte composé. L'avance d'une ligne dépend de sa propre
-    /// hauteur naturelle : un paragraphe qui contient un mot en gros corps s'ouvre
-    /// à cet endroit-là et pas ailleurs. L'espace avant et après le paragraphe s'y
-    /// ajoute, comme il s'ajoute au rendu — c'est la même somme, sinon la mesure de
-    /// débordement mentirait dès qu'un document se sert de l'espacement.
+    /// Hauteur qu'un texte composé réclame, colonnes comprises : celle de la colonne la
+    /// plus remplie, et non la somme de toutes. L'avance d'une ligne dépend de sa propre
+    /// hauteur naturelle — un paragraphe qui contient un mot en gros corps s'ouvre à cet
+    /// endroit-là et pas ailleurs — et l'espace avant comme après le paragraphe s'y
+    /// ajoute, comme il s'ajoute au rendu : sinon la mesure de débordement mentirait dès
+    /// qu'un document se sert de l'espacement.
     /// </summary>
-    public static double Hauteur(IReadOnlyList<LigneComposee> lignes, double multiple) =>
-        lignes.Sum(l => l.EspaceAvant + Avance(l.Naturelle, multiple) + l.EspaceApres);
+    /// <remarks>
+    /// L'interligne n'est plus un paramètre depuis R3, pour la raison qui avait ôté sa
+    /// largeur à <see cref="Decalages"/> : la composition l'a déjà appliqué pour décider
+    /// des ruptures de colonne, et un appelant qui en aurait passé un autre ici aurait
+    /// mesuré un texte que personne ne dessine.
+    /// </remarks>
+    public static double Hauteur(IReadOnlyList<LigneComposee> lignes) =>
+        lignes.Count == 0 ? 0 : lignes.Max(l => l.Haut + l.Avance + l.EspaceApres);
 
     /// <summary>
     /// Avance d'une ligne à la suivante. <paramref name="naturelle"/> est la hauteur

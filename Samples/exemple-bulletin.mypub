@@ -81,7 +81,9 @@
           "IndentFirstLine": 0,
           "SpaceBefore": 0,
           "SpaceAfter": 0,
-          "Paragraphs": []
+          "Paragraphs": [],
+          "Columns": 1,
+          "ColumnGap": 5.67
         },
         {
           "$kind": "text",
@@ -115,7 +117,9 @@
           "IndentFirstLine": 0,
           "SpaceBefore": 0,
           "SpaceAfter": 0,
-          "Paragraphs": []
+          "Paragraphs": [],
+          "Columns": 1,
+          "ColumnGap": 5.67
         },
         {
           "$kind": "text",
@@ -149,7 +153,9 @@
           "IndentFirstLine": 0,
           "SpaceBefore": 0,
           "SpaceAfter": 0,
-          "Paragraphs": []
+          "Paragraphs": [],
+          "Columns": 1,
+          "ColumnGap": 5.67
         },
         {
           "$kind": "text",
@@ -183,7 +189,9 @@
           "IndentFirstLine": 0,
           "SpaceBefore": 0,
           "SpaceAfter": 0,
-          "Paragraphs": []
+          "Paragraphs": [],
+          "Columns": 1,
+          "ColumnGap": 5.67
         },
         {
           "$kind": "text",
@@ -217,7 +225,9 @@
           "IndentFirstLine": 0,
           "SpaceBefore": 0,
           "SpaceAfter": 0,
-          "Paragraphs": []
+          "Paragraphs": [],
+          "Columns": 1,
+          "ColumnGap": 5.67
         },
         {
           "$kind": "shape",
@@ -266,7 +276,9 @@
           "IndentFirstLine": 0,
           "SpaceBefore": 0,
           "SpaceAfter": 0,
-          "Paragraphs": []
+          "Paragraphs": [],
+          "Columns": 1,
+          "ColumnGap": 5.67
         },
         {
           "$kind": "shape",
@@ -315,7 +327,9 @@
           "IndentFirstLine": 0,
           "SpaceBefore": 0,
           "SpaceAfter": 0,
-          "Paragraphs": []
+          "Paragraphs": [],
+          "Columns": 1,
+          "ColumnGap": 5.67
         },
         {
           "$kind": "shape",
@@ -364,7 +378,9 @@
           "IndentFirstLine": 0,
           "SpaceBefore": 0,
           "SpaceAfter": 0,
-          "Paragraphs": []
+          "Paragraphs": [],
+          "Columns": 1,
+          "ColumnGap": 5.67
         }
       ]
     },
@@ -403,7 +419,9 @@
           "IndentFirstLine": 0,
           "SpaceBefore": 0,
           "SpaceAfter": 0,
-          "Paragraphs": []
+          "Paragraphs": [],
+          "Columns": 1,
+          "ColumnGap": 5.67
         },
         {
           "$kind": "shape",
@@ -452,7 +470,9 @@
           "IndentFirstLine": 0,
           "SpaceBefore": 0,
           "SpaceAfter": 0,
-          "Paragraphs": []
+          "Paragraphs": [],
+          "Columns": 1,
+          "ColumnGap": 5.67
         },
         {
           "$kind": "shape",
@@ -501,7 +521,9 @@
           "IndentFirstLine": 0,
           "SpaceBefore": 0,
           "SpaceAfter": 0,
-          "Paragraphs": []
+          "Paragraphs": [],
+          "Columns": 1,
+          "ColumnGap": 5.67
         },
         {
           "$kind": "text",
@@ -535,7 +557,9 @@
           "IndentFirstLine": 0,
           "SpaceBefore": 0,
           "SpaceAfter": 0,
-          "Paragraphs": []
+          "Paragraphs": [],
+          "Columns": 1,
+          "ColumnGap": 5.67
         },
         {
           "$kind": "text",
@@ -569,7 +593,9 @@
           "IndentFirstLine": 0,
           "SpaceBefore": 0,
           "SpaceAfter": 0,
-          "Paragraphs": []
+          "Paragraphs": [],
+          "Columns": 1,
+          "ColumnGap": 5.67
         },
         {
           "$kind": "text",
@@ -603,7 +629,9 @@
           "IndentFirstLine": 0,
           "SpaceBefore": 0,
           "SpaceAfter": 0,
-          "Paragraphs": []
+          "Paragraphs": [],
+          "Columns": 1,
+          "ColumnGap": 5.67
         },
         {
           "$kind": "shape",
@@ -652,7 +680,9 @@
           "IndentFirstLine": 0,
           "SpaceBefore": 0,
           "SpaceAfter": 0,
-          "Paragraphs": []
+          "Paragraphs": [],
+          "Columns": 1,
+          "ColumnGap": 5.67
         }
       ]
     }

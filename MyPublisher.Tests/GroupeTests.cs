@@ -64,6 +64,48 @@ public class GroupeTests
         Assert.False(double.IsNaN(enfant.X));
     }
 
+    [Fact]
+    public void Reduire_un_groupe_retrecit_les_colonnes_dun_bloc_sans_toucher_a_sa_gouttiere()
+    {
+        // Le groupe met ses blocs à l'échelle, et il ne met à l'échelle que la
+        // géométrie : la gouttière reste ce qu'elle est, comme le corps du texte, que
+        // C3c laisse déjà tranquille — « un bloc de texte élargi recompose son texte,
+        // il ne le grossit pas ». Ce sont les colonnes qui rétrécissent, pas ce qui les
+        // sépare. Décidé plutôt que subi : rien dans le modèle ne l'imposait.
+        var groupe = new GroupFrame { X = 0, Y = 0, Width = 320, Height = 100 };
+        var texte = new TextFrame
+        {
+            X = 0, Y = 0, Width = 320, Height = 100,
+            Columns = 3, ColumnGap = 10, FontSize = 12,
+        };
+        groupe.Children.Add(texte);
+
+        groupe.Width = 160;   // moitié moins large
+
+        Assert.Equal(160, texte.Width, precision: 9);
+        Assert.Equal(3, texte.Columns);
+        Assert.Equal(10, texte.ColumnGap, precision: 9);
+        // (160 − 2 × 10) / 3, et non la moitié des 100 pt de départ.
+        Assert.Equal(140.0 / 3, texte.Colonnage.Largeur(texte.Width), precision: 9);
+    }
+
+    [Fact]
+    public void Un_bloc_ecrase_par_son_groupe_garde_des_colonnes_composables()
+    {
+        // Poussé à l'absurde : le groupe réduit le bloc au-dessous de ses gouttières.
+        // La largeur d'une colonne devient négative avant d'être ramenée à un point —
+        // le texte sera illisible, mais il sera là, et rien ne bouclera. C'est la même
+        // règle que pour un retrait plus large que le bloc.
+        var groupe = new GroupFrame { X = 0, Y = 0, Width = 320, Height = 100 };
+        var texte = new TextFrame { X = 0, Y = 0, Width = 320, Height = 100, Columns = 3, ColumnGap = 40 };
+        groupe.Children.Add(texte);
+
+        groupe.Width = 32;   // dix fois moins large : 32 − 2 × 40 est négatif
+
+        Assert.Equal(1, texte.Colonnage.Largeur(texte.Width), precision: 9);
+        Assert.False(double.IsNaN(texte.Colonnage.Pas(texte.Width)));
+    }
+
     [Theory]
     [InlineData(0)]
     [InlineData(30)]

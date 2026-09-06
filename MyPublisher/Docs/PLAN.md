@@ -53,16 +53,16 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **C7** | Bibliothèque de blocs | 0 % | Débloqué depuis C3a |
 | **R1** | Texte riche : fragments de style | **100 %** | `Spans` sur le bloc ; l'écran et l'export passent par la même composition ; recette dans `Scripts/recettes/` |
 | **R2** | Retraits et espacement de paragraphe | **100 %** | Cinq réglages sur le bloc, des écarts par indice de paragraphe ; la ligne composée porte son retrait et sa largeur |
-| **R3** | Colonnes à l'intérieur d'un bloc | 0 % | Posées sur 25 des 27 blocs de texte réels. Autre chose que C2a |
+| **R3** | Colonnes à l'intérieur d'un bloc | **100 %** | Nombre et gouttière sur le bloc ; la ligne composée porte sa colonne et son ordonnée. Autre chose que C2a |
 | **R4** | Interligne : une seule mesure | **100 %** | Multiple de la hauteur naturelle ; écran et PDF concordent au pixel |
 | **R5** | **Ouvrir un `.pub`** | 0 % | Exigé le 6 septembre 2026. Lecture par `pub2raw` ; ce que l'import restitue mesure l'avancement de R1–R4 et C9 |
 | **D** | Moteur de composition | — | Décision non ouverte ; à rouvrir quand A, B et C sont livrées |
 
-**Par phase** — P : 3 sur 3 · A : 0 sur 7 · B : 1 sur 5 · C : 5 sur 7 · R : 3 sur 5 ·
+**Par phase** — P : 3 sur 3 · A : 0 sur 7 · B : 1 sur 5 · C : 5 sur 7 · R : 4 sur 5 ·
 D : non planifié. La ligne comptait 22 postes et ignorait la phase R, apparue le
 6 septembre 2026 ; elle la compte désormais.
 
-Soit **12 postes sur 27**. C'est un compte de postes et non d'effort : C3 pesait à lui
+Soit **13 postes sur 27**. C'est un compte de postes et non d'effort : C3 pesait à lui
 seul plus que toute la phase A, et les préalables ne produisaient aucune fonctionnalité.
 Le tableau dit ce qui est clos, pas ce qui reste à peiner.
 
@@ -781,6 +781,174 @@ quatre propriétés et s'y tient.
 *Choisi sans certitude* : l'espace avant s'applique aussi au premier paragraphe du bloc,
 qui descend donc sous sa marge intérieure haute. C'est ce que fait Publisher dans une
 zone de texte ; le relevé ne tranche pas, n'ayant aucun `fo:margin-top`.
+
+### R3 — Colonnes à l'intérieur d'un bloc
+
+*Fait le 6 septembre 2026.* Le bloc de texte gagne un nombre de colonnes — une par
+défaut — et une gouttière. Le texte remplit la première colonne jusqu'au bas du bloc,
+puis passe à la suivante, quitte à couper un paragraphe en deux : c'est ce que veut dire
+« le texte coule ». La largeur qui sert à la découpe n'est plus celle du bloc mais celle
+d'une colonne, `(largeur − (n − 1) × gouttière) / n`.
+
+**Ce n'est pas C2a**, et le panneau le dit maintenant en toutes lettres : C2a pose des
+colonnes sur la **page**, comme repères d'aimantation ; celles-ci sont **dans un bloc**,
+et rien n'est partagé entre les deux — ni propriété, ni calcul.
+
+**La composition range elle-même les lignes en colonnes**, en une seconde passe qui ne
+touche pas au renvoi à la ligne : toutes les colonnes ayant la même largeur, la découpe
+ne dépend pas de celle où la ligne atterrira. La ligne composée porte désormais sa
+colonne, l'ordonnée de son sommet **dans cette colonne** et son avance ; `Composer` a
+reçu pour cela la hauteur du bloc et l'interligne, et `Hauteur` a **perdu** son
+paramètre d'interligne.
+
+C'est le geste de R2 poussé d'un cran, et pour la même raison. Jusqu'ici chaque rendu
+cumulait sa propre hauteur de ligne en ligne ; c'était sans conséquence tant qu'une
+divergence de métrique ne produisait qu'une dérive continue de quelques centièmes de
+point. **Avec les colonnes, cette dérive devient une falaise** : une ligne posée près
+d'un bord de colonne tomberait dans la colonne 1 à l'écran et dans la colonne 2 au PDF,
+pour un écart de métrique bien inférieur au point. Un seul endroit décide donc, et les
+deux rendus lisent. Aucun des deux n'additionne plus rien.
+
+**Ce qui dépasse la dernière colonne continue vers le bas**, hors du bloc, exactement
+comme un texte trop long le fait aujourd'hui dans un bloc d'une seule colonne. Rien
+n'est tronqué, et c'est délibéré : couper ici livrerait un PDF amputé sans le dire, ce
+que le poste **A2** est justement chargé d'empêcher — et A2 n'est pas écrit. La règle
+« une seule colonne » devient ainsi un cas particulier de la règle générale et non un
+chemin de code à part, ce qui est la vraie garantie qu'aucun document existant ne bouge.
+A2 trouvera d'ailleurs son compte tout fait : la dernière ligne porte son `Haut` et son
+`Avance` dans sa colonne, et `Compositeur.Hauteur` rend la hauteur de la colonne la plus
+remplie — non la somme des colonnes.
+
+`FormatVersion` reste à 3. Une colonne et une gouttière inerte composent exactement
+comme avant, et c'est ce qui dispense de migration — le même mécanisme qu'ont employé
+R1 et R2.
+
+**La non-régression a été mesurée avant de toucher au code**, et c'est la seule façon de
+la mesurer : les sept documents du dépôt ont été exportés et rendus à l'écran *avant* le
+poste, puis à nouveau *après*, une fois les fichiers régénérés par le sérialiseur.
+**Vingt images, écran et PDF, toutes pages : zéro pixel de différence.** Comparer les
+JSON n'aurait rien prouvé — ils changent forcément, le sérialiseur écrivant les deux
+propriétés neuves ; ce sont les images qu'il fallait confronter.
+
+Ce que ce zéro dit, et ce qu'il ne dit pas : les vingt images ne portent que des blocs
+d'une seule colonne — c'est précisément ce qui en fait le bon témoin de non-régression,
+et c'est aussi pourquoi il ne prouve rien sur les colonnes elles-mêmes. Celles-ci
+reposent sur la recette et sur `ColonnesTests`, et sur rien d'autre.
+
+*Décidé, et non subi* : **réduire un groupe rétrécit les colonnes d'un bloc de texte sans
+toucher à sa gouttière.** Le groupe met à l'échelle la géométrie, pas la typographie —
+c'est déjà ce que C3c fait du corps du texte. Ce sont donc les colonnes qui se resserrent,
+pas ce qui les sépare, et un bloc écrasé au-dessous de ses gouttières garde des colonnes
+d'un point plutôt que des colonnes négatives. Deux tests dans `GroupeTests`.
+
+*Recette jouée*, et elle est un script : `Scripts/recettes/R3-colonnes.sh`, sur
+`Samples/recette-colonnes.mypub` — trois colonnes portant douze paragraphes numérotés,
+deux colonnes justifiées, et un témoin à une seule colonne muni d'une gouttière de 40 pt
+qui ne doit rien faire.
+
+Les colonnes sont **mesurées** dans le PDF par `pdftotext -bbox`, qui rend la boîte de
+chaque **mot**. Le mot et non la ligne, contrairement à la recette de R2 : `-bbox-layout`
+regroupe en lignes selon sa propre analyse de mise en page, or ce qu'on veut vérifier est
+précisément qu'il y a plusieurs colonnes à la même hauteur. Mesuré : 169,000 pt d'un
+bord de colonne au suivant, trois sommets identiques au centième de point, le flot dans
+l'ordre — `01 02 03 04` puis `05 06 07 08` puis `09 10 11 12` —, et 241,488 pt de bord
+droit justifié pour une colonne large de 241,5. Ce dernier nombre est le piège du poste,
+le même qu'en R2 : une ligne justifiée dont la cible serait restée la largeur du bloc
+s'étirerait par-dessus la gouttière et sous sa voisine. L'écran est ensuite mesuré de la
+même façon, encre contre encre, bande par bande : **les six bandes concordent au pixel**,
+sauf un pixel de sommet sur le bloc justifié.
+
+La recette a été éprouvée en la faisant échouer, huit fois : l'écran ignorant les
+colonnes, l'export les ignorant, la ligne oubliant le pas de sa colonne, la
+justification visant la largeur du bloc, l'écran ne repartant pas du haut de la colonne,
+le débordement partant dans une quatrième colonne inexistante, et `Clone()` oubliant le
+nombre de colonnes. **Huit sabotages, huit attrapés** — quatre par la recette, deux par
+les tests d'interface, deux par ceux du noyau.
+
+*Trouvé au passage, et il faut le dire.* Le sabotage se restaurait par `cp -a`, qui rend
+au fichier sa date d'origine : MSBuild le croit inchangé, ne recompile pas, et le
+**binaire saboté survit à la restauration**. Un premier passage a ainsi rapporté un
+sabotage « non attrapé » qui l'était, et un autre « attrapé » par un test qui ne le
+regardait pas. Toute vérification qui écrit du code puis le remet doit toucher le
+fichier ; `Scripts/eprouver-le-juge.sh`, qui restaure par `git checkout`, ne court pas ce
+risque — `git` écrit une date neuve.
+
+#### Ce que le relevé dit des colonnes, et ce que les fichiers disent
+
+Le relevé (`Documents-reels.md`) présente R3 ainsi : « `fo:column-gap` est posé sur les
+neuf blocs de texte d'ATA 21 et sur seize des Fiches ». C'est exact. Deux points
+méritent cependant d'être ajoutés, l'un et l'autre vérifiés en relançant `pub2raw` :
+
+**`style:column-width` n'appartient pas aux zones de texte.** Les dix-sept occurrences
+des Fiches sont toutes dans un `startTableObject`, sous `librevenge:table-columns` :
+
+```
+startTableObject(librevenge:table-columns: ((style:column-width: 0.4860in),
+  (style:column-width: 2.2286in), (style:column-width: 0.5220in)), svg:height: ...)
+```
+
+Ce sont les colonnes des **tableaux** — les seize bandes à trois cases du poste C9 — et
+non celles d'un bloc de texte. Le rapprochement du relevé était une lecture rapide.
+
+**`fo:column-count` n'apparaît nulle part.** La chaîne existe dans libmspub 0.1.4 — elle
+est dans la bibliothèque, à côté de `fo:column-gap` — mais elle n'est émise par aucun des
+**vingt-quatre** `.pub` présents sur la machine, les deux documents de référence
+compris, alors que `fo:column-gap` l'est sur chaque zone de texte, toujours à la même
+valeur : 0,0787 in pour ATA 21, soit 2 mm exactement, et 0,0800 in pour les Fiches. Ce
+sont les deux écritures du **défaut** de Publisher, selon que l'unité du document est
+métrique ou impériale.
+
+La lecture la plus probable est donc que **ces documents sont tous à une seule colonne**,
+et que la gouttière n'y est qu'un réglage par défaut qui ne sert à rien. Une seconde
+lecture ne peut pas être écartée sans un `.pub` à deux colonnes sous la main : que
+libmspub 0.1.4 ne restitue tout simplement pas le compte. Les deux mènent au même endroit
+pour R5 — l'import devra lire `fo:column-count` s'il le rencontre, et ne pas conclure des
+colonnes de la seule présence d'une gouttière.
+
+Ce qui change, c'est ce que le poste **prouve**. Il ne reproduit pas une mise en page que
+ces documents demanderaient : il donne à Publisher une fonction qu'il a, que le format
+doit savoir relire, et qui manquait. Et il rend à la gouttière son sens : celle des
+documents réels, 5,67 pt, est désormais la valeur par défaut d'un bloc neuf.
+
+`Documents-reels.md` n'a pas été corrigé : le poste s'en tient à son périmètre, et ce
+fichier fait foi. La rectification est ici, avec sa preuve.
+
+#### Choisi sans certitude
+
+**La gouttière par défaut vaut 5,67 pt** — les 2 mm d'ATA 21. Zéro aurait aussi bien fait
+l'affaire pour la non-régression, une gouttière ne servant à rien à une colonne ; mais
+elle aurait fait se toucher les colonnes le jour où l'on passe le nombre à deux, et ce
+n'est pas ce que Publisher fait.
+
+**L'espace avant s'applique aussi en tête de colonne**, comme R2 l'a fait appliquer au
+premier paragraphe du bloc. Le relevé ne tranche pas davantage ici qu'il ne tranchait
+là — il ne porte aucun `fo:margin-top`. Ce qui compte est que les deux cas soient
+tranchés une fois et de la même façon, plutôt que deux fois différemment.
+
+**Le panneau plafonne à vingt colonnes.** C'est un garde-fou du champ et non du format :
+le fichier en accepte davantage, la composition ramène toute largeur de colonne à un
+point minimum, et au-delà de vingt une colonne est plus étroite qu'un mot. Aucune fiche
+ne donne la limite de Publisher ; le nombre est donc choisi, pas relevé.
+
+#### Trouvé et laissé tel quel
+
+**La vignette d'un modèle ne montre pas les colonnes.** `TemplatePreview` trace le texte
+en filets pleine largeur, quel que soit le nombre de colonnes du bloc. C'est l'écart que
+B1 a assumé et écrit — « les vignettes sont un schéma et non un rendu » — et il n'y a pas
+de raison de le rouvrir pour ce poste.
+
+**Le panneau TEXTE ne rafraîchit toujours pas la page**, colonnes comprises : régler le
+nombre de colonnes ne redessine rien tant qu'on ne retouche pas le texte. C'est le défaut
+que R2 a relevé et daté de R1, à corriger en un seul endroit pour les douze propriétés à
+la fois. Les tests d'interface de ce poste posent donc les colonnes **avant** d'ouvrir la
+fenêtre, comme ceux de R2 posaient les retraits.
+
+*Au passage, et c'est un déplacement et non une correction* : l'ouverture d'une fenêtre
+sur un document et le relevé de son encre sont sortis de `RetraitsTests` vers
+`MyPublisher.Tests.Interface/Rendu.cs`, R3 en ayant besoin pour mesurer autre chose. Le
+piège du banc — `PageRoot` mesuré en points mais vivant sous la mise à l'échelle du
+zoom — n'est ainsi gardé qu'à un seul endroit. Deux copies, et la seconde oublie
+l'assertion.
 
 ---
 

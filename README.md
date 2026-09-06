@@ -113,6 +113,12 @@ la barre du haut regroupe les commandes du document : fichier, annulation, zoom.
   paragraphe. Le panneau les règle pour le bloc entier ; le fichier, lui, sait déjà les
   porter paragraphe par paragraphe, ce dont les documents Publisher se servent
   abondamment.
+- **Colonnes à l'intérieur d'un bloc de texte** : on donne au bloc un nombre de
+  colonnes et une gouttière, et le texte remplit la première jusqu'au bas du bloc
+  avant de passer à la suivante. C'est autre chose que la grille de composition plus
+  bas, qui pose des colonnes sur la *page* comme repères d'aimantation ; ici le texte
+  coule d'une colonne à l'autre dans un seul bloc. Ce qui dépasse la dernière colonne
+  continue sous le bloc, comme un texte trop long l'a toujours fait.
 - Tout bloc — texte, image, forme, groupe — porte un fond, avec son opacité, et un
   contour : épaisseur, trait continu, tirets ou points, angles arrondis. Encadrer
   une image d'un filet ne demande donc plus de lui superposer une forme.
@@ -163,11 +169,18 @@ la barre du haut regroupe les commandes du document : fichier, annulation, zoom.
 ## Choix techniques
 
 **L'écran et l'export composent le texte avec la même fonction.** `Compositeur`, dans le
-noyau, découpe le texte en lignes et répartit le blanc d'une ligne justifiée. Il ne
-connaît ni Avalonia ni PDFsharp : la règle à mesurer lui est passée en paramètre, et
-chaque rendu lui passe la sienne. Tant que la découpe appartenait à chacun — Avalonia à
-l'écran, `XTextFormatter` au PDF — rien ne garantissait qu'ils coupent aux mêmes
-endroits, et l'interligne du modèle ne franchissait tout simplement pas l'export.
+noyau, découpe le texte en lignes, les range dans les colonnes du bloc et répartit le
+blanc d'une ligne justifiée. Il ne connaît ni Avalonia ni PDFsharp : la règle à mesurer
+lui est passée en paramètre, et chaque rendu lui passe la sienne. Tant que la découpe
+appartenait à chacun — Avalonia à l'écran, `XTextFormatter` au PDF — rien ne garantissait
+qu'ils coupent aux mêmes endroits, et l'interligne du modèle ne franchissait tout
+simplement pas l'export.
+
+Chaque ligne en sort avec son retrait, sa largeur disponible, sa colonne et l'ordonnée de
+son sommet. Aucun des deux rendus n'additionne donc plus de hauteur pour son compte, et
+ce n'est pas une élégance depuis qu'il y a des colonnes : le passage à la colonne
+suivante est un seuil, et un écart de métrique d'un centième de point suffirait à faire
+basculer une ligne d'un côté et pas de l'autre.
 
 **Toute la géométrie est en points typographiques (1/72 pouce).** Avalonia raisonne
 en pixels indépendants du périphérique (1/96 pouce) et le PDF en points : modéliser
@@ -239,7 +252,8 @@ liens.
 
 ## Limites connues
 
-- Pas de chaînage du texte entre blocs : un texte trop long est coupé au bloc.
+- Pas de chaînage du texte entre blocs : un texte trop long est coupé au bloc. Les
+  colonnes coulent à l'intérieur d'un bloc, jamais d'un bloc au suivant.
 - Les fragments de style se lisent, s'écrivent et se rendent, mais ne se saisissent pas
   encore à la souris : on ne peut pas sélectionner trois mots dans un bloc pour les
   mettre en gras. Le panneau agit sur le bloc entier. Il en va de même des retraits
@@ -247,9 +261,9 @@ liens.
 - L'alignement — gauche, centré, droite, justifié — reste une propriété du bloc, alors
   qu'un document Publisher le fait varier d'un paragraphe à l'autre.
 - Les réglages typographiques du panneau — police, corps, gras, alignement, interligne,
-  marges, retraits — s'enregistrent et s'exportent bien, mais la page ne se redessine
-  pas au moment où on les change : il faut retoucher le texte, ou rouvrir le document,
-  pour les voir. Seul le contenu rafraîchit l'affichage.
+  marges, retraits, colonnes — s'enregistrent et s'exportent bien, mais la page ne se
+  redessine pas au moment où on les change : il faut retoucher le texte, ou rouvrir le
+  document, pour les voir. Seul le contenu rafraîchit l'affichage.
 - Une première ligne en retrait négatif qui déborde à gauche du bloc est rognée à
   l'écran et entière dans le PDF.
 - Pas de pages maîtres.
