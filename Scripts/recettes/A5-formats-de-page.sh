@@ -12,7 +12,18 @@
 #      et le mauvais placement ;
 #   4. l'écran rend la même page à la même taille, à deux pixels par point ;
 #   5. les quatre formats ajoutés — B4, B5, Executive, Tabloid — sortent aux
-#      dimensions de leur norme.
+#      dimensions de leur norme ;
+#   6. le panneau tient le format libre : le sélecteur se vide sans rien effacer, et
+#      revenir à un format du catalogue ne coûte qu'un pas d'annulation. Joué par
+#      « MyPublisher.Tests.Interface », faute de fenêtre dans un shell.
+#
+# Ce que le point 6 ajoute a été mesuré, et il n'est pas ce qu'on croyait. Le point 4
+# ouvre une VRAIE fenêtre — le banc de rendu en est une — et il attrape donc déjà un
+# sélecteur qui reposerait l'A4 devant un format libre : simulé, il fait sortir l'écran
+# en 1192 × 1684 au lieu de 568 × 1134. Ce qu'il n'attrape pas, c'est ce qui demande un
+# geste : le banc ouvre et rend, il ne choisit jamais de format. Un « OnSelectedPageSize
+# Changed » qui ne ferait plus rien laisse les huit mesures ci-dessus intactes, et seul
+# le point 6 tombe. C'est là sa raison d'être, et non celle qu'on lui prêtait.
 #
 # Le point 5 mérite un mot. Le shell n'a pas accès à « PageSize.All » : ce que le
 # catalogue contient est épinglé par « FormatsDePageTests » et par le test d'interface
@@ -190,4 +201,26 @@ if [ "$echec" != 0 ]; then
     exit 1
 fi
 
+# --------------------------------------------------------------- 6. le panneau
+
+# Ce qui précède ouvre une fenêtre (le banc, au point 4) mais ne fait aucun geste
+# dedans. Choisir un format dans le sélecteur, compter les pas d'annulation, relire ce
+# que le sélecteur affiche : rien de tout cela ne s'obtient d'un shell. Vérifié en
+# faisant échouer les deux côtés séparément — voir l'en-tête.
+attendus=3
+if ! dotnet test MyPublisher.Tests.Interface/MyPublisher.Tests.Interface.csproj \
+        --no-build --nologo -v q --filter "poste=A5" > "$travail/tests.txt" 2>&1; then
+    sed 's/^/    /' "$travail/tests.txt" >&2
+    echo "ÉCHEC : le panneau ne tient pas le format libre." >&2
+    exit 1
+fi
+
+joues="$(grep -o 'Passed: *[0-9]*' "$travail/tests.txt" | head -1 | grep -o '[0-9]*$' || true)"
+if [ "${joues:-0}" -lt "$attendus" ]; then
+    echo "ÉCHEC : $attendus tests attendus sous « poste=A5 », ${joues:-0} joués." >&2
+    echo "Un filtre qui ne désigne plus rien sort en 0 : la recette ne peut pas s'en contenter." >&2
+    exit 1
+fi
+
+echo "  Panneau éprouvé sur la vraie fenêtre : $joues tests"
 echo "A5 : le format libre et les quatre formats ajoutés sortent aux dimensions demandées."

@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Shapes;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
@@ -174,21 +175,37 @@ public class PanneauEtBarreTests
     [Trait("poste", "A4")]
     public void Un_clic_dans_la_liste_selectionne_sans_reordonner()
     {
-        // Le seuil de glissement : sans lui, le tremblement d'un clic ordinaire
-        // réordonnerait la pile à l'insu de qui ne voulait que désigner un bloc.
+        // Désigner un bloc ne doit rien remuer, quel que soit le tremblement du clic.
+        //
+        // Deux choses s'en chargent, et il a fallu saboter le seuil pour apprendre
+        // laquelle fait quoi. Ce qui empêche la pile de bouger n'est PAS le seuil :
+        // c'est l'arithmétique du rang d'insertion — un point visé qui reste dans le
+        // même intervalle rend le rang de départ, et le déplacement est sans objet.
+        // Un seuil ramené à zéro laisse donc l'ordre intact, et un test qui ne
+        // regarderait que l'ordre le déclarerait sain.
+        //
+        // Ce que le seuil tient, c'est le geste : sans lui, le moindre frémissement
+        // capture le pointeur et allume le trait d'insertion sous le doigt de quelqu'un
+        // qui ne fait que cliquer. C'est cela qu'on vérifie, pendant le geste.
         var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(
             Carre("A", 20, 20), Carre("B", 40, 40), Carre("C", 60, 60)));
 
+        var trait = Trouver<Rectangle>(fenetre, "TraitDInsertion");
         var point = DansLaListe(fenetre, 0, 0.5);
 
         fenetre.MouseDown(point, MouseButton.Left);
         fenetre.MouseMove(new Point(point.X, point.Y + 2), RawInputModifiers.LeftMouseButton);
+        Rendu.Battre();
+
+        Assert.False(trait.IsVisible);
+
         fenetre.MouseUp(new Point(point.X, point.Y + 2), MouseButton.Left);
         Rendu.Battre();
 
         Assert.Equal(new[] { "A", "B", "C" }, Pile(vm));
         Assert.Equal("A", vm.Selected?.Name);
         Assert.False(vm.CanUndo);
+        Assert.False(trait.IsVisible);
     }
 
     // ------------------------------------------------------------------ A5 · formats
@@ -239,8 +256,12 @@ public class PanneauEtBarreTests
         vm.SelectedPageSize = PageSize.B5;
         Rendu.Battre();
 
-        Assert.Equal(PageSize.B5.Width, vm.Document.PageWidth, precision: 6);
-        Assert.Equal(PageSize.B5.Height, vm.Document.PageHeight, precision: 6);
+        // 176 × 250 mm, la norme, et non « PageSize.B5.Width » : se comparer à la
+        // constante qu'on vient de poser ne dit rien de sa valeur. C'est ce qui fait
+        // que la recette du poste attrape aussi un format du catalogue mal mesuré, et
+        // pas seulement un panneau qui ne l'appliquerait plus.
+        Assert.Equal(176, Units.PointsToMm(vm.Document.PageWidth), precision: 1);
+        Assert.Equal(250, Units.PointsToMm(vm.Document.PageHeight), precision: 1);
         Assert.Same(PageSize.B5, Trouver<ComboBox>(fenetre, "FormatDePage").SelectedItem);
 
         Assert.True(vm.CanUndo);
@@ -354,16 +375,25 @@ public class PanneauEtBarreTests
         // Choix délibéré, et il se voit : à un bloc c'est son cadre — les quatre
         // nombres que le panneau donne à saisir —, à plusieurs c'est ce que la
         // sélection occupe, faute d'un cadre commun à nommer.
-        var (_, vm) = Rendu.Ouvrir(Rendu.Feuille(Carre("A", 100, 100), Carre("B", 200, 300)));
+        //
+        // Et c'est le cas de figure qui garde la ligne de « NotifySelection » : à
+        // plusieurs blocs le panneau de propriétés ne montre aucun champ, donc aucune
+        // géométrie n'est réécrite, donc l'abonnement aux blocs ne dit rien. Seule la
+        // liste écrite à la main de « NotifySelection » peut alors rafraîchir la barre.
+        // Interroger le modèle de vue plutôt que la case ne prouverait rien : une
+        // propriété calculée rend la bonne valeur même quand personne n'a été prévenu —
+        // la première écriture de ce test s'y est laissé prendre.
+        var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(Carre("A", 100, 100), Carre("B", 200, 300)));
 
         var page = vm.CurrentPage!;
         vm.SetSelection([page.Frames[0], page.Frames[1]]);
         Rendu.Battre();
 
-        Assert.Contains(Millimetres(100), vm.FramePositionLabel);
+        Assert.Contains(Millimetres(100), Trouver<TextBlock>(fenetre, "PositionDuBloc").Text);
         // De 100 à 260 en abscisse, de 100 à 360 en ordonnée.
-        Assert.Contains(Millimetres(160), vm.FrameSizeLabel);
-        Assert.Contains(Millimetres(260), vm.FrameSizeLabel);
+        var taille = Trouver<TextBlock>(fenetre, "TailleDuBloc").Text;
+        Assert.Contains(Millimetres(160), taille);
+        Assert.Contains(Millimetres(260), taille);
     }
 
     /// <summary>

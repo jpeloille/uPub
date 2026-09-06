@@ -35,9 +35,9 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **A1** | Poignée de rotation | 0 % | La rotation est déjà partout ; il manque la neuvième poignée |
 | **A2** | Signaler le débordement du texte | 0 % | Le poste le plus important de la phase : on livre encore un PDF amputé sans le dire |
 | **A3** | Chemins d'images relatifs | 0 % | — |
-| **A4** | Superposition : raccourcis et glisser-déposer | 0 % | Les quatre commandes existent, et portent la sélection multiple depuis C3a |
-| **A5** | Formats de page | 0 % | Le modèle accepte déjà des dimensions libres |
-| **A6** | Taille du bloc dans la barre d'état | 0 % | — |
+| **A4** | Superposition : raccourcis et glisser-déposer | **100 %** | `Ctrl+Maj+F` / `Ctrl+Maj+B`, et la liste des blocs se réordonne en y tirant un bloc ; les quatre commandes ne perdent plus leur sélection |
+| **A5** | Formats de page | **100 %** | B4, B5, Executive, Tabloid au catalogue, et largeur/hauteur libres au panneau. `FormatVersion` reste à 3 |
+| **A6** | Taille du bloc dans la barre d'état | **100 %** | Position **et** taille du bloc, suivies pendant le geste et non seulement à sa fin |
 | **A7** | Alignement vertical du texte | 0 % | — |
 | **B1** | Modèles | **100 %** | Catalogue au démarrage et sur `Ctrl+N` ; quatre modèles composés dans `Templates/` |
 | **B2** | Importer un fichier texte | 0 % | — |
@@ -59,11 +59,11 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **R5** | **Ouvrir un `.pub`** | **100 %** | Lecture déléguée à libmspub. Les deux documents ATR s'ouvrent objet pour objet, sans perdre un style |
 | **D** | Moteur de composition | — | Décision non ouverte ; à rouvrir quand A, B et C sont livrées |
 
-**Par phase** — P : 3 sur 4 (P3 en cours) · A : 0 sur 7 · B : 2 sur 5 · C : 6 sur 8 ·
-R : 4 sur 5 · D : non planifié. La ligne comptait 22 postes et ignorait la phase R,
+**Par phase** — P : 3 sur 4 (P3 en cours) · A : 3 sur 7 · B : 2 sur 5 · C : 6 sur 8 ·
+R : 5 sur 5 · D : non planifié. La ligne comptait 22 postes et ignorait la phase R,
 apparue le 6 septembre 2026 ; elle la compte désormais.
 
-Soit **15 postes sur 29**. Le tableau ne porte pas encore les onze postes que l'audit
+Soit **19 postes sur 29**. Le tableau ne porte pas encore les onze postes que l'audit
 des fiches a fait apparaître le 6 septembre 2026 — A8 à A15, B6, B7, C8 — et qui sont au
 périmètre : ils y entreront quand ils seront spécifiés. C'est un compte de postes et non
 d'effort : C3 pesait à lui
@@ -383,12 +383,88 @@ la liste « Blocs (du fond vers l'avant) » invite à un glisser-déposer qui n'
 
 *Recette* : réordonner un bloc au clavier, puis en le tirant dans la liste.
 
+*Fait le 6 septembre 2026.* `Ctrl+Maj+F` et `Ctrl+Maj+B` portent la sélection au premier
+plan et à l'arrière-plan, et le menu Disposition les affiche. **Deux raccourcis et non
+quatre** : la fiche 15 relève que Publisher n'en donne qu'aux deux extrêmes, et avancer
+ou reculer d'un rang n'en a pas — on n'en invente pas. Publisher 2007 les posait sur
+`Alt+F6` et `Alt+Maj+F6` ; ce sont les combinaisons modernes qui sont reprises, la
+plupart des gestionnaires de fenêtres Linux captant `Alt+F6` avant l'application. Un
+raccourci qui n'arrive jamais jusqu'à son destinataire ne vaut pas mieux qu'aucun.
+
+La liste des blocs se réordonne en y tirant un bloc, un trait bleu marquant où il se
+posera. **Le geste est bâti sur les pointeurs et non sur `DragDrop.DoDragDrop`** : la
+plate-forme sans affichage n'inscrit aucune source de glisser-déposer — vérifié dans
+`Avalonia.Headless` 11.3.9, qui offre bien la réception d'un dépôt mais pas son émission
+— si bien qu'un geste bâti sur elle ne serait jouable par aucun banc, et ce poste
+n'aurait été éprouvé que sur parole. C'est au demeurant l'idiome de la planche, qui
+n'utilise pas davantage le survol des contrôles.
+
+#### Ce que le poste a trouvé
+
+**Les quatre commandes de superposition perdaient leur sélection**, et le défaut est
+antérieur au poste. La liste des blocs est liée à la fois à la collection de la page et
+à l'ancre de sélection ; remuer la collection fait passer la sélection de la liste par
+zéro, et la liaison à double sens redescend cette remise à zéro dans le modèle de vue.
+Le bloc qu'on vient de porter au premier plan cesse donc d'être pris.
+
+Deux choses méritent d'être dites. D'abord, **le moyen n'y est pour rien** :
+`ObservableCollection.Move` perd la sélection exactement comme un retrait suivi d'une
+insertion. C'était l'hypothèse de départ, et elle est fausse — mesurée sur
+`BringForward`, qui employait déjà `Move` et perdait la sélection tout autant. Ensuite,
+le défaut ne devient gênant qu'une fois le geste au clavier : au menu on reclique sans y
+penser, au raccourci on enchaîne les frappes et la deuxième ne fait plus rien. La
+sélection est donc reposée après le remaniement et **avant** la fermeture de la
+transaction, pour que l'instantané d'annulation garde celle qu'on voit et non une
+sélection vide.
+
+Au passage, `StepOrder` interroge désormais une copie de la sélection : la boucle
+d'origine consultait `Selection` à chaque tour, alors que le premier déplacement venait
+de la vider.
+
+**Le seuil de glissement ne fait pas ce qu'on croyait, et c'est le sabotage qui l'a
+dit.** Ramené à zéro, il ne change rien à l'ordre de la pile : le rang d'insertion est
+un point *entre* deux blocs, et un pointeur qui tremble de deux pixels rend le rang dont
+il est parti — le déplacement est alors sans objet. Ce que le seuil tient, c'est le
+geste : sans lui, le moindre frémissement capture le pointeur et allume le trait
+d'insertion sous le doigt de quelqu'un qui ne fait que cliquer. Le test a été réécrit
+pour vérifier cela, qui est vrai, plutôt que ce qu'on lui prêtait.
+
 ### A5 — Formats de page *(fiche 01)*
 
 Deux champs largeur/hauteur libres dans le panneau DOCUMENT — le modèle les accepte déjà,
 ce sont des `double`. Et quatre formats à ajouter à la liste : B4, B5, Executive, Tabloid.
 
 *Recette* : composer sur un format 100 × 200 mm et l'exporter à cette taille exacte.
+
+*Fait le 6 septembre 2026.* Neuf formats au catalogue au lieu de cinq — B4 et B5 aux
+dimensions ISO, Executive et Tabloid en pouces exacts — et deux champs en millimètres
+dans le panneau DOCUMENT. `FormatVersion` reste à 3 : aucune propriété n'est née, ce sont
+les deux `double` que le document portait déjà.
+
+**Le sélecteur suit les dimensions, jamais l'inverse.** `PageSize.Match` rend `null`
+devant une taille qu'aucune entrée ne reconnaît, et c'est un état légitime — la vignette
+« Create custom page size… » du catalogue de Publisher — et non une absence de réponse.
+Ce qu'il ne faut surtout pas en conclure, c'est qu'il faille effacer les dimensions.
+
+Pour que le sélecteur se vide quand on saisit une taille libre, le modèle de vue
+s'abonne désormais aux dimensions du document. Le point délicat n'est pas l'abonnement
+mais sa durée de vie : **le document se remplace en bloc** — ouverture, modèle, page
+neuve, annulation — et un abonnement pris une fois pour toutes laisserait le sélecteur
+muet dès la première annulation, tout en gardant l'ancien document en vie.
+
+**Poser un format écrit deux dimensions l'une après l'autre**, et le document porte
+entre les deux une largeur de B5 avec une hauteur de format libre. Ré-accorder le
+sélecteur sur cet état-là rejouerait le gestionnaire qui vient de l'appeler. Le verrou
+couvre donc l'écriture entière et non chaque ligne ; ce qui le garde est un test qui
+compte les pas d'annulation — un geste, un pas.
+
+*Recette jouée*, `Scripts/recettes/A5-formats-de-page.sh`, sur
+`Samples/recette-formats.mypub`, une page de 100 × 200 mm. Le PDF **mesure**
+283,465 × 566,929 pt, relu deux fois par deux outils — `pdfinfo` lit la boîte déclarée,
+`pdftotext -bbox` la redit à sa façon —, le contenu y est posé à 44,000 pt du bord
+gauche (les 40 pt du bloc et ses 4 pt de marge intérieure), l'écran rend la même page à
+la même taille, et les quatre formats ajoutés sortent aux dimensions de leur norme, au
+centième de point.
 
 ### A6 — Taille du bloc dans la barre d'état *(fiche 02)*
 
@@ -397,6 +473,99 @@ n'affiche que la position du curseur. Pendant un redimensionnement, l'œil est s
 page, pas sur le panneau de droite.
 
 *Recette* : la taille se lit sans quitter la page des yeux pendant le geste.
+
+*Fait le 6 septembre 2026.* Deux cases de plus dans la barre d'état, la position du bloc
+et sa taille, séparées comme la fiche 02 les relève. Elles ne s'affichent qu'à la
+sélection, et les quatre cases de droite sont désormais de largeur fixe : elles se
+rafraîchissent à chaque mouvement de pointeur, et une barre dont les cases se déplacent
+à chaque chiffre ne se lit plus.
+
+**À un bloc, c'est son cadre ; à plusieurs, l'empreinte de l'ensemble.** Choix
+délibéré : les quatre nombres annoncés pour un bloc seul sont exactement ceux que le
+panneau donne à saisir, si bien qu'un chiffre lu en bas et un chiffre lu à droite ne
+peuvent pas se contredire. La différence se voit sur un bloc tourné, dont l'empreinte
+déborde le cadre — et c'est bien le cadre qu'on annonce quand il est seul.
+
+**La mesure suit le geste et non sa fin.** Le plan de travail écrit la géométrie du bloc
+à chaque mouvement du pointeur sans prévenir personne d'autre : le modèle de vue s'abonne
+donc aux blocs sélectionnés. Sans cela, la barre ne se mettrait à jour qu'au
+relâchement — or c'est pendant qu'on la regarde.
+
+*Recette jouée*, `Scripts/recettes/A6-taille-dans-la-barre.sh`. Ce poste n'a rien qu'un
+fichier livré puisse porter : la recette appelle les tests d'interface par leur poste et
+vérifie qu'ils ont été joués, un filtre qui ne désigne plus rien sortant en 0.
+
+Ce que ces tests éprouvent, et pourquoi ils ne sont pas une mise en scène : le bloc est
+sélectionné **avant** la première image, si bien que la case affiche déjà une taille et
+que seule une taille qui change peut en remuer les pixels ; l'image est prise par
+`CaptureRenderedFrame` et non par `RenderTargetBitmap.Render`, qui redessine de force et
+passerait même si plus rien ne se rafraîchissait ; et le découpage porte sur la seule
+case de la taille, non sur la barre entière — la position du curseur, deux cases plus
+loin, change à chaque mouvement de pointeur, et une comparaison large aurait vu sa
+différence à elle.
+
+### A4, A5, A6 — ce que les sabotages ont appris
+
+*6 septembre 2026.* Les trois recettes ont été éprouvées en les faisant échouer, quatorze
+fois. **Douze sabotages attrapés, deux ratés** — et ce sont les deux ratés qui ont
+servi, comme d'habitude.
+
+| Sabotage | Attrapé par |
+|---|---|
+| `Ctrl+Maj+F` retiré des `KeyBindings` | recette A4, lecture des sources |
+| `Ctrl+Maj+B` déclaré deux fois | recette A4, lecture des sources |
+| la ligne du README retirée | recette A4 — **au second essai** |
+| le rang d'insertion toujours nul | recette A4, tests de geste |
+| la sélection non reposée après remaniement | recette A4, trois tests |
+| le seuil de glissement à zéro | recette A4 — **au second essai** |
+| l'export ignorant la hauteur de page | recette A5, quatre mesures sur cinq formats |
+| le sélecteur reposant l'A4 devant un format libre | recette A5, mesure de l'écran |
+| choisir un format ne faisant plus rien | recette A5, tests du panneau |
+| B5 mal mesuré au catalogue | `FormatsDePageTests`, puis recette A5 après correction du test |
+| l'abonnement à la géométrie du bloc coupé | recette A6, comparaison de pixels |
+| l'abonnement jamais pris | recette A6 |
+| la ligne manquante dans `NotifySelection` | recette A6 — **après réécriture du test** |
+| les cases de la barre renommées | recette A6 |
+
+**Le premier raté : une recette qui cherchait au mauvais endroit.** Le contrôle des
+raccourcis confrontait les gestes déclarés au README *entier*. Retirer la ligne du
+tableau ne le faisait pas tomber — les deux raccourcis étant aussi cités dans la prose
+d'à côté. Il cherche désormais dans la seule section « Raccourcis », qui est l'endroit
+où l'on va chercher un raccourci. Un contrôle qu'on n'a jamais vu échouer ne prouve rien,
+et celui-là aurait passé le poste sans rien garder.
+
+**Le second raté : une propriété calculée rend la bonne valeur même quand personne n'a
+été prévenu.** Le test de la barre d'état à plusieurs blocs interrogeait
+`vm.FrameSizeLabel` ; retirer la ligne de `NotifySelection` — celle-là même dont le
+dépôt dit qu'elle s'oublie — ne le faisait pas tomber, puisque lire une propriété
+calculée la recalcule. Le test lit maintenant la **case** et non le modèle de vue.
+
+Ce raté-là en a découvert un autre, qu'il faut consigner : à un seul bloc, la barre se
+rafraîchit **par accident** même sans cette ligne. Sélectionner un bloc fait passer sa
+position par le panneau de propriétés, donc par l'aller-retour points ↔ millimètres qui
+laisse 7·10⁻¹⁴ pt derrière lui — la dérive mesurée au poste P3, réputée sans effet. Elle
+en a un : elle notifie. C'est le cas à plusieurs blocs, où le panneau ne montre aucun
+champ, qui garde réellement la ligne de `NotifySelection`.
+
+**Ce que le sabotage du seuil de glissement a appris** est écrit au poste A4 : ce n'est
+pas lui qui empêche un clic de réordonner la pile, c'est l'arithmétique du rang
+d'insertion. Le test disait le contraire ; il a été réécrit sur ce que le seuil fait
+vraiment.
+
+**Une correction de comptage, à déclarer.** La ligne « par phase » annonçait « R : 4 sur
+5 » alors que les cinq lignes de la phase R portent 100 % depuis la livraison de R5 ;
+le total de 15 en héritait. Corrigé à 5 et à 19, la présente livraison comprise.
+
+#### Trouvé, hors périmètre, non corrigé
+
+- **Les bornes du format libre sont celles du champ, pas du format.** Le panneau plafonne
+  à 10 et 2 000 mm ; un `.mypub` écrit à la main ou importé peut porter n'importe quel
+  nombre, et rien ne le ramène. C'est le même parti que le plafond de vingt colonnes de
+  R3 — un garde-fou de saisie — mais il vaut mieux l'avoir écrit.
+- **Les deux cases neuves de la barre d'état disparaissent sans sélection**, ce qui
+  décale les cases voisines au moment où l'on sélectionne. Publisher les laisse vides.
+  Retenu ainsi pour ne pas montrer deux cases muettes en permanence ; à revoir si le
+  décalage gêne.
 
 ### A7 — Alignement vertical du texte *(fiche 12)*
 

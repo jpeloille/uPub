@@ -74,20 +74,28 @@ for attendu in ("Ctrl+Shift+F", "Ctrl+Shift+B"):
         print(f"    « {attendu} » n'est pas déclaré", file=sys.stderr)
         echec = True
 
-# Le README doit dire ce que l'application écoute. Il écrit « Maj » là où le XAML écrit
-# « Shift » : c'est la seule traduction, et elle est ici plutôt que dans le README, qui
-# s'adresse à un lecteur français. Les touches de zoom sont déclarées en double par
-# nature — pavé numérique et rangée du haut — et le README les résume d'une ligne ;
-# on ne les confronte pas.
+# Le README doit dire ce que l'application écoute, et le dire dans SON TABLEAU : c'est
+# là qu'on va chercher un raccourci, et une mention au fil du texte ne s'y substitue
+# pas. La première écriture de cette recette cherchait dans le README entier, et elle
+# ne tombait pas quand on retirait la ligne du tableau — les deux raccourcis étant
+# aussi cités dans la prose. Un contrôle qu'on n'a pas vu échouer ne prouve rien.
+tableau = re.search(r"^## Raccourcis$(.*?)^## ", readme, re.S | re.M)
+if tableau is None:
+    sys.exit("    le README n'a plus de section « ## Raccourcis »")
+
+# Il écrit « Maj » là où le XAML écrit « Shift » : c'est la seule traduction, et elle
+# est ici plutôt que dans le README, qui s'adresse à un lecteur français. Les touches de
+# zoom sont déclarées en double par nature — pavé numérique et rangée du haut — et le
+# tableau les résume d'une ligne ; on ne les confronte pas.
 zoom = {"Ctrl+OemPlus", "Ctrl+Add", "Ctrl+OemMinus", "Ctrl+Subtract", "Ctrl+D0", "Ctrl+NumPad0"}
 confrontes = [g for g in gestes if g not in zoom]
-manquants = [g for g in confrontes if g.replace("Shift", "Maj") not in readme]
+manquants = [g for g in confrontes if g.replace("Shift", "Maj") not in tableau.group(1)]
 if manquants:
     print("    absents du tableau du README : " + ", ".join(manquants), file=sys.stderr)
     echec = True
 
 print(f"    {len(gestes)} gestes déclarés, {len(set(gestes))} distincts, "
-      f"{len(confrontes)} confrontés au README")
+      f"{len(confrontes)} confrontés au tableau du README")
 sys.exit(1 if echec else 0)
 PY
 
