@@ -18,7 +18,8 @@ using MyPublisher.ViewModels;
 namespace MyPublisher.Views;
 
 /// <summary>
-/// Plan de travail : sélection, déplacement, redimensionnement et saisie de texte.
+/// Plan de travail : sélection, déplacement, redimensionnement, rotation et saisie
+/// de texte.
 ///
 /// Toutes les interactions passent par une couche de saisie transparente placée
 /// au-dessus de la page plutôt que par le test de survol des blocs eux-mêmes.
@@ -27,15 +28,34 @@ namespace MyPublisher.Views;
 /// </summary>
 public partial class PageCanvas : UserControl
 {
-    /// <summary>Poignées dans l'ordre horaire, à 45° d'intervalle : l'index sert aussi au choix du curseur.</summary>
-    private enum Anchor { NorthWest, North, NorthEast, East, SouthEast, South, SouthWest, West }
+    /// <summary>
+    /// Poignées dans l'ordre horaire, à 45° d'intervalle : l'index sert aussi au choix
+    /// du curseur. <see cref="Rotate"/> vient APRÈS les huit et non parmi elles :
+    /// <see cref="UpdateCursor"/> fait tourner l'index avec le bloc, et cette
+    /// arithmétique-là ne compte que sur les huit premières.
+    /// </summary>
+    private enum Anchor { NorthWest, North, NorthEast, East, SouthEast, South, SouthWest, West, Rotate }
 
-    private enum DragMode { None, Move, Resize, Create, Guide }
+    private enum DragMode { None, Move, Resize, Rotate, Create, Guide }
 
     private const double HandleSize = 9;      // pixels écran
     private const double HandleGrab = 7;      // rayon de préhension, pixels écran
     private const double GuideGrab = 4;       // un repère est un trait : on le saisit de près
     private const double SnapPixels = 6;      // tolérance d'aimantation, pixels écran
+
+    /// <summary>
+    /// Distance du bord haut à la poignée de rotation, en pixels écran. Hors de la
+    /// zone de préhension des poignées d'angle (7 px de part et d'autre du bord) :
+    /// deux poignées qui se recouvrent, c'est un geste qui part au hasard.
+    /// </summary>
+    private const double RotateHandleGap = 22;
+
+    /// <summary>
+    /// Pas d'aimantation angulaire sous Maj — celui de Publisher. Douze positions par
+    /// tour couvrent tous les angles droits, les diagonales et les tiers de quart.
+    /// </summary>
+    private const double RotateSnapDegrees = 15;
+
     /// <summary>
     /// Taille minimale d'un bloc. Le panneau de propriétés saisit en millimètres :
     /// les deux plafonds doivent exprimer la même valeur, sinon un bloc réduit à la
@@ -55,6 +75,14 @@ public partial class PageCanvas : UserControl
     private static readonly Cursor MoveCursor = new(StandardCursorType.SizeAll);
     private static readonly Cursor ArrowCursor = new(StandardCursorType.Arrow);
 
+    /// <summary>
+    /// Le jeu standard d'Avalonia n'a pas de curseur de rotation, et en dessiner un
+    /// demanderait une image à embarquer pour un seul geste. La main dit « saisir »,
+    /// ce qui est exactement ce qu'on fait de cette poignée, et ne se confond avec
+    /// aucune des huit flèches de redimensionnement.
+    /// </summary>
+    private static readonly Cursor RotateCursor = new(StandardCursorType.Hand);
+
     private static readonly Cursor DrawCursor = new(StandardCursorType.Cross);
     private static readonly Cursor VerticalGuideCursor = new(StandardCursorType.SizeWestEast);
     private static readonly Cursor HorizontalGuideCursor = new(StandardCursorType.SizeNorthSouth);
@@ -64,7 +92,20 @@ public partial class PageCanvas : UserControl
     /// </summary>
     private readonly List<Polygon> _outlines = [];
 
-    private readonly Rectangle[] _handles = new Rectangle[8];
+    /// <summary>
+    /// Les neuf poignées : les huit du redimensionnement, puis celle de la rotation.
+    /// Un seul tableau, indexé par <see cref="Anchor"/>, parce qu'un second tableau
+    /// serait un second endroit à penser dans <see cref="RefreshOverlay"/> et dans
+    /// <see cref="HitHandle"/> — et le jour où l'on n'en penserait qu'un, la poignée
+    /// se dessinerait sans se laisser saisir.
+    /// </summary>
+    private readonly Shape[] _handles = new Shape[9];
+
+    /// <summary>
+    /// Tige reliant la poignée de rotation au bord haut du bloc. Sans elle, un disque
+    /// flottant au-dessus du bloc ne se rattache visuellement à rien.
+    /// </summary>
+    private readonly Polyline _rotateStem;
 
     /// <summary>Cadre en pointillés affiché pendant le tracé d'un nouveau bloc.</summary>
     private readonly Rectangle _preview;
@@ -98,17 +139,31 @@ public partial class PageCanvas : UserControl
     {
         InitializeComponent();
 
+        // La tige d'abord : posée avant les poignées, elle passe dessous, et le disque
+        // reste saisissable sur toute sa surface.
+        _rotateStem = new Polyline
+        {
+            Stroke = new SolidColorBrush(Color.Parse("#FF2D7DD2")),
+            StrokeThickness = 1,
+            IsVisible = false
+        };
+        Overlay.Children.Add(_rotateStem);
+
         for (var i = 0; i < _handles.Length; i++)
         {
-            _handles[i] = new Rectangle
-            {
-                Width = HandleSize,
-                Height = HandleSize,
-                Fill = Brushes.White,
-                Stroke = new SolidColorBrush(Color.Parse("#FF2D7DD2")),
-                StrokeThickness = 1,
-                IsVisible = false
-            };
+            // La neuvième ne redimensionne pas : elle tourne. Un disque vert plutôt
+            // qu'un carré blanc — un neuvième carré au-dessus du bloc se lirait comme
+            // un bord à tirer, et c'est le vert que Publisher emploie pour ce geste.
+            _handles[i] = (Anchor)i == Anchor.Rotate
+                ? new Ellipse { Fill = new SolidColorBrush(Color.Parse("#FF2F9E5E")) }
+                : new Rectangle { Fill = Brushes.White };
+
+            _handles[i].Width = HandleSize;
+            _handles[i].Height = HandleSize;
+            _handles[i].Stroke = new SolidColorBrush(Color.Parse("#FF2D7DD2"));
+            _handles[i].StrokeThickness = 1;
+            _handles[i].IsVisible = false;
+
             Overlay.Children.Add(_handles[i]);
         }
 
@@ -251,11 +306,13 @@ public partial class PageCanvas : UserControl
 
         for (var i = frames.Count; i < _outlines.Count; i++) _outlines[i].IsVisible = false;
 
-        // Les poignées ne servent qu'à un bloc seul : redimensionner un ensemble
-        // demanderait de mettre à l'échelle chacun de ses blocs, ce que le groupe fait
-        // proprement. On sélectionne, on groupe, puis on redimensionne.
+        // Les poignées ne servent qu'à un bloc seul, celle de rotation comprise :
+        // redimensionner — ou tourner — un ensemble demanderait de reprendre chacun de
+        // ses blocs autour d'un pivot commun, ce que le groupe fait proprement. On
+        // sélectionne, on groupe, puis on redimensionne ou l'on tourne.
         var single = frames.Count == 1 ? frames[0] : null;
         foreach (var handle in _handles) handle.IsVisible = single is not null;
+        _rotateStem.IsVisible = single is not null;
         if (single is null) return;
 
         for (var i = 0; i < _handles.Length; i++)
@@ -265,6 +322,10 @@ public partial class PageCanvas : UserControl
             Canvas.SetLeft(_handles[i], point.X - HandleSize / 2);
             Canvas.SetTop(_handles[i], point.Y - HandleSize / 2);
         }
+
+        var (nx, ny) = LocalAnchor(single, Anchor.North);
+        var (rx, ry) = LocalAnchor(single, Anchor.Rotate);
+        _rotateStem.Points = [SurfacePoint(single, nx, ny), SurfacePoint(single, rx, ry)];
     }
 
     private List<Point> Corners(Frame frame) =>
@@ -305,7 +366,14 @@ public partial class PageCanvas : UserControl
         return new Point(px * Scale, py * Scale);
     }
 
-    private static (double X, double Y) LocalAnchor(Frame frame, Anchor anchor) => anchor switch
+    /// <summary>
+    /// Ancre d'une poignée dans le repère local du bloc. Celle de la rotation se pose
+    /// au-dessus du bord haut, à distance constante à l'ÉCRAN et non sur la page : elle
+    /// reste ainsi à la même portée de main quel que soit le zoom, comme les huit autres
+    /// gardent leur taille. C'est ce qui oblige la méthode à connaître l'échelle, donc à
+    /// ne plus être statique.
+    /// </summary>
+    private (double X, double Y) LocalAnchor(Frame frame, Anchor anchor) => anchor switch
     {
         Anchor.NorthWest => (0, 0),
         Anchor.North => (frame.Width / 2, 0),
@@ -314,6 +382,7 @@ public partial class PageCanvas : UserControl
         Anchor.SouthEast => (frame.Width, frame.Height),
         Anchor.South => (frame.Width / 2, frame.Height),
         Anchor.SouthWest => (0, frame.Height),
+        Anchor.Rotate => (frame.Width / 2, -RotateHandleGap / Scale),
         _ => (0, frame.Height / 2)
     };
 
@@ -361,7 +430,10 @@ public partial class PageCanvas : UserControl
 
         if (_vm.SingleSelected is { } single && HitHandle(single, surfacePoint) is { } anchor)
         {
-            _mode = DragMode.Resize;
+            // Même prise, mêmes repères de départ, même capture : la rotation n'est
+            // qu'un second mode de ce geste-là. BeginEdit ici, CommitEdit au relâché,
+            // comme le redimensionnement — c'est ce qui la rend annulable d'un pas.
+            _mode = anchor == Anchor.Rotate ? DragMode.Rotate : DragMode.Resize;
             _anchor = anchor;
             RememberResize(single, page);
             _vm.BeginEdit();
@@ -467,10 +539,14 @@ public partial class PageCanvas : UserControl
             return;
         }
 
-        if (_vm.SingleSelected is { } frame)
-        {
-            ApplyResize(frame, page, e.KeyModifiers.HasFlag(KeyModifiers.Shift));
-        }
+        if (_vm.SingleSelected is not { } frame) return;
+
+        // Maj sert aux deux gestes, et pas à la même chose : proportions conservées au
+        // redimensionnement, pas de 15° à la rotation. C'est ce que fait Publisher.
+        var maj = e.KeyModifiers.HasFlag(KeyModifiers.Shift);
+
+        if (_mode == DragMode.Rotate) ApplyRotate(frame, page, maj);
+        else ApplyResize(frame, page, maj);
     }
 
     private void OnPointerReleased(object? sender, PointerReleasedEventArgs e)
@@ -551,6 +627,15 @@ public partial class PageCanvas : UserControl
 
         if (_vm?.SingleSelected is { } selected && HitHandle(selected, surfacePoint) is { } anchor)
         {
+            // La neuvième poignée d'abord : elle n'est pas un bord, et l'arithmétique
+            // ci-dessous — qui compte huit poignées — lui donnerait un curseur de
+            // redimensionnement parfaitement valide, donc parfaitement trompeur.
+            if (anchor == Anchor.Rotate)
+            {
+                InputLayer.Cursor = RotateCursor;
+                return;
+            }
+
             // La rotation fait tourner le sens du redimensionnement : on décale
             // l'index de poignée d'un cran par quart de tour de 45°.
             var index = (int)anchor + (int)Math.Round(selected.Rotation / 45.0);
@@ -601,8 +686,26 @@ public partial class PageCanvas : UserControl
 
         Focus();
 
+        // La poignée de rotation est la seule qui se pose DEHORS, au-dessus du bloc :
+        // un bloc collé au haut de la page la met donc sur la règle, où elle se voit
+        // sans se laisser prendre. Le geste y poserait un repère au lieu de tourner —
+        // il ne ferait pas rien, il ferait autre chose. On la sert donc d'abord ; la
+        // capture revient à la règle, qui renvoie déjà la suite du geste aux mêmes
+        // gestionnaires.
+        var surfacePoint = e.GetPosition(Surface);
+        if (_vm.SingleSelected is { } single && HitHandle(single, surfacePoint) == Anchor.Rotate)
+        {
+            _mode = DragMode.Rotate;
+            _anchor = Anchor.Rotate;
+            RememberResize(single, ToPageCoordinates(surfacePoint));
+            _vm.BeginEdit();
+            e.Pointer.Capture(ruler);
+            e.Handled = true;
+            return;
+        }
+
         var vertical = ruler.Orientation == Avalonia.Layout.Orientation.Horizontal;
-        var page = ToPageCoordinates(e.GetPosition(Surface));
+        var page = ToPageCoordinates(surfacePoint);
         var guide = new RulerGuide(vertical ? page.X : page.Y);
 
         BeginGuideDrag(guide, vertical);
@@ -766,6 +869,45 @@ public partial class PageCanvas : UserControl
         frame.Height = height;
         frame.X = originX - width / 2 - cornerX;
         frame.Y = originY - height / 2 - cornerY;
+    }
+
+    // ---------------------------------------------------------------- rotation
+
+    /// <summary>
+    /// Jumeau de <see cref="ApplyResize"/> : mêmes repères de départ, même capture,
+    /// même transaction d'annulation. Le bloc tourne autour de son centre — le pivot
+    /// qu'emploient <see cref="Frame.ToPage"/> et l'export —, si bien que le geste
+    /// n'écrit que <see cref="Frame.Rotation"/> : ni la position ni la taille ne bougent.
+    ///
+    /// Il suit l'ÉCART d'angle depuis la prise, et non l'angle absolu du pointeur. La
+    /// poignée est au-dessus du bloc, à un quart de tour de son axe : viser l'angle
+    /// absolu ferait sauter le bloc de 90° au premier pixel de glissement.
+    /// </summary>
+    private void ApplyRotate(Frame frame, Point page, bool snap)
+    {
+        var centreX = _startX + _startWidth / 2;
+        var centreY = _startY + _startHeight / 2;
+
+        // Sur le pivot, l'angle n'existe pas et bascule d'un demi-tour au moindre
+        // tremblement : on garde alors la rotation acquise plutôt que d'en inventer une.
+        var dx = page.X - centreX;
+        var dy = page.Y - centreY;
+        if (dx * dx + dy * dy < 1) return;
+
+        // L'axe Y descend, comme en PDF : un angle qui croît tourne dans le sens des
+        // aiguilles, ce qui est le sens de Rotation. Aucune négation à faire.
+        var prise = Math.Atan2(_startPointer.Y - centreY, _startPointer.X - centreX);
+        var angle = _startRotation + (Math.Atan2(dy, dx) - prise) * 180.0 / Math.PI;
+
+        // L'aimantation porte sur l'angle ABSOLU et non sur l'écart parcouru : c'est ce
+        // qui permet de remettre d'aplomb un bloc qui ne l'est pas — un pas relatif lui
+        // conserverait son travers.
+        if (snap) angle = Math.Round(angle / RotateSnapDegrees) * RotateSnapDegrees;
+
+        // Ramené dans [0, 360[ : le champ du panneau s'arrête à ±360, et deux tours de
+        // poignée dans le même sens le dépasseraient — la valeur serait alors ramenée en
+        // silence à la sélection suivante. Publisher affiche 350°, pas −10°.
+        frame.Rotation = ((angle % 360) + 360) % 360;
     }
 
     // ---------------------------------------------------------------- saisie de texte
