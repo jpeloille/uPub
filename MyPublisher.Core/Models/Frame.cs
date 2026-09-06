@@ -377,6 +377,15 @@ public partial class TextFrame : Frame
     [property: JsonPropertyOrder(150)]
     private string _foreground = "#FF1A1A1A";
 
+    /// <summary>
+    /// Portions de texte qui s'écartent du style du bloc. Vide — le cas de tous les
+    /// documents écrits jusqu'ici — veut dire que le bloc est d'un seul style, et rien
+    /// ne change pour lui : c'est pourquoi cette addition ne demande aucune migration
+    /// et laisse <c>FormatVersion</c> à 3.
+    /// </summary>
+    [JsonPropertyOrder(160)]
+    public ObservableCollection<StyleSpan> Spans { get; set; } = [];
+
     [ObservableProperty]
     [property: JsonPropertyOrder(170)]
     private TextAlign _align = TextAlign.Left;
@@ -445,6 +454,9 @@ public partial class TextFrame : Frame
             LineHeight = LineHeight, PaddingLeft = PaddingLeft, PaddingTop = PaddingTop,
             PaddingRight = PaddingRight, PaddingBottom = PaddingBottom, Field = Field
         };
+        // Les fragments sont copiés et non partagés : deux blocs issus d'une
+        // duplication doivent pouvoir diverger.
+        foreach (var span in Spans) c.Spans.Add(span.Clone());
         CopyBaseTo(c);
         return c;
     }

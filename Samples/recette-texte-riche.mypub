@@ -1,0 +1,182 @@
+{
+  "FormatVersion": 3,
+  "Title": "Recette R1 — texte riche",
+  "PageWidth": 595.28,
+  "PageHeight": 841.89,
+  "MarginLeft": 56.69,
+  "MarginTop": 56.69,
+  "MarginRight": 56.69,
+  "MarginBottom": 56.69,
+  "ColumnCount": 1,
+  "ColumnSpacing": 0,
+  "RowCount": 1,
+  "RowSpacing": 0,
+  "BaselineSpacing": 0,
+  "BaselineOffset": 0,
+  "VerticalRulerGuides": [],
+  "HorizontalRulerGuides": [],
+  "Pages": [
+    {
+      "Name": "Page 1",
+      "Frames": [
+        {
+          "$kind": "text",
+          "Name": "Fragments",
+          "X": 40,
+          "Y": 40,
+          "Width": 360,
+          "Height": 140,
+          "Rotation": 0,
+          "Fill": null,
+          "Stroke": null,
+          "StrokeThickness": 1,
+          "StrokeStyle": "Solid",
+          "CornerRadius": 0,
+          "Text": "Un paragraphe ordinaire, dans lequel un mot est en gras, un autre en italique, un troisieme en rouge, et un quatrieme dans un corps plus grand que ses voisins.",
+          "FontFamily": "DejaVu Sans",
+          "FontSize": 11,
+          "Bold": false,
+          "Italic": false,
+          "Foreground": "#FF1A1A1A",
+          "Spans": [
+            {
+              "Start": 51,
+              "Length": 4,
+              "FontFamily": null,
+              "FontSize": null,
+              "Bold": true,
+              "Italic": null,
+              "Foreground": null,
+              "BaselineShift": 0
+            },
+            {
+              "Start": 69,
+              "Length": 8,
+              "FontFamily": null,
+              "FontSize": null,
+              "Bold": null,
+              "Italic": true,
+              "Foreground": null,
+              "BaselineShift": 0
+            },
+            {
+              "Start": 95,
+              "Length": 5,
+              "FontFamily": null,
+              "FontSize": null,
+              "Bold": null,
+              "Italic": null,
+              "Foreground": "#FFCC0000",
+              "BaselineShift": 0
+            },
+            {
+              "Start": 126,
+              "Length": 16,
+              "FontFamily": null,
+              "FontSize": 17,
+              "Bold": null,
+              "Italic": null,
+              "Foreground": null,
+              "BaselineShift": 0
+            }
+          ],
+          "Align": "Justify",
+          "LineHeight": 1.25,
+          "PaddingLeft": 0,
+          "PaddingTop": 0,
+          "PaddingRight": 0,
+          "PaddingBottom": 0,
+          "Field": "None"
+        },
+        {
+          "$kind": "text",
+          "Name": "Indice et exposant",
+          "X": 40,
+          "Y": 200,
+          "Width": 360,
+          "Height": 60,
+          "Rotation": 0,
+          "Fill": null,
+          "Stroke": null,
+          "StrokeThickness": 1,
+          "StrokeStyle": "Solid",
+          "CornerRadius": 0,
+          "Text": "Formule H2O et note 3, dans une meme ligne.",
+          "FontFamily": "DejaVu Sans",
+          "FontSize": 11,
+          "Bold": false,
+          "Italic": false,
+          "Foreground": "#FF1A1A1A",
+          "Spans": [
+            {
+              "Start": 9,
+              "Length": 1,
+              "FontFamily": null,
+              "FontSize": 8,
+              "Bold": null,
+              "Italic": null,
+              "Foreground": null,
+              "BaselineShift": -0.25
+            },
+            {
+              "Start": 20,
+              "Length": 1,
+              "FontFamily": null,
+              "FontSize": 8,
+              "Bold": null,
+              "Italic": null,
+              "Foreground": null,
+              "BaselineShift": 0.35
+            }
+          ],
+          "Align": "Left",
+          "LineHeight": 1.25,
+          "PaddingLeft": 0,
+          "PaddingTop": 0,
+          "PaddingRight": 0,
+          "PaddingBottom": 0,
+          "Field": "None"
+        },
+        {
+          "$kind": "text",
+          "Name": "Police melangee",
+          "X": 40,
+          "Y": 280,
+          "Width": 360,
+          "Height": 60,
+          "Rotation": 0,
+          "Fill": null,
+          "Stroke": null,
+          "StrokeThickness": 1,
+          "StrokeStyle": "Solid",
+          "CornerRadius": 0,
+          "Text": "Une police differente au milieu : DejaVu Serif, puis retour.",
+          "FontFamily": "DejaVu Sans",
+          "FontSize": 11,
+          "Bold": false,
+          "Italic": false,
+          "Foreground": "#FF1A1A1A",
+          "Spans": [
+            {
+              "Start": 34,
+              "Length": 12,
+              "FontFamily": "DejaVu Serif",
+              "FontSize": null,
+              "Bold": null,
+              "Italic": null,
+              "Foreground": null,
+              "BaselineShift": 0
+            }
+          ],
+          "Align": "Left",
+          "LineHeight": 1.25,
+          "PaddingLeft": 0,
+          "PaddingTop": 0,
+          "PaddingRight": 0,
+          "PaddingBottom": 0,
+          "Field": "None"
+        }
+      ]
+    }
+  ]
+}

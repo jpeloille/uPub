@@ -190,97 +190,110 @@ public static class PdfExporter
         var content = FieldResolver.Resolve(text.Field, text.Text, context);
         if (string.IsNullOrEmpty(content)) return;
 
-        var style = XFontStyleEx.Regular;
-        if (text.Bold) style |= XFontStyleEx.Bold;
-        if (text.Italic) style |= XFontStyleEx.Italic;
-
-        var font = new XFont(text.FontFamily, text.FontSize, style);
-        var brush = ParseBrush(text.Foreground) ?? XBrushes.Black;
-
         var box = new XRect(
             text.X + text.PaddingLeft,
             text.Y + text.PaddingTop,
             Math.Max(1, text.Width - text.PaddingLeft - text.PaddingRight),
             Math.Max(1, text.Height - text.PaddingTop - text.PaddingBottom));
 
-        // On compose nous-mêmes plutôt que de laisser XTextFormatter le faire : il ne
-        // publie pas sa découpe et n'expose aucun réglage d'avance de ligne, si bien
-        // que l'interligne du modèle ne franchissait pas l'export. La découpe est
-        // celle du noyau ; seule la règle à mesurer est d'ici.
-        var lignes = Compositeur.Composer(
-            content, box.Width, s => gfx.MeasureString(s, font).Width);
+        // La composition est celle du noyau ; seule la règle à mesurer est d'ici.
+        // C'est ce qui permet à l'écran d'obtenir exactement les mêmes lignes.
+        //
+        // Un bloc portant un champ résolu n'a pas les mêmes caractères que son texte
+        // saisi : les fragments de style, qui repèrent des positions dans le texte,
+        // ne s'y appliquent pas. Un folio ou une date sont d'un seul style, et c'est
+        // bien ainsi.
+        var fragments = content == text.Text ? text.Spans : (IReadOnlyList<StyleSpan>)[];
+
+        var metriques = new MetriquesPdf(gfx);
+        var commun = Commun(text);
+        var lignes = Compositeur.Composer(content, fragments, commun, box.Width, metriques);
         if (lignes.Count == 0) return;
 
-        var naturelle = font.GetHeight();
-        var avance = Compositeur.Avance(naturelle, text.LineHeight);
-
-        // La ligne de base de la première ligne : DrawString cale sur elle, et la
-        // montée de la police dit de combien descendre depuis le haut de la boîte.
-        //
-        // L'interligne supplémentaire se répartit de part et d'autre de la ligne, et
-        // non entièrement en dessous : c'est la convention typographique, celle de
-        // CSS, et celle d'Avalonia. Mesuré : sans ce demi-interligne, l'écran et le
-        // PDF décalaient de 2 pt à interligne 1,25 — assez pour que les deux rendus
-        // ne se superposent plus.
-        var ligneDeBase = box.Top
-                          + (avance - naturelle) / 2
-                          + font.Metrics.Ascent * font.Size / font.Metrics.UnitsPerEm;
+        // L'interligne supplémentaire se répartit de part et d'autre de la ligne et
+        // non entièrement en dessous : convention typographique, celle de CSS et celle
+        // d'Avalonia. Sans ce demi-interligne, l'écran et le PDF décalaient de 2 pt à
+        // interligne 1,25 — assez pour que les deux rendus ne se superposent plus.
+        var haut = box.Top;
 
         foreach (var ligne in lignes)
         {
-            if (ligne.Texte.Length == 0) { ligneDeBase += avance; continue; }
+            var avance = Compositeur.Avance(ligne.Naturelle, text.LineHeight);
+            var ligneDeBase = haut + (avance - ligne.Naturelle) / 2 + Montee(ligne, metriques);
 
-            // Justifier : répartir le blanc qui manque entre les mots. La dernière
-            // ligne d'un paragraphe ne se justifie pas — sinon « fin. » s'étirerait
-            // sur toute la largeur du bloc.
-            if (text.Align == TextAlign.Justify && !ligne.FinDeParagraphe)
+            if (ligne.Morceaux.Count > 0)
             {
-                Justifier(gfx, ligne, font, brush, box, ligneDeBase);
-            }
-            else
-            {
-                var x = text.Align switch
+                var justifiee = text.Align == TextAlign.Justify && !ligne.FinDeParagraphe;
+                var origine = justifiee ? box.Left : text.Align switch
                 {
                     TextAlign.Center => box.Left + (box.Width - ligne.Largeur) / 2,
                     TextAlign.Right => box.Right - ligne.Largeur,
                     _ => box.Left,
                 };
 
-                gfx.DrawString(ligne.Texte, font, brush, new XPoint(x, ligneDeBase));
+                // Justifier : répartir le blanc qui manque entre les morceaux. La
+                // dernière ligne d'un paragraphe ne se justifie pas, sinon « fin. »
+                // s'étirerait sur toute la largeur du bloc.
+                // Le blanc se répartit entre les mots, pas entre les morceaux : le
+                // calcul est celui du noyau, partagé avec l'écran.
+                var decalages = justifiee
+                    ? Compositeur.Decalages(ligne, box.Width)
+                    : new double[ligne.Morceaux.Count];
+
+                for (var m = 0; m < ligne.Morceaux.Count; m++)
+                {
+                    var morceau = ligne.Morceaux[m];
+                    if (morceau.Texte.Trim().Length == 0) continue;
+
+                    var police = Police(morceau.Style);
+                    var pinceau = ParseBrush(morceau.Style.Foreground) ?? XBrushes.Black;
+                    // Un exposant ou un indice décale la ligne de base, vers le haut
+                    // pour un exposant : l'axe du PDF descend, d'où le moins.
+                    var y = ligneDeBase - morceau.Style.BaselineShift * morceau.Style.FontSize;
+                    gfx.DrawString(morceau.Texte, police, pinceau,
+                        new XPoint(origine + morceau.X + decalages[m], y));
+                }
             }
 
-            ligneDeBase += avance;
+            haut += avance;
         }
     }
 
-    /// <summary>
-    /// Trace une ligne justifiée : les mots gardent leur largeur, seuls les blancs
-    /// qui les séparent s'élargissent.
-    /// </summary>
-    private static void Justifier(XGraphics gfx, LigneComposee ligne, XFont font,
-                                  XBrush brush, XRect box, double ligneDeBase)
+    /// <summary>Le style du bloc, celui dont les fragments s'écartent.</summary>
+    private static StyleEffectif Commun(TextFrame text) =>
+        new(text.FontFamily, text.FontSize, text.Bold, text.Italic, text.Foreground, 0);
+
+    private static XFont Police(StyleEffectif style)
     {
-        var mots = ligne.Texte.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        if (mots.Length < 2)
+        var variante = XFontStyleEx.Regular;
+        if (style.Bold) variante |= XFontStyleEx.Bold;
+        if (style.Italic) variante |= XFontStyleEx.Italic;
+        return new XFont(style.FontFamily, style.FontSize, variante);
+    }
+
+    /// <summary>
+    /// Montée de la ligne : celle du plus grand style qu'elle porte. C'est ce qui cale
+    /// les morceaux sur une même ligne de base, quelle que soit leur taille.
+    /// </summary>
+    private static double Montee(LigneComposee ligne, MetriquesPdf metriques)
+    {
+        var montee = 0.0;
+        foreach (var morceau in ligne.Morceaux)
         {
-            gfx.DrawString(ligne.Texte, font, brush, new XPoint(box.Left, ligneDeBase));
-            return;
+            var police = Police(morceau.Style);
+            montee = Math.Max(montee, police.Metrics.Ascent * police.Size / police.Metrics.UnitsPerEm);
         }
 
-        var encre = 0.0;
-        foreach (var mot in mots) encre += gfx.MeasureString(mot, font).Width;
+        return montee;
+    }
 
-        var blanc = (box.Width - encre) / (mots.Length - 1);
-        // Un blanc négatif voudrait dire une ligne déjà trop large : on ne rétrécit
-        // pas, on laisse déborder plutôt que de superposer les mots.
-        if (blanc < 0) blanc = gfx.MeasureString(" ", font).Width;
+    /// <summary>La règle à mesurer du PDF, prêtée au compositeur du noyau.</summary>
+    private sealed class MetriquesPdf(XGraphics gfx) : Compositeur.IMetriques
+    {
+        public double Largeur(string texte, StyleEffectif style) =>
+            gfx.MeasureString(texte, Police(style)).Width;
 
-        var x = box.Left;
-        foreach (var mot in mots)
-        {
-            gfx.DrawString(mot, font, brush, new XPoint(x, ligneDeBase));
-            x += gfx.MeasureString(mot, font).Width + blanc;
-        }
+        public double Naturelle(StyleEffectif style) => Police(style).GetHeight();
     }
 
     private static void DrawImage(XGraphics gfx, ImageFrame frame, List<string> warnings, FieldContext context)
