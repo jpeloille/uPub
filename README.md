@@ -130,12 +130,17 @@ la barre du haut regroupe les commandes du document : fichier, annulation, zoom.
   contour : épaisseur, trait continu, tirets ou points, angles arrondis. Encadrer
   une image d'un filet ne demande donc plus de lui superposer une forme.
 - Rotation libre de n'importe quel bloc, y compris pour la sélection et le
-  redimensionnement.
+  redimensionnement. Elle se prend **à la souris**, par une neuvième poignée posée
+  au-dessus du bloc — un disque vert au bout d'une tige — ou se saisit au degré près
+  dans le panneau. `Maj` pendant le geste tourne par pas de 15°, et remet d'aplomb un
+  bloc qui ne l'est pas.
 - Groupes : plusieurs blocs réunis se déplacent, se tournent et se redimensionnent
   d'une pièce — le redimensionnement met les blocs du groupe à la même échelle. Un
   bloc d'un groupe ne se sélectionne pas directement : on dissocie pour le retoucher.
 - Sélection d'un bloc ou de plusieurs (`Ctrl` + clic), déplacement d'ensemble,
-  redimensionnement par huit poignées.
+  redimensionnement par huit poignées, rotation par une neuvième. Les poignées ne
+  paraissent que sur un bloc seul : pour tourner ou redimensionner plusieurs blocs, on
+  les groupe.
 - Grille de composition : colonnes et lignes avec leur gouttière, grille de ligne de
   base réglée en points. L'aimantation s'y accroche comme aux marges, aux bords et à
   l'axe médian de la page.
@@ -187,6 +192,7 @@ la barre du haut regroupe les commandes du document : fichier, annulation, zoom.
 | `Ctrl` ou `Maj` + clic | Ajoute un bloc à la sélection, ou l'en retire |
 | `Alt` pendant le déplacement | Désactive l'aimantation |
 | `Maj` sur une poignée d'angle | Conserve les proportions |
+| `Maj` sur la poignée de rotation | Tourne par pas de 15° |
 
 ## Choix techniques
 

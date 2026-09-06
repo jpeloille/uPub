@@ -32,7 +32,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **P1** | Dépôt sous git | **100 %** | Branche `main`, commit initial `cc098e0` |
 | **P2** | Contrôle de non-régression | **100 %** | `Scripts/controle.sh`, référence dans `Scripts/reference.txt` |
 | **P3** | Banc de vérification | en cours | Noyau séparé, banc de rendu, comparaison écran ↔ PDF, export déterministe, 20 tests, `Scripts/verifier.sh`. Reste : les recettes des postes clos, et le bilan |
-| **A1** | Poignée de rotation | 0 % | La rotation est déjà partout ; il manque la neuvième poignée |
+| **A1** | Poignée de rotation | **100 %** | Neuvième poignée au-dessus du bloc, aimantée sur 15° sous Maj ; recette dans `Scripts/recettes/` |
 | **A2** | Signaler le débordement du texte | **100 %** | Marqueur rouge à l'écran, avertissement à l'export, et l'export rogne au bloc comme l'écran |
 | **A3** | Chemins d'images relatifs | 0 % | — |
 | **A4** | Superposition : raccourcis et glisser-déposer | 0 % | Les quatre commandes existent, et portent la sélection multiple depuis C3a |
@@ -59,11 +59,12 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **R5** | **Ouvrir un `.pub`** | **100 %** | Lecture déléguée à libmspub. Les deux documents ATR s'ouvrent objet pour objet, sans perdre un style |
 | **D** | Moteur de composition | — | Décision non ouverte ; à rouvrir quand A, B et C sont livrées |
 
-**Par phase** — P : 3 sur 4 (P3 en cours) · A : 2 sur 7 · B : 2 sur 5 · C : 6 sur 8 ·
-R : 4 sur 5 · D : non planifié. La ligne comptait 22 postes et ignorait la phase R,
-apparue le 6 septembre 2026 ; elle la compte désormais.
+**Par phase** — P : 3 sur 4 · A : 3 sur 7 · B : 2 sur 5 · C : 6 sur 8 · R : 5 sur 5 · D : non planifié. La ligne comptait 22 postes et
+ignorait la phase R, apparue le 6 septembre 2026 ; elle la compte désormais.
 
-Soit **17 postes sur 29**. Le tableau ne porte pas encore les onze postes que l'audit
+Soit **19 postes sur 29**. Le tableau ne porte pas encore les onze
+postes que l'audit des fiches a fait apparaître le 6 septembre 2026 — A8 à A15, B6,
+B7, C8 — et qui sont au périmètre : ils y entreront quand ils seront spécifiés.
 des fiches a fait apparaître le 6 septembre 2026 — A8 à A15, B6, B7, C8 — et qui sont au
 périmètre : ils y entreront quand ils seront spécifiés. C'est un compte de postes et non
 d'effort : C3 pesait à lui
@@ -355,6 +356,113 @@ même tableau de poignées et le même mode de glisser que le redimensionnement.
 
 *Recette* : tourner un bloc à la souris, l'exporter, l'angle est le même à l'écran et
 dans le PDF.
+
+*Fait le 6 septembre 2026.* Une neuvième poignée, posée au-dessus du bord haut du bloc,
+sur le même tableau que les huit autres et sur le même mode de glisser que le
+redimensionnement — `BeginEdit` à la prise, `CommitEdit` au relâché, donc annulable d'un
+seul pas comme un déplacement. Le poste tient dans un fichier, `Views/PageCanvas.axaml.cs` ;
+il n'ajoute aucune propriété au modèle, `FormatVersion` reste à 3 et aucun document du
+dépôt n'a eu à être régénéré.
+
+**Le geste suit l'écart d'angle depuis la prise, et non l'angle absolu du pointeur.** La
+poignée n'est pas sur l'axe du bloc mais à un quart de tour de lui : viser l'angle absolu
+ferait sauter le bloc de 90° au premier pixel de glissement. Le pivot est le centre —
+celui qu'emploient déjà `Frame.ToPage` et l'export —, si bien que tourner n'écrit que
+`Rotation` : ni la position ni la taille ne bougent.
+
+**Maj aimante sur 15°, le pas de Publisher, et l'aimantation porte sur l'angle absolu.**
+C'est la seule décision du poste qui ne se déduisait pas. Un pas appliqué à l'écart
+parcouru conserverait son travers à un bloc déjà de guingois ; appliqué à l'angle, il
+permet de redresser un bloc importé — et c'est ce qu'on attend d'un pas de rotation.
+Douze positions par tour couvrent les angles droits, les diagonales et les tiers de
+quart. **Maj change donc de sens d'un geste à l'autre** : elle conserve les proportions
+sur une poignée d'angle et aimante l'angle sur celle-ci. C'est une divergence assumée,
+et c'est celle de Publisher.
+
+L'angle est ramené dans [0, 360[. Le champ du panneau s'arrête à ±360 : deux tours de
+poignée dans le même sens le dépasseraient, et la valeur serait ramenée en silence à la
+sélection suivante. Publisher affiche 350°, pas −10°.
+
+*Recette jouée*, et elle est un script : `Scripts/recettes/A1-poignee-rotation.sh`. Elle
+part d'un vrai pointeur synthétisé sur la vraie couche de saisie — onze vérifications
+dans `MyPublisher.Tests.Interface/RotationTests.cs` — puis mesure ce que le geste a
+produit : **90°, l'angle des trois objets tournés d'ATA 21** (`librevenge:rotate: 90`
+dans le relevé de `pub2raw` ; les fiches de limitations n'en portent aucun). Le PDF et
+l'écran sont ensuite rendus à deux pixels par point et leur **boîte d'encre mesurée** :
+120 × 400 px posée en (340, 60) des deux côtés, soit le bloc de 200 × 60 pt debout,
+tourné autour de son centre. La position absolue de cette boîte n'est pas décorative :
+elle mesure le pivot, un quart de tour autour du coin supérieur gauche donnant la même
+boîte 130 pt plus loin.
+
+**Ce que la mesure d'encre ne peut pas voir, et ce qui s'en charge.** La boîte d'un bloc
+tourné de +90° est exactement celle d'un bloc tourné de −90°, et l'écran comme le PDF
+lisent la même propriété : ni la mesure ni la comparaison d'images n'attraperaient une
+inversion de sens. C'est la valeur **signée** écrite dans le document, et un test qui
+tourne dans l'autre sens et exige 270°, qui l'épinglent.
+
+La recette a été éprouvée en la faisant échouer, cinq fois : sens inversé, aimantation
+retirée, pivot placé au coin supérieur gauche, geste de rotation aiguillé vers le
+redimensionnement — et, pour vérifier que la mesure d'encre n'est pas décorative, la
+rotation retirée de `PdfExporter`. Cinq sabotages, cinq attrapés ; le cinquième par la
+seule mesure de boîte, les quatre autres par les tests d'interface. Le binaire a été
+touché à chaque restauration : `cp -a` rendrait au fichier sa date d'origine et MSBuild
+laisserait vivre le binaire saboté — le piège consigné au poste R3.
+
+#### Trouvé au passage, et corrigé à moitié — la moitié qui nuisait
+
+**Un bloc collé au haut de la page mettait sa poignée sur la règle graduée.** C'est la
+seule poignée qui se pose hors du bloc, donc la seule qui puisse sortir de la planche :
+la couche de saisie s'arrête au bord de la page, et le clic tombait sur `Ruler`, qui
+**posait un repère au lieu de tourner**. Il ne faisait pas rien, il faisait autre chose.
+Les deux règles servent désormais la poignée de rotation avant de poser un repère ; la
+capture leur revient, et elles renvoient déjà la suite du geste aux mêmes gestionnaires.
+Mesuré avant correction sur un bloc posé à 5 pt du haut : rotation 0°, un repère
+vertical de trop ; après : 90°, aucun repère.
+
+**Cela ne vaut que règles affichées, et il faut le dire.** *Affichage ▸ Règles* décoché,
+`Ruler` n'est plus dans l'arbre visuel : le clic tombe alors sur le plan de travail, que
+personne n'écoute, et **ne fait rien**. Mesuré, comme le reste : rotation 0°, aucun
+repère. C'est le cas ci-dessous, moins nuisible que celui qui est corrigé — se tromper
+de geste vaut moins bien que n'en faire aucun — mais il n'est pas supprimé. Le supprimer
+vraiment demanderait d'étendre la couche de saisie au-delà de la page, donc de toucher
+`PageCanvas.axaml`, hors du fichier de ce poste.
+
+#### Choisi sans certitude
+
+**La poignée est à 22 px du bord haut, en pixels d'écran et non en points.** Elle garde
+donc la même portée de main à tous les zooms, comme les huit autres gardent leur taille.
+Vingt-deux plutôt que quinze pour que sa zone de préhension (7 px) ne touche jamais celle
+des poignées d'angle : deux poignées qui se recouvrent, c'est un geste qui part au
+hasard. Aucune fiche ne donne la distance de Publisher.
+
+**Un disque vert, et une tige qui le relie au bloc.** Le vert est celui que Publisher
+emploie pour ce geste — c'est aussi celui des repères libres dans cette application, mais
+un disque de neuf pixels sur un bloc sélectionné ne se confond pas avec un trait qui
+barre la page. Un neuvième carré, lui, se serait lu comme un bord à tirer.
+
+**Le curseur est la main.** Le jeu standard d'Avalonia n'a pas de curseur de rotation, et
+en embarquer une image pour un seul geste coûterait plus que ça ne dit.
+
+#### Trouvé et laissé tel quel
+
+**Une poignée qui sort de la page là où il n'y a pas de règle n'est pas saisissable.**
+Deux cas : un bloc tourné de 180° et collé au bas de la page met sa poignée sous la
+planche, et un bloc collé au haut la met hors de portée dès que les règles sont
+masquées. Le clic ne fait alors rien — et non pas autre chose, contrairement au cas
+corrigé ci-dessus. Le champ du panneau reste. Le traiter demanderait d'étendre la couche
+de saisie au-delà de la page, donc de toucher `PageCanvas.axaml`, hors du fichier de ce
+poste.
+
+**Le curseur ne change pas au-dessus de la poignée quand elle est sur la règle.**
+`UpdateCursor` n'écrit que sur la couche de saisie ; les règles portent le leur, posé une
+fois pour toutes. On y voit donc la flèche de déplacement de repère alors qu'on
+s'apprête à tourner. Le geste, lui, est le bon.
+
+**Une poignée d'angle déborde de sept pixels au-dessus d'un bloc posé à Y = 0.** Sa zone
+de préhension sort alors de la planche par le haut et retombe sur la règle, qui pose un
+repère. Le défaut est antérieur à ce poste et vaut pour les huit poignées ; il n'est pas
+corrigé ici parce que servir les huit depuis la règle changerait le geste de C2b — un
+clic sur la règle près du bord d'un bloc cesserait de poser un repère.
 
 ### A2 — Signaler le débordement du texte *(fiche 12)*
 
