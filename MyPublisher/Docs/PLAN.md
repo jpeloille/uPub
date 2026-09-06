@@ -231,6 +231,64 @@ vers `Models/Snap.cs` — la seconde y était déclarée deux fois, sans que rie
 l'accord. Vingt tests, dont quatre qui jouent de vrais gestes sur la vraie couche de
 saisie, et `Scripts/verifier.sh` qui enchaîne tout ce qui doit passer.
 
+
+### Ce que la relecture adversariale du 6 septembre 2026 a trouvé
+
+Quatre postes livrés par quatre agents, quatre relecteurs lancés contre eux. Ce qu'ils
+ont trouvé, et ce qui en a été fait.
+
+**Corrigé aussitôt**
+
+- **Le panneau ne redessinait plus rien, depuis R1.** `TexteCompose` déclarait
+  `AffectsRender` sur la propriété qui porte le bloc — or régler le corps ou un retrait
+  ne remplace pas l'instance du bloc, la liaison ne rendait donc rien de neuf. Quinze
+  réglages s'enregistraient et s'exportaient correctement sans que la page bouge. Le
+  contrôle s'abonne désormais au bloc et à ses deux collections d'écarts.
+
+  *Ce qui l'avait laissé passer quatre postes durant* : aucune vérification ne comparait
+  **deux images de la même page**. Les recettes comparaient l'écran au PDF, tous deux
+  recalculés depuis le modèle, tous deux justes — c'est l'écran déjà affiché qui ne
+  suivait pas. Et le premier test écrit pour l'attraper ne l'attrapait pas non plus :
+  `RenderTargetBitmap.Render` redessine de force, quel qu'ait été l'état
+  d'invalidation. Il a fallu `CaptureRenderedFrame`, qui rend l'image réellement
+  composée. Onze réglages sont désormais éprouvés ainsi, et le correctif a été retiré
+  pour vérifier qu'ils échouent sans lui : huit sur onze tombent.
+
+- **La passe des polices ne descendait pas dans les tableaux.** Trouvé par la relecture
+  de B5 avant même que C9 ne soit fusionné, et devenu réel à la fusion : les polices des
+  cases échappaient au contrôle. `Descendance` traite maintenant les deux types qui
+  portent des enfants.
+
+- **Un tableau de 40 × 40 figeait l'application 145 secondes.** Chaque case insérée
+  faisait renaître toutes les autres — 1 673 reconstructions pour 1 600 cases — et le
+  panneau les relisait à chaque fois. Un verrou de lot ne notifie plus qu'une fois par
+  redimensionnement. Deux tests comptent les reconstructions plutôt que les
+  millisecondes, pour dire la même chose sur une machine lente.
+
+**Consigné, non corrigé**
+
+- **L'écran découpe le texte au bloc, l'export non.** Une première ligne en retrait
+  négatif qui déborde à gauche est rognée à l'écran et entière au PDF. La relecture de
+  R2 va plus loin, et elle a raison : le document de recette porte 18 et −18 pt,
+  *choisis pour rester dans le cadre*, alors que la paire réelle d'ATA 21 (13,9 et
+  −15,7 pt) sort de 1,8 pt. « Un poste dont la recette évite son propre défaut connu
+  n'est pas mesuré, il est mis en scène. » À trancher : Publisher ne dessine pas le
+  texte hors de sa zone, donc c'est l'export qui devrait découper — et alors les deux
+  s'accordent.
+
+- **Le seuil de rupture de colonne est évalué deux fois, sur deux mesures.** R3 a
+  partagé le *code* qui décide où rompre, pas la *mesure* : l'écran interroge Avalonia,
+  l'export PDFsharp. Une ligne qui tombe à un centième de point du bas d'une colonne
+  peut partir en colonne 1 d'un côté et en colonne 2 de l'autre, et tout le reste du
+  texte se décale. Le message de livraison de R3 présentait ce risque comme supprimé :
+  il ne l'est pas. Le supprimer vraiment demande **une seule source de mesure**, ce qui
+  est la question du seuil D.
+
+- **Certains avertissements de police portent sur des polices jamais dessinées** : la
+  passe relit l'héritage des fragments pour son compte au lieu de lire les styles
+  composés. Un fragment entièrement recouvert par un autre est signalé quand même.
+
+
 ### P0 — Une décision à prendre tout de suite
 
 **Le nom du remplissage.** `ShapeFrame.Fill` et `TextFrame.Background` désignent la même

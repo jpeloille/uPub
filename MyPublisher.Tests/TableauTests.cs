@@ -258,4 +258,52 @@ public class TableauTests
         Assert.Equal("case 1", table.Cells[0].Text);
         Assert.Equal(300, table.Width);
     }
+
+    [Fact]
+    public void Agrandir_un_tableau_ne_reconstruit_la_grille_quune_fois()
+    {
+        // Trouvé par la relecture de C9 : chaque case insérée faisait renaître toutes
+        // les autres, et le panneau les relisait à chaque notification. Passer à
+        // 40 × 40 — deux valeurs que le champ accepte — figeait l'application deux
+        // minutes et demie pour 1 600 cases. Ce n'est pas une question de vitesse mais
+        // de nombre : on compte les notifications, pas les millisecondes, pour que le
+        // test dise la même chose sur une machine lente.
+        var tableau = new TableFrame { X = 0, Y = 0, Width = 300, Height = 100 };
+        tableau.ColumnCount = 3;
+        tableau.RowCount = 1;
+
+        var reconstructions = 0;
+        tableau.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(TableFrame.CellFrames)) reconstructions++;
+        };
+
+        tableau.ColumnCount = 20;
+
+        Assert.Equal(20, tableau.ColumnCount);
+        Assert.Equal(20, tableau.CellFrames.Count);
+        // Une notification pour les vingt colonnes, et non une par case.
+        Assert.Equal(1, reconstructions);
+    }
+
+    [Fact]
+    public void Un_tableau_de_quarante_sur_quarante_reste_praticable()
+    {
+        // Le plafond que le panneau offre, poussé à bout. Mille six cents cases, et le
+        // compte de reconstructions doit rester celui de deux gestes.
+        var tableau = new TableFrame { X = 0, Y = 0, Width = 300, Height = 100 };
+
+        var reconstructions = 0;
+        tableau.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(TableFrame.CellFrames)) reconstructions++;
+        };
+
+        tableau.RowCount = 40;
+        tableau.ColumnCount = 40;
+
+        Assert.Equal(1600, tableau.CellFrames.Count);
+        Assert.Equal(2, reconstructions);
+    }
+
 }

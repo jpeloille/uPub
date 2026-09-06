@@ -137,12 +137,24 @@ public static class PdfExporter
     private static IEnumerable<Frame> Blocs(Document document) =>
         document.Pages.SelectMany(page => page.Frames).SelectMany(Descendance);
 
+    /// <summary>
+    /// Le bloc et tout ce qu'il contient. Les deux types qui portent des enfants sont
+    /// traités ici : le groupe, et le tableau, dont les cases sont des blocs de texte
+    /// ordinaires. Oublier le tableau laisserait ses polices hors du contrôle — trouvé
+    /// par la relecture de B5, avant même que C9 ne soit fusionné.
+    /// </summary>
     private static IEnumerable<Frame> Descendance(Frame frame)
     {
         yield return frame;
 
-        if (frame is not GroupFrame groupe) yield break;
-        foreach (var enfant in groupe.Children)
+        var enfants = frame switch
+        {
+            GroupFrame groupe => groupe.Children.AsEnumerable(),
+            TableFrame tableau => tableau.CellFrames,
+            _ => [],
+        };
+
+        foreach (var enfant in enfants)
         {
             foreach (var descendant in Descendance(enfant)) yield return descendant;
         }

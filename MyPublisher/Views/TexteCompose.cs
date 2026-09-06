@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Globalization;
 using Avalonia;
 using Avalonia.Controls;
@@ -41,7 +42,45 @@ public sealed class TexteCompose : Control
     static TexteCompose()
     {
         AffectsRender<TexteCompose>(BlocProperty, ContenuProperty);
+        BlocProperty.Changed.AddClassHandler<TexteCompose>((c, e) => c.Suivre(e));
     }
+
+    /// <summary>
+    /// Ce qu'on écoute sur le bloc, et pourquoi il faut l'écouter.
+    ///
+    /// « AffectsRender » ne se déclenche que si la VALEUR de la propriété change. Or
+    /// « Bloc » est lié au bloc lui-même : régler son retrait ou son corps depuis le
+    /// panneau ne remplace pas l'instance, la liaison ne rend donc rien de neuf, et la
+    /// page ne se redessinait pas. Le défaut est arrivé avec R1, quand le TextBlock —
+    /// qui liait chaque propriété séparément — a cédé la place à ce contrôle : quinze
+    /// réglages du panneau s'enregistraient et s'exportaient sans que rien ne bouge à
+    /// l'écran, jusqu'à ce qu'on retouche le texte ou rouvre le document.
+    ///
+    /// On s'abonne donc au bloc, et à ses deux collections d'écarts — ajouter un
+    /// fragment de style ne change aucune propriété du bloc.
+    /// </summary>
+    private void Suivre(AvaloniaPropertyChangedEventArgs e)
+    {
+        if (e.OldValue is TextFrame ancien)
+        {
+            ancien.PropertyChanged -= SurChangement;
+            ancien.Spans.CollectionChanged -= SurCollection;
+            ancien.Paragraphs.CollectionChanged -= SurCollection;
+        }
+
+        if (e.NewValue is TextFrame nouveau)
+        {
+            nouveau.PropertyChanged += SurChangement;
+            nouveau.Spans.CollectionChanged += SurCollection;
+            nouveau.Paragraphs.CollectionChanged += SurCollection;
+        }
+    }
+
+    private void SurChangement(object? _, System.ComponentModel.PropertyChangedEventArgs __) =>
+        InvalidateVisual();
+
+    private void SurCollection(object? _, NotifyCollectionChangedEventArgs __) =>
+        InvalidateVisual();
 
     /// <summary>Le bloc, pour son style commun, ses fragments et ses marges.</summary>
     public TextFrame? Bloc

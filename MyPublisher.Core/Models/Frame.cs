@@ -919,6 +919,26 @@ public partial class TableFrame : Frame
         var actuel = horizontal ? Columns.Count : Rows.Count;
         if (voulu == actuel) return;
 
+        _enLot = true;
+        try
+        {
+            Poser(voulu, horizontal);
+        }
+        finally
+        {
+            _enLot = false;
+        }
+
+        // La source compte : « Recalculer » choisit d'accorder la largeur ou la
+        // hauteur du bloc selon ce qui a bougé. Lui passer le tableau lui-même ne
+        // désignerait ni l'une ni l'autre, et le bloc garderait sa taille d'avant.
+        Recalculer(horizontal ? Columns : (object)Rows);
+        OnPropertyChanged(horizontal ? nameof(ColumnCount) : nameof(RowCount));
+    }
+
+    private void Poser(int voulu, bool horizontal)
+    {
+
         while ((horizontal ? Columns.Count : Rows.Count) > voulu)
         {
             var dernier = (horizontal ? Columns.Count : Rows.Count) - 1;
@@ -945,8 +965,6 @@ public partial class TableFrame : Frame
                 Cells.Insert(RangDe(ligne, colonne), Modeler(ligne, colonne));
             }
         }
-
-        OnPropertyChanged(horizontal ? nameof(ColumnCount) : nameof(RowCount));
     }
 
     /// <summary>Taille d'une colonne (ou d'une ligne) neuve : celle de ses voisines.</summary>
@@ -1088,6 +1106,10 @@ public partial class TableFrame : Frame
     /// </summary>
     private void Recalculer(object? source)
     {
+        // Pendant un redimensionnement en série, on laisse passer : le lot notifie une
+        // seule fois à la fin.
+        if (_enLot) return;
+
         if (!_ajuste)
         {
             _ajuste = true;
@@ -1168,6 +1190,21 @@ public partial class TableFrame : Frame
     }
 
     private void SurMembre(object? sender, PropertyChangedEventArgs e) => Recalculer(sender);
+
+    /// <summary>
+    /// Vrai pendant qu'on ajoute ou retire des lignes et des colonnes en série.
+    ///
+    /// Sans lui, chaque case insérée fait renaître toutes les autres : « CellFrames »
+    /// reconstruit la grille entière à chaque lecture, et le panneau la relit à chaque
+    /// notification. Mesuré par la relecture de C9 : passer un tableau à 40 × 40 —
+    /// deux valeurs que le champ accepte — figeait l'application 145 secondes pour
+    /// 1 600 cases, soit 1 673 reconstructions complètes. Une seule suffit.
+    ///
+    /// Le cas réel des documents à reprendre — une bande de trois cases — n'en
+    /// souffrait pas. C'est le plafond offert par le panneau qui rendait le défaut
+    /// atteignable en deux gestes.
+    /// </summary>
+    private bool _enLot;
 
     public override Frame Clone()
     {
