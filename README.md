@@ -246,6 +246,12 @@ liens.
   posés paragraphe par paragraphe.
 - L'alignement — gauche, centré, droite, justifié — reste une propriété du bloc, alors
   qu'un document Publisher le fait varier d'un paragraphe à l'autre.
+- Les réglages typographiques du panneau — police, corps, gras, alignement, interligne,
+  marges, retraits — s'enregistrent et s'exportent bien, mais la page ne se redessine
+  pas au moment où on les change : il faut retoucher le texte, ou rouvrir le document,
+  pour les voir. Seul le contenu rafraîchit l'affichage.
+- Une première ligne en retrait négatif qui déborde à gauche du bloc est rognée à
+  l'écran et entière dans le PDF.
 - Pas de pages maîtres.
 - Les images sont liées, pas embarquées dans le `.mypub`.
 - Pas de gestion des couleurs CMJN ni de fond perdu : l'export est en RVB.

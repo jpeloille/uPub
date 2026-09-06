@@ -73,7 +73,15 @@ public partial class ParagraphSpan : ObservableObject
     [property: JsonPropertyOrder(50)]
     private double? _indentFirstLine;
 
-    /// <summary>Espace avant le paragraphe, en points (<c>fo:margin-top</c>).</summary>
+    /// <summary>
+    /// Espace avant le paragraphe, en points (<c>fo:margin-top</c>).
+    ///
+    /// Il s'applique aussi au <b>premier</b> paragraphe du bloc, qui descend donc
+    /// d'autant sous la marge intérieure haute. C'est ce que fait Publisher dans une
+    /// zone de texte, là où Word l'escamote en tête de page. Choisi sans mesure, et
+    /// c'est à dire : le relevé des deux <c>.pub</c> ne porte que <c>margin-bottom</c>,
+    /// vingt-neuf fois, et pas un seul <c>margin-top</c>.
+    /// </summary>
     [ObservableProperty]
     [property: JsonPropertyOrder(60)]
     private double? _spaceBefore;

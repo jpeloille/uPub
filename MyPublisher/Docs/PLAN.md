@@ -738,16 +738,49 @@ l'espace après, et la justification visant la largeur du bloc. Quatre sabotages
 attrapés. Les tests d'interface l'ont été de même, sur les deux sabotages qui ne touchent
 que l'écran.
 
-*Trouvé au passage.* Le test d'exhaustivité de `Clone()` par réflexion **ne couvre pas
-les collections** : la fabrique de valeurs rend `null` pour elles, si bien qu'elles
-restent vides des deux côtés et que l'égalité des deux JSON passe sans rien prouver.
-`Spans` était dans ce cas depuis R1. Un test propre aux deux collections du bloc de texte
-comble le trou, et vérifie au passage que les éléments sont copiés et non partagés.
+*Trouvé au passage, et comblé.* Le test d'exhaustivité de `Clone()` par réflexion **ne
+couvre pas les collections** : la fabrique de valeurs rend `null` pour elles, si bien
+qu'elles restent vides des deux côtés et que l'égalité des deux JSON passe sans rien
+prouver. `Spans` était dans ce cas depuis R1. Un test propre aux deux collections du bloc
+de texte comble le trou, et vérifie au passage que les éléments sont copiés et non
+partagés.
+
+#### Trois choses trouvées et laissées telles quelles
+
+**Le panneau TEXTE ne rafraîchit plus la page — et c'est R1, pas R2.** Mesuré : on change
+`IndentLeft` sur un bloc, la fenêtre rend une image identique ; on change `FontSize`,
+elle rend encore la même ; on change `Text`, elle change. La raison est unique et elle
+vaut pour les dix propriétés typographiques du panneau, pas seulement pour les cinq de ce
+poste : `TexteCompose` déclare `AffectsRender` sur `Bloc` et `Contenu`, or `Bloc` est
+lié au bloc lui-même — l'instance ne change pas quand une de ses propriétés change, donc
+rien n'invalide le visuel. Seul `Contenu`, calculé par liaison à partir de `Text` et de
+`Field`, en produit une nouvelle valeur. Avant R1 le texte était un `TextBlock` dont
+chaque propriété était liée séparément, et le rafraîchissement suivait. Hors périmètre de
+R2, et à corriger en un seul endroit pour toutes : c'est le bloc qu'il faut écouter.
+
+**L'écran découpe le texte au bloc, l'export ne le découpe pas.** `PageCanvas.axaml` pose
+`ClipToBounds` sur le contenu du bloc de texte ; `PdfExporter` dessine sans découpe.
+Tant que le texte reste dans son cadre, les deux concordent. Une première ligne qui pend
+au-delà du bord gauche, elle, est rognée à l'écran et entière au PDF — et c'est
+exactement ce que la vraie paire d'ATA 21 produit : `margin-left 0.1930in` avec
+`text-indent −0.2183in` place la première ligne à **−1,8 pt**, dehors. R5 importera
+trente-six paragraphes de cette sorte.
+
+**La recette éprouve donc le mécanisme, pas encore les valeurs réelles.** Elle mesure
+18 pt de retrait négatif, 24 pt de retrait de paragraphe et 12 pt d'espace après, tous
+choisis pour que le texte reste dans son cadre et que la découpe ci-dessus ne se voie
+pas. Les valeurs relevées sur les documents — −15,7 pt et 13,9 pt — se composeront
+correctement, mais leur concordance écran ↔ PDF ne sera acquise qu'une fois la découpe
+tranchée : soit l'écran cesse de rogner, soit l'export rogne à son tour.
 
 *Laissé de côté, et à noter pour R5* : `fo:text-align` varie **par paragraphe** dans
 ATA 21 — 31 justifiés contre 21 au fer à gauche — alors que l'alignement reste une
 propriété du bloc. `ParagraphSpan` le porterait pour presque rien, mais le poste énumère
 quatre propriétés et s'y tient.
+
+*Choisi sans certitude* : l'espace avant s'applique aussi au premier paragraphe du bloc,
+qui descend donc sous sa marge intérieure haute. C'est ce que fait Publisher dans une
+zone de texte ; le relevé ne tranche pas, n'ayant aucun `fo:margin-top`.
 
 ---
 
