@@ -48,7 +48,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **C2** | Repères | **100 %** | C2a grille de composition · C2b règles graduées et repères libres |
 | **C3** | Sélection multiple, puis groupement | **100 %** | C3a sélection · C3b alignement et répartition · C3c groupe persistant |
 | **C4** | Champs | **100 %** | Folio, nombre de pages, date, coordonnées et logo ; les coordonnées attendent B1 pour servir vraiment |
-| **C5** | Remplissage riche et cohérence visuelle | 0 % | C5a fond de page · C5b jeux de couleurs · C5c dégradés — C5a et C5c débloqués par C1 |
+| **C5** | Remplissage riche et cohérence visuelle | C5a et C5c faits | Fond de page, et remplissage uni, dégradé, image ou teinte sur tout bloc ; `FormatVersion` 4. Les cinq images d'ATA 21 sont portées. **C5b — jeux de couleurs et de polices — reste ouvert** |
 | **C6** | Marges intérieures par côté | **100 %** | Quatre marges sur le bloc de texte ; `FormatVersion` 3 |
 | **C7** | Bibliothèque de blocs | 0 % | Débloqué depuis C3a |
 | **C9** | Le bloc tableau | **100 %** | Bande de cases : colonnes, lignes, contenu, fond et contour par case. `FormatVersion` reste à 3 |
@@ -59,9 +59,10 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **R5** | **Ouvrir un `.pub`** | **100 %** | Lecture déléguée à libmspub. Les deux documents ATR s'ouvrent objet pour objet, sans perdre un style |
 | **D** | Moteur de composition | — | Décision non ouverte ; à rouvrir quand A, B et C sont livrées |
 
-**Par phase** — P : 3 sur 4 (P3 en cours) · A : 0 sur 7 · B : 2 sur 5 · C : 6 sur 8 ·
-R : 4 sur 5 · D : non planifié. La ligne comptait 22 postes et ignorait la phase R,
-apparue le 6 septembre 2026 ; elle la compte désormais.
+**Par phase** — P : 3 sur 4 (P3 en cours) · A : 0 sur 7 · B : 2 sur 5 · C : 6 sur 8 —
+C5 compte deux tiers, C5a et C5c étant livrés et C5b non · R : 4 sur 5 · D : non planifié.
+La ligne comptait 22 postes et ignorait la phase R, apparue le 6 septembre 2026 ; elle la
+compte désormais.
 
 Soit **15 postes sur 29**. Le tableau ne porte pas encore les onze postes que l'audit
 des fiches a fait apparaître le 6 septembre 2026 — A8 à A15, B6, B7, C8 — et qui sont au
@@ -773,6 +774,163 @@ Textures et motifs : écartés, ressources à embarquer pour une esthétique dat
 
 *Recette* : un document composé avec un jeu de couleurs, un fond de page dégradé, et un
 export fidèle.
+
+*C5a et C5c faits le 6 septembre 2026. C5b reste ouvert.*
+
+`Fill` n'est plus une couleur mais un type discriminé par `$kind` — `solid`, `gradient`,
+`image`, `tint` — exactement comme les blocs le sont depuis C3c. Le fond de page arrive
+avec, sous le nom que la décision P0 lui réservait : `Document.Background`, du même type,
+dessiné en tête de chaque page par le même chemin que le fond d'un bloc. Une seule
+propriété nouvelle sur le document, aucune sur les blocs.
+
+**`FormatVersion` passe à 4.** Une couleur ancienne devient un remplissage uni de cette
+couleur ; un fond absent le reste, sans quoi une page changerait d'aspect à la seule
+ouverture. La migration descend dans les groupes **et dans les cases des tableaux** — une
+case n'est pas un bloc, elle n'a pas de `$kind`, et un parcours qui n'aurait suivi que les
+blocs aurait laissé des fonds de case en chaîne que le modèle refuse de relire. C'est le
+premier poste où la distinction compte. La version 3 du document d'exemple rejoint les
+deux précédentes dans `Scripts/fixtures/`.
+
+#### Ce que les documents réels demandaient
+
+**Les cinq PNG d'ATA 21 sont portés.** Ce ne sont pas des blocs image : ce sont des
+remplissages de forme (`draw:fill: bitmap`), et l'import les perdait en le disant. Le
+relevé les donne en base64 — jusqu'à 142 000 caractères pour une seule — alors que le
+modèle référence les images par chemin.
+
+**Où l'image est écrite, et pourquoi.** Dans les données de l'utilisateur,
+`~/.local/share/MyPublisher/images/`, sous un nom tiré de son contenu. Trois raisons, et
+un prix qu'il faut dire :
+
+- les écrire à côté du `.pub` modifierait un dossier que personne n'a demandé de toucher —
+  et, très concrètement, salirait `MyPublisher/Books/` à chaque passage de la recette ;
+- les images d'un document ne sont pas de la configuration : elles vont dans les données,
+  là où les coordonnées professionnelles vont dans `~/.config` ;
+- nommer d'après le contenu rend l'import **idempotent** : réimporter le même `.pub` rend
+  exactement le même document, au caractère près, ce sans quoi l'aller-retour qu'exige le
+  contrôle P2 cesserait d'être vérifiable sur un document importé.
+
+Le prix : déplacer un document ne déplace pas ses images, et une purge de ce dossier les
+perd. L'export le dit — « Image de remplissage introuvable » — plutôt que de laisser un
+aplat vide. C'est le compromis des images liées, et c'est le poste **B4** qui le résoudra.
+
+**`PubImporter` reste pur**, ce qui n'allait pas de soi : il ne touche pas au disque, il
+demande un chemin à un `IDepotImages` qu'on lui prête. Les tests lui en donnent un faux et
+s'exécutent en quelques millisecondes, comme le poste R5 en avait pris l'habitude ; sans
+dépôt, l'import dit qu'il a perdu l'image plutôt que de l'écrire de son propre chef.
+
+**Une des cinq images tourne, et c'est 20 % du poste.** Elle porte
+`librevenge:rotate: 90` : son PNG fait 1062 × 617, rapport 1,721, dans un cadre de
+3,04 × 5,23 in, rapport 0,582 — exactement l'inverse. Sans le quart de tour elle arrive
+couchée **et** écrasée d'un facteur trois, au milieu d'un schéma de ventilation.
+`ImageFill` le porte donc, et les deux rendus l'appliquent : découpe au bloc d'abord — le
+bloc, lui, ne tourne pas — puis rotation autour du centre, puis l'image posée dans le cadre
+que le modèle a calculé.
+
+#### Deux calculs qui vivent dans le noyau
+
+Les extrémités d'un dégradé et la couleur d'une teinte. Aucun des deux rendus n'en fait
+sa part : ils lisent. Ce n'est pas une élégance — c'est la leçon écrite plus haut, prise
+par le bon bout. Une comparaison écran ↔ PDF ne peut pas attraper une erreur **partagée**,
+mais elle ne peut pas non plus attraper une erreur qui **n'existe qu'une fois** : les deux
+rendus s'accordent, et se trompent ensemble. Ce sont donc des tests du noyau qui épinglent
+les valeurs, et la démonstration est faite plus bas.
+
+L'angle d'un dégradé est en degrés, zéro de gauche à droite, croissant dans le sens des
+aiguilles — l'axe Y descend, comme en PDF. Les extrémités sont posées en projetant les
+coins du rectangle sur l'axe, convention de CSS : c'est la seule qui rende un dégradé à 45°
+complet dans les coins plutôt que délavé. Les quatre ombrages de Publisher se ramènent à
+un angle ; les deux radiaux — depuis un coin, depuis le centre — ne sont pas repris.
+
+#### La recette, et le sabotage qu'elle a laissé passer
+
+`Scripts/recettes/C5-fonds.sh`, en deux temps. Le premier porte sur ATA 21 lui-même : les
+cinq remplissages par image arrivent, les cinq fichiers sont écrits, un seul quart de tour,
+et `pdfimages -list` donne la définition posée de chaque image en largeur et en hauteur —
+elles ne sont égales que si l'image n'a pas été étirée de travers. Le second mesure neuf
+couleurs au pixel sur `Samples/recette-fonds.mypub`, dans le PDF puis à l'écran, aux mêmes
+points, avec la comparaison d'ensemble en filet.
+
+Éprouvée en sabotant sept fois le code, et **six seulement ont été attrapés du premier
+coup**. Le septième — l'export cessant d'appliquer le quart de tour — est passé au vert :
+une image non tournée garde une définition uniforme, elle est simplement rognée. Le compte
+de définitions mesurait « pas déformée », pas « tournée ». La recette mesure donc
+maintenant jusqu'où l'encre monte et descend dans le cadre de l'image tournée : 4,5 pt du
+bord avec le quart de tour, 86 sans — la bande centrale de 219 pt sur 376. Et les deux
+rendus doivent s'accorder à 3 pt près, ce qui prend en défaut une rotation oubliée d'un
+seul côté.
+
+**Le sabotage qui vaut d'être raconté** est celui des extrémités du dégradé, échangées
+dans le noyau. Les deux rendus tracent alors tous les dégradés du document à l'envers — et
+la comparaison écran ↔ PDF reste à **0,08 %**, exactement le chiffre du code sain. Elle
+prouve l'accord, jamais la justesse. Ce sont les couleurs mesurées et cinq tests du noyau
+qui l'attrapent.
+
+Les six autres : la copie qui partage le remplissage au lieu de le cloner, l'étape de
+migration retirée, l'import qui perd la rotation, l'export qui ignore le fond de page,
+l'écran qui l'ignore, et la migration qui ne descend pas dans les cases d'un tableau.
+
+#### Trois pièges rencontrés
+
+**Le sélecteur de couleur pouvait effacer un dégradé.** `FillColor` existe depuis C1 parce
+qu'un `ColorPicker` renvoie vers sa source la valeur qu'il vient d'en lire, dès qu'il
+s'affiche. Le même piège revient sous une forme neuve : si l'accesseur écrivait dans un
+fond d'une autre sorte, sélectionner un bloc au fond dégradé le remplacerait par un aplat.
+`FillColor` ne vaut donc que pour l'aplat, et le panneau ne montre le sélecteur que dans
+ce cas ; le dégradé, l'image et la teinte ont leurs propres champs. Un test le garde.
+
+**Un remplissage se modifie sur place.** Régler l'angle d'un dégradé ne remplace pas
+l'instance que porte le bloc : ni `AffectsRender` ni `NotifyPropertyChangedFor` n'en
+sauraient rien, et la page ne se repeindrait pas — c'est le défaut de rafraîchissement de
+R1, dans un habit neuf. Le bloc, la case et le document s'abonnent donc à leur remplissage,
+et le contrôle d'affichage aussi. Le désabonnement passe par la surcharge à deux
+paramètres d'`OnFillChanging` : celle à un seul ne donne pas l'ancienne valeur, et le bloc
+continuerait d'entendre un remplissage qu'il ne porte plus.
+
+**Le test d'exhaustivité de `Clone()` allait cesser de couvrir le fond.** Il découvre les
+propriétés par réflexion et leur donne une valeur ; sa fabrique rend `null` pour tout type
+qu'elle ne sait pas distinguer. `Fill` était une chaîne, donc couvert ; devenu un objet, il
+serait retombé dans ce cas sans qu'aucun test ne change de couleur — exactement le trou que
+les collections avaient laissé depuis R1. La fabrique sait désormais fabriquer un
+remplissage, et trois tests vérifient en plus que la copie est profonde : deux blocs issus
+d'une duplication doivent pouvoir diverger, et une case neuve ne partage pas le fond de sa
+voisine.
+
+#### Écrit ailleurs, et assumé
+
+**Le fond de la vignette d'un modèle reste un aplat.** `TemplatePreview` donne un dégradé
+par sa première couleur et une image par un gris neutre. C'est l'écart que B1 a assumé —
+« les vignettes sont un schéma et non un rendu » — et l'ouvrir ici reviendrait à embarquer
+un troisième moteur de rendu, ce que tout l'équilibre du projet cherche à éviter.
+
+**Un dégradé semi-transparent sort opaque du PDF.** PDFsharp écrit un ombrage axial, dont
+l'alpha est celui de la page ; le format ne donne pas de transparence propre à chaque
+extrémité sans un groupe de transparence, que l'export n'écrit pas. L'écran, lui, l'honore.
+Consigné plutôt que tu.
+
+**La forme ne se trace plus d'un seul trait.** Fond et contour étaient dessinés en un
+appel ; ils sont désormais séparés, comme pour les autres blocs, parce qu'un remplissage
+par image ne se pose pas avec un pinceau. Le rendu est le même — remplir puis contourner
+est ce que fait l'opérateur combiné — et la forme hérite au passage des quatre sortes de
+fond.
+
+#### Choisi sans certitude
+
+**L'échelle de la teinte.** 100 est la couleur de base, 0 le blanc, 200 le noir : une seule
+échelle continue, monotone, sans valeur ambiguë. Publisher étiquette ses dix-huit pastilles
+en couverture d'encre et tient deux échelles séparées, « 60 % Tint » et « 60 % Shade ». Le
+côté clair correspond donc exactement — 60 ici est bien 60 % de teinte — et le côté sombre
+est son miroir plutôt que l'étiquette de Publisher. Aucun des deux documents réels ne porte
+de teinte : le choix est écrit pour être discuté, non pour être mesuré.
+
+**Une mosaïque est rendue sans répétition.** `style:repeat` vaut `stretch` sur les cinq
+images d'ATA 21, ce qui est le cadrage « Remplir ». Toute autre valeur est cadrée sans
+déformation, avec un avertissement : le modèle ne sait pas mettre une image en mosaïque, et
+l'inventer ici sortirait du poste.
+
+**Le fond de page est porté par le document et non par la page**, comme les repères libres
+et pour la même raison : c'est ainsi que Publisher le règle, et un fond qui changerait
+d'une page à l'autre est une page maître — poste non planifié.
 
 ### C6 — Marges intérieures par côté *(fiche 12)*
 
