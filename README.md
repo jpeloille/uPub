@@ -100,8 +100,9 @@ la barre du haut regroupe les commandes du document : fichier, annulation, zoom.
   saisis une fois et réinjectés dans tous les blocs qui portent le champ correspondant.
   Plusieurs jeux coexistent, on bascule de l'un à l'autre.
 - Blocs de texte (police système, corps, gras, italique, alignement dont justifié,
-  interligne, marges intérieures réglées côté par côté, couleur), images (trois
-  modes de cadrage) et formes (rectangle, ellipse).
+  calage vertical du texte dans son bloc — haut, milieu, bas —, interligne, marges
+  intérieures réglées côté par côté, couleur), images (trois modes de cadrage) et
+  formes (rectangle, ellipse).
 - **Tableaux** : des bandes de cases, avec leurs colonnes et leurs lignes. Chaque case
   porte son texte, son alignement, son fond et son contour ; la grille se règle d'un
   geste pour toutes. Les colonnes et les lignes font la taille du bloc : élargir une
@@ -141,7 +142,8 @@ la barre du haut regroupe les commandes du document : fichier, annulation, zoom.
 - Règles graduées bordant la planche, et repères libres posés où l'on veut : on les
   glisse depuis une règle, on les déplace, on les retire en les ramenant hors de la
   page, et l'aimantation s'y accroche. Aucun repère ne s'imprime ; *Affichage ▸
-  Repères* et *Règles* les effacent de l'écran.
+  Repères* et *Règles* les effacent de l'écran — et *Repères* efface aussi le marqueur
+  de débordement, qui ne s'imprime pas davantage.
 - Édition du texte directement sur la page (double-clic).
 - Ordre de superposition ; alignement (gauche, centre, droite, haut, milieu, bas) et
   répartition d'une sélection ; ajustement aux marges. L'alignement se fait par
@@ -155,6 +157,12 @@ la barre du haut regroupe les commandes du document : fichier, annulation, zoom.
   leurs fragments de style, retraits et fers par paragraphe, tabulations, tableaux,
   cadres et traits. L'import dit ce qu'il n'a pas su rendre plutôt que de le perdre en
   silence.
+- **Un bloc trop plein le dit.** Le texte qui ne tient pas dans son bloc n'est imprimé
+  ni à l'écran ni au PDF — c'est ainsi que Publisher se comporte — et le bloc porte
+  alors un petit **A rouge** à son coin, comme dans Publisher. L'export le répète et
+  chiffre ce qui manque : « Page 1 · Consigne : le texte déborde du bloc de 8,6 pt — ce
+  qui dépasse n'est pas imprimé. » Il se tait, en revanche, quand le texte ne fait
+  qu'entamer la marge intérieure basse : rien n'y est coupé.
 - **L'export dit quelles polices il n'a pas trouvées**, et par quoi il les a
   remplacées : « Police substituée : « Wingdings » demandée, « DejaVu Sans »
   employée ». Une substitution muette ne dégrade pas seulement l'allure — sur une
@@ -285,8 +293,11 @@ liens.
 
 ## Limites connues
 
-- Pas de chaînage du texte entre blocs : un texte trop long est coupé au bloc. Les
-  colonnes coulent à l'intérieur d'un bloc, jamais d'un bloc au suivant.
+- Pas de chaînage du texte entre blocs : un texte trop long est coupé au bloc — le bloc
+  le signale et l'export l'écrit, mais il n'y a nulle part où faire couler la suite. Les
+  colonnes coulent à l'intérieur d'un bloc, jamais d'un bloc au suivant. Un texte trop
+  LARGE, lui, est coupé sans rien dire : le signalement ne porte que sur la hauteur,
+  comme le marqueur de Publisher.
 - Les fragments de style se lisent, s'écrivent et se rendent, mais ne se saisissent pas
   encore à la souris : on ne peut pas sélectionner trois mots dans un bloc pour les
   mettre en gras. Le panneau agit sur le bloc entier. Il en va de même des retraits
@@ -297,8 +308,6 @@ liens.
   marges, retraits, colonnes — s'enregistrent et s'exportent bien, mais la page ne se
   redessine pas au moment où on les change : il faut retoucher le texte, ou rouvrir le
   document, pour les voir. Seul le contenu rafraîchit l'affichage.
-- Une première ligne en retrait négatif qui déborde à gauche du bloc est rognée à
-  l'écran et entière dans le PDF.
 - Les tableaux ne fusionnent pas de cellules, ne s'imbriquent pas et ne se scindent pas
   entre deux pages : ce sont des bandes de cases, ce dont les documents à reprendre ont
   besoin, et rien de plus.
@@ -308,8 +317,8 @@ liens.
 - Le format `.pub` se lit mais ne s'écrit pas. La lecture demande `libmspub`
   (`apt install libmspub-tools`) : le format est fermé, et c'est le lecteur qu'emploie
   tout le monde libre. Sans droits d'installation, `Scripts/outils-pub.sh` l'extrait
-  localement. Ne sont pas repris : les remplissages par image, l'alignement vertical du
-  texte, et les taquets de tabulation autres que ceux par défaut.
+  localement. Ne sont pas repris : les remplissages par image et les taquets de
+  tabulation autres que ceux par défaut.
 
 Ces limites, et une trentaine d'autres écarts fonctionnels, sont détaillées fiche par
 fiche dans [`MyPublisher/Docs/Publisher2007/`](MyPublisher/Docs/Publisher2007/00-index.md),

@@ -71,9 +71,15 @@ verifier() {   # <libellé> <mesuré> <attendu> <tolérance>
 }
 
 # Le nombre de pixels sombres d'une bande, donnée en POINTS : x, y, largeur, hauteur.
-# Le seuil de 50 % écarte le lissage des bords sans écarter le trait lui-même.
+# Le seuil de 50 % écarte le lissage des bords sans écarter le trait lui-même. Les
+# points se convertissent par awk et non par l'arithmétique du shell : la bande la plus
+# fine mesurée ici fait deux points et demi, et l'arrondi à l'entier la ferait tomber
+# du mauvais côté d'un bord de zone de texte.
 noir() {   # <image> <x> <y> <largeur> <hauteur>
-    magick "$1" -crop "$(( $4 * pp ))x$(( $5 * pp ))+$(( $2 * pp ))+$(( $3 * pp ))" +repage \
+    local geometrie
+    geometrie="$(awk -v x="$2" -v y="$3" -v w="$4" -v h="$5" -v p="$pp" \
+        'BEGIN { printf "%dx%d+%d+%d", w * p, h * p, x * p, y * p }')"
+    magick "$1" -crop "$geometrie" +repage \
            -colorspace Gray -threshold 50% -negate -format "%[fx:mean*w*h]" info:
 }
 
@@ -258,6 +264,21 @@ for cote in ecran pdf; do
     # lignes cachées tomberaient au-delà, en oblique. Une découpe posée en coordonnées
     # de page au lieu du repère du bloc ne se verrait sur aucun autre document.
     verifier "$cote — encre sous le bloc pivoté (px)" "$(noir "$image" 20 650 210 40)" 0 20
+
+    # La paire d'ATA 21, mesurée cette fois sur des PIXELS et non sur « pdftotext » :
+    # celui-ci trouve le texte que la découpe cache, il ne peut donc rien dire d'elle.
+    # La première ligne pend jusqu'à 57,748 pt, à gauche de sa zone de texte qui
+    # commence à 59,57. Une découpe posée sur la zone au lieu du bloc l'effacerait ; la
+    # deuxième ligne, qui rentre à 73,466, ne pose rien dans cette bande-là et le
+    # prouve.
+    pendante="$(noir "$image" 57 433 2.5 12)"
+    if [ "$pendante" -lt 4 ]; then
+        echo "ÉCHEC ($cote) : la première ligne pendante est rognée — $pendante px." >&2
+        echo "C'est le BLOC qu'on découpe, pas la zone de texte." >&2
+        exit 1
+    fi
+    verifier "$cote — même bande, ligne rentrée : rien (px)" "$(noir "$image" 57 446 2.5 12)" 0 0
+    echo "  ($cote — encre de la ligne pendante hors de sa zone : $pendante px)"
 done
 
 # Le filet de 2 pt du bloc trop plein est centré sur le bord du bloc à l'export : sa

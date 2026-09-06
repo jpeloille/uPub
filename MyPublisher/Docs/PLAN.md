@@ -33,12 +33,12 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **P2** | Contrôle de non-régression | **100 %** | `Scripts/controle.sh`, référence dans `Scripts/reference.txt` |
 | **P3** | Banc de vérification | en cours | Noyau séparé, banc de rendu, comparaison écran ↔ PDF, export déterministe, 20 tests, `Scripts/verifier.sh`. Reste : les recettes des postes clos, et le bilan |
 | **A1** | Poignée de rotation | 0 % | La rotation est déjà partout ; il manque la neuvième poignée |
-| **A2** | Signaler le débordement du texte | 0 % | Le poste le plus important de la phase : on livre encore un PDF amputé sans le dire |
+| **A2** | Signaler le débordement du texte | **100 %** | Marqueur rouge à l'écran, avertissement à l'export, et l'export rogne au bloc comme l'écran |
 | **A3** | Chemins d'images relatifs | 0 % | — |
 | **A4** | Superposition : raccourcis et glisser-déposer | 0 % | Les quatre commandes existent, et portent la sélection multiple depuis C3a |
 | **A5** | Formats de page | 0 % | Le modèle accepte déjà des dimensions libres |
 | **A6** | Taille du bloc dans la barre d'état | 0 % | — |
-| **A7** | Alignement vertical du texte | 0 % | — |
+| **A7** | Alignement vertical du texte | **100 %** | Haut, milieu, bas sur le bloc de texte ; le calage est borné à zéro. `FormatVersion` reste à 3 |
 | **B1** | Modèles | **100 %** | Catalogue au démarrage et sur `Ctrl+N` ; quatre modèles composés dans `Templates/` |
 | **B2** | Importer un fichier texte | 0 % | — |
 | **B3** | Imprimer | 0 % | — |
@@ -59,11 +59,11 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **R5** | **Ouvrir un `.pub`** | **100 %** | Lecture déléguée à libmspub. Les deux documents ATR s'ouvrent objet pour objet, sans perdre un style |
 | **D** | Moteur de composition | — | Décision non ouverte ; à rouvrir quand A, B et C sont livrées |
 
-**Par phase** — P : 3 sur 4 (P3 en cours) · A : 0 sur 7 · B : 2 sur 5 · C : 6 sur 8 ·
+**Par phase** — P : 3 sur 4 (P3 en cours) · A : 2 sur 7 · B : 2 sur 5 · C : 6 sur 8 ·
 R : 4 sur 5 · D : non planifié. La ligne comptait 22 postes et ignorait la phase R,
 apparue le 6 septembre 2026 ; elle la compte désormais.
 
-Soit **15 postes sur 29**. Le tableau ne porte pas encore les onze postes que l'audit
+Soit **17 postes sur 29**. Le tableau ne porte pas encore les onze postes que l'audit
 des fiches a fait apparaître le 6 septembre 2026 — A8 à A15, B6, B7, C8 — et qui sont au
 périmètre : ils y entreront quand ils seront spécifiés. C'est un compte de postes et non
 d'effort : C3 pesait à lui
@@ -267,14 +267,13 @@ ont trouvé, et ce qui en a été fait.
 
 **Consigné, non corrigé**
 
-- **L'écran découpe le texte au bloc, l'export non.** Une première ligne en retrait
-  négatif qui déborde à gauche est rognée à l'écran et entière au PDF. La relecture de
-  R2 va plus loin, et elle a raison : le document de recette porte 18 et −18 pt,
-  *choisis pour rester dans le cadre*, alors que la paire réelle d'ATA 21 (13,9 et
-  −15,7 pt) sort de 1,8 pt. « Un poste dont la recette évite son propre défaut connu
-  n'est pas mesuré, il est mis en scène. » À trancher : Publisher ne dessine pas le
-  texte hors de sa zone, donc c'est l'export qui devrait découper — et alors les deux
-  s'accordent.
+- **L'écran découpe le texte au bloc, l'export non.** ***Tranché et fait le
+  6 septembre 2026, au poste A2*** : c'est l'export qui découpe, et au bloc. Une
+  précision que la vérification a apportée, et qui corrige ce qui suit : la paire réelle
+  d'ATA 21 (13,9 et −15,7 pt) sort bien de 1,82 pt de sa **zone de texte**, mais les
+  2,88 pt de `fo:padding-left` la laissent à 1,06 pt **à l'intérieur du bloc** — elle
+  n'était donc rognée nulle part. La divergence réelle de ces documents est verticale, et
+  elle vaut jusqu'à 36,95 pt sur un bloc d'ATA 21.
 
 - **Le seuil de rupture de colonne est évalué deux fois, sur deux mesures.** R3 a
   partagé le *code* qui décide où rompre, pas la *mesure* : l'écran interroge Avalonia,
@@ -369,6 +368,173 @@ bloc par son nom.
 C'est le poste le plus important de la phase A : il n'ajoute aucune fonction, il
 supprime un risque — livrer un PDF amputé sans le savoir.
 
+*Fait le 6 septembre 2026*, avec **A7** et le **rognage à l'export**. Les trois ne font
+qu'un : ils demandent tous la hauteur composée d'un bloc, que `Compositeur` sait rendre
+depuis R3, et les traiter séparément aurait produit trois mesures là où le dépôt tient à
+n'en avoir qu'une.
+
+#### Le rognage : un retour, et non une addition
+
+`PdfExporter.DrawText` pose désormais un chemin de découpe sur le bloc, exactement là où
+`PageCanvas.axaml` pose `ClipToBounds`. Ce n'est pas une fonction neuve : la fiche 12
+relève qu'**avant R1, `XTextFormatter.DrawString` s'arrêtait au bord de la boîte**. La
+composition partagée, qui pose chaque ligne à l'ordonnée qu'on lui donne, a emporté cette
+limite sans que rien ne la remplace — et depuis, un bloc trop plein débordait sur ses
+voisins dans le PDF et pas à l'écran. Publisher ne dessine pas le texte hors de sa zone ;
+les deux rendus s'accordent de nouveau là-dessus.
+
+C'est le **bloc** qu'on découpe, et non la zone de texte, parce que c'est ce que l'écran
+fait : une première ligne en retrait négatif pend dans la marge intérieure gauche et doit
+y rester visible.
+
+#### Ce que la vérification a corrigé de l'énoncé
+
+La consigne de ce poste, comme la note de R2 plus bas, présentait la paire d'ATA 21 —
+`fo:margin-left 0.1930in` avec `fo:text-indent −0.2183in` — comme un cas où l'écran rogne
+et le PDF non. **Ce n'est pas le cas, et l'arithmétique le dit** : 13,896 − 15,718 =
+−1,822 pt, mais `fo:padding-left` vaut `0.0400in`, soit 2,88 pt. La première ligne tombe
+donc à **+1,058 pt à l'intérieur du bloc**. Vérifié sur les neuf blocs d'ATA 21 et sur les
+dix-huit des fiches : aucun ne sort de son bloc par la gauche ni par la droite, d'un
+millième de point.
+
+La conclusion de l'énoncé tient — c'est bien l'export qui doit rogner — mais le cas qui la
+démontrait n'est pas celui-là. La divergence réelle d'ATA 21 est **verticale**, et elle
+est bien plus grande : « Air is cooled » compose 36,95 pt de plus que son bloc, « Overheat
+Protection » 8,65 pt. C'est donc là que la recette mesure, où le signal vaut 74 pixels à
+deux pixels par point et non trois.
+
+#### Le critère du débordement est le bloc, pas la zone de texte
+
+Une fois la découpe posée au bloc, ce qui sort du bloc est exactement ce qui est amputé —
+et rien d'autre ne l'est. Un texte qui ne dépasse que dans sa marge intérieure basse reste
+entier et lisible : le signaler serait crier au loup, et c'est la leçon que B5 a payée
+cher. **Deux des neuf blocs d'ATA 21 sont dans ce cas**, à 1,5 pt près ; la recette exige
+le silence sur eux, nommément.
+
+Le seuil est un demi-point, et il n'est pas là pour absorber une erreur d'arrondi — elle
+est de l'ordre du millionième. Il est là parce que le marqueur de l'écran sort des
+métriques d'Avalonia et l'avertissement de l'export de celles de PDFsharp : un bloc au ras
+de son bord peut être signalé d'un côté et pas de l'autre. Aucun seuil ne referme cette
+fenêtre ; seul un document qui se donne de l'air la referme.
+
+#### A7 : le calage est borné, et c'est tout le poste
+
+Trois valeurs sur le bloc de texte — haut, milieu, bas —, une propriété facultative, et
+`FormatVersion` **reste à 3**. L'import de R5 les lit (`draw:textarea-vertical-align`) et
+son avertissement disparaît.
+
+Le seul bloc des deux documents réels qui porte ce réglage compose **26,86 pt dans 19,43
+pt de haut**. Le calage est donc borné à zéro : un texte plus haut que sa zone se cale en
+haut, quel que soit le fer demandé. Centrer y escamoterait le début du texte, et ce qui
+manque à la fin se voit quand ce qui manque au début ne se voit pas. Une recette sur les
+valeurs réelles n'éprouve donc *que* cette borne — d'où le document propre au poste, qui
+éprouve les trois calages sur un bloc où ils se distinguent.
+
+*Choisi sans certitude* : c'est bien cette borne, et non la troncature par le haut, que
+fait Publisher — mais aucune fiche ne le dit et le relevé ne montre qu'une occurrence.
+
+#### La désignation d'un avertissement
+
+Le format reste « &lt;désignation&gt; : &lt;message&gt; » ; la désignation seule s'allonge
+de ce qu'il faut pour désigner. La page d'abord, puis les blocs qui portent celui-ci, puis
+un rang **lorsque le nom se répète dans la même liste** :
+
+```
+Page 2 · ATA 21 - Air conditioning : le texte déborde du bloc de 4,5 pt — …
+Page 4 · Bande n° 9 · L1 · C2 : le texte déborde du bloc de 9,8 pt — …
+```
+
+Sans cela, deux blocs anonymes donnaient deux lignes identiques, et l'import de R5, qui
+nomme « Bande » chacune des seize bandes des fiches ATR et « L1 · C2 » la deuxième case de
+chacune, en donnait six sur la seule page 4. Le rang ne s'écrit que là où il apprend
+quelque chose : posé sur un nom déjà unique, il ferait croire à une numérotation que le
+document ne porte pas.
+
+#### Le marqueur, et pourquoi il obéit aux repères
+
+Un petit A rouge au coin inférieur droit du bloc, comme Publisher. Il est le frère du
+contrôle qui dessine le texte et non un morceau de lui — le texte est découpé au bloc, un
+marqueur dessiné dedans le serait aussi, et il doit mordre le bord. Les deux lisent la
+même composition et la même règle de débordement, celle que l'export applique.
+
+**Il s'efface avec les repères** (*Affichage ▸ Repères*), ce qui s'écarte de Publisher,
+qui le montre toujours. Deux raisons, et la seconde est décisive : il n'a pas plus de sens
+qu'un repère sur une page qu'on regarde pour la juger ; et sans cet interrupteur, toute
+page portant un débordement afficherait une tache que le PDF n'a pas, si bien que la
+comparaison écran ↔ PDF cesserait de prouver quoi que ce soit — précisément sur les pages
+que ce poste concerne.
+
+#### Ce que le poste a trouvé
+
+**Le dépôt livrait des PDF amputés, et le document de référence du contrôle P2 le
+premier.** Quatre blocs de `Samples/exemple-bulletin.mypub` — dont « Colonne de gauche »,
+43,56 pt, presque trois lignes de corps — et deux de `Samples/recette-polices.mypub`
+perdaient du texte à l'export sans un mot. Ce n'est pas une négligence de composition :
+c'est **la retombée de R4**, qui a fait de l'interligne un multiple de la hauteur
+naturelle et non du corps. Les blocs avaient été dimensionnés sous l'ancienne sémantique,
+où `LineHeight 1,4` valait `1,4 × corps` ; ils réclament depuis 16 % de plus. Personne ne
+l'avait vu parce que rien ne le disait — ce qui est exactement la raison d'être d'A2. Les
+documents sont remis à la taille de leur texte, et un test les garde désormais tous.
+
+**Les deux règles à mesurer ne donnent pas le même nombre de lignes.** Le bloc « Rappel »
+d'`exemple-bulletin` — DejaVu Sans *italique* 14 pt sur 441,9 pt de large — se compose en
+**deux lignes sous PDFsharp et en trois sous Avalonia**. L'écart n'est pas de quelques
+centièmes : c'est une ligne entière, soit 23,55 pt, et il fait que l'écran signalait un
+débordement que l'export ne voyait pas. C'est le défaut déjà consigné à R3 — « le seuil de
+rupture de colonne est évalué deux fois, sur deux mesures » — pris ici sur un cas où il se
+voit à l'œil nu. Il n'est pas corrigeable dans ce poste : le supprimer demande une seule
+source de mesure, ce qui est la question du seuil D. Le bloc a été agrandi de façon à
+tenir sous les deux.
+
+#### Recette
+
+`Scripts/recettes/A2-A7-debordement-et-rognage.sh`, sur **ATA 21 d'abord** — importé,
+exporté, et mesuré aux valeurs qui y sont — puis sur `Samples/recette-debordement.mypub`
+pour ce que le réel ne porte pas.
+
+Le rognage se mesure sur des **images** et jamais sur `pdftotext` : un chemin de découpe
+PDF cache le texte, il ne le retire pas du flux. `pdftotext` le trouve encore — et c'est
+tant mieux, la recette de R5 compte dessus pour affirmer que le texte est passé.
+
+Mesuré : zéro pixel d'encre sous « Overheat Protection » des deux côtés, contre 5 455
+pixels dans le bas du bloc — la mesure n'est pas prise à vide ; les trois calages
+verticaux à 160,002, 207,198 et 254,393 pt, au centième ; le calage au milieu d'un bloc
+trop petit qui rend exactement la même ordonnée que son jumeau calé en haut ; la première
+ligne pendante à 57,748 pt et les suivantes à 73,466, aux valeurs d'ATA 21, avec l'encre
+qui reste **hors de sa zone de texte** et dans le bloc ; et la moitié basse du filet de
+2 pt d'un bloc trop plein, qui prouve que le découpage du texte n'a pas survécu au texte.
+
+Un bloc **pivoté de 20°** porte le même débordement : le découpage est posé dans le repère
+courant, donc il tourne avec le bloc, et une découpe restée en coordonnées de page ne se
+verrait sur aucun autre document du dépôt.
+
+La recette a été éprouvée en la faisant échouer, sept fois : le découpage retiré, le
+découpage posé sur la zone de texte au lieu du bloc, le découpage survivant au texte, le
+calage vertical oublié à l'export, l'avertissement supprimé, le calage non borné, et le
+débordement mesuré sur la zone au lieu du bloc. Les tests l'ont été de même sur cinq
+autres : le calage oublié à l'écran, le marqueur jamais dessiné, le rang retiré de la
+désignation, le calage perdu à l'import, et une propriété oubliée dans `Clone()`. **Douze
+sabotages, douze attrapés.**
+
+#### Trouvé au passage, et laissé tel quel
+
+**L'écran rentre son filet dans le bloc, l'export le centre sur le bord.** Mesuré sur un
+filet de 2 pt : il occupe 115,0–117,0 pt à l'écran et 115,5–117,5 pt au PDF, pour un bord
+de bloc à 116,69. Avalonia décale la géométrie d'une demi-épaisseur, PDFsharp non — et la
+documentation de `Frame.StrokeThickness`, « centrée sur le bord du bloc », n'est donc vraie
+que d'un côté. Antérieur à ce poste, visible seulement sur les filets épais, hors
+périmètre.
+
+**Le débordement horizontal est rogné et n'est pas signalé.** Un mot plus large que sa
+colonne, ou un retrait de première ligne assez négatif pour sortir du bloc, est désormais
+coupé des deux côtés sans un mot — A2 ne mesure que la hauteur, comme le marqueur de
+Publisher. Aucun des vingt-quatre `.pub` de la machine ne produit ce cas ; il n'en est pas
+moins muet.
+
+**Un tableau ne porte pas de calage vertical.** Ses cases naissent calées en haut, et rien
+ne le règle : `TableFrame` a une police, un corps et une marge, pas de fer vertical. Le
+relevé n'en demande aucun.
+
 ### A3 — Chemins d'images relatifs *(fiche 21)*
 
 À l'enregistrement, écrire le chemin en relatif quand le fichier image se trouve sous le
@@ -404,6 +570,9 @@ Trois valeurs — haut, milieu, bas. Propriété nouvelle et facultative, donc s
 migration. Immédiat à l'écran, calculable à l'export à partir de la hauteur mesurée.
 
 *Recette* : un titre centré verticalement dans son bloc l'est aussi dans le PDF.
+
+*Fait le 6 septembre 2026*, **avec A2 et le rognage à l'export** : les trois demandent la
+même mesure, et le compte rendu est [au poste A2](#a2--signaler-le-débordement-du-texte-fiche-12).
 
 ---
 
@@ -986,6 +1155,13 @@ au-delà du bord gauche, elle, est rognée à l'écran et entière au PDF — et
 exactement ce que la vraie paire d'ATA 21 produit : `margin-left 0.1930in` avec
 `text-indent −0.2183in` place la première ligne à **−1,8 pt**, dehors. R5 importera
 trente-six paragraphes de cette sorte.
+
+> *Rectifié au poste A2, le 6 septembre 2026, en le mesurant.* La dernière phrase est
+> fausse, et c'est la marge intérieure qui la rend fausse : `fo:padding-left` vaut
+> `0.0400in` sur les neuf blocs d'ATA 21, soit 2,88 pt, si bien que la première ligne
+> tombe à 1,06 pt **dans** le bloc. Elle sort de sa zone de texte, que rien ne découpe,
+> et non du bloc, qui seul l'est. Le constat général était juste, l'exemple non — et
+> c'est l'exemple qui aurait servi de recette.
 
 **La recette éprouve donc le mécanisme, pas encore les valeurs réelles.** Elle mesure
 18 pt de retrait négatif, 24 pt de retrait de paragraphe et 12 pt d'espace après, tous
