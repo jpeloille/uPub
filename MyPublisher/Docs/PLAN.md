@@ -743,12 +743,21 @@ l'écart qu'à 3,04 %. Le même décalage déplace chaque mesure de 2,00 pt, con
 tolérance de 0,05 pt. La comparaison d'images reste, en filet, pour ce qu'une mesure de
 position ne voit pas : une couleur perdue, un fond oublié, un filet disparu.
 
-*Trouvé au passage*, et non corrigé — hors périmètre : `TexteCompose` ne se redessine
-que lorsque la **référence** de son bloc change (`AffectsRender` porte sur `Bloc` et
-`Contenu`). Modifier le corps ou la police d'un bloc de texte dans le panneau ne
-repeint donc pas l'écran tant qu'aucune autre liaison ne le force. Les tableaux n'en
-souffrent pas — leurs cases sont recalculées et changent donc de référence à chaque
-retouche — mais les blocs de texte, si.
+*Trouvé au passage*, et non corrigé — hors périmètre. Deux choses.
+
+`TexteCompose` ne se redessine que lorsque la **référence** de son bloc change
+(`AffectsRender` porte sur `Bloc` et `Contenu`). Modifier le corps ou la police d'un
+bloc de texte dans le panneau ne repeint donc pas l'écran tant qu'aucune autre liaison
+ne le force. Les tableaux n'en souffrent pas — leurs cases sont recalculées et changent
+donc de référence à chaque retouche — mais les blocs de texte, si.
+
+Un bloc plus large que le groupe qui le porte est **découpé à l'écran et pas au PDF**.
+Vérifié sur un groupe de 120 pt contenant un rectangle et un texte de 400 pt, sans
+aucun tableau : l'écran s'arrête au bord du groupe, le PDF va jusqu'au bout. Le cas ne
+s'obtient pas au geste — grouper ajuste le groupe à ses blocs — mais un fichier écrit à
+la main ou un import le produira. Il ne touche pas les tableaux : leur largeur est
+toujours celle de leurs colonnes, y compris après relecture d'un fichier qui dirait
+autre chose.
 
 *Écart assumé* : le contenu d'une case est découpé au bloc à l'écran (`ClipToBounds`) et
 ne l'est pas au PDF. Un texte trop long pour sa case sortira du cadre dans le PDF et pas
