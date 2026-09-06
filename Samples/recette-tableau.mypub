@@ -1,0 +1,600 @@
+{
+  "FormatVersion": 3,
+  "Title": "Recette C9 - le bloc tableau",
+  "PageWidth": 595.28,
+  "PageHeight": 841.89,
+  "MarginLeft": 56.69,
+  "MarginTop": 56.69,
+  "MarginRight": 56.69,
+  "MarginBottom": 56.69,
+  "ColumnCount": 1,
+  "ColumnSpacing": 0,
+  "RowCount": 1,
+  "RowSpacing": 0,
+  "BaselineSpacing": 0,
+  "BaselineOffset": 0,
+  "VerticalRulerGuides": [],
+  "HorizontalRulerGuides": [],
+  "Pages": [
+    {
+      "Name": "Page 1",
+      "Frames": [
+        {
+          "$kind": "text",
+          "Name": "Titre",
+          "X": 56.69,
+          "Y": 56.69,
+          "Width": 482,
+          "Height": 30,
+          "Rotation": 0,
+          "Fill": null,
+          "Stroke": null,
+          "StrokeThickness": 1,
+          "StrokeStyle": "Solid",
+          "CornerRadius": 0,
+          "Text": "Limitations et procedures",
+          "FontFamily": "DejaVu Sans",
+          "FontSize": 16,
+          "Bold": true,
+          "Italic": false,
+          "Foreground": "#FF1A1A1A",
+          "Spans": [],
+          "Align": "Left",
+          "LineHeight": 1,
+          "PaddingLeft": 0,
+          "PaddingTop": 0,
+          "PaddingRight": 0,
+          "PaddingBottom": 0,
+          "Field": "None"
+        },
+        {
+          "$kind": "table",
+          "Name": "Bande 1",
+          "X": 56.69,
+          "Y": 110,
+          "Width": 482,
+          "Height": 26,
+          "Rotation": 0,
+          "Fill": null,
+          "Stroke": null,
+          "StrokeThickness": 1,
+          "StrokeStyle": "Solid",
+          "CornerRadius": 0,
+          "FontFamily": "DejaVu Sans",
+          "FontSize": 10,
+          "Bold": false,
+          "Italic": false,
+          "Foreground": "#FF1A1A1A",
+          "LineHeight": 1,
+          "CellPadding": 3,
+          "Columns": [
+            {
+              "Width": 160
+            },
+            {
+              "Width": 160
+            },
+            {
+              "Width": 162
+            }
+          ],
+          "Rows": [
+            {
+              "Height": 26
+            }
+          ],
+          "Cells": [
+            {
+              "Row": 0,
+              "Column": 0,
+              "Text": "Vitesse maximale",
+              "Spans": [],
+              "Align": "Left",
+              "Fill": "#FFEFF2F6",
+              "Stroke": "#FF404040",
+              "StrokeThickness": 1
+            },
+            {
+              "Row": 0,
+              "Column": 1,
+              "Text": "VNE 250 kt",
+              "Spans": [],
+              "Align": "Center",
+              "Fill": null,
+              "Stroke": "#FF404040",
+              "StrokeThickness": 1
+            },
+            {
+              "Row": 0,
+              "Column": 2,
+              "Text": "lisse",
+              "Spans": [],
+              "Align": "Right",
+              "Fill": null,
+              "Stroke": "#FF404040",
+              "StrokeThickness": 1
+            }
+          ]
+        },
+        {
+          "$kind": "table",
+          "Name": "Bande 2",
+          "X": 56.69,
+          "Y": 136,
+          "Width": 482,
+          "Height": 26,
+          "Rotation": 0,
+          "Fill": null,
+          "Stroke": null,
+          "StrokeThickness": 1,
+          "StrokeStyle": "Solid",
+          "CornerRadius": 0,
+          "FontFamily": "DejaVu Sans",
+          "FontSize": 10,
+          "Bold": false,
+          "Italic": false,
+          "Foreground": "#FF1A1A1A",
+          "LineHeight": 1,
+          "CellPadding": 3,
+          "Columns": [
+            {
+              "Width": 160
+            },
+            {
+              "Width": 160
+            },
+            {
+              "Width": 162
+            }
+          ],
+          "Rows": [
+            {
+              "Height": 26
+            }
+          ],
+          "Cells": [
+            {
+              "Row": 0,
+              "Column": 0,
+              "Text": "Vitesse de manoeuvre",
+              "Spans": [],
+              "Align": "Left",
+              "Fill": "#FFEFF2F6",
+              "Stroke": "#FF404040",
+              "StrokeThickness": 1
+            },
+            {
+              "Row": 0,
+              "Column": 1,
+              "Text": "VA 165 kt",
+              "Spans": [],
+              "Align": "Center",
+              "Fill": null,
+              "Stroke": "#FF404040",
+              "StrokeThickness": 1
+            },
+            {
+              "Row": 0,
+              "Column": 2,
+              "Text": "masse maximale",
+              "Spans": [],
+              "Align": "Right",
+              "Fill": null,
+              "Stroke": "#FF404040",
+              "StrokeThickness": 1
+            }
+          ]
+        },
+        {
+          "$kind": "table",
+          "Name": "Bande 3",
+          "X": 56.69,
+          "Y": 162,
+          "Width": 482,
+          "Height": 26,
+          "Rotation": 0,
+          "Fill": null,
+          "Stroke": null,
+          "StrokeThickness": 1,
+          "StrokeStyle": "Solid",
+          "CornerRadius": 0,
+          "FontFamily": "DejaVu Sans",
+          "FontSize": 10,
+          "Bold": false,
+          "Italic": false,
+          "Foreground": "#FF1A1A1A",
+          "LineHeight": 1,
+          "CellPadding": 3,
+          "Columns": [
+            {
+              "Width": 160
+            },
+            {
+              "Width": 160
+            },
+            {
+              "Width": 162
+            }
+          ],
+          "Rows": [
+            {
+              "Height": 26
+            }
+          ],
+          "Cells": [
+            {
+              "Row": 0,
+              "Column": 0,
+              "Text": "Volets sortis",
+              "Spans": [],
+              "Align": "Left",
+              "Fill": "#FFEFF2F6",
+              "Stroke": "#FF404040",
+              "StrokeThickness": 1
+            },
+            {
+              "Row": 0,
+              "Column": 1,
+              "Text": "VFE 180 kt",
+              "Spans": [],
+              "Align": "Center",
+              "Fill": null,
+              "Stroke": "#FF404040",
+              "StrokeThickness": 1
+            },
+            {
+              "Row": 0,
+              "Column": 2,
+              "Text": "15 degres",
+              "Spans": [],
+              "Align": "Right",
+              "Fill": null,
+              "Stroke": "#FF404040",
+              "StrokeThickness": 1
+            }
+          ]
+        },
+        {
+          "$kind": "table",
+          "Name": "Bande 4",
+          "X": 56.69,
+          "Y": 188,
+          "Width": 482,
+          "Height": 26,
+          "Rotation": 0,
+          "Fill": null,
+          "Stroke": null,
+          "StrokeThickness": 1,
+          "StrokeStyle": "Solid",
+          "CornerRadius": 0,
+          "FontFamily": "DejaVu Sans",
+          "FontSize": 10,
+          "Bold": false,
+          "Italic": false,
+          "Foreground": "#FF1A1A1A",
+          "LineHeight": 1,
+          "CellPadding": 3,
+          "Columns": [
+            {
+              "Width": 160
+            },
+            {
+              "Width": 160
+            },
+            {
+              "Width": 162
+            }
+          ],
+          "Rows": [
+            {
+              "Height": 26
+            }
+          ],
+          "Cells": [
+            {
+              "Row": 0,
+              "Column": 0,
+              "Text": "Train sorti",
+              "Spans": [],
+              "Align": "Left",
+              "Fill": "#FFEFF2F6",
+              "Stroke": "#FF404040",
+              "StrokeThickness": 1
+            },
+            {
+              "Row": 0,
+              "Column": 1,
+              "Text": "VLE 150 kt",
+              "Spans": [],
+              "Align": "Center",
+              "Fill": null,
+              "Stroke": "#FF404040",
+              "StrokeThickness": 1
+            },
+            {
+              "Row": 0,
+              "Column": 2,
+              "Text": "toutes configurations",
+              "Spans": [],
+              "Align": "Right",
+              "Fill": null,
+              "Stroke": "#FF404040",
+              "StrokeThickness": 1
+            }
+          ]
+        },
+        {
+          "$kind": "table",
+          "Name": "Bande 5",
+          "X": 56.69,
+          "Y": 214,
+          "Width": 482,
+          "Height": 26,
+          "Rotation": 0,
+          "Fill": null,
+          "Stroke": null,
+          "StrokeThickness": 1,
+          "StrokeStyle": "Solid",
+          "CornerRadius": 0,
+          "FontFamily": "DejaVu Sans",
+          "FontSize": 10,
+          "Bold": false,
+          "Italic": false,
+          "Foreground": "#FF1A1A1A",
+          "LineHeight": 1,
+          "CellPadding": 3,
+          "Columns": [
+            {
+              "Width": 160
+            },
+            {
+              "Width": 160
+            },
+            {
+              "Width": 162
+            }
+          ],
+          "Rows": [
+            {
+              "Height": 26
+            }
+          ],
+          "Cells": [
+            {
+              "Row": 0,
+              "Column": 0,
+              "Text": "Vent traversier",
+              "Spans": [],
+              "Align": "Left",
+              "Fill": "#FFEFF2F6",
+              "Stroke": "#FF404040",
+              "StrokeThickness": 1
+            },
+            {
+              "Row": 0,
+              "Column": 1,
+              "Text": "25 kt",
+              "Spans": [],
+              "Align": "Center",
+              "Fill": null,
+              "Stroke": "#FF404040",
+              "StrokeThickness": 1
+            },
+            {
+              "Row": 0,
+              "Column": 2,
+              "Text": "piste seche",
+              "Spans": [],
+              "Align": "Right",
+              "Fill": null,
+              "Stroke": "#FF404040",
+              "StrokeThickness": 1
+            }
+          ]
+        },
+        {
+          "$kind": "table",
+          "Name": "Bande 6",
+          "X": 56.69,
+          "Y": 240,
+          "Width": 482,
+          "Height": 26,
+          "Rotation": 0,
+          "Fill": null,
+          "Stroke": null,
+          "StrokeThickness": 1,
+          "StrokeStyle": "Solid",
+          "CornerRadius": 0,
+          "FontFamily": "DejaVu Sans",
+          "FontSize": 10,
+          "Bold": false,
+          "Italic": false,
+          "Foreground": "#FF1A1A1A",
+          "LineHeight": 1,
+          "CellPadding": 3,
+          "Columns": [
+            {
+              "Width": 160
+            },
+            {
+              "Width": 160
+            },
+            {
+              "Width": 162
+            }
+          ],
+          "Rows": [
+            {
+              "Height": 26
+            }
+          ],
+          "Cells": [
+            {
+              "Row": 0,
+              "Column": 0,
+              "Text": "Altitude maximale",
+              "Spans": [],
+              "Align": "Left",
+              "Fill": "#FFEFF2F6",
+              "Stroke": "#FF404040",
+              "StrokeThickness": 1
+            },
+            {
+              "Row": 0,
+              "Column": 1,
+              "Text": "FL 250",
+              "Spans": [],
+              "Align": "Center",
+              "Fill": null,
+              "Stroke": "#FF404040",
+              "StrokeThickness": 1
+            },
+            {
+              "Row": 0,
+              "Column": 2,
+              "Text": "cabine pressurisee",
+              "Spans": [],
+              "Align": "Right",
+              "Fill": null,
+              "Stroke": "#FF404040",
+              "StrokeThickness": 1
+            }
+          ]
+        },
+        {
+          "$kind": "table",
+          "Name": "Deux lignes",
+          "X": 56.69,
+          "Y": 290,
+          "Width": 482,
+          "Height": 48,
+          "Rotation": 0,
+          "Fill": null,
+          "Stroke": null,
+          "StrokeThickness": 1,
+          "StrokeStyle": "Solid",
+          "CornerRadius": 0,
+          "FontFamily": "DejaVu Sans",
+          "FontSize": 10,
+          "Bold": false,
+          "Italic": false,
+          "Foreground": "#FF1A1A1A",
+          "LineHeight": 1,
+          "CellPadding": 3,
+          "Columns": [
+            {
+              "Width": 240
+            },
+            {
+              "Width": 242
+            }
+          ],
+          "Rows": [
+            {
+              "Height": 24
+            },
+            {
+              "Height": 24
+            }
+          ],
+          "Cells": [
+            {
+              "Row": 0,
+              "Column": 0,
+              "Text": "Volets 15 degres",
+              "Spans": [
+                {
+                  "Start": 0,
+                  "Length": 6,
+                  "FontFamily": null,
+                  "FontSize": null,
+                  "Bold": true,
+                  "Italic": null,
+                  "Foreground": null,
+                  "BaselineShift": 0
+                }
+              ],
+              "Align": "Left",
+              "Fill": "#FFEFF2F6",
+              "Stroke": "#FF404040",
+              "StrokeThickness": 1
+            },
+            {
+              "Row": 0,
+              "Column": 1,
+              "Text": "185 kt",
+              "Spans": [],
+              "Align": "Left",
+              "Fill": "#FFEFF2F6",
+              "Stroke": "#FF404040",
+              "StrokeThickness": 1
+            },
+            {
+              "Row": 1,
+              "Column": 0,
+              "Text": "Trains sortis",
+              "Spans": [],
+              "Align": "Left",
+              "Fill": null,
+              "Stroke": "#FF404040",
+              "StrokeThickness": 1
+            },
+            {
+              "Row": 1,
+              "Column": 1,
+              "Text": "155 kt",
+              "Spans": [],
+              "Align": "Left",
+              "Fill": null,
+              "Stroke": "#FF404040",
+              "StrokeThickness": 1
+            }
+          ]
+        },
+        {
+          "$kind": "table",
+          "Name": "Case seule",
+          "X": 56.69,
+          "Y": 362,
+          "Width": 482,
+          "Height": 30,
+          "Rotation": 0,
+          "Fill": null,
+          "Stroke": null,
+          "StrokeThickness": 1,
+          "StrokeStyle": "Solid",
+          "CornerRadius": 0,
+          "FontFamily": "DejaVu Sans",
+          "FontSize": 10,
+          "Bold": false,
+          "Italic": false,
+          "Foreground": "#FF1A1A1A",
+          "LineHeight": 1,
+          "CellPadding": 4,
+          "Columns": [
+            {
+              "Width": 482
+            }
+          ],
+          "Rows": [
+            {
+              "Height": 30
+            }
+          ],
+          "Cells": [
+            {
+              "Row": 0,
+              "Column": 0,
+              "Text": "Une seule case, comme trois des dix-neuf tableaux des fiches.",
+              "Spans": [],
+              "Align": "Center",
+              "Fill": "#FFFDF3D8",
+              "Stroke": "#FF404040",
+              "StrokeThickness": 1
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

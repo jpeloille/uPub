@@ -44,6 +44,11 @@
         <StreamGeometry x:Key="IconHeading">F1 M 4,4 H 8 V 10.4 H 16 V 4 H 20 V 20 H 16 V 13.6 H 8 V 20 H 4 Z</StreamGeometry>
         <StreamGeometry x:Key="IconRectangle">F0 M 3,5 H 21 V 19 H 3 Z M 5,7 V 17 H 19 V 7 Z</StreamGeometry>
         <StreamGeometry x:Key="IconEllipse">F0 M 3,12 A 9,7 0 1 0 21,12 A 9,7 0 1 0 3,12 Z M 5,12 A 7,5 0 1 1 19,12 A 7,5 0 1 1 5,12 Z</StreamGeometry>
+        <!-- Le tableau est dessiné en barres séparées et non en contour évidé : avec la
+             règle pair-impair, les croisements des filets se creuseraient en trous
+             blancs de un pixel. Toutes les barres tournent dans le même sens, si bien
+             que la règle par défaut les additionne au lieu de les soustraire. -->
+        <StreamGeometry x:Key="IconTable">F1 M 3,5 H 21 V 6 H 3 Z M 3,18 H 21 V 19 H 3 Z M 3,5 H 4 V 19 H 3 Z M 20,5 H 21 V 19 H 20 Z M 3,9 H 21 V 10 H 3 Z M 9,5 H 10 V 19 H 9 Z M 14,5 H 15 V 19 H 14 Z</StreamGeometry>
         <StreamGeometry x:Key="IconImage">F0 M 3,5 H 21 V 19 H 3 Z M 5,7 V 17 H 19 V 7 Z M 6.4,16 L 10.2,11 L 13,14.2 L 15.6,10.8 L 18.4,16 Z M 7.6,9.6 A 1.4,1.4 0 1 1 10.4,9.6 A 1.4,1.4 0 1 1 7.6,9.6 Z</StreamGeometry>
         <StreamGeometry x:Key="IconToFront">F1 M 12,2.5 L 19.5,10 H 4.5 Z M 4.5,12.5 H 19.5 V 15 H 4.5 Z M 4.5,17 H 19.5 V 19.5 H 4.5 Z</StreamGeometry>
         <StreamGeometry x:Key="IconForward">F1 M 12,4.5 L 19.5,12 H 4.5 Z M 4.5,15.5 H 19.5 V 19.5 H 4.5 Z</StreamGeometry>
@@ -137,6 +142,7 @@
                 <MenuItem Header="_Titre" Command="{Binding AddHeadingCommand}"/>
                 <MenuItem Header="Bloc de _texte" Command="{Binding AddTextCommand}"/>
                 <MenuItem Header="_Image…" Click="OnInsertImage"/>
+                <MenuItem Header="Ta_bleau" Command="{Binding AddTableCommand}"/>
                 <Separator/>
                 <MenuItem Header="_Rectangle" Command="{Binding AddRectangleCommand}"/>
                 <MenuItem Header="_Ellipse" Command="{Binding AddEllipseCommand}"/>
@@ -507,6 +513,118 @@
                                 </StackPanel>
                             </DataTemplate>
 
+                            <DataTemplate DataType="models:TableFrame">
+                                <StackPanel>
+                                    <TextBlock Classes="section" Text="TABLEAU"/>
+                                    <TextBlock Text="Les colonnes et les lignes font la taille du bloc : les élargir l'élargit, le redimensionner les mesure à la même aune."
+                                               FontSize="11" Foreground="#FF8A929E"
+                                               TextWrapping="Wrap" Margin="0,0,0,6"/>
+
+                                    <Grid ColumnDefinitions="*,8,*" RowDefinitions="Auto,Auto">
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Classes="field" Text="Lignes"/>
+                                        <TextBlock Grid.Row="0" Grid.Column="2" Classes="field" Text="Colonnes"/>
+                                        <NumericUpDown Grid.Row="1" Grid.Column="0" FormatString="0" Increment="1"
+                                                       Minimum="1" Maximum="40" Value="{Binding RowCount}"/>
+                                        <NumericUpDown Grid.Row="1" Grid.Column="2" FormatString="0" Increment="1"
+                                                       Minimum="1" Maximum="40" Value="{Binding ColumnCount}"/>
+                                    </Grid>
+
+                                    <TextBlock Classes="field" Text="Police" Margin="0,8,0,2"/>
+                                    <ComboBox HorizontalAlignment="Stretch" MaxDropDownHeight="320"
+                                              ItemsSource="{Binding #Root.((vm:MainWindowViewModel)DataContext).FontFamilies}"
+                                              SelectedItem="{Binding FontFamily}"/>
+
+                                    <Grid ColumnDefinitions="*,8,*" RowDefinitions="Auto,Auto">
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Classes="field" Text="Corps (pt)"/>
+                                        <TextBlock Grid.Row="0" Grid.Column="2" Classes="field" Text="Interligne"/>
+                                        <NumericUpDown Grid.Row="1" Grid.Column="0" FormatString="0.#" Increment="0.5" Minimum="1"
+                                                       Value="{Binding FontSize, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
+                                        <NumericUpDown Grid.Row="1" Grid.Column="2" FormatString="0.00" Increment="0.05" Minimum="0.5"
+                                                       Value="{Binding LineHeight, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
+                                    </Grid>
+
+                                    <StackPanel Orientation="Horizontal" Margin="0,8">
+                                        <ToggleButton Content="G" FontWeight="Bold" Width="36" IsChecked="{Binding Bold}"/>
+                                        <ToggleButton Content="I" FontStyle="Italic" Width="36" Margin="4,0"
+                                                      IsChecked="{Binding Italic}"/>
+                                    </StackPanel>
+
+                                    <TextBlock Classes="field" Text="Marge intérieure des cases (pt)"/>
+                                    <NumericUpDown FormatString="0.#" Increment="1" Minimum="0"
+                                                   Value="{Binding CellPadding, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
+
+                                    <TextBlock Classes="field" Text="Couleur du texte" Margin="0,8,0,2"/>
+                                    <ColorPicker HorizontalAlignment="Left"
+                                                 Color="{Binding Foreground, Converter={x:Static conv:HexToColor.Instance}}"/>
+
+                                    <!-- La grille se règle pour toutes les cases à la fois ; chacune
+                                         garde pourtant son contour dans le fichier, comme Publisher
+                                         les décrit. Personne ne veut cocher trois cases pour
+                                         encadrer une bande. -->
+                                    <CheckBox Content="Encadrer les cases" Margin="0,10,0,0"
+                                              IsChecked="{Binding HasGrid}"/>
+                                    <StackPanel IsEnabled="{Binding HasGrid}">
+                                        <ColorPicker HorizontalAlignment="Left" Margin="0,2,0,0"
+                                                     Color="{Binding GridColor, Converter={x:Static conv:HexToColor.Instance}}"/>
+                                        <TextBlock Classes="field" Text="Épaisseur des filets (pt)" Margin="0,6,0,2"/>
+                                        <NumericUpDown FormatString="0.#" Increment="0.5" Minimum="0"
+                                                       Value="{Binding GridThickness, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
+                                    </StackPanel>
+
+                                    <TextBlock Classes="field" Text="Largeur des colonnes (mm)" Margin="0,10,0,2"/>
+                                    <ItemsControl ItemsSource="{Binding Columns}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate DataType="models:TableColumn">
+                                                <NumericUpDown FormatString="0.##" Increment="1" Minimum="1"
+                                                               Value="{Binding Width, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+
+                                    <TextBlock Classes="field" Text="Hauteur des lignes (mm)" Margin="0,8,0,2"/>
+                                    <ItemsControl ItemsSource="{Binding Rows}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate DataType="models:TableRow">
+                                                <NumericUpDown FormatString="0.##" Increment="1" Minimum="1"
+                                                               Value="{Binding Height, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+
+                                    <!-- Les cases se règlent ici et non sur la page : il n'y a pas
+                                         de sélection à l'intérieur d'un bloc, et une bande en
+                                         compte trois. Chacune est nommée par son rang, ligne puis
+                                         colonne, pour qu'on sache laquelle on modifie. -->
+                                    <TextBlock Classes="section" Text="CASES"/>
+                                    <ItemsControl ItemsSource="{Binding Cells}">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate DataType="models:TableCell">
+                                                <Border BorderBrush="#FFE3E6EA" BorderThickness="0,1,0,0" Padding="0,6">
+                                                    <StackPanel>
+                                                        <TextBlock Text="{Binding Label}" FontSize="11"
+                                                                   Foreground="#FF8A929E"/>
+                                                        <TextBox Classes="cellText"
+                                                                 Text="{Binding Text}" AcceptsReturn="True"
+                                                                 TextWrapping="Wrap" Height="54"
+                                                                 VerticalContentAlignment="Top" Margin="0,2,0,0"/>
+                                                        <Grid ColumnDefinitions="*,8,Auto" Margin="0,4,0,0">
+                                                            <ComboBox Grid.Column="0" HorizontalAlignment="Stretch"
+                                                                      ItemsSource="{Binding #Root.((vm:MainWindowViewModel)DataContext).TextAlignments}"
+                                                                      SelectedItem="{Binding Align}"/>
+                                                            <CheckBox Grid.Column="2" Content="Fond"
+                                                                      IsChecked="{Binding HasFill}"/>
+                                                        </Grid>
+                                                        <ColorPicker HorizontalAlignment="Left" Margin="0,4,0,0"
+                                                                     IsEnabled="{Binding HasFill}"
+                                                                     Color="{Binding FillColor, Converter={x:Static conv:HexToColor.Instance}}"/>
+                                                    </StackPanel>
+                                                </Border>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                </StackPanel>
+                            </DataTemplate>
+
                             <DataTemplate DataType="models:ImageFrame">
                                 <StackPanel>
                                     <TextBlock Classes="section" Text="IMAGE"/>
@@ -587,7 +705,7 @@
                 </StackPanel>
             </ScrollViewer>
 
-            <!-- Barre d'outils latérale. Les cinq premiers boutons arment un outil :
+            <!-- Barre d'outils latérale. Les six premiers boutons arment un outil :
                  on trace ensuite le bloc directement sur la page. Les suivants sont
                  des actions immédiates sur le bloc sélectionné. -->
             <Border Grid.Column="5" Background="#FFF3F4F6"
@@ -614,6 +732,13 @@
                         <ToggleButton Classes="sidebar" ToolTip.Tip="Ellipse (E)"
                                       IsChecked="{Binding ActiveTool, Converter={x:Static conv:EnumToBool.Instance}, ConverterParameter=Ellipse}">
                             <Path Classes="icon" Data="{StaticResource IconEllipse}"/>
+                        </ToggleButton>
+
+                        <!-- « B » comme bande : « T » appartient au texte, et ces
+                             tableaux-là sont des bandes à trois cases. -->
+                        <ToggleButton Classes="sidebar" ToolTip.Tip="Tableau (B)"
+                                      IsChecked="{Binding ActiveTool, Converter={x:Static conv:EnumToBool.Instance}, ConverterParameter=Table}">
+                            <Path Classes="icon" Data="{StaticResource IconTable}"/>
                         </ToggleButton>
 
                         <!-- L'image ne se trace pas : elle demande d'abord un fichier. -->

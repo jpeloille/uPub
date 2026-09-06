@@ -12,5 +12,6 @@ public enum EditorTool
     Text,
     Heading,
     Rectangle,
-    Ellipse
+    Ellipse,
+    Table
 }

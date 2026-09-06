@@ -590,8 +590,34 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             Name = "Ellipse", Shape = ShapeKind.Ellipse, Width = 160, Height = 160
         },
+        EditorTool.Table => BuildTable(),
         _ => throw new ArgumentOutOfRangeException(nameof(tool), tool, "Outil sans gabarit de bloc.")
     };
+
+    /// <summary>
+    /// Une bande de trois cases sur toute la largeur de composition : c'est la forme
+    /// que prennent seize des dix-neuf tableaux des fiches ATR. Sa taille n'est pas
+    /// posée ici — ce sont les colonnes et la ligne qui la font, et poser la largeur
+    /// avant elles reviendrait à les mesurer au rapport entre les deux.
+    /// </summary>
+    private TableFrame BuildTable()
+    {
+        var table = new TableFrame { Name = "Tableau" };
+        var largeur = Document.MarginBoxWidth / 3;
+
+        for (var colonne = 0; colonne < 3; colonne++) table.Columns.Add(new TableColumn(largeur));
+        table.Rows.Add(new TableRow(26));
+
+        for (var colonne = 0; colonne < 3; colonne++)
+        {
+            table.Cells.Add(new TableCell
+            {
+                Row = 0, Column = colonne, Stroke = "#FF6B7280", StrokeThickness = 1
+            });
+        }
+
+        return table;
+    }
 
     [RelayCommand]
     private void AddText() => InsertWithTool(EditorTool.Text);
@@ -604,6 +630,9 @@ public partial class MainWindowViewModel : ViewModelBase
 
     [RelayCommand]
     private void AddEllipse() => InsertWithTool(EditorTool.Ellipse);
+
+    [RelayCommand]
+    private void AddTable() => InsertWithTool(EditorTool.Table);
 
     /// <summary>Insertion par le menu : le bloc est posé dans la zone de composition.</summary>
     private void InsertWithTool(EditorTool tool)

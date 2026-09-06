@@ -182,6 +182,27 @@
             </Panel>
         </DataTemplate>
 
+        <DataTemplate DataType="models:TableFrame">
+            <!-- Un tableau se rend comme un groupe : il pose son repère, et ses cases
+                 s'y dessinent en coordonnées relatives. Ces cases sont des blocs de
+                 texte calculés par le modèle, si bien qu'elles passent par le gabarit
+                 ci-dessus — l'écran n'a aucun rendu de tableau qui lui soit propre, et
+                 l'export non plus. -->
+            <Panel Width="{Binding Width}" Height="{Binding Height}"
+                   RenderTransformOrigin="50%,50%"
+                   RenderTransform="{Binding Rotation, Converter={x:Static conv:Conv.Rotate}}">
+                <Rectangle Classes="frameFill"/>
+                <ItemsControl Classes="frames" ItemsSource="{Binding CellFrames}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <Canvas/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                </ItemsControl>
+                <Rectangle Classes="frameStroke"/>
+            </Panel>
+        </DataTemplate>
+
     </UserControl.DataTemplates>
 
     <ScrollViewer Name="Scroller"

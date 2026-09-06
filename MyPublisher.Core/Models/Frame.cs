@@ -1,6 +1,9 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Linq;
 using System.Text.Json.Serialization;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -63,6 +66,7 @@ public readonly record struct Insets(double Left, double Top, double Right, doub
 [JsonDerivedType(typeof(ImageFrame), "image")]
 [JsonDerivedType(typeof(ShapeFrame), "shape")]
 [JsonDerivedType(typeof(GroupFrame), "group")]
+[JsonDerivedType(typeof(TableFrame), "table")]
 public abstract partial class Frame : ObservableObject
 {
     // L'ordre d'écriture est explicite d'un bout à l'autre du modèle. Sans lui, le
@@ -582,5 +586,504 @@ public partial class GroupFrame : Frame
         CopyBaseTo(c);
         foreach (var child in Children) c.Children.Add(child.Clone());
         return c;
+    }
+}
+
+/// <summary>
+/// Bande de cases : des colonnes, des lignes, et une cellule par croisement utile.
+///
+/// Ce que les documents réels demandent, et rien de plus. Les fiches ATR portent
+/// dix-neuf objets tableau, dont seize de trois colonnes sur une seule ligne, aucune
+/// cellule fusionnée, aucun tableau imbriqué (voir <c>Docs/Documents-reels.md</c>).
+/// C'est un porte-cases, pas un tableur : il ne calcule rien, ne se scinde pas entre
+/// deux pages et ne fusionne pas.
+///
+/// **Un tableau se rend comme un groupe.** Ses cases sont des blocs de texte calculés
+/// — <see cref="CellFrames"/> — que l'écran et l'export dessinent par le même chemin
+/// que n'importe quel bloc de texte. Aucun des deux rendus n'a une ligne de tableau à
+/// lui : ils sont donc d'accord par construction, comme ils le sont pour un groupe, et
+/// une case hérite gratuitement de la composition de R1, du fond et du contour de C1.
+///
+/// **Les colonnes et les lignes font la taille du bloc**, et non l'inverse : c'est la
+/// seule règle qui rende vrai le chiffre affiché dans le panneau. Redimensionner le
+/// bloc mesure les colonnes à la même aune (comme un groupe fait de ses blocs) ;
+/// modifier une colonne fait suivre le bloc. Les deux sens passent par le même
+/// verrou, sans quoi ils se relanceraient l'un l'autre indéfiniment.
+/// </summary>
+public partial class TableFrame : Frame
+{
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CellFrames))]
+    [property: JsonPropertyOrder(100)]
+    private string _fontFamily = "DejaVu Sans";
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CellFrames))]
+    [property: JsonPropertyOrder(110)]
+    private double _fontSize = 10;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CellFrames))]
+    [property: JsonPropertyOrder(120)]
+    private bool _bold;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CellFrames))]
+    [property: JsonPropertyOrder(130)]
+    private bool _italic;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CellFrames))]
+    [property: JsonPropertyOrder(140)]
+    private string _foreground = "#FF1A1A1A";
+
+    /// <summary>
+    /// Interligne en multiple de la hauteur naturelle de la police, comme sur un bloc
+    /// de texte depuis R4. Une bande se compose serré : le défaut est la hauteur
+    /// naturelle, sans rien y ajouter.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CellFrames))]
+    [property: JsonPropertyOrder(150)]
+    private double _lineHeight = 1;
+
+    /// <summary>
+    /// Marge intérieure des cases, en points, la même des quatre côtés. Une seule
+    /// valeur là où le bloc de texte en a quatre depuis C6 : ce qu'on règle sur une
+    /// bande, c'est l'air autour du texte, et le régler côté par côté sur chaque case
+    /// d'un tableau demanderait quatre champs pour un besoin qu'aucun des deux
+    /// documents réels n'exprime.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CellFrames))]
+    [property: JsonPropertyOrder(160)]
+    private double _cellPadding = 3;
+
+    private ObservableCollection<TableColumn> _columns = [];
+    private ObservableCollection<TableRow> _rows = [];
+    private ObservableCollection<TableCell> _cells = [];
+
+    /// <summary>
+    /// Colonnes, de gauche à droite. Écrites après la géométrie du bloc (rang 40 et 50)
+    /// et ce n'est pas indifférent : la largeur doit être relue avant elles, sinon la
+    /// mise à l'échelle ci-dessous s'appliquerait à des colonnes déjà en place. C'est
+    /// le même piège que celui des blocs d'un groupe, et la même parade.
+    /// </summary>
+    [JsonPropertyOrder(170)]
+    public ObservableCollection<TableColumn> Columns
+    {
+        get => _columns;
+        set => Adopter(ref _columns, value);
+    }
+
+    /// <summary>Lignes, de haut en bas.</summary>
+    [JsonPropertyOrder(180)]
+    public ObservableCollection<TableRow> Rows
+    {
+        get => _rows;
+        set => Adopter(ref _rows, value);
+    }
+
+    /// <summary>
+    /// Cases, rangées par ligne puis par colonne. Un croisement sans cellule est une
+    /// case vide : rien n'y est tracé, pas même son contour.
+    /// </summary>
+    [JsonPropertyOrder(190)]
+    public ObservableCollection<TableCell> Cells
+    {
+        get => _cells;
+        set => Adopter(ref _cells, value);
+    }
+
+    public TableFrame()
+    {
+        Brancher(_columns, true);
+        Brancher(_rows, true);
+        Brancher(_cells, true);
+    }
+
+    [JsonIgnore] public override string Kind => "Tableau";
+
+    // ------------------------------------------------------------------ disposition
+
+    /// <summary>
+    /// Les cases, en blocs de texte prêts à dessiner, en coordonnées relatives au coin
+    /// supérieur gauche du tableau — comme les blocs d'un groupe.
+    ///
+    /// Recalculée à chaque lecture plutôt que gardée en cache : le modèle ne porte
+    /// aucun état calculé, et une case qu'on vient de modifier doit valoir aussitôt.
+    /// C'est le parti pris de la grille de composition (<c>Document.VerticalGridLines</c>),
+    /// et il tient ici pour la même raison — une bande compte trois cases.
+    ///
+    /// Une cellule mal repérée n'est pas refusée mais ignorée, et la première posée sur
+    /// un croisement l'emporte : un document ne doit pas devenir illisible parce qu'un
+    /// import a mal compté ses lignes. C'est la règle que R1 s'est déjà donnée pour les
+    /// fragments qui se chevauchent.
+    /// </summary>
+    [JsonIgnore]
+    public IReadOnlyList<Frame> CellFrames
+    {
+        get
+        {
+            var abscisses = Bornes(Columns.Select(colonne => colonne.Width));
+            var ordonnees = Bornes(Rows.Select(ligne => ligne.Height));
+
+            var cases = new List<Frame>(Cells.Count);
+            var occupes = new HashSet<(int, int)>();
+
+            foreach (var cellule in Cells)
+            {
+                if (cellule.Row < 0 || cellule.Row >= Rows.Count) continue;
+                if (cellule.Column < 0 || cellule.Column >= Columns.Count) continue;
+                if (!occupes.Add((cellule.Row, cellule.Column))) continue;
+
+                var bloc = new TextFrame
+                {
+                    Name = cellule.Label,
+                    X = abscisses[cellule.Column],
+                    Y = ordonnees[cellule.Row],
+                    Width = Columns[cellule.Column].Width,
+                    Height = Rows[cellule.Row].Height,
+                    Text = cellule.Text,
+                    FontFamily = FontFamily,
+                    FontSize = FontSize,
+                    Bold = Bold,
+                    Italic = Italic,
+                    Foreground = Foreground,
+                    Align = cellule.Align,
+                    LineHeight = LineHeight,
+                    PaddingLeft = CellPadding,
+                    PaddingTop = CellPadding,
+                    PaddingRight = CellPadding,
+                    PaddingBottom = CellPadding,
+                    Fill = cellule.Fill,
+                    Stroke = cellule.Stroke,
+                    StrokeThickness = cellule.StrokeThickness,
+                    // Les fragments sont prêtés, non copiés : ce bloc-ci ne vit que le
+                    // temps d'un rendu et ne modifie rien.
+                    Spans = cellule.Spans,
+                };
+
+                cases.Add(bloc);
+            }
+
+            return cases;
+        }
+    }
+
+    /// <summary>Positions cumulées des bords, la première à zéro.</summary>
+    private static double[] Bornes(IEnumerable<double> tailles)
+    {
+        var bornes = new List<double> { 0 };
+        foreach (var taille in tailles) bornes.Add(bornes[^1] + taille);
+        return [.. bornes];
+    }
+
+    // ------------------------------------------------------------------ nombre de cases
+
+    /// <summary>
+    /// Nombre de colonnes, tel que le règle le panneau. Réglage de structure et non
+    /// valeur à écrire : ce sont les colonnes elles-mêmes qui sont dans le fichier.
+    /// </summary>
+    [JsonIgnore]
+    public int ColumnCount
+    {
+        get => Columns.Count;
+        set => Redimensionner(Math.Max(1, value), horizontal: true);
+    }
+
+    [JsonIgnore]
+    public int RowCount
+    {
+        get => Rows.Count;
+        set => Redimensionner(Math.Max(1, value), horizontal: false);
+    }
+
+    /// <summary>
+    /// Ajoute ou retire des colonnes (ou des lignes) par la fin, en créant les cases
+    /// qui manquent. Une case neuve reprend l'aspect de sa voisine : ajouter une
+    /// colonne à une bande encadrée ne doit pas y ouvrir un trou sans contour.
+    /// </summary>
+    private void Redimensionner(int voulu, bool horizontal)
+    {
+        var actuel = horizontal ? Columns.Count : Rows.Count;
+        if (voulu == actuel) return;
+
+        while ((horizontal ? Columns.Count : Rows.Count) > voulu)
+        {
+            var dernier = (horizontal ? Columns.Count : Rows.Count) - 1;
+            if (horizontal) Columns.RemoveAt(dernier);
+            else Rows.RemoveAt(dernier);
+
+            foreach (var perdue in Cells.Where(c => (horizontal ? c.Column : c.Row) == dernier).ToList())
+            {
+                Cells.Remove(perdue);
+            }
+        }
+
+        while ((horizontal ? Columns.Count : Rows.Count) < voulu)
+        {
+            var index = horizontal ? Columns.Count : Rows.Count;
+            if (horizontal) Columns.Add(new TableColumn(TailleType(true)));
+            else Rows.Add(new TableRow(TailleType(false)));
+
+            var autres = horizontal ? Rows.Count : Columns.Count;
+            for (var i = 0; i < autres; i++)
+            {
+                var ligne = horizontal ? i : index;
+                var colonne = horizontal ? index : i;
+                Cells.Insert(RangDe(ligne, colonne), Modeler(ligne, colonne));
+            }
+        }
+
+        OnPropertyChanged(horizontal ? nameof(ColumnCount) : nameof(RowCount));
+    }
+
+    /// <summary>Taille d'une colonne (ou d'une ligne) neuve : celle de ses voisines.</summary>
+    private double TailleType(bool horizontal)
+    {
+        if (horizontal) return Columns.Count > 0 ? Columns.Average(c => c.Width) : 100;
+        return Rows.Count > 0 ? Rows.Average(r => r.Height) : 24;
+    }
+
+    /// <summary>Où insérer une case pour que le fichier se lise ligne par ligne.</summary>
+    private int RangDe(int ligne, int colonne)
+    {
+        for (var i = 0; i < Cells.Count; i++)
+        {
+            if (Cells[i].Row > ligne || (Cells[i].Row == ligne && Cells[i].Column > colonne)) return i;
+        }
+
+        return Cells.Count;
+    }
+
+    /// <summary>Une case neuve, habillée comme celles qui l'entourent.</summary>
+    private TableCell Modeler(int ligne, int colonne)
+    {
+        var voisine = Cells.LastOrDefault(c => c.Row == ligne) ?? Cells.LastOrDefault();
+        return new TableCell
+        {
+            Row = ligne,
+            Column = colonne,
+            Align = voisine?.Align ?? TextAlign.Left,
+            Fill = voisine?.Fill,
+            Stroke = voisine?.Stroke,
+            StrokeThickness = voisine?.StrokeThickness ?? 1,
+        };
+    }
+
+    // ------------------------------------------------------------------ la grille
+
+    private string _derniereGrille = "#FF6B7280";
+
+    /// <summary>
+    /// La grille, telle que la règle le panneau : le contour de toutes les cases d'un
+    /// seul geste. Chaque case garde le sien dans le fichier — c'est ainsi que
+    /// Publisher les décrit et que l'import de R5 les lira — mais personne ne veut
+    /// cocher trois cases pour encadrer une bande.
+    /// </summary>
+    [JsonIgnore]
+    public bool HasGrid
+    {
+        get => Cells.Any(cellule => cellule.Stroke is not null);
+        set
+        {
+            if (value == HasGrid) return;
+
+            foreach (var cellule in Cells) cellule.Stroke = value ? _derniereGrille : null;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(GridColor));
+        }
+    }
+
+    [JsonIgnore]
+    public string GridColor
+    {
+        get => Cells.FirstOrDefault(cellule => cellule.Stroke is not null)?.Stroke ?? _derniereGrille;
+        set
+        {
+            if (value == GridColor) return;
+
+            _derniereGrille = value;
+            if (HasGrid)
+            {
+                foreach (var cellule in Cells) cellule.Stroke = value;
+            }
+
+            OnPropertyChanged();
+        }
+    }
+
+    [JsonIgnore]
+    public double GridThickness
+    {
+        get => Cells.Count > 0 ? Cells[0].StrokeThickness : 1;
+        set
+        {
+            if (Math.Abs(value - GridThickness) < 1e-9) return;
+
+            foreach (var cellule in Cells) cellule.StrokeThickness = value;
+            OnPropertyChanged();
+        }
+    }
+
+    // ------------------------------------------------------------------ accord des tailles
+
+    /// <summary>
+    /// Verrou du va-et-vient entre la taille du bloc et celle des cases. Sans lui,
+    /// mesurer les colonnes réécrirait la largeur, qui remesurerait les colonnes.
+    /// </summary>
+    private bool _ajuste;
+
+    /// <summary>
+    /// Redimensionner le tableau mesure ses colonnes et ses lignes à la même aune —
+    /// exactement ce que fait un groupe de ses blocs. Le corps du texte, lui, ne bouge
+    /// pas : une bande élargie donne de l'air à ses cases, elle ne grossit pas.
+    /// </summary>
+    protected override void OnResized(double oldSize, double newSize, bool horizontal)
+    {
+        if (_ajuste || oldSize <= 0 || newSize <= 0) return;
+
+        var facteur = newSize / oldSize;
+        _ajuste = true;
+        try
+        {
+            if (horizontal)
+            {
+                foreach (var colonne in Columns) colonne.Width *= facteur;
+            }
+            else
+            {
+                foreach (var ligne in Rows) ligne.Height *= facteur;
+            }
+        }
+        finally
+        {
+            _ajuste = false;
+        }
+
+        OnPropertyChanged(nameof(CellFrames));
+    }
+
+    /// <summary>
+    /// Une colonne, une ligne ou une case vient de changer : le bloc reprend la taille
+    /// de ce qu'il contient, et les cases sont à redessiner.
+    ///
+    /// L'écart est comparé à un seuil et non à zéro. Mesurer trois colonnes au rapport
+    /// d'un redimensionnement laisse leur somme à un ulp de la largeur demandée ; sans
+    /// ce seuil, ouvrir puis réenregistrer un document déplacerait ce dernier chiffre
+    /// et l'aller-retour cesserait d'être identique au caractère près — ce qu'exigent
+    /// le contrôle P2 et la recette de ce poste. Un milliardième de point est cent fois
+    /// plus fin que le plus petit réglage qu'offre le panneau.
+    /// </summary>
+    private void Recalculer(object? source)
+    {
+        if (!_ajuste)
+        {
+            _ajuste = true;
+            try
+            {
+                if (ReferenceEquals(source, _columns) || source is TableColumn)
+                {
+                    Accorder(Columns.Sum(colonne => colonne.Width), horizontal: true);
+                }
+                else if (ReferenceEquals(source, _rows) || source is TableRow)
+                {
+                    Accorder(Rows.Sum(ligne => ligne.Height), horizontal: false);
+                }
+            }
+            finally
+            {
+                _ajuste = false;
+            }
+        }
+
+        OnPropertyChanged(nameof(CellFrames));
+    }
+
+    private void Accorder(double somme, bool horizontal)
+    {
+        if (horizontal)
+        {
+            if (Math.Abs(somme - Width) > 1e-9) Width = somme;
+        }
+        else
+        {
+            if (Math.Abs(somme - Height) > 1e-9) Height = somme;
+        }
+    }
+
+    /// <summary>
+    /// Le sérialiseur remplace une collection accessible en écriture au lieu de la
+    /// remplir : un abonnement pris au constructeur ne survivrait pas à l'ouverture
+    /// d'un document, et le tableau cesserait silencieusement de se redessiner.
+    /// </summary>
+    private void Adopter<T>(ref ObservableCollection<T> champ, ObservableCollection<T> neuve)
+        where T : ObservableObject
+    {
+        if (ReferenceEquals(champ, neuve)) return;
+
+        Brancher(champ, false);
+        champ = neuve;
+        Brancher(neuve, true);
+        Recalculer(neuve);
+    }
+
+    private void Brancher<T>(ObservableCollection<T> collection, bool brancher)
+        where T : ObservableObject
+    {
+        if (brancher) collection.CollectionChanged += SurCollection;
+        else collection.CollectionChanged -= SurCollection;
+
+        foreach (var membre in collection)
+        {
+            if (brancher) membre.PropertyChanged += SurMembre;
+            else membre.PropertyChanged -= SurMembre;
+        }
+    }
+
+    private void SurCollection(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        foreach (var parti in e.OldItems?.OfType<ObservableObject>() ?? [])
+        {
+            parti.PropertyChanged -= SurMembre;
+        }
+
+        foreach (var venu in e.NewItems?.OfType<ObservableObject>() ?? [])
+        {
+            venu.PropertyChanged += SurMembre;
+        }
+
+        Recalculer(sender);
+    }
+
+    private void SurMembre(object? sender, PropertyChangedEventArgs e) => Recalculer(sender);
+
+    public override Frame Clone()
+    {
+        var copie = new TableFrame
+        {
+            FontFamily = FontFamily, FontSize = FontSize, Bold = Bold, Italic = Italic,
+            Foreground = Foreground, LineHeight = LineHeight, CellPadding = CellPadding,
+        };
+
+        // Le verrou vaut pour tout le corps, et dans les deux sens : poser la taille du
+        // bloc mesurerait des colonnes encore vides, et ajouter les colonnes réécrirait
+        // la taille qu'on vient de copier. L'ordre des trois boucles n'a alors plus
+        // d'importance — c'est ce qu'on veut d'une copie.
+        copie._ajuste = true;
+        try
+        {
+            CopyBaseTo(copie);
+            foreach (var colonne in Columns) copie.Columns.Add(new TableColumn(colonne.Width));
+            foreach (var ligne in Rows) copie.Rows.Add(new TableRow(ligne.Height));
+            foreach (var cellule in Cells) copie.Cells.Add(cellule.Clone());
+        }
+        finally
+        {
+            copie._ajuste = false;
+        }
+
+        return copie;
     }
 }

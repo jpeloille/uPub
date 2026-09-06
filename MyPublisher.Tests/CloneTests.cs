@@ -27,6 +27,7 @@ public class CloneTests
     [InlineData(typeof(ImageFrame))]
     [InlineData(typeof(ShapeFrame))]
     [InlineData(typeof(GroupFrame))]
+    [InlineData(typeof(TableFrame))]
     public void Une_copie_conserve_tout_ce_qui_sécrit_dans_le_fichier(Type type)
     {
         var original = (Frame)Activator.CreateInstance(type)!;
