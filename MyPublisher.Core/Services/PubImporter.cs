@@ -22,18 +22,24 @@ public sealed record ImportReport(Document Document, IReadOnlyList<string> Warni
 /// Les longueurs du relevé sont en pouces ; le modèle est en points typographiques.
 /// La conversion se fait à un seul endroit, <see cref="Points"/>.
 ///
+/// Les images, elles, ne tiennent pas dans un document : le relevé les donne en base64
+/// et le modèle les référence par chemin. La traduction reste pure en demandant ce
+/// chemin à un <see cref="IDepotImages"/> qu'on lui prête ; sans dépôt, elle dit qu'elle
+/// a perdu l'image plutôt que de l'écrire quelque part de son propre chef.
+///
 /// Ce que la traduction NE rend PAS, faute que le modèle sache l'exprimer, et qui
 /// remonte en avertissement plutôt que de disparaître en silence :
-/// l'alignement vertical d'un bloc, les remplissages par image autres que posés en
-/// bloc, et les chemins de plus de deux points.
+/// l'alignement vertical d'un bloc, les remplissages par image répétés en mosaïque,
+/// et les chemins de plus de deux points.
 /// </summary>
 public static class PubImporter
 {
     private const double PointsParPouce = 72;
 
-    public static ImportReport Importer(string releve, string? titre = null)
+    public static ImportReport Importer(
+        string releve, string? titre = null, IDepotImages? depot = null)
     {
-        var etat = new Etat(titre);
+        var etat = new Etat(titre, depot);
 
         foreach (var ligne in releve.Split('\n'))
         {
@@ -130,7 +136,7 @@ public static class PubImporter
 
     // ------------------------------------------------------------------ l'état
 
-    private sealed class Etat(string? titre)
+    private sealed class Etat(string? titre, IDepotImages? depot)
     {
         public Document Document { get; } = new()
         {
@@ -144,6 +150,14 @@ public static class PubImporter
 
         /// <summary>Le dernier « setStyle » : il habille le prochain objet dessiné.</summary>
         private Dictionary<string, string> _habillage = [];
+
+        /// <summary>
+        /// L'image du dernier « setStyle », déposée une seule fois. Le même habillage peut
+        /// servir à plusieurs objets ; décoder 140 000 caractères de base64 à chaque fois
+        /// serait inutile, et compter deux images là où il n'y en a qu'une le serait aussi.
+        /// </summary>
+        private string? _imageDeposee;
+        private bool _imageTentee;
 
         private TextFrame? _bloc;
         private TableFrame? _tableau;
@@ -165,7 +179,11 @@ public static class PubImporter
                 case "startPage": DebutPage(Arguments(brut)); break;
                 case "endPage": _page = null; break;
 
-                case "setStyle": _habillage = Arguments(brut); break;
+                case "setStyle":
+                    _habillage = Arguments(brut);
+                    _imageDeposee = null;
+                    _imageTentee = false;
+                    break;
 
                 case "startTextObject": DebutTexte(Arguments(brut)); break;
                 case "endTextObject": FinTexte(); break;
@@ -448,16 +466,14 @@ public static class PubImporter
         {
             var remplissage = _habillage.GetValueOrDefault("draw:fill");
 
-            forme.Fill = remplissage == "solid"
-                ? Couleur(_habillage.GetValueOrDefault("draw:fill-color"))
-                : null;
-
-            if (remplissage == "bitmap")
+            forme.Fill = remplissage switch
             {
-                Avertissements.Add(
-                    "Remplissage par image perdu : le modèle ne porte pas encore les " +
-                    "remplissages non unis (poste C5c).");
-            }
+                "solid" => Couleur(_habillage.GetValueOrDefault("draw:fill-color")) is { } teinte
+                    ? new SolidFill(teinte)
+                    : null,
+                "bitmap" => Image(),
+                _ => null,
+            };
 
             var trait = _habillage.GetValueOrDefault("draw:stroke");
             if (trait is "solid" or "dash")
@@ -472,6 +488,86 @@ public static class PubImporter
                 forme.Stroke = null;
             }
         }
+
+        /// <summary>
+        /// Le remplissage par image du dernier « setStyle », s'il a pu être déposé.
+        ///
+        /// C'est la raison d'être de ce poste : les cinq PNG d'ATA 21 ne sont pas des
+        /// blocs image, ce sont des remplissages de forme, et le relevé les donne en
+        /// clair — <c>draw:fill-image</c>, du base64, jusqu'à 142 000 caractères.
+        ///
+        /// Trois choses s'y lisent, et les trois comptent :
+        ///
+        /// <c>style:repeat: stretch</c> étire l'image sur la forme, ce qui est le cadrage
+        /// « Remplir ». Une mosaïque — la seule autre valeur que Publisher pose — n'est pas
+        /// au modèle : on cadre alors sans déformer, et on le dit.
+        ///
+        /// <c>librevenge:rotate</c> fait pivoter l'image dans son cadre. Sur les cinq
+        /// images d'ATA 21, une seule le porte, et sans elle cette image-là arrive couchée
+        /// et écrasée d'un facteur trois : son PNG fait 1062 × 617 dans un cadre de
+        /// 3,04 × 5,23 in. Une sur cinq, ce n'est pas une finition.
+        ///
+        /// <c>librevenge:mime-type</c> nomme le format, dont le dépôt tire l'extension.
+        /// </summary>
+        private FillBrush? Image()
+        {
+            if (!_imageTentee)
+            {
+                _imageTentee = true;
+                _imageDeposee = Deposer();
+            }
+
+            if (_imageDeposee is null) return null;
+
+            var repetition = _habillage.GetValueOrDefault("style:repeat");
+            if (repetition is not null and not "stretch")
+            {
+                Avertissements.Add(
+                    $"Remplissage par image « {repetition} » rendu sans répétition : le " +
+                    "modèle ne sait pas mettre une image en mosaïque.");
+            }
+
+            return new ImageFill(
+                _imageDeposee,
+                repetition == "stretch" ? ImageFit.Fill : ImageFit.Uniform,
+                Rotation(_habillage.GetValueOrDefault("librevenge:rotate")));
+        }
+
+        private string? Deposer()
+        {
+            var base64 = _habillage.GetValueOrDefault("draw:fill-image");
+            if (string.IsNullOrEmpty(base64)) return null;
+
+            if (depot is null)
+            {
+                Avertissements.Add(
+                    "Remplissage par image perdu : aucun dépôt d'images n'a été fourni à " +
+                    "l'import.");
+                return null;
+            }
+
+            byte[] donnees;
+            try
+            {
+                donnees = Convert.FromBase64String(base64);
+            }
+            catch (FormatException)
+            {
+                Avertissements.Add("Remplissage par image perdu : l'image du relevé est illisible.");
+                return null;
+            }
+
+            var chemin = depot.Deposer(donnees, _habillage.GetValueOrDefault("librevenge:mime-type") ?? "");
+            if (chemin is null)
+            {
+                Avertissements.Add("Remplissage par image perdu : l'image n'a pas pu être rangée.");
+            }
+
+            return chemin;
+        }
+
+        private static double Rotation(string? valeur) =>
+            double.TryParse(valeur, NumberStyles.Float, CultureInfo.InvariantCulture, out var v) ? v : 0;
 
         private void Polygone(Dictionary<string, string> args)
         {

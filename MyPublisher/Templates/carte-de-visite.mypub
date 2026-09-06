@@ -1,5 +1,5 @@
 {
-  "FormatVersion": 3,
+  "FormatVersion": 4,
   "Title": "Carte de visite",
   "PageWidth": 240.9448818897638,
   "PageHeight": 153.0708661417323,
@@ -7,6 +7,7 @@
   "MarginTop": 14.173228346456694,
   "MarginRight": 14.173228346456694,
   "MarginBottom": 14.173228346456694,
+  "Background": null,
   "ColumnCount": 1,
   "ColumnSpacing": 0,
   "RowCount": 1,
@@ -27,7 +28,10 @@
           "Width": 240.9448818897638,
           "Height": 5,
           "Rotation": 0,
-          "Fill": "#FF1F3B57",
+          "Fill": {
+            "$kind": "solid",
+            "Color": "#FF1F3B57"
+          },
           "Stroke": null,
           "StrokeThickness": 0,
           "StrokeStyle": "Solid",
@@ -131,7 +135,10 @@
           "Width": 212.59842519685043,
           "Height": 0.75,
           "Rotation": 0,
-          "Fill": "#FFF0C674",
+          "Fill": {
+            "$kind": "solid",
+            "Color": "#FFF0C674"
+          },
           "Stroke": null,
           "StrokeThickness": 0,
           "StrokeStyle": "Solid",

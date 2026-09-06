@@ -45,17 +45,22 @@
             <Setter Property="Canvas.Top" Value="{Binding Position}"/>
         </Style>
 
-        <!-- Fond et contour d'un bloc : deux rectangles qui prennent le contenu en
+        <!-- Fond et contour d'un bloc : deux éléments qui prennent le contenu en
              sandwich, le fond dessous, le contour dessus — un filet posé sur une image
              passe sur son bord et non sous elle, et l'export trace dans le même ordre.
              Les liaisons sont posées ici une fois pour toutes ; chaque gabarit n'a plus
-             qu'à poser un rectangle de la classe voulue. Aucun des deux ne reçoit le
+             qu'à poser un élément de la classe voulue. Aucun des deux ne reçoit le
              pointeur : la couche de saisie s'en charge, et pendant la frappe le contour
-             ne doit pas voler le clic au champ de texte. -->
-        <Style Selector="Rectangle.frameFill" x:DataType="models:Frame">
-            <Setter Property="Fill" Value="{Binding Fill, Converter={x:Static conv:Conv.Brush}}"/>
-            <Setter Property="RadiusX" Value="{Binding CornerRadius}"/>
-            <Setter Property="RadiusY" Value="{Binding CornerRadius}"/>
+             ne doit pas voler le clic au champ de texte.
+
+             Le fond est dessiné par un contrôle et non peint par un pinceau, depuis que
+             les remplissages ne sont plus tous unis : une image que Publisher fait
+             pivoter dans son cadre ne se dit pas en pinceau. Le même contrôle sert au
+             fond de page, ce qui garantit qu'un dégradé de page et un dégradé de bloc se
+             rendent pareil. -->
+        <Style Selector="views|FondBloc.frameFill" x:DataType="models:Frame">
+            <Setter Property="Fond" Value="{Binding Fill}"/>
+            <Setter Property="Arrondi" Value="{Binding CornerRadius}"/>
             <Setter Property="IsHitTestVisible" Value="False"/>
         </Style>
         <Style Selector="Rectangle.frameStroke" x:DataType="models:Frame">
@@ -76,17 +81,19 @@
             <Panel Width="{Binding Width}" Height="{Binding Height}"
                    RenderTransformOrigin="50%,50%"
                    RenderTransform="{Binding Rotation, Converter={x:Static conv:Conv.Rotate}}">
-                <!-- Une forme n'a pas de contenu : fond et contour tiennent en un seul
-                     élément, sans passer par les deux rectangles des autres blocs. -->
+                <!-- Une forme n'a pas de contenu, mais elle passe par le même fond et le
+                     même contour que les autres blocs depuis C5c : elle peut porter un
+                     dégradé ou une image, qu'un « Fill » de rectangle ne saurait pas
+                     poser. C'est aussi l'ordre de l'export, qui a cessé pour cela de
+                     tracer la forme d'un seul trait. -->
+                <views:FondBloc Classes="frameFill" Ellipse="{Binding IsEllipse}"/>
                 <Rectangle IsVisible="{Binding IsRectangle}"
-                           Fill="{Binding Fill, Converter={x:Static conv:Conv.Brush}}"
                            Stroke="{Binding Stroke, Converter={x:Static conv:Conv.Brush}}"
                            StrokeThickness="{Binding StrokeThickness}"
                            StrokeDashArray="{Binding StrokeStyle, Converter={x:Static conv:Conv.Dash}}"
                            RadiusX="{Binding CornerRadius}"
                            RadiusY="{Binding CornerRadius}"/>
                 <Ellipse IsVisible="{Binding IsEllipse}"
-                         Fill="{Binding Fill, Converter={x:Static conv:Conv.Brush}}"
                          Stroke="{Binding Stroke, Converter={x:Static conv:Conv.Brush}}"
                          StrokeThickness="{Binding StrokeThickness}"
                          StrokeDashArray="{Binding StrokeStyle, Converter={x:Static conv:Conv.Dash}}"/>
@@ -97,7 +104,7 @@
             <Panel Width="{Binding Width}" Height="{Binding Height}"
                    RenderTransformOrigin="50%,50%"
                    RenderTransform="{Binding Rotation, Converter={x:Static conv:Conv.Rotate}}">
-                <Rectangle Classes="frameFill"/>
+                <views:FondBloc Classes="frameFill"/>
                 <!-- Repère visible tant qu'aucune image n'est chargée. -->
                 <Rectangle Stroke="#FFB0B0B0" StrokeThickness="0.5" StrokeDashArray="4,3"/>
                 <!-- Même découpage que pour le texte : le chemin passe par le résolveur,
@@ -122,7 +129,7 @@
                 <!-- Le fond est un rectangle sous les deux contrôles, pas une propriété
                      de l'un d'eux : il reste donc identique à l'affichage et pendant la
                      saisie, le TextBox se contentant d'être transparent. -->
-                <Rectangle Classes="frameFill"/>
+                <views:FondBloc Classes="frameFill"/>
                 <!-- Seul le texte est découpé au bloc. Le contour, lui, est centré sur le
                      bord et déborde de moitié, comme à l'export : le découper le
                      réduirait à l'écran à la moitié de son épaisseur. -->
@@ -170,7 +177,7 @@
             <Panel Width="{Binding Width}" Height="{Binding Height}"
                    RenderTransformOrigin="50%,50%"
                    RenderTransform="{Binding Rotation, Converter={x:Static conv:Conv.Rotate}}">
-                <Rectangle Classes="frameFill"/>
+                <views:FondBloc Classes="frameFill"/>
                 <ItemsControl Classes="frames" ItemsSource="{Binding Children}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
@@ -191,7 +198,7 @@
             <Panel Width="{Binding Width}" Height="{Binding Height}"
                    RenderTransformOrigin="50%,50%"
                    RenderTransform="{Binding Rotation, Converter={x:Static conv:Conv.Rotate}}">
-                <Rectangle Classes="frameFill"/>
+                <views:FondBloc Classes="frameFill"/>
                 <ItemsControl Classes="frames" ItemsSource="{Binding CellFrames}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
@@ -248,6 +255,13 @@
                                Height="{Binding Document.PageHeight}"
                                Background="White"
                                ClipToBounds="True">
+
+                            <!-- Le fond de page, sous tout le reste et sur le blanc de la
+                                 planche : il se dessine par le même contrôle que le fond
+                                 d'un bloc, et l'export le pose de même en tête de page.
+                                 Absent, la page reste blanche comme elle l'a toujours été. -->
+                            <views:FondBloc Fond="{Binding Document.Background}"
+                                            IsHitTestVisible="False"/>
 
                             <!-- Repères : zone de marges, colonnes, lignes, lignes de base.
                                  Ils ne sont dessinés que là — l'export ne les connaît pas,

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using MyPublisher.Models;
 using MyPublisher.Services;
@@ -205,6 +206,98 @@ public class ImportPubTests
         Assert.Equal(36, forme.X, precision: 6);
         Assert.Equal(144, forme.Width, precision: 6);
         Assert.Equal(72, forme.Height, precision: 6);
+    }
+
+    /// <summary>
+    /// Un dépôt d'images qui ne touche à rien : il retient ce qu'on lui donne et rend un
+    /// chemin. C'est ce qui permet d'éprouver le remplissage par image sans écrire un
+    /// octet, et sans que <see cref="PubImporter"/> cesse d'être pur.
+    /// </summary>
+    private sealed class DepotEnMemoire : IDepotImages
+    {
+        public List<(byte[] Donnees, string Mime)> Recues { get; } = [];
+
+        public string? Deposer(byte[] donnees, string typeMime)
+        {
+            Recues.Add((donnees, typeMime));
+            return $"/tmp/faux-{Recues.Count}.png";
+        }
+    }
+
+    /// <summary>Un PNG de 1 × 1 pixel, en base64 — de quoi éprouver le décodage.</summary>
+    private const string PngMinuscule =
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
+
+    [Fact]
+    public void Une_forme_remplie_par_une_image_la_porte()
+    {
+        // C'est ce que ce poste existe pour rendre : les cinq PNG d'ATA 21 ne sont pas
+        // des blocs image, ce sont des remplissages de forme.
+        var depot = new DepotEnMemoire();
+        var rapport = PubImporter.Importer($"""
+            {UnePage}
+                setStyle(draw:fill: bitmap, draw:fill-image: {PngMinuscule}, draw:fill-image-ref-point: top-left, draw:stroke: none, librevenge:mime-type: image/png, style:repeat: stretch)
+                  drawPolygon (svg:points: ((svg:x: 1.0000in, svg:y: 1.0000in), (svg:x: 3.0000in, svg:y: 1.0000in), (svg:x: 3.0000in, svg:y: 2.0000in), (svg:x: 1.0000in, svg:y: 2.0000in), (svg:x: 1.0000in, svg:y: 1.0000in)))
+            """, depot: depot);
+
+        var forme = Assert.IsType<ShapeFrame>(rapport.Document.Pages[0].Frames.Single());
+        var fond = Assert.IsType<ImageFill>(forme.Fill);
+        Assert.Equal("/tmp/faux-1.png", fond.Path);
+        // « style:repeat: stretch » étire l'image sur la forme : c'est le cadrage « Remplir ».
+        Assert.Equal(ImageFit.Fill, fond.Fit);
+        Assert.Equal(0, fond.Rotation);
+        Assert.Empty(rapport.Warnings);
+
+        // L'image est bien passée au dépôt, décodée, avec son type.
+        var (donnees, mime) = Assert.Single(depot.Recues);
+        Assert.Equal("image/png", mime);
+        Assert.Equal(0x89, donnees[0]);
+        Assert.Equal("PNG", System.Text.Encoding.ASCII.GetString(donnees, 1, 3));
+    }
+
+    [Fact]
+    public void Une_image_que_Publisher_fait_pivoter_garde_son_quart_de_tour()
+    {
+        // Une des cinq images d'ATA 21 porte « librevenge:rotate: 90 » : son PNG est
+        // couché et son cadre debout. Perdre la rotation la rendrait couchée ET écrasée
+        // d'un facteur trois.
+        var rapport = PubImporter.Importer($"""
+            {UnePage}
+                setStyle(draw:fill: bitmap, draw:fill-image: {PngMinuscule}, draw:stroke: none, librevenge:mime-type: image/png, librevenge:rotate: 90, style:repeat: stretch)
+                  drawPolygon (svg:points: ((svg:x: 1.0000in, svg:y: 1.0000in), (svg:x: 3.0000in, svg:y: 1.0000in), (svg:x: 3.0000in, svg:y: 2.0000in), (svg:x: 1.0000in, svg:y: 2.0000in), (svg:x: 1.0000in, svg:y: 1.0000in)))
+            """, depot: new DepotEnMemoire());
+
+        var forme = Assert.IsType<ShapeFrame>(rapport.Document.Pages[0].Frames.Single());
+        Assert.Equal(90, Assert.IsType<ImageFill>(forme.Fill).Rotation);
+    }
+
+    [Fact]
+    public void Une_image_sans_depot_ou_ne_se_deposant_pas_est_dite()
+    {
+        // Sans dépôt, l'import n'a nulle part où écrire l'image : il le dit plutôt que de
+        // rendre une forme au fond vide dont personne ne saurait qu'elle en avait un.
+        var rapport = PubImporter.Importer($"""
+            {UnePage}
+                setStyle(draw:fill: bitmap, draw:fill-image: {PngMinuscule}, draw:stroke: none, librevenge:mime-type: image/png, style:repeat: stretch)
+                  drawPolygon (svg:points: ((svg:x: 1.0000in, svg:y: 1.0000in), (svg:x: 3.0000in, svg:y: 1.0000in), (svg:x: 3.0000in, svg:y: 2.0000in), (svg:x: 1.0000in, svg:y: 2.0000in), (svg:x: 1.0000in, svg:y: 1.0000in)))
+            """);
+
+        var forme = Assert.IsType<ShapeFrame>(rapport.Document.Pages[0].Frames.Single());
+        Assert.Null(forme.Fill);
+        Assert.Contains(rapport.Warnings, a => a.Contains("Remplissage par image perdu"));
+    }
+
+    [Fact]
+    public void Une_couleur_unie_reste_un_remplissage_uni()
+    {
+        var document = Importer($"""
+            {UnePage}
+                setStyle(draw:fill: solid, draw:fill-color: #336699, draw:stroke: none)
+                  drawPolygon (svg:points: ((svg:x: 1.0000in, svg:y: 1.0000in), (svg:x: 3.0000in, svg:y: 1.0000in), (svg:x: 3.0000in, svg:y: 2.0000in), (svg:x: 1.0000in, svg:y: 2.0000in), (svg:x: 1.0000in, svg:y: 1.0000in)))
+            """);
+
+        var forme = Assert.IsType<ShapeFrame>(document.Pages[0].Frames.Single());
+        Assert.Equal("#FF336699", Assert.IsType<SolidFill>(forme.Fill).Color);
     }
 
     [Fact]

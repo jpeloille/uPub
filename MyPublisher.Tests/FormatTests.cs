@@ -64,7 +64,9 @@ public class FormatTests
         FormatMigrations.Apply(racine);
 
         var bloc = racine["Pages"]![0]!["Frames"]![0]!;
-        Assert.Equal("#FF102030", bloc["Fill"]!.GetValue<string>());
+        // La couleur se lit sous le remplissage uni que la version 4 a posé autour : les
+        // deux étapes se composent, et c'est ce qu'un fichier de la version 1 traverse.
+        Assert.Equal("#FF102030", bloc["Fill"]!["Color"]!.GetValue<string>());
         Assert.Null(bloc["Background"]);
         Assert.Equal(Document.CurrentFormatVersion, racine["FormatVersion"]!.GetValue<int>());
     }
@@ -106,7 +108,61 @@ public class FormatTests
         FormatMigrations.Apply(racine);
 
         var enfant = racine["Pages"]![0]!["Frames"]![0]!["Children"]![0]!;
-        Assert.Equal("#FFAABBCC", enfant["Fill"]!.GetValue<string>());
+        Assert.Equal("#FFAABBCC", enfant["Fill"]!["Color"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void La_version_3_enveloppe_la_couleur_de_fond_dans_un_remplissage()
+    {
+        var racine = JsonNode.Parse("""
+            {
+              "FormatVersion": 3,
+              "Pages": [ { "Frames": [ { "$kind": "shape", "Fill": "#FF9DC3E6" } ] } ]
+            }
+            """)!.AsObject();
+
+        FormatMigrations.Apply(racine);
+
+        var bloc = racine["Pages"]![0]!["Frames"]![0]!;
+        Assert.Equal("solid", bloc["Fill"]!["$kind"]!.GetValue<string>());
+        Assert.Equal("#FF9DC3E6", bloc["Fill"]!["Color"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void La_migration_descend_dans_les_cases_dun_tableau()
+    {
+        // Le piège propre à cette étape-ci : une case n'est pas un bloc — elle n'a pas de
+        // « $kind » — et un parcours qui ne suivrait que les blocs laisserait un fond de
+        // case en chaîne derrière lui, que le modèle refuserait ensuite de relire.
+        var racine = JsonNode.Parse("""
+            {
+              "FormatVersion": 3,
+              "Pages": [ { "Frames": [
+                { "$kind": "table", "Cells": [ { "Row": 0, "Column": 0, "Fill": "#FFEFF2F6" } ] } ] } ]
+            }
+            """)!.AsObject();
+
+        FormatMigrations.Apply(racine);
+
+        var case0 = racine["Pages"]![0]!["Frames"]![0]!["Cells"]![0]!;
+        Assert.Equal("#FFEFF2F6", case0["Fill"]!["Color"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void Un_fond_absent_le_reste_apres_migration()
+    {
+        // Enveloppé, un « null » deviendrait un aplat blanc : la page changerait
+        // d'aspect à la seule ouverture, ce qu'aucune migration n'a le droit de faire.
+        var racine = JsonNode.Parse("""
+            {
+              "FormatVersion": 3,
+              "Pages": [ { "Frames": [ { "$kind": "text", "Fill": null } ] } ]
+            }
+            """)!.AsObject();
+
+        FormatMigrations.Apply(racine);
+
+        Assert.Null(racine["Pages"]![0]!["Frames"]![0]!["Fill"]);
     }
 
     [Fact]

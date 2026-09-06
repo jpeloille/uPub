@@ -52,7 +52,7 @@ public partial class Document : ObservableObject
     /// migré à la lecture (<see cref="Services.FormatMigrations"/>) ; un fichier plus
     /// récent est refusé, plutôt que lu de travers.
     /// </summary>
-    public const int CurrentFormatVersion = 3;
+    public const int CurrentFormatVersion = 4;
 
     /// <summary>Version du format de fichier, telle que lue puis migrée.</summary>
     [JsonPropertyOrder(10)]
@@ -99,6 +99,98 @@ public partial class Document : ObservableObject
     [NotifyPropertyChangedFor(nameof(HorizontalGridLines))]
     [NotifyPropertyChangedFor(nameof(HorizontalGuides))]
     private double _marginBottom = Units.MmToPoints(20);
+
+    // -------------------------------------------------------------- fond de page
+
+    /// <summary>
+    /// Fond de la page, dessiné en tête de chaque page, sous tous les blocs. Null veut
+    /// dire « page blanche », et c'est ce qu'écrivaient tous les documents jusqu'ici.
+    ///
+    /// Porté par le document et non par la page, comme les repères libres et pour la
+    /// même raison : un fond change l'allure de la publication entière, et Publisher le
+    /// règle une fois pour toutes dans <c>Format ▸ Background</c>.
+    ///
+    /// C'est un <see cref="FillBrush"/> et non une couleur : le fond de page est
+    /// justement l'endroit où un dégradé sert. Le nom était réservé depuis la décision
+    /// P0 — « Fill » pour les blocs, « Background » pour la page.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasBackground))]
+    [NotifyPropertyChangedFor(nameof(BackgroundKind))]
+    [NotifyPropertyChangedFor(nameof(BackgroundColor))]
+    [property: JsonPropertyOrder(85)]
+    private FillBrush? _background;
+
+    /// <summary>La teinte retenue pendant qu'aucun fond n'est posé. Jamais sérialisée.</summary>
+    private string _dernierFond = "#FFF2F4F7";
+
+    private readonly FillBrush?[] _fondsRetenus = new FillBrush?[4];
+
+    /// <summary>
+    /// Présence d'un fond de page, telle que la manipule le panneau. Même mécanique que
+    /// sur un bloc — voir <see cref="Frame.HasFill"/> — et pour les mêmes raisons.
+    /// </summary>
+    [JsonIgnore]
+    public bool HasBackground
+    {
+        get => Background is not null;
+        set
+        {
+            if (value == HasBackground) return;
+            Background = value ? new SolidFill(_dernierFond) : null;
+        }
+    }
+
+    [JsonIgnore]
+    public FillKind BackgroundKind
+    {
+        get => FillBrush.SorteDe(Background);
+        set
+        {
+            if (value == BackgroundKind && Background is not null) return;
+
+            if (Background is { } ancien) _fondsRetenus[(int)BackgroundKind] = ancien;
+            Background = _fondsRetenus[(int)value] ?? FillBrush.Neuf(value, _dernierFond);
+        }
+    }
+
+    /// <summary>La couleur du fond de page quand il est uni ; voir <see cref="Frame.FillColor"/>.</summary>
+    [JsonIgnore]
+    public string BackgroundColor
+    {
+        get => (Background as SolidFill)?.Color ?? _dernierFond;
+        set
+        {
+            if (value == BackgroundColor) return;
+
+            _dernierFond = value;
+            if (Background is SolidFill uni) uni.Color = value;
+            else OnPropertyChanged();
+        }
+    }
+
+    partial void OnBackgroundChanging(FillBrush? oldValue, FillBrush? newValue)
+    {
+        if (oldValue is not null) oldValue.PropertyChanged -= SurFond;
+        if (newValue is not null) newValue.PropertyChanged += SurFond;
+    }
+
+    partial void OnBackgroundChanged(FillBrush? value)
+    {
+        if (value is SolidFill uni) _dernierFond = uni.Color;
+    }
+
+    /// <summary>
+    /// Le fond se modifie sur place : sans cet abonnement, régler l'angle d'un dégradé
+    /// de page ne redirait rien au document, et la planche ne se repeindrait pas.
+    /// </summary>
+    private void SurFond(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (Background is SolidFill uni) _dernierFond = uni.Color;
+
+        OnPropertyChanged(nameof(Background));
+        OnPropertyChanged(nameof(BackgroundColor));
+    }
 
     [JsonPropertyOrder(100)]
     // ------------------------------------------------------------------ grille

@@ -1,5 +1,5 @@
 {
-  "FormatVersion": 3,
+  "FormatVersion": 4,
   "Title": "Affiche A3",
   "PageWidth": 841.89,
   "PageHeight": 1190.55,
@@ -7,6 +7,7 @@
   "MarginTop": 70.86614173228347,
   "MarginRight": 70.86614173228347,
   "MarginBottom": 62.36220472440945,
+  "Background": null,
   "ColumnCount": 1,
   "ColumnSpacing": 0,
   "RowCount": 1,
@@ -27,7 +28,10 @@
           "Width": 841.89,
           "Height": 1190.55,
           "Rotation": 0,
-          "Fill": "#FFEDF2F8",
+          "Fill": {
+            "$kind": "solid",
+            "Color": "#FFEDF2F8"
+          },
           "Stroke": null,
           "StrokeThickness": 0,
           "StrokeStyle": "Solid",
@@ -59,7 +63,10 @@
           "Width": 841.89,
           "Height": 8,
           "Rotation": 0,
-          "Fill": "#FFF0C674",
+          "Fill": {
+            "$kind": "solid",
+            "Color": "#FFF0C674"
+          },
           "Stroke": null,
           "StrokeThickness": 0,
           "StrokeStyle": "Solid",
@@ -146,7 +153,10 @@
           "Width": 196.04416062992127,
           "Height": 4,
           "Rotation": 0,
-          "Fill": "#FF1F3B57",
+          "Fill": {
+            "$kind": "solid",
+            "Color": "#FF1F3B57"
+          },
           "Stroke": null,
           "StrokeThickness": 0,
           "StrokeStyle": "Solid",
@@ -247,7 +257,10 @@
               "Width": 700.157716535433,
               "Height": 1.5,
               "Rotation": 0,
-              "Fill": "#FF1F3B57",
+              "Fill": {
+                "$kind": "solid",
+                "Color": "#FF1F3B57"
+              },
               "Stroke": null,
               "StrokeThickness": 0,
               "StrokeStyle": "Solid",

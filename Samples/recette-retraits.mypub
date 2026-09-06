@@ -1,5 +1,5 @@
 {
-  "FormatVersion": 3,
+  "FormatVersion": 4,
   "Title": "Recette R2 — retraits et espacement",
   "PageWidth": 595.28,
   "PageHeight": 841.89,
@@ -7,6 +7,7 @@
   "MarginTop": 56.69,
   "MarginRight": 56.69,
   "MarginBottom": 56.69,
+  "Background": null,
   "ColumnCount": 1,
   "ColumnSpacing": 0,
   "RowCount": 1,
