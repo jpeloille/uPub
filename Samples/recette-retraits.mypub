@@ -131,7 +131,8 @@
               "IndentRight": 24,
               "IndentFirstLine": null,
               "SpaceBefore": null,
-              "SpaceAfter": null
+              "SpaceAfter": null,
+              "Align": null
             }
           ],
           "Columns": 1,

@@ -538,7 +538,7 @@ public partial class TextFrame : Frame
     /// </summary>
     [JsonIgnore]
     public ParagrapheEffectif Paragraph =>
-        new(IndentLeft, IndentRight, IndentFirstLine, SpaceBefore, SpaceAfter);
+        new(IndentLeft, IndentRight, IndentFirstLine, SpaceBefore, SpaceAfter, Align);
 
     /// <summary>Le découpage en colonnes d'un seul tenant, pour la composition.</summary>
     [JsonIgnore] public Colonnage Colonnage => new(Columns, ColumnGap);

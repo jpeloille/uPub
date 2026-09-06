@@ -343,13 +343,14 @@ public static class PdfExporter
 
             if (ligne.Morceaux.Count > 0)
             {
-                var justifiee = text.Align == TextAlign.Justify && !ligne.FinDeParagraphe;
+                // Le fer vient de la LIGNE et non du bloc : il appartient au paragraphe.
+                var justifiee = ligne.Fer == TextAlign.Justify && !ligne.FinDeParagraphe;
                 // Le retrait déplace le bord gauche de la ligne, gouttières comprises ;
                 // « Disponible » est ce qui reste entre les deux retraits, dans sa
                 // colonne. C'est cette largeur-là, et non celle du bloc, qui cale un
                 // centrage ou un fer à droite.
                 var gauche = box.Left + ligne.Retrait;
-                var origine = justifiee ? gauche : text.Align switch
+                var origine = justifiee ? gauche : ligne.Fer switch
                 {
                     TextAlign.Center => gauche + (ligne.Disponible - ligne.Largeur) / 2,
                     TextAlign.Right => gauche + ligne.Disponible - ligne.Largeur,

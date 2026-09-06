@@ -273,6 +273,63 @@ public class CompositeurTests
         Assert.All(Compositeur.Decalages(ligne), d => Assert.Equal(0, d));
     }
 
+
+    // -------------------------------------------------------------- tabulations
+
+    [Fact]
+    public void Une_tabulation_avance_jusquau_prochain_taquet()
+    {
+        // Taquets tous les 36 pt. « ab » fait 2 unités avec la règle factice, la
+        // tabulation doit donc porter le mot suivant à 36.
+        var ligne = Composer("ab\tcd", 200)[0];
+        var apres = ligne.Morceaux.First(m => m.Texte == "cd");
+
+        Assert.Equal(Compositeur.IntervalleTaquet, apres.X, precision: 9);
+    }
+
+    [Fact]
+    public void Deux_tabulations_ne_valent_pas_une()
+    {
+        // Le piège : posée exactement sur un taquet, une tabulation qui avancerait
+        // « jusqu'au prochain multiple » ne bougerait pas, et les deux consignes
+        // d'une fiche se colleraient.
+        var ligne = Composer("ab\t\tcd", 400)[0];
+        var apres = ligne.Morceaux.First(m => m.Texte == "cd");
+
+        Assert.Equal(2 * Compositeur.IntervalleTaquet, apres.X, precision: 9);
+    }
+
+    [Fact]
+    public void Une_tabulation_en_debut_de_ligne_decale_le_premier_mot()
+    {
+        var ligne = Composer("\tab", 200)[0];
+
+        Assert.Equal(Compositeur.IntervalleTaquet,
+            ligne.Morceaux.First(m => m.Texte == "ab").X, precision: 9);
+    }
+
+    [Fact]
+    public void Un_taquet_tombe_toujours_apres_la_position_courante()
+    {
+        Assert.Equal(36, Compositeur.ProchainTaquet(0), precision: 9);
+        Assert.Equal(36, Compositeur.ProchainTaquet(1), precision: 9);
+        Assert.Equal(72, Compositeur.ProchainTaquet(36), precision: 9);
+        Assert.Equal(72, Compositeur.ProchainTaquet(71.9), precision: 9);
+    }
+
+    [Fact]
+    public void Une_tabulation_dans_un_bloc_trop_etroit_ne_part_pas_en_cascade()
+    {
+        // Un taquet à 36 pt dans un bloc de 5 pt pousse forcément le mot suivant
+        // au-delà du bord : il passe à la ligne, et c'est bien ce qu'on veut. Ce qu'on
+        // ne veut pas, c'est qu'il recommence indéfiniment — la tabulation elle-même ne
+        // provoque jamais de renvoi, sans quoi chaque ligne neuve en rouvrirait une.
+        var lignes = Composer("a\tb", 5);
+
+        Assert.Equal(2, lignes.Count);
+        Assert.Equal("ab", string.Concat(lignes.Select(l => l.Texte)).Replace("\t", ""));
+    }
+
     // ---------------------------------------------------------------- interligne
 
     [Theory]
@@ -307,7 +364,8 @@ public class CompositeurTests
     /// <summary>Un réglage de paragraphe écrit en clair, plutôt que cinq nombres.</summary>
     private static ParagrapheEffectif Reglage(
         double gauche = 0, double droite = 0, double premiere = 0,
-        double avant = 0, double apres = 0) => new(gauche, droite, premiere, avant, apres);
+        double avant = 0, double apres = 0, TextAlign fer = TextAlign.Left) =>
+        new(gauche, droite, premiere, avant, apres, fer);
 
     [Fact]
     public void Sans_reglage_une_ligne_occupe_toute_la_largeur()

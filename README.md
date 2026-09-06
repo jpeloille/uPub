@@ -151,6 +151,10 @@ la barre du haut regroupe les commandes du document : fichier, annulation, zoom.
 - Annulation / rétablissement sur 60 pas, couvrant aussi bien les gestes à la
   souris que les champs du panneau de propriétés.
 - Enregistrement au format `.mypub` (JSON lisible) et export PDF.
+- **Ouverture des documents Microsoft Publisher (`.pub`)** : pages, blocs de texte avec
+  leurs fragments de style, retraits et fers par paragraphe, tabulations, tableaux,
+  cadres et traits. L'import dit ce qu'il n'a pas su rendre plutôt que de le perdre en
+  silence.
 - **L'export dit quelles polices il n'a pas trouvées**, et par quoi il les a
   remplacées : « Police substituée : « Wingdings » demandée, « DejaVu Sans »
   employée ». Une substitution muette ne dégrade pas seulement l'allure — sur une
@@ -301,7 +305,11 @@ liens.
 - Pas de pages maîtres.
 - Les images sont liées, pas embarquées dans le `.mypub`.
 - Pas de gestion des couleurs CMJN ni de fond perdu : l'export est en RVB.
-- Le format `.pub` de Microsoft Publisher n'est ni lu ni écrit (format fermé).
+- Le format `.pub` se lit mais ne s'écrit pas. La lecture demande `libmspub`
+  (`apt install libmspub-tools`) : le format est fermé, et c'est le lecteur qu'emploie
+  tout le monde libre. Sans droits d'installation, `Scripts/outils-pub.sh` l'extrait
+  localement. Ne sont pas repris : les remplissages par image, l'alignement vertical du
+  texte, et les taquets de tabulation autres que ceux par défaut.
 
 Ces limites, et une trentaine d'autres écarts fonctionnels, sont détaillées fiche par
 fiche dans [`MyPublisher/Docs/Publisher2007/`](MyPublisher/Docs/Publisher2007/00-index.md),

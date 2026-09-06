@@ -42,6 +42,7 @@ public readonly record struct Morceau(string Texte, StyleEffectif Style, double 
 /// </summary>
 public readonly record struct LigneComposee(
     IReadOnlyList<Morceau> Morceaux, double Largeur, double Naturelle, bool FinDeParagraphe,
+    TextAlign Fer,
     double Retrait, double Disponible, double EspaceAvant, double EspaceApres,
     int Colonne, double Haut, double Avance)
 {
@@ -184,6 +185,9 @@ public static class Compositeur
             // pose, une fois qu'on sait combien chaque ligne mesure.
             lignes.Add(new LigneComposee(
                 [.. courante], largeurCourante, naturelle, finDeParagraphe,
+                // Le fer appartient au paragraphe et non au bloc : ATA 21 mêle
+                // justifié et fer à gauche dans le même cadre.
+                reglage.Align,
                 retrait, disponible,
                 premiereLigne ? reglage.SpaceBefore : 0,
                 finDeParagraphe ? reglage.SpaceAfter : 0,
@@ -203,11 +207,18 @@ public static class Compositeur
         {
             if (mot.FinDeLigne) { Fermer(finDeParagraphe: true); continue; }
 
-            var l = metriques.Largeur(mot.Texte, mot.Style);
+            // Une tabulation n'a pas de largeur propre : elle vaut la distance qui
+            // reste jusqu'au prochain taquet, et dépend donc d'où on en est sur la
+            // ligne. On la calcule ici, où cette position est connue.
+            var tabulation = mot.Texte == "\t";
+            var l = tabulation
+                ? ProchainTaquet(largeurCourante) - largeurCourante
+                : metriques.Largeur(mot.Texte, mot.Style);
 
             // On ne renvoie à la ligne que si quelque chose y est déjà : un mot plus
             // large que la boîte garde sa ligne plutôt que d'être coupé au milieu.
-            if (courante.Count > 0 && largeurCourante + metriques.Largeur(mot.Texte.TrimEnd(), mot.Style) > disponible)
+            if (!tabulation && courante.Count > 0 &&
+                largeurCourante + metriques.Largeur(mot.Texte.TrimEnd(), mot.Style) > disponible)
             {
                 Fermer(finDeParagraphe: false);
                 var debut = mot.Texte.TrimStart();
@@ -340,14 +351,43 @@ public static class Compositeur
     /// attaché évite de le réinventer au moment de recoller, et de perdre les espaces
     /// multiples que l'auteur a voulus.
     /// </summary>
+    /// <summary>
+    /// Intervalle des taquets par défaut, en points : un demi-pouce, comme Publisher.
+    ///
+    /// MyPublisher n'offre pas de taquets réglables, et n'en a pas besoin pour l'usage
+    /// qu'on en fait : une tabulation avance jusqu'au prochain multiple de cet
+    /// intervalle, mesuré depuis le bord gauche du texte. C'est ce que fait Publisher
+    /// tant qu'aucun taquet n'a été posé à la main.
+    ///
+    /// Ce n'est pas un raffinement : les fiches de procédures d'urgence à reprendre
+    /// portent 157 tabulations dans 98 de leurs 169 paragraphes. Les rendre par des
+    /// espaces désalignerait les colonnes de consignes ; les perdre les collerait.
+    /// </summary>
+    public const double IntervalleTaquet = 36;
+
+    /// <summary>La prochaine position de taquet strictement après <paramref name="x"/>.</summary>
+    public static double ProchainTaquet(double x)
+    {
+        var suivant = (Math.Floor(x / IntervalleTaquet) + 1) * IntervalleTaquet;
+        // Un taquet avance toujours d'au moins un peu : sans cela, une tabulation posée
+        // exactement sur un taquet ne ferait rien et deux tabulations vaudraient une.
+        return suivant > x ? suivant : x + IntervalleTaquet;
+    }
+
     private static IEnumerable<string> Mots(string segment)
     {
         var debut = 0;
 
         while (debut < segment.Length)
         {
-            var fin = segment.IndexOf(' ', debut);
+            // La tabulation se détache du mot qui la suit : sa largeur se calcule au
+            // moment de la poser, pas au moment de la mesurer.
+            if (segment[debut] == '\t') { yield return "\t"; debut++; continue; }
+
+            var fin = segment.IndexOfAny([' ', '\t'], debut);
             if (fin < 0) { yield return segment[debut..]; yield break; }
+
+            if (segment[fin] == '\t') { yield return segment[debut..fin]; debut = fin; continue; }
 
             var apres = fin;
             while (apres < segment.Length && segment[apres] == ' ') apres++;

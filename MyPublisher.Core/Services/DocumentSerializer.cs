@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Text.Encodings.Web;
 using System.Text.Json;
@@ -49,5 +50,21 @@ public static class DocumentSerializer
     public static void Save(Document document, string path) =>
         File.WriteAllText(path, ToJson(document));
 
-    public static Document Load(string path) => FromJson(File.ReadAllText(path));
+    /// <summary>
+    /// Ouvre un document. Un fichier <c>.pub</c> est importé plutôt que lu : c'est le
+    /// même geste pour qui ouvre, et l'importation dit ce qu'elle n'a pas su rendre.
+    ///
+    /// L'aiguillage est ici plutôt que chez l'appelant pour que tout le monde en
+    /// profite d'un coup — la fenêtre, le mode sans interface et le banc.
+    /// </summary>
+    public static Document Load(string path) =>
+        path.EndsWith(".pub", StringComparison.OrdinalIgnoreCase)
+            ? Import(path).Document
+            : FromJson(File.ReadAllText(path));
+
+    /// <summary>
+    /// Importe un <c>.pub</c>, avec le relevé de ce qui s'est perdu en route.
+    /// </summary>
+    public static ImportReport Import(string path) =>
+        PubImporter.Importer(PubReader.Relever(path), Path.GetFileNameWithoutExtension(path));
 }

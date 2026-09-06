@@ -91,10 +91,23 @@ public partial class ParagraphSpan : ObservableObject
     [property: JsonPropertyOrder(70)]
     private double? _spaceAfter;
 
+    /// <summary>
+    /// Fer du paragraphe, ou <c>null</c> pour celui du bloc.
+    ///
+    /// Ajouté par le poste R5 et non par R2, qui l'avait écarté faute d'emploi. L'emploi
+    /// est venu avec l'import : ATA 21 mêle 31 paragraphes justifiés et 21 au fer à
+    /// gauche, souvent dans le même bloc. Sans cela, l'import devait choisir un fer pour
+    /// tout le bloc et perdre l'autre moitié de la mise en forme.
+    /// </summary>
+    [ObservableProperty]
+    [property: JsonPropertyOrder(95)]
+    private TextAlign? _align;
+
     public ParagraphSpan Clone() => new()
     {
         Start = Start, Length = Length, IndentLeft = IndentLeft, IndentRight = IndentRight,
         IndentFirstLine = IndentFirstLine, SpaceBefore = SpaceBefore, SpaceAfter = SpaceAfter,
+        Align = Align,
     };
 }
 
@@ -105,7 +118,7 @@ public partial class ParagraphSpan : ObservableObject
 /// </summary>
 public readonly record struct ParagrapheEffectif(
     double IndentLeft, double IndentRight, double IndentFirstLine,
-    double SpaceBefore, double SpaceAfter)
+    double SpaceBefore, double SpaceAfter, TextAlign Align)
 {
     /// <summary>
     /// Les réglages de chacun des <paramref name="nombre"/> paragraphes du bloc. Les
@@ -134,7 +147,8 @@ public readonly record struct ParagrapheEffectif(
                     ecart.IndentRight ?? reglages[i].IndentRight,
                     ecart.IndentFirstLine ?? reglages[i].IndentFirstLine,
                     ecart.SpaceBefore ?? reglages[i].SpaceBefore,
-                    ecart.SpaceAfter ?? reglages[i].SpaceAfter);
+                    ecart.SpaceAfter ?? reglages[i].SpaceAfter,
+                    ecart.Align ?? reglages[i].Align);
             }
         }
 

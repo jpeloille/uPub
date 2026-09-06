@@ -16,3 +16,6 @@ ecart-page*.png
 
 # Copies de travail des agents
 .claude/
+
+# Outils tiers extraits localement (Scripts/outils-pub.sh)
+.outils/
