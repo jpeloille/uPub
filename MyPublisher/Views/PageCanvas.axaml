@@ -140,9 +140,21 @@
                                FontStyle="{Binding Italic, Converter={x:Static conv:Conv.Slant}}"
                                Foreground="{Binding Foreground, Converter={x:Static conv:Conv.Brush}}"
                                TextAlignment="{Binding Align, Converter={x:Static conv:Conv.Align}}"
-                               LineHeight="{Binding AbsoluteLineHeight}"
                                Padding="{Binding Padding, Converter={x:Static conv:Conv.Pad}}"
                                TextWrapping="Wrap">
+                        <!-- L'interligne est un multiple de la hauteur naturelle de la police
+                             et non du corps : c'est ce que veut dire « 1,25 » chez Publisher,
+                             et c'est exactement l'avance que l'export applique. Il faut les
+                             métriques de la police, d'où la liaison multiple. -->
+                        <TextBlock.LineHeight>
+                            <MultiBinding Converter="{x:Static conv:InterligneConverter.Instance}">
+                                <Binding Path="FontFamily"/>
+                                <Binding Path="FontSize"/>
+                                <Binding Path="Bold"/>
+                                <Binding Path="Italic"/>
+                                <Binding Path="LineHeight"/>
+                            </MultiBinding>
+                        </TextBlock.LineHeight>
                         <TextBlock.Text>
                             <MultiBinding Converter="{x:Static conv:FieldToText.Instance}">
                                 <Binding Path="Text"/>

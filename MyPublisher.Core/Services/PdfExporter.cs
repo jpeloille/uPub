@@ -203,18 +203,84 @@ public static class PdfExporter
             Math.Max(1, text.Width - text.PaddingLeft - text.PaddingRight),
             Math.Max(1, text.Height - text.PaddingTop - text.PaddingBottom));
 
-        var formatter = new XTextFormatter(gfx)
-        {
-            Alignment = text.Align switch
-            {
-                TextAlign.Center => XParagraphAlignment.Center,
-                TextAlign.Right => XParagraphAlignment.Right,
-                TextAlign.Justify => XParagraphAlignment.Justify,
-                _ => XParagraphAlignment.Left
-            }
-        };
+        // On compose nous-mêmes plutôt que de laisser XTextFormatter le faire : il ne
+        // publie pas sa découpe et n'expose aucun réglage d'avance de ligne, si bien
+        // que l'interligne du modèle ne franchissait pas l'export. La découpe est
+        // celle du noyau ; seule la règle à mesurer est d'ici.
+        var lignes = Compositeur.Composer(
+            content, box.Width, s => gfx.MeasureString(s, font).Width);
+        if (lignes.Count == 0) return;
 
-        formatter.DrawString(content, font, brush, box, XStringFormats.TopLeft);
+        var naturelle = font.GetHeight();
+        var avance = Compositeur.Avance(naturelle, text.LineHeight);
+
+        // La ligne de base de la première ligne : DrawString cale sur elle, et la
+        // montée de la police dit de combien descendre depuis le haut de la boîte.
+        //
+        // L'interligne supplémentaire se répartit de part et d'autre de la ligne, et
+        // non entièrement en dessous : c'est la convention typographique, celle de
+        // CSS, et celle d'Avalonia. Mesuré : sans ce demi-interligne, l'écran et le
+        // PDF décalaient de 2 pt à interligne 1,25 — assez pour que les deux rendus
+        // ne se superposent plus.
+        var ligneDeBase = box.Top
+                          + (avance - naturelle) / 2
+                          + font.Metrics.Ascent * font.Size / font.Metrics.UnitsPerEm;
+
+        foreach (var ligne in lignes)
+        {
+            if (ligne.Texte.Length == 0) { ligneDeBase += avance; continue; }
+
+            // Justifier : répartir le blanc qui manque entre les mots. La dernière
+            // ligne d'un paragraphe ne se justifie pas — sinon « fin. » s'étirerait
+            // sur toute la largeur du bloc.
+            if (text.Align == TextAlign.Justify && !ligne.FinDeParagraphe)
+            {
+                Justifier(gfx, ligne, font, brush, box, ligneDeBase);
+            }
+            else
+            {
+                var x = text.Align switch
+                {
+                    TextAlign.Center => box.Left + (box.Width - ligne.Largeur) / 2,
+                    TextAlign.Right => box.Right - ligne.Largeur,
+                    _ => box.Left,
+                };
+
+                gfx.DrawString(ligne.Texte, font, brush, new XPoint(x, ligneDeBase));
+            }
+
+            ligneDeBase += avance;
+        }
+    }
+
+    /// <summary>
+    /// Trace une ligne justifiée : les mots gardent leur largeur, seuls les blancs
+    /// qui les séparent s'élargissent.
+    /// </summary>
+    private static void Justifier(XGraphics gfx, LigneComposee ligne, XFont font,
+                                  XBrush brush, XRect box, double ligneDeBase)
+    {
+        var mots = ligne.Texte.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (mots.Length < 2)
+        {
+            gfx.DrawString(ligne.Texte, font, brush, new XPoint(box.Left, ligneDeBase));
+            return;
+        }
+
+        var encre = 0.0;
+        foreach (var mot in mots) encre += gfx.MeasureString(mot, font).Width;
+
+        var blanc = (box.Width - encre) / (mots.Length - 1);
+        // Un blanc négatif voudrait dire une ligne déjà trop large : on ne rétrécit
+        // pas, on laisse déborder plutôt que de superposer les mots.
+        if (blanc < 0) blanc = gfx.MeasureString(" ", font).Width;
+
+        var x = box.Left;
+        foreach (var mot in mots)
+        {
+            gfx.DrawString(mot, font, brush, new XPoint(x, ligneDeBase));
+            x += gfx.MeasureString(mot, font).Width + blanc;
+        }
     }
 
     private static void DrawImage(XGraphics gfx, ImageFrame frame, List<string> warnings, FieldContext context)

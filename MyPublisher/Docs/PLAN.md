@@ -54,7 +54,8 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **R1** | Texte riche : fragments de style | 0 % | **Le manque décisif.** 402 fragments sur les deux documents réels ; le bloc n'en porte qu'un |
 | **R2** | Retraits et espacement de paragraphe | 0 % | Retrait négatif (listes à puces), retrait gauche, espace après |
 | **R3** | Colonnes à l'intérieur d'un bloc | 0 % | Posées sur 25 des 27 blocs de texte réels. Autre chose que C2a |
-| **R4** | Interligne : une seule mesure | 0 % | L'écran suit le corps, l'export la police. Tranché : c'est l'export qui a raison |
+| **R4** | Interligne : une seule mesure | **fait, recette à écrire** | Composition de lignes dans le noyau ; écran et PDF concordent au pixel à 1,0, 1,25 et 1,5 |
+| **R5** | **Ouvrir un `.pub`** | 0 % | Exigé le 6 septembre 2026. Lecture par `pub2raw` ; ce que l'import restitue mesure l'avancement de R1–R4 et C9 |
 | **D** | Moteur de composition | — | Décision non ouverte ; à rouvrir quand A, B et C sont livrées |
 
 **Par phase** — P : 3 sur 3 · A : 0 sur 7 · B : 1 sur 5 · C : 5 sur 7 · D : non planifié.
