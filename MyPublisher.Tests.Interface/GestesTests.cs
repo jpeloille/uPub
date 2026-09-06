@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Avalonia;
@@ -172,6 +173,163 @@ public class GestesTests
         Battre();
 
         Assert.Equal(colonne, bloc.X, precision: 6);
+    }
+
+    /// <summary>Une bande à trois cases, comme celles des fiches ATR.</summary>
+    private static TableFrame Bande()
+    {
+        var table = new TableFrame { Name = "Bande", X = 100, Y = 200 };
+        foreach (var largeur in new[] { 120.0, 80.0, 100.0 }) table.Columns.Add(new TableColumn(largeur));
+        table.Rows.Add(new TableRow(30));
+
+        for (var colonne = 0; colonne < 3; colonne++)
+        {
+            table.Cells.Add(new TableCell
+            {
+                Row = 0, Column = colonne, Text = $"case {colonne + 1}", Stroke = "#FF404040"
+            });
+        }
+
+        return table;
+    }
+
+    /// <summary>Les cases affichées, de gauche à droite, avec leur position sur la page.</summary>
+    private static List<(TexteCompose Case, Point Position)> Cases(Window fenetre)
+    {
+        var page = Page(fenetre);
+        return fenetre.GetVisualDescendants().OfType<TexteCompose>()
+            .Select(c => (Case: c, Position: c.TranslatePoint(new Point(0, 0), page) ?? default))
+            .OrderBy(item => item.Position.X)
+            .ToList();
+    }
+
+    [AvaloniaFact]
+    public void Les_cases_dun_tableau_se_posent_aux_bords_de_colonnes()
+    {
+        // Le PDF est mesuré par la recette du poste ; ici c'est l'écran qu'on mesure,
+        // dans l'arbre visuel, comme les recettes de C2a et C3c l'ont fait. Le zoom
+        // est réglé pour qu'une unité de mise en page vaille un point : les positions
+        // relevées sont donc directement celles du modèle.
+        var document = Document.CreateDefault();
+        document.Pages[0].Frames.Add(Bande());
+        var (fenetre, _) = Ouvrir(document);
+
+        var cases = Cases(fenetre);
+
+        Assert.Equal(3, cases.Count);
+        Assert.Equal([100, 220, 300], cases.Select(c => Math.Round(c.Position.X)));
+        Assert.All(cases, c => Assert.Equal(200, Math.Round(c.Position.Y)));
+        Assert.Equal([120, 80, 100], cases.Select(c => Math.Round(c.Case.Bounds.Width)));
+        Assert.Equal(["case 1", "case 2", "case 3"], cases.Select(c => c.Case.Contenu));
+    }
+
+    [AvaloniaFact]
+    public void Une_case_modifiee_se_redessine_meme_apres_lecture_dun_fichier()
+    {
+        // Le piège silencieux de ce poste : le sérialiseur ne remplit pas les
+        // collections d'un bloc, il les remplace. Un abonnement pris au constructeur
+        // ne survivrait donc pas à l'ouverture d'un document, et le tableau cesserait
+        // de se redessiner — sans erreur, et seulement sur les documents lus, jamais
+        // sur ceux qu'on vient de composer. D'où le passage par le fichier.
+        var neuf = Document.CreateDefault();
+        neuf.Pages[0].Frames.Add(Bande());
+        var document = DocumentSerializer.FromJson(DocumentSerializer.ToJson(neuf));
+
+        var (fenetre, _) = Ouvrir(document);
+        var table = (TableFrame)document.Pages[0].Frames[0];
+
+        table.Cells[1].Text = "modifiée";
+        table.Columns[0].Width = 200;
+        Battre();
+
+        var cases = Cases(fenetre);
+        Assert.Equal("modifiée", cases[1].Case.Contenu);
+        Assert.Equal(300, Math.Round(cases[1].Position.X));
+        // Les colonnes font la taille du bloc : l'élargir de 80 pt élargit le tableau.
+        Assert.Equal(380, table.Width);
+
+        // La grille passe par un autre chemin — le panneau écrit le contour de toutes
+        // les cases à la fois — et retombe sur le même abonnement.
+        table.HasGrid = false;
+        Battre();
+        Assert.All(Cases(fenetre), c => Assert.Null(c.Case.Bloc!.Stroke));
+    }
+
+    [AvaloniaFact]
+    public void Le_panneau_edite_les_cases_du_tableau_selectionne()
+    {
+        // Une case ne se choisit pas sur la page — il n'y a pas de sélection à
+        // l'intérieur d'un bloc — mais dans le panneau, case par case. Ce test garde
+        // ce chemin-là : un gabarit de propriétés qui ne se lie plus n'afficherait
+        // rien du tout, sans erreur.
+        var document = Document.CreateDefault();
+        var table = Bande();
+        document.Pages[0].Frames.Add(table);
+        var (fenetre, vm) = Ouvrir(document);
+
+        vm.SelectOnly(table);
+        Battre();
+
+        // Le sélecteur de couleur de la case porte lui aussi des champs de texte, et
+        // il hérite du même contexte : on vise la classe, pas le type.
+        var champs = fenetre.GetVisualDescendants().OfType<TextBox>()
+            .Where(t => t.DataContext is TableCell && t.Classes.Contains("cellText"))
+            .ToList();
+
+        Assert.Equal(3, champs.Count);
+        Assert.Equal(["case 1", "case 2", "case 3"], champs.Select(t => t.Text));
+
+        champs[0].Text = "saisie au panneau";
+        Battre();
+
+        Assert.Equal("saisie au panneau", table.Cells[0].Text);
+        Assert.Equal("saisie au panneau", Cases(fenetre)[0].Case.Contenu);
+    }
+
+    [AvaloniaFact]
+    public void Inserer_un_tableau_pose_une_bande_a_trois_cases_et_sannule()
+    {
+        var document = Document.CreateDefault();
+        var (_, vm) = Ouvrir(document);
+        var avant = DocumentSerializer.ToJson(vm.Document);
+
+        vm.AddTableCommand.Execute(null);
+        Battre();
+
+        var table = Assert.IsType<TableFrame>(vm.Document.Pages[0].Frames[0]);
+        Assert.Equal(3, table.Columns.Count);
+        Assert.Single(table.Rows);
+        Assert.Equal(3, table.Cells.Count);
+        // La largeur n'est pas posée à l'insertion : ce sont les colonnes qui la font.
+        // À six décimales et non à l'identique : sélectionner le bloc fait passer sa
+        // largeur par le panneau, donc par un aller-retour en millimètres qui laisse
+        // 10⁻¹³ pt derrière lui — la dérive consignée au poste P3, sans effet ici.
+        Assert.Equal(table.Columns.Sum(colonne => colonne.Width), table.Width, precision: 6);
+        Assert.Same(table, vm.Selected);
+
+        vm.UndoCommand.Execute(null);
+        Battre();
+
+        Assert.Equal(avant, DocumentSerializer.ToJson(vm.Document));
+    }
+
+    [AvaloniaFact]
+    public void Un_tableau_trace_sur_la_page_mesure_ses_cases_au_cadre()
+    {
+        // L'outil arme, on trace, et le tableau prend la taille tracée : ses colonnes
+        // et sa ligne s'y mesurent, comme les blocs d'un groupe redimensionné.
+        var document = Document.CreateDefault();
+        var (_, vm) = Ouvrir(document);
+
+        vm.ActiveTool = EditorTool.Table;
+        var trace = Assert.IsType<TableFrame>(vm.DrawWithActiveTool(50, 50, 300, 60));
+        Battre();
+
+        Assert.Equal(300, trace.Width, precision: 6);
+        Assert.Equal(300, trace.Columns.Sum(colonne => colonne.Width), precision: 6);
+        Assert.Equal(60, trace.Rows[0].Height, precision: 6);
+        // L'outil se désarme tout seul, comme les autres.
+        Assert.Equal(EditorTool.Select, vm.ActiveTool);
     }
 
     /// <summary>Compte les pixels franchement rouges — l'encre du bloc de test.</summary>

@@ -123,6 +123,18 @@ public class TemplatePreview : Control
 
                 return;
 
+            case TableFrame table:
+                // Comme un groupe : ses cases sont des blocs calculés, en coordonnées
+                // relatives. Sans ce cas, un modèle portant un tableau montrerait une
+                // vignette vide — le switch n'a pas de branche par défaut.
+                if (fill is not null || pen is not null) context.DrawRectangle(fill, pen, rect);
+                using (context.PushTransform(Matrix.CreateTranslation(frame.X, frame.Y)))
+                {
+                    foreach (var cellule in table.CellFrames) Draw(context, cellule, scale);
+                }
+
+                return;
+
             case TextFrame text:
                 if (fill is not null || pen is not null) context.DrawRectangle(fill, pen, rect);
                 DrawTextBars(context, text, scale);

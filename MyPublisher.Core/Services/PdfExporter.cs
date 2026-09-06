@@ -183,6 +183,7 @@ public static class PdfExporter
                     case TextFrame text: DrawText(gfx, text, context); break;
                     case ImageFrame image: DrawImage(gfx, image, warnings, context); break;
                     case GroupFrame group: DrawChildren(gfx, group, warnings, context); break;
+                    case TableFrame table: DrawTable(gfx, table, warnings, context); break;
                 }
             }
             catch (Exception ex)
@@ -203,6 +204,22 @@ public static class PdfExporter
         var state = gfx.Save();
         gfx.TranslateTransform(group.X, group.Y);
         foreach (var child in group.Children) DrawFrame(gfx, child, warnings, context);
+        gfx.Restore(state);
+    }
+
+    /// <summary>
+    /// Un tableau se dessine comme un groupe, et pour la même raison : ses cases sont
+    /// des blocs de texte calculés à partir de ses colonnes, de ses lignes et de ses
+    /// cellules, en coordonnées relatives. L'export n'a donc aucun code de tableau qui
+    /// lui soit propre — il redescend dans celui du bloc de texte, exactement comme
+    /// l'écran. Les deux rendus sont d'accord par construction, sans qu'il faille les
+    /// comparer pour s'en assurer.
+    /// </summary>
+    private static void DrawTable(XGraphics gfx, TableFrame table, List<string> warnings, FieldContext context)
+    {
+        var state = gfx.Save();
+        gfx.TranslateTransform(table.X, table.Y);
+        foreach (var cell in table.CellFrames) DrawFrame(gfx, cell, warnings, context);
         gfx.Restore(state);
     }
 

@@ -51,6 +51,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **C5** | Remplissage riche et cohérence visuelle | 0 % | C5a fond de page · C5b jeux de couleurs · C5c dégradés — C5a et C5c débloqués par C1 |
 | **C6** | Marges intérieures par côté | **100 %** | Quatre marges sur le bloc de texte ; `FormatVersion` 3 |
 | **C7** | Bibliothèque de blocs | 0 % | Débloqué depuis C3a |
+| **C9** | Le bloc tableau | **100 %** | Bande de cases : colonnes, lignes, contenu, fond et contour par case. `FormatVersion` reste à 3 |
 | **R1** | Texte riche : fragments de style | **100 %** | `Spans` sur le bloc ; l'écran et l'export passent par la même composition ; recette dans `Scripts/recettes/` |
 | **R2** | Retraits et espacement de paragraphe | **100 %** | Cinq réglages sur le bloc, des écarts par indice de paragraphe ; la ligne composée porte son retrait et sa largeur |
 | **R3** | Colonnes à l'intérieur d'un bloc | **100 %** | Nombre et gouttière sur le bloc ; la ligne composée porte sa colonne et son ordonnée. Autre chose que C2a |
@@ -58,11 +59,14 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **R5** | **Ouvrir un `.pub`** | 0 % | Exigé le 6 septembre 2026. Lecture par `pub2raw` ; ce que l'import restitue mesure l'avancement de R1–R4 et C9 |
 | **D** | Moteur de composition | — | Décision non ouverte ; à rouvrir quand A, B et C sont livrées |
 
-**Par phase** — P : 3 sur 4 (P3 en cours) · A : 0 sur 7 · B : 2 sur 5 · C : 5 sur 7 ·
+**Par phase** — P : 3 sur 4 (P3 en cours) · A : 0 sur 7 · B : 2 sur 5 · C : 6 sur 8 ·
 R : 4 sur 5 · D : non planifié. La ligne comptait 22 postes et ignorait la phase R,
 apparue le 6 septembre 2026 ; elle la compte désormais.
 
-Soit **14 postes sur 28**. C'est un compte de postes et non d'effort : C3 pesait à lui
+Soit **15 postes sur 29**. Le tableau ne porte pas encore les onze postes que l'audit
+des fiches a fait apparaître le 6 septembre 2026 — A8 à A15, B6, B7, C8 — et qui sont au
+périmètre : ils y entreront quand ils seront spécifiés. C'est un compte de postes et non
+d'effort : C3 pesait à lui
 seul plus que toute la phase A, et les préalables ne produisaient aucune fonctionnalité.
 Le tableau dit ce qui est clos, pas ce qui reste à peiner.
 
@@ -748,6 +752,94 @@ dans le même panneau qu'une éventuelle bibliothèque d'images locale (fiche 13
 
 *Recette* : enregistrer un bloc-titre composé, ouvrir un autre document, le reposer.
 
+### C9 — Le bloc tableau
+
+Poste que ce plan ne portait pas : il vient de
+[`Documents-reels.md`](Documents-reels.md), où les fiches ATR comptent dix-neuf objets
+tableau. Le relevé a été rectifié le 6 septembre 2026, et la rectification change tout :
+**seize de ces dix-neuf tableaux ont trois colonnes et une seule ligne**, trois n'ont
+qu'une case, aucune cellule n'est fusionnée, aucun tableau n'est imbriqué. Ce sont des
+bandes à trois cases, et non des tableaux de données. Sur les 362 insertions de texte du
+document, seize sont dans un tableau : l'essentiel du contenu vit dans les blocs de
+texte ordinaires.
+
+Ce que le poste doit donc livrer est un porte-cases : des colonnes, des lignes, et une
+cellule qui porte un contenu de texte, son fond et son contour. Rien qui calcule, rien
+qui se scinde entre deux pages, rien qui fusionne.
+
+*Recette* : un document portant une bande de trois cases se relit et se réécrit au
+caractère près, s'exporte, et l'écran concorde avec le PDF.
+
+*Fait le 6 septembre 2026.* `TableFrame`, discriminant `table`. `FormatVersion` **reste
+à 3** : un type de bloc neuf n'oblige à migrer aucun fichier ancien, exactement comme
+C3c avait ajouté `group` sans changer de numéro.
+
+**Un tableau se rend comme un groupe.** C'est le choix qui commande tout le reste. Ses
+cases ne sont pas dessinées : elles sont *calculées* en blocs de texte, en coordonnées
+relatives, à partir des colonnes, des lignes et des cellules. L'écran les affiche par le
+gabarit du bloc de texte, l'export les trace par sa fonction de bloc de texte. Aucun des
+deux rendus n'a une ligne de tableau qui lui soit propre, et ils sont donc d'accord par
+construction — comme ils le sont déjà pour un groupe. Une case hérite au passage de tout
+ce que les postes précédents ont apporté au texte : la composition partagée de R1, ses
+fragments de style, l'interligne de R4, le fond et le contour de C1.
+
+**Les colonnes et les lignes font la taille du bloc**, et non l'inverse. C'était la
+question à trancher, parce que le bloc porte déjà une largeur et une hauteur : trois
+mécanismes pouvaient les accorder, et deux suffisent. Redimensionner le tableau mesure
+ses colonnes à la même aune — ce qu'un groupe fait de ses blocs, donc le tirer à la
+poignée et le mettre à l'échelle dans un groupe marchent sans une ligne de plus. Élargir
+une colonne élargit le bloc. Les deux sens passent par un même verrou, sans quoi ils se
+relanceraient l'un l'autre. Le prix de ce choix est qu'aucun chiffre du panneau ne peut
+mentir : la largeur qu'on lit sur une colonne est celle qu'on mesure sur la page.
+
+Un détail qui n'en est pas un : l'accord des deux tailles se fait à **un milliardième de
+point près**, et non à l'identique. Mesurer trois colonnes au rapport d'un
+redimensionnement laisse leur somme à un ulp de la largeur demandée ; sans ce seuil,
+ouvrir puis réenregistrer un document déplacerait ce dernier chiffre, et l'aller-retour
+cesserait d'être identique au caractère près. C'est la même dérive que celle consignée
+au poste P3, prise cette fois avant qu'elle ne nuise.
+
+**Ce que le panneau règle** : lignes et colonnes, la largeur de chacune, la police et le
+corps du tableau, la marge intérieure des cases, la grille — et, case par case, son
+texte, son alignement et son fond. Une case ne se choisit pas sur la page : il n'y a pas
+de sélection à l'intérieur d'un bloc, et une bande en compte trois. La grille, elle, se
+règle pour toutes les cases à la fois alors que chacune porte son contour dans le
+fichier : c'est ainsi que Publisher les décrit et que l'import de R5 les lira, mais
+personne ne veut cocher trois cases pour encadrer une bande.
+
+*Recette jouée*, `Scripts/recettes/C9-tableau.sh` : le document de six bandes se réécrit
+au caractère près, son texte se retrouve dans le PDF, et surtout **les cases y sont
+mesurées** par `pdftotext -bbox` — origine de colonne, bord intérieur, fer à droite sur
+la somme des largeurs, hauteur de ligne — au centième de point.
+
+La mesure a remplacé une comparaison d'images qui ne prouvait pas grand-chose ici : sur
+une page de tableaux, aux trois quarts blanche, le lissage des glyphes et des filets
+coûte à lui seul 2,40 %, et décaler tous les tableaux de 2 pt à l'export ne fait monter
+l'écart qu'à 3,04 %. Le même décalage déplace chaque mesure de 2,00 pt, contre une
+tolérance de 0,05 pt. La comparaison d'images reste, en filet, pour ce qu'une mesure de
+position ne voit pas : une couleur perdue, un fond oublié, un filet disparu.
+
+*Trouvé au passage*, et non corrigé — hors périmètre. Deux choses.
+
+`TexteCompose` ne se redessine que lorsque la **référence** de son bloc change
+(`AffectsRender` porte sur `Bloc` et `Contenu`). Modifier le corps ou la police d'un
+bloc de texte dans le panneau ne repeint donc pas l'écran tant qu'aucune autre liaison
+ne le force. Les tableaux n'en souffrent pas — leurs cases sont recalculées et changent
+donc de référence à chaque retouche — mais les blocs de texte, si.
+
+Un bloc plus large que le groupe qui le porte est **découpé à l'écran et pas au PDF**.
+Vérifié sur un groupe de 120 pt contenant un rectangle et un texte de 400 pt, sans
+aucun tableau : l'écran s'arrête au bord du groupe, le PDF va jusqu'au bout. Le cas ne
+s'obtient pas au geste — grouper ajuste le groupe à ses blocs — mais un fichier écrit à
+la main ou un import le produira. Il ne touche pas les tableaux : leur largeur est
+toujours celle de leurs colonnes, y compris après relecture d'un fichier qui dirait
+autre chose.
+
+*Écart assumé* : le contenu d'une case est découpé au bloc à l'écran (`ClipToBounds`) et
+ne l'est pas au PDF. Un texte trop long pour sa case sortira du cadre dans le PDF et pas
+sur la page. C'est le poste A2 — signaler le débordement — et il vaut déjà pour les
+blocs de texte ordinaires.
+
 ---
 
 ## Phase R — Ce que les documents réels ont ajouté
@@ -1086,7 +1178,7 @@ finissent toujours par se contredire.
 | **P** | P0 décision de nommage · P1 git · P2 contrôle | préalables | — |
 | **A** | A1 rotation · A2 débordement · A3 chemins relatifs · A4 superposition · A5 formats · A6 barre d'état · A7 alignement vertical | finitions | — |
 | **B** | B1 modèles · B2 import texte · B3 impression · B4 archive · B5 polices | usage | — |
-| **C** | C1 remplissage · C2 repères · C3 sélection multiple · C4 champs · C5 couleurs · C6 marges · C7 bibliothèque | structure | P1, P2 |
+| **C** | C1 remplissage · C2 repères · C3 sélection multiple · C4 champs · C5 couleurs · C6 marges · C7 bibliothèque · C9 tableau | structure | P1, P2 |
 | **D** | moteur de composition | décision | A, B, C |
 
 Trois postes à faire en premier si l'on ne devait en retenir que trois : **A2**

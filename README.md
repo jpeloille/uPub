@@ -79,7 +79,7 @@ L'espace de travail se lit de gauche à droite : liste des **pages** et des **bl
 puis la **planche**, puis les **propriétés** du bloc sélectionné, et enfin la **barre
 d'outils** verticale sur le bord droit.
 
-Les cinq premiers boutons de cette barre **arment un outil** : on trace ensuite le cadre
+Les six premiers boutons de cette barre **arment un outil** : on trace ensuite le cadre
 directement sur la page, à la taille voulue. Un simple clic sans glisser pose le bloc à
 sa taille par défaut. L'outil se désarme tout seul après usage, pour qu'on puisse
 ajuster immédiatement ce qu'on vient de poser ; un bloc de texte passe même directement
@@ -102,6 +102,12 @@ la barre du haut regroupe les commandes du document : fichier, annulation, zoom.
 - Blocs de texte (police système, corps, gras, italique, alignement dont justifié,
   interligne, marges intérieures réglées côté par côté, couleur), images (trois
   modes de cadrage) et formes (rectangle, ellipse).
+- **Tableaux** : des bandes de cases, avec leurs colonnes et leurs lignes. Chaque case
+  porte son texte, son alignement, son fond et son contour ; la grille se règle d'un
+  geste pour toutes. Les colonnes et les lignes font la taille du bloc : élargir une
+  colonne élargit le tableau, et tirer le tableau à la poignée mesure ses cases à la
+  même aune. Une case se remplit dans le panneau de propriétés, où elle est nommée par
+  son rang — « L1 · C2 ».
 - **Plusieurs styles dans un même bloc** : une portion de texte porte sa propre police,
   son corps, son gras, son italique, sa couleur, et se pose en indice ou en exposant.
   L'interligne s'exprime en multiple de la hauteur **naturelle** de la police — « 1,25 »
@@ -163,7 +169,7 @@ la barre du haut regroupe les commandes du document : fichier, annulation, zoom.
 | `Suppr` | Supprimer la sélection |
 | Flèches | Déplacer de 3 pt (`Maj` : 0,5 pt) |
 | `Ctrl` + molette, `Ctrl` `+`/`-`/`0` | Zoom |
-| `V` / `T` / `H` / `R` / `E` | Outil sélection / texte / titre / rectangle / ellipse |
+| `V` / `T` / `H` / `R` / `E` / `B` | Outil sélection / texte / titre / rectangle / ellipse / tableau |
 | `Échap` | Désarme l'outil, sinon désélectionne |
 | Double-clic | Éditer le texte d'un bloc |
 | `Ctrl` ou `Maj` + clic | Ajoute un bloc à la sélection, ou l'en retire |
@@ -185,6 +191,13 @@ son sommet. Aucun des deux rendus n'additionne donc plus de hauteur pour son com
 ce n'est pas une élégance depuis qu'il y a des colonnes : le passage à la colonne
 suivante est un seuil, et un écart de métrique d'un centième de point suffirait à faire
 basculer une ligne d'un côté et pas de l'autre.
+
+**Un tableau se rend comme un groupe.** Ses cases ne sont pas dessinées : elles sont
+calculées en blocs de texte, en coordonnées relatives, à partir de ses colonnes, de ses
+lignes et de ses cellules. L'écran les affiche par le gabarit du bloc de texte, l'export
+les trace par sa fonction de bloc de texte — aucun des deux n'a de rendu de tableau qui
+lui soit propre. Une case hérite ainsi de tout ce que le texte sait déjà faire :
+composition partagée, fragments de style, interligne, fond et contour.
 
 **Toute la géométrie est en points typographiques (1/72 pouce).** Avalonia raisonne
 en pixels indépendants du périphérique (1/96 pouce) et le PDF en points : modéliser
@@ -251,14 +264,18 @@ des retraits repérés **par indice de paragraphe**. Le repérage diffère à de
 retrait appartient au paragraphe entier, et un indice de paragraphe ne bouge pas quand on
 tape un mot. Vides, les deux collections ne changent rien.
 
-Chaque bloc porte un discriminant `$kind` (`text`, `image`, `shape`, `group`) et, pour
+Chaque bloc porte un discriminant `$kind` (`text`, `image`, `shape`, `group`, `table`)
+et, pour
 un texte, un `Field` éventuel — de même pour un bloc image, dont le champ ne peut valoir
 que le logo. Renseigné, il fait calculer le contenu à l'affichage plutôt que de lire le
 texte saisi ou le chemin, lesquels restent écrits dans le fichier et se retrouvent
 intacts si l'on retire le champ.
 
 Un groupe contient ses blocs en coordonnées relatives à son coin supérieur gauche,
-écrits après sa géométrie — le rendu et l'export composent les deux repères. Les images
+écrits après sa géométrie — le rendu et l'export composent les deux repères. Un tableau
+suit la même règle : ses colonnes et ses lignes sont écrites après sa taille, et ses
+cases sont repérées par leur ligne et leur colonne, si bien qu'un tableau dont la
+plupart des cases sont vides n'écrit que celles qui disent quelque chose. Les images
 sont référencées par chemin absolu : déplacer un document sans ses images casse les
 liens.
 
@@ -278,6 +295,9 @@ liens.
   document, pour les voir. Seul le contenu rafraîchit l'affichage.
 - Une première ligne en retrait négatif qui déborde à gauche du bloc est rognée à
   l'écran et entière dans le PDF.
+- Les tableaux ne fusionnent pas de cellules, ne s'imbriquent pas et ne se scindent pas
+  entre deux pages : ce sont des bandes de cases, ce dont les documents à reprendre ont
+  besoin, et rien de plus.
 - Pas de pages maîtres.
 - Les images sont liées, pas embarquées dans le `.mypub`.
 - Pas de gestion des couleurs CMJN ni de fond perdu : l'export est en RVB.
