@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -8,6 +9,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using Avalonia.VisualTree;
+using MyPublisher.Models;
 using MyPublisher.Services;
 using MyPublisher.ViewModels;
 
@@ -35,6 +37,14 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+
+        // En phase de tunnel : la liste consomme le clic pour sélectionner, et il faut
+        // savoir d'où le geste part avant qu'elle ne le fasse. L'événement n'est pas
+        // marqué traité — cliquer sur un bloc le sélectionne comme avant.
+        ListeDesBlocs.AddHandler(PointerPressedEvent, OnBlockListPressed, RoutingStrategies.Tunnel);
+        ListeDesBlocs.PointerMoved += OnBlockListMoved;
+        ListeDesBlocs.PointerReleased += OnBlockListReleased;
+        ListeDesBlocs.PointerCaptureLost += (_, _) => EndBlockDrag();
 
         DataContextChanged += (_, _) => AttachViewModel();
         AttachViewModel();
@@ -250,6 +260,149 @@ public partial class MainWindow : Window
 
         _propertyEditOpen = false;
         Vm?.CommitEdit();
+    }
+
+    // ------------------------------------------------------- ordre des blocs à la souris
+
+    /// <summary>Déplacement, en pixels, à partir duquel un clic devient un glissement.</summary>
+    private const double DragThreshold = 4;
+
+    private Frame? _draggedBlock;
+    private Point _dragOrigin;
+    private bool _dragging;
+
+    /// <summary>Rang d'insertion visé, c'est-à-dire le rang <b>avant</b> lequel on dépose.</summary>
+    private int _dropIndex = -1;
+
+    /// <summary>
+    /// Le geste est bâti sur les pointeurs et non sur <c>DragDrop.DoDragDrop</c>.
+    ///
+    /// Deux raisons, et la seconde suffirait. La plate-forme sans affichage n'inscrit
+    /// aucune source de glisser-déposer : un geste bâti sur elle ne pourrait pas être
+    /// joué par le banc, et ce poste serait éprouvé sur la parole. Et c'est déjà ainsi
+    /// que la planche travaille — pointeur brut, ordre de superposition explicite —
+    /// ce qui fait un idiome de moins à connaître.
+    /// </summary>
+    private void OnBlockListPressed(object? sender, PointerPressedEventArgs e)
+    {
+        EndBlockDrag();
+
+        if (!e.GetCurrentPoint(ListeDesBlocs).Properties.IsLeftButtonPressed) return;
+        if (e.Source is not Visual source) return;
+        if (source.GetSelfAndVisualAncestors().OfType<ListBoxItem>().FirstOrDefault()
+            is not { DataContext: Frame frame }) return;
+
+        _draggedBlock = frame;
+        _dragOrigin = e.GetPosition(ListeDesBlocs);
+    }
+
+    private void OnBlockListMoved(object? sender, PointerEventArgs e)
+    {
+        if (_draggedBlock is null) return;
+
+        if (!e.GetCurrentPoint(ListeDesBlocs).Properties.IsLeftButtonPressed)
+        {
+            EndBlockDrag();
+            return;
+        }
+
+        var point = e.GetPosition(ListeDesBlocs);
+
+        // On ne s'engage qu'au-delà du seuil : sans lui, le tremblement d'un clic
+        // ordinaire réordonnerait la pile à l'insu de celui qui sélectionne un bloc.
+        if (!_dragging)
+        {
+            if (Math.Abs(point.Y - _dragOrigin.Y) < DragThreshold) return;
+
+            _dragging = true;
+            e.Pointer.Capture(ListeDesBlocs);
+        }
+
+        _dropIndex = DropIndexAt(point);
+        ShowDropMark(_dropIndex);
+    }
+
+    private void OnBlockListReleased(object? sender, PointerReleasedEventArgs e)
+    {
+        // L'état est relevé avant de rendre la capture : la rendre ferme le geste.
+        var frame = _draggedBlock;
+        var dragging = _dragging;
+        var index = _dropIndex;
+
+        if (dragging) e.Pointer.Capture(null);
+        EndBlockDrag();
+
+        if (!dragging || frame is null || Vm is not { } vm) return;
+        if (vm.CurrentPage?.Frames.IndexOf(frame) is not { } from || from < 0) return;
+
+        // Le rang visé est un point d'insertion, entre deux blocs. Retirer le bloc de
+        // sa place fait remonter d'un cran tout ce qui le suit, ce point compris : un
+        // dépôt vers l'avant vaut donc un rang de moins qu'il n'y paraît.
+        if (index > from) index--;
+
+        if (vm.ReorderFrame(frame, index)) e.Handled = true;
+    }
+
+    private void EndBlockDrag()
+    {
+        _draggedBlock = null;
+        _dragging = false;
+        _dropIndex = -1;
+        TraitDInsertion.IsVisible = false;
+    }
+
+    /// <summary>
+    /// Les éléments réellement construits, avec leur rang et leur bande verticale dans
+    /// la liste. Le rang est celui du modèle et non la position dans cette liste-ci :
+    /// la liste ne construit que ce qu'elle affiche, et compter les éléments présents
+    /// désignerait le mauvais bloc dès qu'elle défile.
+    /// </summary>
+    private List<(int Index, double Top, double Height)> RealisedItems()
+    {
+        var items = new List<(int, double, double)>();
+
+        for (var i = 0; i < ListeDesBlocs.ItemCount; i++)
+        {
+            if (ListeDesBlocs.ContainerFromIndex(i) is not { } container) continue;
+            if (container.TranslatePoint(new Point(0, 0), ListeDesBlocs) is not { } origin) continue;
+
+            items.Add((i, origin.Y, container.Bounds.Height));
+        }
+
+        return items;
+    }
+
+    /// <summary>
+    /// Le rang d'insertion que désigne le pointeur : celui de l'élément dont on survole
+    /// la moitié haute, le suivant si l'on est dans sa moitié basse.
+    /// </summary>
+    private int DropIndexAt(Point point)
+    {
+        var items = RealisedItems();
+        if (items.Count == 0) return 0;
+
+        foreach (var (index, top, height) in items)
+        {
+            if (point.Y < top + height / 2) return index;
+            if (point.Y < top + height) return index + 1;
+        }
+
+        return items[^1].Index + 1;
+    }
+
+    private void ShowDropMark(int index)
+    {
+        var items = RealisedItems();
+        if (items.Count == 0) return;
+
+        var y = items.FirstOrDefault(item => item.Index == index) is { Height: > 0 } cible
+            ? cible.Top
+            : items[^1].Top + items[^1].Height;
+
+        Canvas.SetLeft(TraitDInsertion, 0);
+        Canvas.SetTop(TraitDInsertion, Math.Max(0, y - 1));
+        TraitDInsertion.Width = ListeDesBlocs.Bounds.Width;
+        TraitDInsertion.IsVisible = true;
     }
 
     // ---------------------------------------------------------------- clavier

@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Headless;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Avalonia.Threading;
@@ -99,6 +100,68 @@ public static class Rendu
         }
 
         return new Image(pixels, taille.Width, taille.Height);
+    }
+
+    /// <summary>
+    /// L'image RÉELLEMENT composée de la fenêtre, celle que l'utilisateur voit.
+    ///
+    /// À ne pas confondre avec <see cref="Encre"/>, qui rend la page à la demande par
+    /// <c>RenderTargetBitmap</c> : celui-ci redessine l'arbre visuel de force, quel
+    /// qu'ait été l'état d'invalidation, et passe donc même quand rien ne se
+    /// rafraîchit à l'écran. Il mesure le modèle, pas l'affichage. Un défaut
+    /// d'affichage a survécu quatre postes faute de cette distinction.
+    ///
+    /// Les deux ont leur emploi : <see cref="Encre"/> mesure OÙ le texte se pose,
+    /// celle-ci mesure SI l'écran a suivi.
+    /// </summary>
+    public static Image Composee(Window fenetre)
+    {
+        var image = fenetre.CaptureRenderedFrame()
+                    ?? throw new InvalidOperationException("aucune image composée");
+
+        using (image)
+        {
+            var pixels = new byte[image.PixelSize.Width * image.PixelSize.Height * 4];
+            using var verrou = image.Lock();
+            System.Runtime.InteropServices.Marshal.Copy(verrou.Address, pixels, 0, pixels.Length);
+            return new Image(pixels, image.PixelSize.Width, image.PixelSize.Height);
+        }
+    }
+
+    /// <summary>
+    /// Les pixels composés que couvre un contrôle donné, et rien d'autre.
+    ///
+    /// Comparer la fenêtre entière ne prouverait pas grand-chose d'une case de la barre
+    /// d'état : la position du curseur, à deux cases de là, change à chaque mouvement
+    /// de pointeur, et la différence viendrait d'elle. Le découpage est pris sur les
+    /// limites du contrôle au moment de la mesure, si bien qu'une case qui se déplace
+    /// sans changer de contenu rend les mêmes pixels.
+    /// </summary>
+    public static byte[] Bande(Window fenetre, Control controle)
+    {
+        var image = Composee(fenetre);
+        var origine = controle.TranslatePoint(new Point(0, 0), fenetre)
+                      ?? throw new InvalidOperationException(
+                          $"« {controle.Name} » n'est pas dans la fenêtre");
+
+        var x = (int)Math.Floor(origine.X);
+        var y = (int)Math.Floor(origine.Y);
+        var largeur = (int)Math.Floor(controle.Bounds.Width);
+        var hauteur = (int)Math.Floor(controle.Bounds.Height);
+
+        Assert.True(largeur > 0 && hauteur > 0,
+            $"« {controle.Name} » n'occupe rien ({controle.Bounds}) : une bande vide serait égale à elle-même");
+        Assert.True(x >= 0 && y >= 0 && x + largeur <= image.Largeur && y + hauteur <= image.Hauteur,
+            $"« {controle.Name} » déborde de l'image composée ({image.Largeur}×{image.Hauteur})");
+
+        var bande = new byte[largeur * hauteur * 4];
+        for (var ligne = 0; ligne < hauteur; ligne++)
+        {
+            Array.Copy(image.Pixels, ((y + ligne) * image.Largeur + x) * 4,
+                bande, ligne * largeur * 4, largeur * 4);
+        }
+
+        return bande;
     }
 
     /// <summary>

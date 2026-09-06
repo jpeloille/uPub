@@ -26,6 +26,14 @@
         <KeyBinding Gesture="Ctrl+A" Command="{Binding SelectAllCommand}"/>
         <KeyBinding Gesture="Ctrl+Shift+G" Command="{Binding GroupSelectedCommand}"/>
         <KeyBinding Gesture="Ctrl+Shift+H" Command="{Binding UngroupSelectedCommand}"/>
+        <!-- Ordre de superposition. Publisher ne donne de raccourci qu'aux deux
+             extrêmes (fiche 15) : avancer et reculer d'un rang n'en ont pas, et on
+             ne leur en invente pas. Publisher 2007 les posait sur Alt+F6 et
+             Alt+Maj+F6 ; ce sont les combinaisons modernes qui sont reprises ici,
+             Alt+F6 étant capté par la plupart des gestionnaires de fenêtres Linux —
+             un raccourci qui ne peut pas arriver jusqu'à l'application ne sert à rien. -->
+        <KeyBinding Gesture="Ctrl+Shift+F" Command="{Binding BringToFrontCommand}"/>
+        <KeyBinding Gesture="Ctrl+Shift+B" Command="{Binding SendToBackCommand}"/>
         <KeyBinding Gesture="Ctrl+OemPlus" Command="{Binding ZoomInCommand}"/>
         <KeyBinding Gesture="Ctrl+Add" Command="{Binding ZoomInCommand}"/>
         <KeyBinding Gesture="Ctrl+OemMinus" Command="{Binding ZoomOutCommand}"/>
@@ -154,10 +162,12 @@
                 <MenuItem Header="_Dissocier" InputGesture="Ctrl+Shift+H"
                           Command="{Binding UngroupSelectedCommand}"/>
                 <Separator/>
-                <MenuItem Header="Premier _plan" Command="{Binding BringToFrontCommand}"/>
+                <MenuItem Header="Premier _plan" InputGesture="Ctrl+Shift+F"
+                          Command="{Binding BringToFrontCommand}"/>
                 <MenuItem Header="_Avancer" Command="{Binding BringForwardCommand}"/>
                 <MenuItem Header="_Reculer" Command="{Binding SendBackwardCommand}"/>
-                <MenuItem Header="Arrière-p_lan" Command="{Binding SendToBackCommand}"/>
+                <MenuItem Header="Arrière-p_lan" InputGesture="Ctrl+Shift+B"
+                          Command="{Binding SendToBackCommand}"/>
                 <Separator/>
                 <MenuItem Header="Aligner à _gauche" Command="{Binding AlignLeftCommand}"/>
                 <MenuItem Header="Centrer _horizontalement" Command="{Binding AlignCentreHorizontallyCommand}"/>
@@ -226,12 +236,28 @@
 
         <Border DockPanel.Dock="Bottom" Background="#FFF3F4F6" BorderBrush="#FFD9DDE3"
                 BorderThickness="0,1,0,0" Padding="10,4">
-            <Grid ColumnDefinitions="*,Auto,Auto,Auto">
-                <TextBlock Grid.Column="0" Text="{Binding Status}" VerticalAlignment="Center"/>
-                <TextBlock Grid.Column="1" Text="{Binding CursorLabel}" Margin="16,0" VerticalAlignment="Center"/>
-                <TextBlock Grid.Column="2" Margin="16,0" VerticalAlignment="Center"
+            <!-- Publisher affiche en permanence la position ET la taille du bloc
+                 sélectionné, dans deux cases distinctes (fiche 02) : pendant un
+                 redimensionnement, l'œil est sur la page et non sur le panneau de
+                 droite. Les cases sont de largeur fixe, comme celle du zoom l'était
+                 déjà : elles se rafraîchissent à chaque mouvement du pointeur, et une
+                 barre dont les cases se déplacent à chaque chiffre ne se lit plus. -->
+            <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto,Auto">
+                <TextBlock Grid.Column="0" Text="{Binding Status}" VerticalAlignment="Center"
+                           TextTrimming="CharacterEllipsis"/>
+                <TextBlock Grid.Column="1" Text="{Binding CursorLabel}" Margin="16,0"
+                           VerticalAlignment="Center" Width="150" TextAlignment="Right"/>
+                <TextBlock Grid.Column="2" x:Name="PositionDuBloc" Margin="16,0"
+                           VerticalAlignment="Center" Width="150" TextAlignment="Right"
+                           Text="{Binding FramePositionLabel}"
+                           IsVisible="{Binding HasSelection}"/>
+                <TextBlock Grid.Column="3" x:Name="TailleDuBloc" Margin="0,0"
+                           VerticalAlignment="Center" Width="130" TextAlignment="Right"
+                           Text="{Binding FrameSizeLabel}"
+                           IsVisible="{Binding HasSelection}"/>
+                <TextBlock Grid.Column="4" Margin="16,0" VerticalAlignment="Center"
                            Text="{Binding PageCountLabel}"/>
-                <TextBlock Grid.Column="3" Margin="16,0" VerticalAlignment="Center"
+                <TextBlock Grid.Column="5" Margin="16,0" VerticalAlignment="Center"
                            Text="{Binding ZoomLabel}"/>
             </Grid>
         </Border>
@@ -252,18 +278,29 @@
                 </ListBox>
 
                 <TextBlock Grid.Row="2" Classes="section" Text="Blocs (du fond vers l'avant)" Margin="10,4"/>
-                <ListBox Grid.Row="3" Margin="6,0,6,8"
-                         ItemsSource="{Binding CurrentPage.Frames}"
-                         SelectedItem="{Binding Selected}">
-                    <ListBox.ItemTemplate>
-                        <DataTemplate DataType="models:Frame">
-                            <StackPanel>
-                                <TextBlock Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis"/>
-                                <TextBlock Text="{Binding Kind}" FontSize="11" Foreground="#FF8A929E"/>
-                            </StackPanel>
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
+
+                <!-- La liste montre la pile, et se laisse réordonner en tirant un bloc :
+                     c'est le geste qu'on essaie spontanément en la voyant. Le trait
+                     d'insertion est posé par-dessus, dans un calque qui ne reçoit pas
+                     le pointeur — le geste appartient à la liste. -->
+                <Panel Grid.Row="3" Margin="6,0,6,8">
+                    <ListBox x:Name="ListeDesBlocs"
+                             ItemsSource="{Binding CurrentPage.Frames}"
+                             SelectedItem="{Binding Selected}">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate DataType="models:Frame">
+                                <StackPanel>
+                                    <TextBlock Text="{Binding DisplayName}" TextTrimming="CharacterEllipsis"/>
+                                    <TextBlock Text="{Binding Kind}" FontSize="11" Foreground="#FF8A929E"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                    <Canvas IsHitTestVisible="False" ClipToBounds="True">
+                        <Rectangle x:Name="TraitDInsertion" Height="2" IsVisible="False"
+                                   Fill="#FF2D7DD2"/>
+                    </Canvas>
+                </Panel>
             </Grid>
 
             <GridSplitter Grid.Column="1" Width="4" Background="#FFE3E6EA"/>
@@ -280,10 +317,30 @@
 
                     <TextBlock Classes="section" Text="DOCUMENT"/>
                     <TextBlock Classes="field" Text="Format"/>
-                    <ComboBox HorizontalAlignment="Stretch"
+                    <ComboBox x:Name="FormatDePage" HorizontalAlignment="Stretch"
                               ItemsSource="{Binding PageSizes}"
                               SelectedItem="{Binding SelectedPageSize}"/>
                     <CheckBox Content="Paysage" Margin="0,6" IsChecked="{Binding IsLandscape}"/>
+
+                    <!-- Les dimensions se saisissent aussi en clair : c'est le « Create
+                         custom page size… » du catalogue de Publisher (fiche 01). Une
+                         taille libre ne correspond à aucune entrée du sélecteur
+                         ci-dessus, qui se vide alors sans rien effacer — ce sont les
+                         dimensions qui font foi, et le sélecteur qui les suit.
+                         Les bornes sont un garde-fou du champ et non du format : le
+                         fichier accepte n'importe quel nombre, mais une page d'un
+                         millimètre n'a pas de sens et une page de trois mètres n'a pas
+                         d'imprimante. -->
+                    <Grid ColumnDefinitions="*,8,*" RowDefinitions="Auto,Auto">
+                        <TextBlock Grid.Row="0" Grid.Column="0" Classes="field" Text="Largeur (mm)"/>
+                        <TextBlock Grid.Row="0" Grid.Column="2" Classes="field" Text="Hauteur (mm)"/>
+                        <NumericUpDown Grid.Row="1" Grid.Column="0" x:Name="LargeurDePage"
+                                       FormatString="0.#" Increment="1" Minimum="10" Maximum="2000"
+                                       Value="{Binding Document.PageWidth, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
+                        <NumericUpDown Grid.Row="1" Grid.Column="2" x:Name="HauteurDePage"
+                                       FormatString="0.#" Increment="1" Minimum="10" Maximum="2000"
+                                       Value="{Binding Document.PageHeight, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
+                    </Grid>
 
                     <Grid ColumnDefinitions="*,8,*" RowDefinitions="Auto,Auto,Auto,Auto">
                         <TextBlock Grid.Row="0" Grid.Column="0" Classes="field" Text="Marge gauche (mm)"/>
