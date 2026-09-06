@@ -23,9 +23,10 @@ public sealed record ImportReport(Document Document, IReadOnlyList<string> Warni
 /// La conversion se fait à un seul endroit, <see cref="Points"/>.
 ///
 /// Ce que la traduction NE rend PAS, faute que le modèle sache l'exprimer, et qui
-/// remonte en avertissement plutôt que de disparaître en silence :
-/// l'alignement vertical d'un bloc, les remplissages par image autres que posés en
-/// bloc, et les chemins de plus de deux points.
+/// remonte en avertissement plutôt que de disparaître en silence : les remplissages
+/// par image autres que posés en bloc, et les chemins de plus de deux points.
+/// L'alignement vertical, lui, y était jusqu'au poste A7 ; le modèle le porte
+/// désormais.
 /// </summary>
 public static class PubImporter
 {
@@ -255,22 +256,32 @@ public static class PubImporter
                 // de la police, ce qui est le cas des documents à reprendre : « 1 » est
                 // donc la valeur juste, et non un défaut de repli.
                 LineHeight = 1,
+                VerticalAlign = Calage(args.GetValueOrDefault("draw:textarea-vertical-align")),
             };
 
             Habiller(_bloc);
-
-            if (args.ContainsKey("draw:textarea-vertical-align"))
-            {
-                Avertissements.Add(
-                    "Alignement vertical du texte perdu : le modèle ne le porte pas encore " +
-                    "(poste A7).");
-            }
 
             _texte.Clear();
             _fragments.Clear();
             _paragraphes.Clear();
             _paragraphe = 0;
         }
+
+        /// <summary>
+        /// Le calage vertical du texte dans sa zone (<c>draw:textarea-vertical-align</c>).
+        ///
+        /// L'absence de la clé vaut « en haut », qui est le défaut de Publisher. Des
+        /// quatre valeurs que le format nomme, libmspub 0.1.4 n'écrit que « middle » :
+        /// la chaîne est seule dans la bibliothèque, sans « top » ni « bottom » à côté
+        /// d'elle. Les deux autres sont reconnues quand même — elles ne coûtent rien et
+        /// une version ultérieure du lecteur pourrait les rendre.
+        /// </summary>
+        private static VerticalAlign Calage(string? valeur) => valeur switch
+        {
+            "middle" => VerticalAlign.Middle,
+            "bottom" => VerticalAlign.Bottom,
+            _ => VerticalAlign.Top,
+        };
 
         /// <summary>
         /// Combien de colonnes tiennent dans le bloc. Le relevé donne la largeur d'une

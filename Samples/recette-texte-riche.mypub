@@ -94,7 +94,8 @@
           "SpaceAfter": 0,
           "Paragraphs": [],
           "Columns": 1,
-          "ColumnGap": 5.67
+          "ColumnGap": 5.67,
+          "VerticalAlign": "Top"
         },
         {
           "$kind": "text",
@@ -151,7 +152,8 @@
           "SpaceAfter": 0,
           "Paragraphs": [],
           "Columns": 1,
-          "ColumnGap": 5.67
+          "ColumnGap": 5.67,
+          "VerticalAlign": "Top"
         },
         {
           "$kind": "text",
@@ -198,7 +200,8 @@
           "SpaceAfter": 0,
           "Paragraphs": [],
           "Columns": 1,
-          "ColumnGap": 5.67
+          "ColumnGap": 5.67,
+          "VerticalAlign": "Top"
         }
       ]
     }

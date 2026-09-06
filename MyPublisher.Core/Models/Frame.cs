@@ -12,6 +12,12 @@ namespace MyPublisher.Models;
 
 public enum TextAlign { Left, Center, Right, Justify }
 
+/// <summary>
+/// Où le texte se cale dans la hauteur de son bloc — <c>draw:textarea-vertical-align</c>
+/// chez Publisher. Trois valeurs, comme la liste « Vertical alignment » de la fiche 12.
+/// </summary>
+public enum VerticalAlign { Top, Middle, Bottom }
+
 public enum ImageFit { Uniform, UniformToFill, Fill }
 
 public enum ShapeKind { Rectangle, Ellipse }
@@ -533,6 +539,21 @@ public partial class TextFrame : Frame
     private double _columnGap = 5.67;
 
     /// <summary>
+    /// Où le texte se cale dans la hauteur du bloc (<c>draw:textarea-vertical-align</c>).
+    /// En haut est le cas de tous les documents écrits jusqu'ici, et compose exactement
+    /// comme avant : c'est pourquoi cette addition ne demande aucune migration et laisse
+    /// <c>FormatVersion</c> à 3 — le même mécanisme qu'ont employé R1, R2 et R3.
+    ///
+    /// Un seul des deux documents réels s'en sert, une seule fois, et c'est justement le
+    /// cas limite : un bloc de 19,43 pt de haut dont le texte en compose 26,86. Le calage
+    /// est donc borné (<see cref="Compositeur.Decalage"/>), sans quoi centrer aurait
+    /// escamoté le début du texte.
+    /// </summary>
+    [ObservableProperty]
+    [property: JsonPropertyOrder(320)]
+    private VerticalAlign _verticalAlign = VerticalAlign.Top;
+
+    /// <summary>
     /// Les cinq réglages d'un seul tenant, pour la composition — comme
     /// <see cref="Padding"/> pour les marges.
     /// </summary>
@@ -565,7 +586,7 @@ public partial class TextFrame : Frame
             PaddingRight = PaddingRight, PaddingBottom = PaddingBottom, Field = Field,
             IndentLeft = IndentLeft, IndentRight = IndentRight,
             IndentFirstLine = IndentFirstLine, SpaceBefore = SpaceBefore, SpaceAfter = SpaceAfter,
-            Columns = Columns, ColumnGap = ColumnGap
+            Columns = Columns, ColumnGap = ColumnGap, VerticalAlign = VerticalAlign
         };
         // Les fragments comme les écarts de paragraphe sont copiés et non partagés :
         // deux blocs issus d'une duplication doivent pouvoir diverger.

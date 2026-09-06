@@ -474,6 +474,74 @@ public static class Compositeur
         lignes.Count == 0 ? 0 : lignes.Max(l => l.Haut + l.Avance + l.EspaceApres);
 
     /// <summary>
+    /// De combien le texte descend sous le sommet de sa zone, selon l'alignement
+    /// vertical du bloc.
+    ///
+    /// Jamais négatif, et c'est tout le poste A7 : un texte plus haut que sa zone se
+    /// cale en haut, quel que soit l'alignement demandé. Centrer un texte qui déborde
+    /// en escamoterait le début — or c'est le début qu'on lit, et ce qui manque à la
+    /// fin se voit, tandis que ce qui manque au début ne se voit pas. Le seul bloc des
+    /// deux documents réels qui porte <c>draw:textarea-vertical-align: middle</c> est
+    /// justement dans ce cas : 26,86 pt composés dans 19,43 pt de haut.
+    ///
+    /// Le calage porte sur la colonne la plus remplie, comme <see cref="Hauteur"/> :
+    /// deux colonnes inégalement remplies descendent ensemble, elles ne se centrent pas
+    /// chacune pour son compte.
+    /// </summary>
+    public static double Decalage(
+        IReadOnlyList<LigneComposee> lignes, double disponible, VerticalAlign fer)
+    {
+        var reste = disponible - Hauteur(lignes);
+        if (reste <= 0) return 0;
+
+        return fer switch
+        {
+            VerticalAlign.Middle => reste / 2,
+            VerticalAlign.Bottom => reste,
+            _ => 0,
+        };
+    }
+
+    /// <summary>
+    /// De combien le texte composé sort du BLOC, en points ; zéro s'il y tient.
+    ///
+    /// C'est le bloc qu'on mesure, et non la zone de texte. Depuis que l'export découpe
+    /// au bloc comme l'écran le fait déjà, ce qui sort du bloc est exactement ce qui est
+    /// amputé, et rien d'autre ne l'est. Un texte qui ne dépasse que dans la marge
+    /// intérieure basse reste entier et lisible : le signaler serait crier au loup, et
+    /// un avertissement qui crie au loup ne se lit plus — c'est la leçon de B5. Deux des
+    /// neuf blocs d'ATA 21 sont dans ce cas, à 1,5 pt près.
+    ///
+    /// <paramref name="disponible"/> est la hauteur de la zone de texte, celle-là même
+    /// qu'a reçue <see cref="Composer"/> ; <paramref name="margeBasse"/> ce qui reste
+    /// entre elle et le bord du bloc.
+    /// </summary>
+    public static double Debordement(
+        IReadOnlyList<LigneComposee> lignes, double disponible, double margeBasse,
+        VerticalAlign fer) =>
+        Math.Max(0, Decalage(lignes, disponible, fer) + Hauteur(lignes) - disponible - margeBasse);
+
+    /// <summary>
+    /// En deçà de quoi un débordement ne se signale pas, en points : un demi-point, la
+    /// hauteur d'une queue de « p ».
+    ///
+    /// Le seuil n'est pas là pour absorber une erreur d'arrondi — elle est de l'ordre du
+    /// millionième — mais parce que les deux rendus ne mesurent pas avec la même règle :
+    /// le marqueur de l'écran sort des métriques d'Avalonia, l'avertissement de l'export
+    /// de celles de PDFsharp. Un bloc au ras de son bord peut donc être signalé d'un côté
+    /// et pas de l'autre, et aucun seuil ne referme cette fenêtre — seul un document qui
+    /// se donne de l'air la referme. Ce qu'on écarte ici, c'est le débordement qui ne
+    /// coûte rien à voir.
+    /// </summary>
+    public const double SeuilDebordement = 0.5;
+
+    /// <summary>Le texte sort-il de son bloc au point que cela mérite d'être dit.</summary>
+    public static bool Deborde(
+        IReadOnlyList<LigneComposee> lignes, double disponible, double margeBasse,
+        VerticalAlign fer) =>
+        Debordement(lignes, disponible, margeBasse, fer) > SeuilDebordement;
+
+    /// <summary>
     /// Avance d'une ligne à la suivante. <paramref name="naturelle"/> est la hauteur
     /// de ligne de la police elle-même ; le multiple vient du modèle.
     ///

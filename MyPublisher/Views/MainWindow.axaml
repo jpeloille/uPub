@@ -468,10 +468,21 @@
                                                       IsChecked="{Binding Italic}"/>
                                     </StackPanel>
 
-                                    <TextBlock Classes="field" Text="Alignement"/>
-                                    <ComboBox HorizontalAlignment="Stretch"
-                                              ItemsSource="{Binding #Root.((vm:MainWindowViewModel)DataContext).TextAlignments}"
-                                              SelectedItem="{Binding Align}"/>
+                                    <!-- Deux alignements et non un : l'horizontal cale les
+                                         lignes dans leur largeur, le vertical cale le
+                                         texte entier dans la hauteur du bloc. Publisher
+                                         les présente aussi séparément, le second sous
+                                         « Format Text Box ▸ Vertical alignment ». -->
+                                    <Grid ColumnDefinitions="*,8,*" RowDefinitions="Auto,Auto">
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Classes="field" Text="Alignement"/>
+                                        <TextBlock Grid.Row="0" Grid.Column="2" Classes="field" Text="Vertical"/>
+                                        <ComboBox Grid.Row="1" Grid.Column="0" HorizontalAlignment="Stretch"
+                                                  ItemsSource="{Binding #Root.((vm:MainWindowViewModel)DataContext).TextAlignments}"
+                                                  SelectedItem="{Binding Align}"/>
+                                        <ComboBox Grid.Row="1" Grid.Column="2" HorizontalAlignment="Stretch"
+                                                  ItemsSource="{Binding #Root.((vm:MainWindowViewModel)DataContext).VerticalAlignments}"
+                                                  SelectedItem="{Binding VerticalAlign}"/>
+                                    </Grid>
 
                                     <TextBlock Classes="field" Text="Marges intérieures (pt)" Margin="0,8,0,2"/>
                                     <Grid ColumnDefinitions="*,8,*" RowDefinitions="Auto,Auto,Auto,Auto">

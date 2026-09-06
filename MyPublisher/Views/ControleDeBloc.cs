@@ -1,0 +1,158 @@
+using System;
+using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.Globalization;
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Media;
+using MyPublisher.Converters;
+using MyPublisher.Models;
+
+namespace MyPublisher.Views;
+
+/// <summary>
+/// Ce qu'un contrôle a besoin de savoir d'un bloc de texte pour le dessiner : ses
+/// lignes composées et la zone qu'il leur laisse.
+/// </summary>
+public readonly record struct TexteMesure(
+    IReadOnlyList<LigneComposee> Lignes, double Largeur, double Hauteur);
+
+/// <summary>
+/// Base des contrôles qui regardent un bloc de texte : le texte lui-même
+/// (<see cref="TexteCompose"/>) et le marqueur de débordement
+/// (<see cref="MarqueurDebordement"/>).
+///
+/// Elle porte le bloc, le contenu résolu, et surtout l'abonnement. « AffectsRender »
+/// ne se déclenche que si la VALEUR de la propriété change : régler le corps ou un
+/// retrait depuis le panneau ne remplace pas l'instance du bloc, et la page ne se
+/// redessinait pas. C'est le défaut que R1 avait introduit et qui a survécu quatre
+/// postes. Il ne doit pas revenir par une seconde copie du même code — d'où cette
+/// base commune plutôt qu'un abonnement recopié dans chaque contrôle.
+/// </summary>
+public abstract class ControleDeBloc : Control
+{
+    public static readonly StyledProperty<TextFrame?> BlocProperty =
+        AvaloniaProperty.Register<ControleDeBloc, TextFrame?>(nameof(Bloc));
+
+    public static readonly StyledProperty<string?> ContenuProperty =
+        AvaloniaProperty.Register<ControleDeBloc, string?>(nameof(Contenu));
+
+    static ControleDeBloc()
+    {
+        AffectsRender<ControleDeBloc>(BlocProperty, ContenuProperty);
+        BlocProperty.Changed.AddClassHandler<ControleDeBloc>((c, e) => c.Suivre(e));
+    }
+
+    /// <summary>Le bloc, pour son style commun, ses fragments et ses marges.</summary>
+    public TextFrame? Bloc
+    {
+        get => GetValue(BlocProperty);
+        set => SetValue(BlocProperty, value);
+    }
+
+    /// <summary>
+    /// Le texte à afficher, déjà passé par le résolveur de champs : un folio vu ici
+    /// est le folio imprimé.
+    /// </summary>
+    public string? Contenu
+    {
+        get => GetValue(ContenuProperty);
+        set => SetValue(ContenuProperty, value);
+    }
+
+    /// <summary>
+    /// On s'abonne au bloc et à ses deux collections d'écarts — ajouter un fragment de
+    /// style ne change aucune propriété du bloc.
+    /// </summary>
+    private void Suivre(AvaloniaPropertyChangedEventArgs e)
+    {
+        if (e.OldValue is TextFrame ancien)
+        {
+            ancien.PropertyChanged -= SurChangement;
+            ancien.Spans.CollectionChanged -= SurCollection;
+            ancien.Paragraphs.CollectionChanged -= SurCollection;
+        }
+
+        if (e.NewValue is TextFrame nouveau)
+        {
+            nouveau.PropertyChanged += SurChangement;
+            nouveau.Spans.CollectionChanged += SurCollection;
+            nouveau.Paragraphs.CollectionChanged += SurCollection;
+        }
+    }
+
+    private void SurChangement(object? _, System.ComponentModel.PropertyChangedEventArgs __) =>
+        InvalidateVisual();
+
+    private void SurCollection(object? _, NotifyCollectionChangedEventArgs __) =>
+        InvalidateVisual();
+
+    /// <summary>
+    /// Compose le bloc pour la place dont ce contrôle dispose. Les deux contrôles
+    /// passent par ici : le texte tracé et le marqueur qui dit qu'il déborde doivent
+    /// parler de la même composition, sinon l'un signalerait ce que l'autre ne montre
+    /// pas.
+    /// </summary>
+    protected TexteMesure? Mesurer(Compositeur.IMetriques metriques)
+    {
+        if (Bloc is not { } bloc || string.IsNullOrEmpty(Contenu)) return null;
+
+        var largeur = Math.Max(1, Bounds.Width - bloc.PaddingLeft - bloc.PaddingRight);
+        var hauteur = Math.Max(1, Bounds.Height - bloc.PaddingTop - bloc.PaddingBottom);
+
+        var commun = new StyleEffectif(
+            bloc.FontFamily, bloc.FontSize, bloc.Bold, bloc.Italic, bloc.Foreground, 0);
+
+        // Les fragments repèrent des positions dans le texte saisi ; un champ résolu
+        // n'a pas les mêmes caractères, et n'est jamais qu'un seul style. Les écarts de
+        // paragraphe tombent pour la même raison — un champ n'a pas les mêmes
+        // paragraphes. Les réglages du bloc, eux, valent toujours : ce sont des
+        // propriétés du bloc, comme ses marges intérieures.
+        var fragments = Contenu == bloc.Text ? bloc.Spans : (IReadOnlyList<StyleSpan>)[];
+        var ecarts = Contenu == bloc.Text ? bloc.Paragraphs : (IReadOnlyList<ParagraphSpan>)[];
+
+        var lignes = Compositeur.Composer(
+            Contenu, fragments, commun, ecarts, bloc.Paragraph,
+            largeur, hauteur, bloc.Colonnage, bloc.LineHeight, metriques);
+
+        return new TexteMesure(lignes, largeur, hauteur);
+    }
+}
+
+/// <summary>La règle à mesurer d'Avalonia, prêtée au compositeur du noyau.</summary>
+public sealed class MetriquesAvalonia : Compositeur.IMetriques
+{
+    private readonly Dictionary<StyleEffectif, Typeface> _polices = [];
+
+    public double Largeur(string texte, StyleEffectif style) =>
+        Composer(texte, style).WidthIncludingTrailingWhitespace;
+
+    public double Naturelle(StyleEffectif style) =>
+        InterligneConverter.HauteurNaturelle(
+            style.FontFamily, style.FontSize, style.Bold, style.Italic);
+
+    public double Montee(StyleEffectif style)
+    {
+        var metriques = Police(style).GlyphTypeface.Metrics;
+        var em = (double)metriques.DesignEmHeight;
+        return em > 0 ? -metriques.Ascent * style.FontSize / em : style.FontSize;
+    }
+
+    public FormattedText Composer(string texte, StyleEffectif style) =>
+        new(texte, CultureInfo.CurrentCulture, FlowDirection.LeftToRight,
+            Police(style), style.FontSize,
+            Conv.ToBrush(style.Foreground) ?? Brushes.Black);
+
+    private Typeface Police(StyleEffectif style)
+    {
+        if (_polices.TryGetValue(style, out var connue)) return connue;
+
+        var typeface = new Typeface(
+            new FontFamily(style.FontFamily),
+            style.Italic ? FontStyle.Italic : FontStyle.Normal,
+            style.Bold ? FontWeight.Bold : FontWeight.Normal);
+
+        _polices[style] = typeface;
+        return typeface;
+    }
+}

@@ -199,6 +199,9 @@ public partial class MainWindowViewModel : ViewModelBase
     public IReadOnlyList<TextAlign> TextAlignments { get; } =
         [TextAlign.Left, TextAlign.Center, TextAlign.Right, TextAlign.Justify];
 
+    public IReadOnlyList<VerticalAlign> VerticalAlignments { get; } =
+        [VerticalAlign.Top, VerticalAlign.Middle, VerticalAlign.Bottom];
+
     public IReadOnlyList<ImageFit> ImageFits { get; } =
         [ImageFit.Uniform, ImageFit.UniformToFill, ImageFit.Fill];
 

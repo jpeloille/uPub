@@ -61,7 +61,7 @@ public static class PdfExporter
 
             using var gfx = XGraphics.FromPdfPage(pdfPage);
 
-            foreach (var frame in page.Frames) DrawFrame(gfx, frame, warnings, context);
+            DessinerTous(gfx, page.Frames, warnings, context, $"Page {index + 1}");
         }
 
         var pageCount = pdf.PageCount;
@@ -161,12 +161,60 @@ public static class PdfExporter
     }
 
     /// <summary>
+    /// Dessine une liste de blocs de même niveau, chacun avec la désignation sous
+    /// laquelle un avertissement le nommera. La liste entière est nécessaire pour cela :
+    /// c'est elle qui dit si un nom suffit à désigner.
+    /// </summary>
+    private static void DessinerTous(
+        XGraphics gfx, IReadOnlyList<Frame> blocs, List<string> warnings,
+        FieldContext context, string chemin)
+    {
+        for (var rang = 0; rang < blocs.Count; rang++)
+        {
+            DrawFrame(gfx, blocs[rang], warnings, context, Reperer(chemin, blocs, rang));
+        }
+    }
+
+    /// <summary>
+    /// Comment un avertissement désigne le bloc qu'il vise.
+    ///
+    /// Le format « &lt;nom du bloc&gt; : &lt;message&gt; » ne suffit plus depuis que le
+    /// débordement se signale, et il ne suffisait déjà pas : <c>DisplayName</c> retombe
+    /// sur le TYPE quand le nom est vide, si bien que deux blocs anonymes donnaient deux
+    /// avertissements indiscernables. On préfixe donc par la page, puis par les blocs
+    /// qui portent celui-ci : « Page 4 · Bande · L1 · C2 ».
+    ///
+    /// Cela ne suffit pas non plus. L'import de R5 nomme « Bande » chacune des seize
+    /// bandes des fiches ATR et « L1 · C2 » la deuxième case de chacune : six d'entre
+    /// elles débordent sur la seule page 4, et six lignes identiques ne désignent rien.
+    /// D'où le rang, qui ne s'écrit **que** lorsque le nom se répète dans la même
+    /// liste — un numéro posé sur un nom déjà unique ferait croire à une numérotation
+    /// que le document ne porte pas.
+    /// </summary>
+    private static string Reperer(string chemin, IReadOnlyList<Frame> fratrie, int rang)
+    {
+        var nom = fratrie[rang].DisplayName;
+
+        var homonymes = 0;
+        var precedents = 0;
+        for (var i = 0; i < fratrie.Count; i++)
+        {
+            if (fratrie[i].DisplayName != nom) continue;
+            homonymes++;
+            if (i < rang) precedents++;
+        }
+
+        return homonymes > 1 ? $"{chemin} · {nom} n° {precedents + 1}" : $"{chemin} · {nom}";
+    }
+
+    /// <summary>
     /// Dessine un bloc dans le repère courant. Récursif : un groupe translate le repère
     /// et redescend, ses enfants étant en coordonnées relatives. La rotation s'applique
     /// avant la translation, si bien que celle d'un groupe se compose avec celle de
     /// chacun de ses blocs sans qu'aucun calcul n'ait à les combiner.
     /// </summary>
-    private static void DrawFrame(XGraphics gfx, Frame frame, List<string> warnings, FieldContext context)
+    private static void DrawFrame(
+        XGraphics gfx, Frame frame, List<string> warnings, FieldContext context, string repere)
     {
         var state = gfx.Save();
         if (frame.Rotation != 0)
@@ -192,15 +240,15 @@ public static class PdfExporter
             {
                 switch (frame)
                 {
-                    case TextFrame text: DrawText(gfx, text, context); break;
-                    case ImageFrame image: DrawImage(gfx, image, warnings, context); break;
-                    case GroupFrame group: DrawChildren(gfx, group, warnings, context); break;
-                    case TableFrame table: DrawTable(gfx, table, warnings, context); break;
+                    case TextFrame text: DrawText(gfx, text, context, warnings, repere); break;
+                    case ImageFrame image: DrawImage(gfx, image, warnings, context, repere); break;
+                    case GroupFrame group: DrawChildren(gfx, group, warnings, context, repere); break;
+                    case TableFrame table: DrawTable(gfx, table, warnings, context, repere); break;
                 }
             }
             catch (Exception ex)
             {
-                warnings.Add($"{frame.DisplayName} : {ex.Message}");
+                warnings.Add($"{repere} : {ex.Message}");
             }
 
             DrawStroke(gfx, frame);
@@ -209,13 +257,14 @@ public static class PdfExporter
         gfx.Restore(state);
     }
 
-    private static void DrawChildren(XGraphics gfx, GroupFrame group, List<string> warnings, FieldContext context)
+    private static void DrawChildren(
+        XGraphics gfx, GroupFrame group, List<string> warnings, FieldContext context, string repere)
     {
         // La translation ne vaut que pour les enfants : le contour du groupe, tracé
         // ensuite, est en coordonnées de page comme son fond.
         var state = gfx.Save();
         gfx.TranslateTransform(group.X, group.Y);
-        foreach (var child in group.Children) DrawFrame(gfx, child, warnings, context);
+        DessinerTous(gfx, group.Children, warnings, context, repere);
         gfx.Restore(state);
     }
 
@@ -227,11 +276,12 @@ public static class PdfExporter
     /// l'écran. Les deux rendus sont d'accord par construction, sans qu'il faille les
     /// comparer pour s'en assurer.
     /// </summary>
-    private static void DrawTable(XGraphics gfx, TableFrame table, List<string> warnings, FieldContext context)
+    private static void DrawTable(
+        XGraphics gfx, TableFrame table, List<string> warnings, FieldContext context, string repere)
     {
         var state = gfx.Save();
         gfx.TranslateTransform(table.X, table.Y);
-        foreach (var cell in table.CellFrames) DrawFrame(gfx, cell, warnings, context);
+        DessinerTous(gfx, table.CellFrames, warnings, context, repere);
         gfx.Restore(state);
     }
 
@@ -297,7 +347,26 @@ public static class PdfExporter
         return pen;
     }
 
-    private static void DrawText(XGraphics gfx, TextFrame text, FieldContext context)
+    /// <summary>
+    /// Dessine le texte d'un bloc, et dit ce qu'il en coupe.
+    ///
+    /// **Le texte est découpé au bloc**, comme l'écran le fait depuis toujours
+    /// (<c>ClipToBounds</c> dans <c>PageCanvas.axaml</c>). Ce n'est pas une addition
+    /// mais un retour : jusqu'à R1, <c>XTextFormatter</c> s'arrêtait au bord de la
+    /// boîte, et la composition partagée — qui pose chaque ligne à l'ordonnée qu'on lui
+    /// donne — a emporté cette limite sans que rien ne la remplace. Depuis, un bloc trop
+    /// plein débordait sur ses voisins dans le PDF et pas à l'écran. Publisher ne dessine
+    /// pas le texte hors de sa zone ; les deux rendus s'accordent désormais là-dessus.
+    ///
+    /// C'est le BLOC qu'on découpe et non la zone de texte : une première ligne en
+    /// retrait négatif pend dans la marge intérieure gauche et doit y rester visible.
+    /// C'est exactement ce que fait la paire d'ATA 21 — <c>margin-left 0,1930in</c> avec
+    /// <c>text-indent −0,2183in</c> pose la ligne à 1,82 pt à gauche de la zone de
+    /// texte, que les 2,88 pt de <c>fo:padding-left</c> laissent bien à l'intérieur du
+    /// bloc.
+    /// </summary>
+    private static void DrawText(
+        XGraphics gfx, TextFrame text, FieldContext context, List<string> warnings, string repere)
     {
         // Le contenu passe par le résolveur de champs, celui-là même que l'écran
         // appelle : un folio vu à l'écran est le folio imprimé.
@@ -328,6 +397,43 @@ public static class PdfExporter
             box.Width, box.Height, text.Colonnage, text.LineHeight, metriques);
         if (lignes.Count == 0) return;
 
+        // Le calage vertical et la mesure du débordement viennent du noyau, comme la
+        // découpe en lignes : l'écran lit les mêmes deux fonctions, avec sa règle.
+        var descente = Compositeur.Decalage(lignes, box.Height, text.VerticalAlign);
+        var debordement = Compositeur.Debordement(
+            lignes, box.Height, text.PaddingBottom, text.VerticalAlign);
+
+        if (debordement > Compositeur.SeuilDebordement)
+        {
+            warnings.Add(
+                $"{repere} : le texte déborde du bloc de " +
+                $"{debordement.ToString("0.#", Nombres)} pt — ce qui dépasse n'est pas imprimé.");
+        }
+
+        // Le découpage est posé ici et retiré ici, quoi qu'il arrive : le contour du
+        // bloc se trace APRÈS le contenu, et un découpage qui lui survivrait le
+        // réduirait à la moitié de son épaisseur. C'est la parade que « DrawImage »
+        // s'était déjà donnée pour le cadrage « remplir ».
+        var decoupe = gfx.Save();
+        try
+        {
+            gfx.IntersectClip(new XRect(text.X, text.Y, text.Width, text.Height));
+            Tracer(gfx, lignes, box, descente, metriques);
+        }
+        finally
+        {
+            gfx.Restore(decoupe);
+        }
+    }
+
+    /// <summary>Les nombres d'un avertissement : « 36,9 pt », comme la date est en français.</summary>
+    private static readonly System.Globalization.CultureInfo Nombres =
+        System.Globalization.CultureInfo.GetCultureInfo("fr-FR");
+
+    private static void Tracer(
+        XGraphics gfx, IReadOnlyList<LigneComposee> lignes, XRect box, double descente,
+        MetriquesPdf metriques)
+    {
         foreach (var ligne in lignes)
         {
             // Rien ne se cumule ici : la ligne porte son ordonnée dans sa colonne, et
@@ -338,7 +444,7 @@ public static class PdfExporter
             // non entièrement en dessous : convention typographique, celle de CSS et celle
             // d'Avalonia. Sans ce demi-interligne, l'écran et le PDF décalaient de 2 pt à
             // interligne 1,25 — assez pour que les deux rendus ne se superposent plus.
-            var ligneDeBase = box.Top + ligne.Haut
+            var ligneDeBase = box.Top + descente + ligne.Haut
                               + (ligne.Avance - ligne.Naturelle) / 2 + Montee(ligne, metriques);
 
             if (ligne.Morceaux.Count > 0)
@@ -420,7 +526,8 @@ public static class PdfExporter
         public double Naturelle(StyleEffectif style) => Police(style).GetHeight();
     }
 
-    private static void DrawImage(XGraphics gfx, ImageFrame frame, List<string> warnings, FieldContext context)
+    private static void DrawImage(
+        XGraphics gfx, ImageFrame frame, List<string> warnings, FieldContext context, string repere)
     {
         // Un bloc à champ tire son chemin du jeu de coordonnées ; les autres du leur.
         var source = FieldResolver.Resolve(frame.Field, frame.Path, context);
@@ -430,7 +537,7 @@ public static class PdfExporter
             // Un bloc image sans chemin est un emplacement qui attend son image — c'est
             // ainsi que les modèles réservent leur place — et non une image perdue. Il
             // ne se signale que s'il attendait un logo qu'on n'a pas renseigné.
-            if (frame.HasField) warnings.Add($"{frame.DisplayName} : aucun logo dans le jeu de coordonnées.");
+            if (frame.HasField) warnings.Add($"{repere} : aucun logo dans le jeu de coordonnées.");
             return;
         }
 

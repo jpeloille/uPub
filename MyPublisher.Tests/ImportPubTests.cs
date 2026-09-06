@@ -289,7 +289,27 @@ public class ImportPubTests
         // Un import muet sur ce qu'il perd est pire qu'un import qui échoue.
         var rapport = PubImporter.Importer($"""
             {UnePage}
-                startTextObject (draw:textarea-vertical-align: middle, svg:height: 1.0000in, svg:width: 4.0000in, svg:x: 0.0000in, svg:y: 0.0000in)
+                setStyle(draw:fill: bitmap, draw:stroke: none)
+                drawPolygon (svg:points: ((svg:x: 0.0000in, svg:y: 0.0000in), (svg:x: 1.0000in, svg:y: 0.0000in), (svg:x: 1.0000in, svg:y: 1.0000in), (svg:x: 0.0000in, svg:y: 1.0000in)))
+            """);
+
+        Assert.Contains(rapport.Warnings, a => a.Contains("Remplissage par image"));
+    }
+
+    [Theory]
+    [InlineData("middle", VerticalAlign.Middle)]
+    [InlineData("bottom", VerticalAlign.Bottom)]
+    [InlineData(null, VerticalAlign.Top)]
+    public void Le_calage_vertical_traverse_limport(string? valeur, VerticalAlign attendu)
+    {
+        // Le relevé des fiches de limitations porte « draw:textarea-vertical-align:
+        // middle » une fois, sur un bandeau de titre. L'import le disait perdu jusqu'au
+        // poste A7 ; le modèle le porte désormais, et l'avertissement n'a plus lieu
+        // d'être. L'absence de la clé vaut « en haut », le défaut de Publisher.
+        var calage = valeur is null ? "" : $"draw:textarea-vertical-align: {valeur}, ";
+        var rapport = PubImporter.Importer($"""
+            {UnePage}
+                startTextObject ({calage}svg:height: 1.0000in, svg:width: 4.0000in, svg:x: 0.0000in, svg:y: 0.0000in)
                   openParagraph ()
                     openSpan()
                       insertText (x)
@@ -298,7 +318,9 @@ public class ImportPubTests
                 endTextObject
             """);
 
-        Assert.Contains(rapport.Warnings, a => a.Contains("Alignement vertical"));
+        var bloc = Assert.IsType<TextFrame>(rapport.Document.Pages[0].Frames.Single());
+        Assert.Equal(attendu, bloc.VerticalAlign);
+        Assert.DoesNotContain(rapport.Warnings, a => a.Contains("Alignement vertical"));
     }
 
     [Fact]

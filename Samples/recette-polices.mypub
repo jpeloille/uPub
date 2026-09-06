@@ -25,7 +25,7 @@
           "X": 40,
           "Y": 40,
           "Width": 340,
-          "Height": 40,
+          "Height": 56,
           "Rotation": 0,
           "Fill": null,
           "Stroke": null,
@@ -53,7 +53,8 @@
           "SpaceAfter": 0,
           "Paragraphs": [],
           "Columns": 1,
-          "ColumnGap": 5.67
+          "ColumnGap": 5.67,
+          "VerticalAlign": "Top"
         },
         {
           "$kind": "text",
@@ -61,7 +62,7 @@
           "X": 40,
           "Y": 100,
           "Width": 340,
-          "Height": 40,
+          "Height": 56,
           "Rotation": 0,
           "Fill": null,
           "Stroke": null,
@@ -89,7 +90,8 @@
           "SpaceAfter": 0,
           "Paragraphs": [],
           "Columns": 1,
-          "ColumnGap": 5.67
+          "ColumnGap": 5.67,
+          "VerticalAlign": "Top"
         },
         {
           "$kind": "text",
@@ -97,7 +99,7 @@
           "X": 40,
           "Y": 160,
           "Width": 340,
-          "Height": 40,
+          "Height": 56,
           "Rotation": 0,
           "Fill": null,
           "Stroke": null,
@@ -125,7 +127,8 @@
           "SpaceAfter": 0,
           "Paragraphs": [],
           "Columns": 1,
-          "ColumnGap": 5.67
+          "ColumnGap": 5.67,
+          "VerticalAlign": "Top"
         },
         {
           "$kind": "text",
@@ -161,7 +164,8 @@
           "SpaceAfter": 0,
           "Paragraphs": [],
           "Columns": 1,
-          "ColumnGap": 5.67
+          "ColumnGap": 5.67,
+          "VerticalAlign": "Top"
         },
         {
           "$kind": "text",
@@ -208,7 +212,8 @@
           "SpaceAfter": 0,
           "Paragraphs": [],
           "Columns": 1,
-          "ColumnGap": 5.67
+          "ColumnGap": 5.67,
+          "VerticalAlign": "Top"
         }
       ]
     }

@@ -733,4 +733,123 @@ public class CompositeurTests
         Assert.Equal([0, 1, 2], large.Select(l => l.Colonne));
         Assert.All(large, l => Assert.Equal(2, l.Avance));
     }
+
+    // --------------------------------- débordement et calage vertical (A2, A7)
+
+    /// <summary>
+    /// Un bloc dont la zone de texte fait <paramref name="disponible"/> de haut, avec
+    /// <paramref name="margeBasse"/> sous elle jusqu'au bord du bloc. Les deux sont
+    /// toujours donnés à part : c'est leur somme qui décide du débordement, et une
+    /// mesure qui les confondrait signalerait un texte que rien ne coupe.
+    /// </summary>
+    private static IReadOnlyList<LigneComposee> Lignes(string texte, double disponible) =>
+        Composer(texte, 100, disponible, UneColonne);
+
+    [Fact]
+    public void Un_texte_qui_tient_dans_son_bloc_ne_deborde_pas()
+    {
+        // Trois lignes d'une unité dans quatre unités de haut.
+        Assert.Equal(0, Compositeur.Debordement(
+            Lignes("a\nb\nc", 4), 4, margeBasse: 0, VerticalAlign.Top));
+    }
+
+    [Fact]
+    public void Un_texte_trop_haut_deborde_de_ce_qui_depasse()
+    {
+        // Cinq lignes d'une unité dans trois unités de haut : deux dépassent.
+        Assert.Equal(2, Compositeur.Debordement(
+            Lignes("a\nb\nc\nd\ne", 3), 3, margeBasse: 0, VerticalAlign.Top), precision: 9);
+    }
+
+    [Fact]
+    public void La_marge_interieure_basse_absorbe_ce_qui_ne_sort_pas_du_bloc()
+    {
+        // Le cas réel d'ATA 21 : deux de ses neuf blocs composent une fraction de point
+        // de plus que leur zone de texte, et la marge intérieure basse — 2,88 pt chez
+        // Publisher — la reçoit. Rien n'est coupé, rien ne doit être signalé : un
+        // avertissement qui crie au loup ne se lit plus.
+        var lignes = Lignes("a\nb\nc\nd", 3);
+
+        Assert.Equal(1, Compositeur.Debordement(lignes, 3, margeBasse: 0, VerticalAlign.Top), precision: 9);
+        Assert.Equal(0, Compositeur.Debordement(lignes, 3, margeBasse: 1, VerticalAlign.Top));
+        Assert.False(Compositeur.Deborde(lignes, 3, margeBasse: 1, VerticalAlign.Top));
+    }
+
+    [Fact]
+    public void Le_debordement_se_mesure_sur_la_colonne_la_plus_remplie()
+    {
+        // Cinq lignes en trois colonnes de deux unités : la première colonne en porte
+        // deux, la dernière une. Le bloc ne déborde pas, alors que la somme des
+        // colonnes ferait cinq fois sa hauteur — une mesure qui additionnerait les
+        // colonnes signalerait tous les blocs en colonnes du monde.
+        var lignes = Composer("a\nb\nc\nd\ne", 34, 2, Trois);
+
+        Assert.Equal(0, Compositeur.Debordement(lignes, 2, margeBasse: 0, VerticalAlign.Top));
+    }
+
+    [Fact]
+    public void Un_bloc_vide_ne_deborde_pas()
+    {
+        // Quel que soit le fer : un bloc sans ligne n'a rien à couper. Le calage, lui,
+        // rend bien la moitié de la zone — il n'y a rien à y poser, et c'est sans
+        // conséquence ; ce qui compte est qu'il ne fasse pas croire à un débordement.
+        foreach (var fer in Enum.GetValues<VerticalAlign>())
+        {
+            Assert.Equal(0, Compositeur.Debordement([], 10, margeBasse: 0, fer));
+        }
+    }
+
+    [Theory]
+    [InlineData(VerticalAlign.Top, 0)]
+    [InlineData(VerticalAlign.Middle, 3.5)]
+    [InlineData(VerticalAlign.Bottom, 7)]
+    public void Le_calage_vertical_descend_le_texte_dans_sa_zone(VerticalAlign fer, double attendu)
+    {
+        // Trois lignes d'une unité dans dix unités de haut : sept unités de reste, que
+        // le milieu partage et que le bas prend en entier.
+        Assert.Equal(attendu, Compositeur.Decalage(Lignes("a\nb\nc", 10), 10, fer), precision: 9);
+    }
+
+    [Theory]
+    [InlineData(VerticalAlign.Top)]
+    [InlineData(VerticalAlign.Middle)]
+    [InlineData(VerticalAlign.Bottom)]
+    public void Un_texte_plus_haut_que_sa_zone_reste_cale_en_haut(VerticalAlign fer)
+    {
+        // C'est le seul bloc des deux documents réels qui porte un calage vertical :
+        // « draw:textarea-vertical-align: middle » sur une zone de 19,43 pt dont le
+        // texte en compose 26,86. Centrer escamoterait le début, et c'est le début
+        // qu'on lit ; caler en bas l'escamoterait deux fois plus.
+        var lignes = Lignes("a\nb\nc\nd\ne", 3);
+
+        Assert.Equal(0, Compositeur.Decalage(lignes, 3, fer));
+        // Et le débordement ne dépend donc pas du calage : ce qui dépasse dépasse par
+        // le bas, quel que soit le fer demandé.
+        Assert.Equal(2, Compositeur.Debordement(lignes, 3, margeBasse: 0, fer), precision: 9);
+    }
+
+    [Fact]
+    public void Le_calage_en_bas_fait_deborder_ce_qui_debordait_deja_par_le_haut()
+    {
+        // Un texte calé en bas descend jusqu'au bord de sa zone : il ne peut pas
+        // déborder tant qu'il y tient, et la marge basse ne l'absorbe plus.
+        var lignes = Lignes("a\nb\nc", 10);
+
+        Assert.Equal(0, Compositeur.Debordement(lignes, 10, margeBasse: 2, VerticalAlign.Bottom));
+        Assert.Equal(7, Compositeur.Decalage(lignes, 10, VerticalAlign.Bottom), precision: 9);
+    }
+
+    [Fact]
+    public void Un_demi_point_de_debordement_ne_se_signale_pas()
+    {
+        // Le seuil n'absorbe pas une erreur d'arrondi — elle est de l'ordre du
+        // millionième — mais le débordement qui ne coûte rien à voir, et il laisse aux
+        // deux règles à mesurer, celle d'Avalonia et celle de PDFsharp, une fenêtre où
+        // s'accorder.
+        var lignes = Lignes("a\nb", 1);
+
+        Assert.True(Compositeur.Debordement(lignes, 1, margeBasse: 0.6, VerticalAlign.Top) > 0);
+        Assert.False(Compositeur.Deborde(lignes, 1, margeBasse: 0.6, VerticalAlign.Top));
+        Assert.True(Compositeur.Deborde(lignes, 1, margeBasse: 0.4, VerticalAlign.Top));
+    }
 }

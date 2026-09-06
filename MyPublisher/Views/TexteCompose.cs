@@ -1,11 +1,5 @@
-using System;
-using System.Collections.Generic;
-using System.Collections.Specialized;
-using System.Globalization;
 using Avalonia;
-using Avalonia.Controls;
 using Avalonia.Media;
-using MyPublisher.Converters;
 using MyPublisher.Models;
 
 namespace MyPublisher.Views;
@@ -29,99 +23,24 @@ namespace MyPublisher.Views;
 /// couche intermédiaire susceptible de diverger ».
 ///
 /// La saisie, elle, reste au <c>TextBox</c> posé par-dessus : ce contrôle-ci ne fait
-/// qu'afficher.
+/// qu'afficher. Le bloc, le contenu et l'abonnement viennent de
+/// <see cref="ControleDeBloc"/>.
 /// </summary>
-public sealed class TexteCompose : Control
+public sealed class TexteCompose : ControleDeBloc
 {
-    public static readonly StyledProperty<TextFrame?> BlocProperty =
-        AvaloniaProperty.Register<TexteCompose, TextFrame?>(nameof(Bloc));
-
-    public static readonly StyledProperty<string?> ContenuProperty =
-        AvaloniaProperty.Register<TexteCompose, string?>(nameof(Contenu));
-
-    static TexteCompose()
-    {
-        AffectsRender<TexteCompose>(BlocProperty, ContenuProperty);
-        BlocProperty.Changed.AddClassHandler<TexteCompose>((c, e) => c.Suivre(e));
-    }
-
-    /// <summary>
-    /// Ce qu'on écoute sur le bloc, et pourquoi il faut l'écouter.
-    ///
-    /// « AffectsRender » ne se déclenche que si la VALEUR de la propriété change. Or
-    /// « Bloc » est lié au bloc lui-même : régler son retrait ou son corps depuis le
-    /// panneau ne remplace pas l'instance, la liaison ne rend donc rien de neuf, et la
-    /// page ne se redessinait pas. Le défaut est arrivé avec R1, quand le TextBlock —
-    /// qui liait chaque propriété séparément — a cédé la place à ce contrôle : quinze
-    /// réglages du panneau s'enregistraient et s'exportaient sans que rien ne bouge à
-    /// l'écran, jusqu'à ce qu'on retouche le texte ou rouvre le document.
-    ///
-    /// On s'abonne donc au bloc, et à ses deux collections d'écarts — ajouter un
-    /// fragment de style ne change aucune propriété du bloc.
-    /// </summary>
-    private void Suivre(AvaloniaPropertyChangedEventArgs e)
-    {
-        if (e.OldValue is TextFrame ancien)
-        {
-            ancien.PropertyChanged -= SurChangement;
-            ancien.Spans.CollectionChanged -= SurCollection;
-            ancien.Paragraphs.CollectionChanged -= SurCollection;
-        }
-
-        if (e.NewValue is TextFrame nouveau)
-        {
-            nouveau.PropertyChanged += SurChangement;
-            nouveau.Spans.CollectionChanged += SurCollection;
-            nouveau.Paragraphs.CollectionChanged += SurCollection;
-        }
-    }
-
-    private void SurChangement(object? _, System.ComponentModel.PropertyChangedEventArgs __) =>
-        InvalidateVisual();
-
-    private void SurCollection(object? _, NotifyCollectionChangedEventArgs __) =>
-        InvalidateVisual();
-
-    /// <summary>Le bloc, pour son style commun, ses fragments et ses marges.</summary>
-    public TextFrame? Bloc
-    {
-        get => GetValue(BlocProperty);
-        set => SetValue(BlocProperty, value);
-    }
-
-    /// <summary>
-    /// Le texte à afficher, déjà passé par le résolveur de champs : un folio vu ici
-    /// est le folio imprimé.
-    /// </summary>
-    public string? Contenu
-    {
-        get => GetValue(ContenuProperty);
-        set => SetValue(ContenuProperty, value);
-    }
-
     public override void Render(DrawingContext contexte)
     {
-        if (Bloc is not { } bloc || string.IsNullOrEmpty(Contenu)) return;
+        if (Bloc is not { } bloc) return;
 
-        var largeur = Math.Max(1, Bounds.Width - bloc.PaddingLeft - bloc.PaddingRight);
-        var hauteur = Math.Max(1, Bounds.Height - bloc.PaddingTop - bloc.PaddingBottom);
         var metriques = new MetriquesAvalonia();
-        var commun = new StyleEffectif(
-            bloc.FontFamily, bloc.FontSize, bloc.Bold, bloc.Italic, bloc.Foreground, 0);
+        if (Mesurer(metriques) is not { } mesure) return;
 
-        // Les fragments repèrent des positions dans le texte saisi ; un champ résolu
-        // n'a pas les mêmes caractères, et n'est jamais qu'un seul style. Les écarts de
-        // paragraphe tombent pour la même raison — un champ n'a pas les mêmes
-        // paragraphes. Les réglages du bloc, eux, valent toujours : ce sont des
-        // propriétés du bloc, comme ses marges intérieures.
-        var fragments = Contenu == bloc.Text ? bloc.Spans : (IReadOnlyList<StyleSpan>)[];
-        var ecarts = Contenu == bloc.Text ? bloc.Paragraphs : (IReadOnlyList<ParagraphSpan>)[];
+        // Le calage vertical vient du noyau, comme la découpe en lignes : l'export lit
+        // la même fonction. Il est borné à zéro là-bas comme ici, si bien qu'un texte
+        // trop haut se cale en haut des deux côtés.
+        var descente = Compositeur.Decalage(mesure.Lignes, mesure.Hauteur, bloc.VerticalAlign);
 
-        var lignes = Compositeur.Composer(
-            Contenu, fragments, commun, ecarts, bloc.Paragraph,
-            largeur, hauteur, bloc.Colonnage, bloc.LineHeight, metriques);
-
-        foreach (var ligne in lignes)
+        foreach (var ligne in mesure.Lignes)
         {
             // Rien ne se cumule ici : la ligne porte son ordonnée dans sa colonne, et
             // l'espace avant le paragraphe y est déjà entré. C'est la composition qui a
@@ -155,10 +74,10 @@ public sealed class TexteCompose : Control
                 var montee = 0.0;
                 foreach (var morceau in ligne.Morceaux)
                 {
-                    montee = Math.Max(montee, metriques.Montee(morceau.Style));
+                    montee = System.Math.Max(montee, metriques.Montee(morceau.Style));
                 }
 
-                var ligneDeBase = bloc.PaddingTop + ligne.Haut
+                var ligneDeBase = bloc.PaddingTop + descente + ligne.Haut
                                   + (ligne.Avance - ligne.Naturelle) / 2 + montee;
 
                 for (var m = 0; m < ligne.Morceaux.Count; m++)
@@ -175,44 +94,6 @@ public sealed class TexteCompose : Control
                     contexte.DrawText(rendu, new Point(origine + morceau.X + decalages[m], y));
                 }
             }
-        }
-    }
-
-    /// <summary>La règle à mesurer d'Avalonia, prêtée au compositeur du noyau.</summary>
-    private sealed class MetriquesAvalonia : Compositeur.IMetriques
-    {
-        private readonly Dictionary<StyleEffectif, Typeface> _polices = [];
-
-        public double Largeur(string texte, StyleEffectif style) =>
-            Composer(texte, style).WidthIncludingTrailingWhitespace;
-
-        public double Naturelle(StyleEffectif style) =>
-            InterligneConverter.HauteurNaturelle(
-                style.FontFamily, style.FontSize, style.Bold, style.Italic);
-
-        public double Montee(StyleEffectif style)
-        {
-            var metriques = Police(style).GlyphTypeface.Metrics;
-            var em = (double)metriques.DesignEmHeight;
-            return em > 0 ? -metriques.Ascent * style.FontSize / em : style.FontSize;
-        }
-
-        public FormattedText Composer(string texte, StyleEffectif style) =>
-            new(texte, CultureInfo.CurrentCulture, FlowDirection.LeftToRight,
-                Police(style), style.FontSize,
-                Conv.ToBrush(style.Foreground) ?? Brushes.Black);
-
-        private Typeface Police(StyleEffectif style)
-        {
-            if (_polices.TryGetValue(style, out var connue)) return connue;
-
-            var typeface = new Typeface(
-                new FontFamily(style.FontFamily),
-                style.Italic ? FontStyle.Italic : FontStyle.Normal,
-                style.Bold ? FontWeight.Bold : FontWeight.Normal);
-
-            _polices[style] = typeface;
-            return typeface;
         }
     }
 }

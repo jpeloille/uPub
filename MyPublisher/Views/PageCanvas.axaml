@@ -160,6 +160,23 @@
                              Background="Transparent" BorderThickness="0"
                              VerticalContentAlignment="Top"/>
                 </Panel>
+                <!-- Le marqueur de débordement est HORS du panneau découpé : il doit
+                     mordre le bord du bloc, ce que le découpage lui interdirait. Il ne
+                     s'imprime pas, et se range donc sous le même interrupteur que les
+                     repères — c'est aussi ce qui permet de comparer l'écran au PDF sur
+                     une page qui déborde. -->
+                <views:MarqueurDebordement
+                    IsHitTestVisible="False"
+                    IsVisible="{Binding #Board.((vm:MainWindowViewModel)DataContext).ShowGuides}"
+                    Bloc="{Binding}">
+                    <views:MarqueurDebordement.Contenu>
+                        <MultiBinding Converter="{x:Static conv:FieldToText.Instance}">
+                            <Binding Path="Text"/>
+                            <Binding Path="Field"/>
+                            <Binding Path="#Board.((vm:MainWindowViewModel)DataContext).FieldContext"/>
+                        </MultiBinding>
+                    </views:MarqueurDebordement.Contenu>
+                </views:MarqueurDebordement>
                 <Rectangle Classes="frameStroke"/>
             </Panel>
         </DataTemplate>

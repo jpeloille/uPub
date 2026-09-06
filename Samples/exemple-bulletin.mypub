@@ -55,7 +55,7 @@
           "X": 56.69,
           "Y": 26,
           "Width": 481.9,
-          "Height": 46,
+          "Height": 56,
           "Rotation": 0,
           "Fill": null,
           "Stroke": null,
@@ -83,13 +83,14 @@
           "SpaceAfter": 0,
           "Paragraphs": [],
           "Columns": 1,
-          "ColumnGap": 5.67
+          "ColumnGap": 5.67,
+          "VerticalAlign": "Top"
         },
         {
           "$kind": "text",
           "Name": "Sous-titre",
           "X": 56.69,
-          "Y": 76,
+          "Y": 86,
           "Width": 481.9,
           "Height": 24,
           "Rotation": 0,
@@ -119,7 +120,8 @@
           "SpaceAfter": 0,
           "Paragraphs": [],
           "Columns": 1,
-          "ColumnGap": 5.67
+          "ColumnGap": 5.67,
+          "VerticalAlign": "Top"
         },
         {
           "$kind": "text",
@@ -155,7 +157,8 @@
           "SpaceAfter": 0,
           "Paragraphs": [],
           "Columns": 1,
-          "ColumnGap": 5.67
+          "ColumnGap": 5.67,
+          "VerticalAlign": "Top"
         },
         {
           "$kind": "text",
@@ -163,14 +166,14 @@
           "X": 56.69,
           "Y": 208,
           "Width": 232,
-          "Height": 196,
+          "Height": 216,
           "Rotation": 0,
           "Fill": null,
           "Stroke": null,
           "StrokeThickness": 1,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
-          "Text": "La composition d'une page tient à peu de choses : une grille lisible, des marges qui respirent, et une hiérarchie typographique qui guide l'œil sans le brusquer. MyPublisher travaille en points typographiques — l'unité du plomb, puis du PostScript, puis du PDF. Le document n'est donc jamais converti d'une unité vers une autre entre l'écran et le fichier final.\n\nC'est un détail invisible et pourtant décisif : une conversion à chaque export introduit une dérive d'arrondi qui finit par décaler les blocs d'un document long.",
+          "Text": "La composition d'une page tient à peu de choses : une grille lisible, des marges qui respirent, et une hiérarchie typographique qui guide l'œil. MyPublisher travaille en points typographiques — l'unité du plomb, puis du PDF. Le document n'est donc jamais converti d'une unité vers une autre.\n\nC'est un détail invisible et pourtant décisif : une conversion à chaque export introduit une dérive d'arrondi qui décale les blocs.",
           "FontFamily": "DejaVu Sans",
           "FontSize": 10.5,
           "Bold": false,
@@ -191,7 +194,8 @@
           "SpaceAfter": 0,
           "Paragraphs": [],
           "Columns": 1,
-          "ColumnGap": 5.67
+          "ColumnGap": 5.67,
+          "VerticalAlign": "Top"
         },
         {
           "$kind": "text",
@@ -199,14 +203,14 @@
           "X": 306.59,
           "Y": 208,
           "Width": 232,
-          "Height": 196,
+          "Height": 216,
           "Rotation": 0,
           "Fill": null,
           "Stroke": null,
           "StrokeThickness": 1,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
-          "Text": "Chaque bloc est indépendant : on le pose, on le déplace, on l'aligne sur les repères de marge. L'aimantation accroche les bords de la page, les marges et l'axe médian ; la touche Alt la désactive quand on préfère placer à l'œil.\n\nLes huit poignées redimensionnent depuis n'importe quel côté, et la touche Maj conserve les proportions d'origine sur les poignées d'angle. La rotation, elle, reste correcte : sélection, poignées et curseurs suivent l'angle du bloc.",
+          "Text": "Chaque bloc est indépendant : on le pose, on le déplace, on l'aligne sur les repères de marge. L'aimantation accroche les bords de la page, les marges et l'axe médian ; la touche Alt la désactive.\n\nLes huit poignées redimensionnent depuis n'importe quel côté, et la touche Maj conserve les proportions sur les poignées d'angle. La rotation reste correcte : sélection, poignées et curseurs suivent l'angle du bloc.",
           "FontFamily": "DejaVu Sans",
           "FontSize": 10.5,
           "Bold": false,
@@ -227,7 +231,8 @@
           "SpaceAfter": 0,
           "Paragraphs": [],
           "Columns": 1,
-          "ColumnGap": 5.67
+          "ColumnGap": 5.67,
+          "VerticalAlign": "Top"
         },
         {
           "$kind": "shape",
@@ -278,7 +283,8 @@
           "SpaceAfter": 0,
           "Paragraphs": [],
           "Columns": 1,
-          "ColumnGap": 5.67
+          "ColumnGap": 5.67,
+          "VerticalAlign": "Top"
         },
         {
           "$kind": "shape",
@@ -329,7 +335,8 @@
           "SpaceAfter": 0,
           "Paragraphs": [],
           "Columns": 1,
-          "ColumnGap": 5.67
+          "ColumnGap": 5.67,
+          "VerticalAlign": "Top"
         },
         {
           "$kind": "shape",
@@ -380,7 +387,8 @@
           "SpaceAfter": 0,
           "Paragraphs": [],
           "Columns": 1,
-          "ColumnGap": 5.67
+          "ColumnGap": 5.67,
+          "VerticalAlign": "Top"
         }
       ]
     },
@@ -421,7 +429,8 @@
           "SpaceAfter": 0,
           "Paragraphs": [],
           "Columns": 1,
-          "ColumnGap": 5.67
+          "ColumnGap": 5.67,
+          "VerticalAlign": "Top"
         },
         {
           "$kind": "shape",
@@ -444,7 +453,7 @@
           "X": 56.69,
           "Y": 128,
           "Width": 481.9,
-          "Height": 136,
+          "Height": 152,
           "Rotation": 0,
           "Fill": null,
           "Stroke": null,
@@ -472,7 +481,8 @@
           "SpaceAfter": 0,
           "Paragraphs": [],
           "Columns": 1,
-          "ColumnGap": 5.67
+          "ColumnGap": 5.67,
+          "VerticalAlign": "Top"
         },
         {
           "$kind": "shape",
@@ -480,7 +490,7 @@
           "X": 56.69,
           "Y": 296,
           "Width": 481.9,
-          "Height": 92,
+          "Height": 112,
           "Rotation": 0,
           "Fill": "#FF1F3B57",
           "Stroke": null,
@@ -495,7 +505,7 @@
           "X": 76.69,
           "Y": 316,
           "Width": 441.9,
-          "Height": 60,
+          "Height": 78,
           "Rotation": 0,
           "Fill": null,
           "Stroke": null,
@@ -523,7 +533,8 @@
           "SpaceAfter": 0,
           "Paragraphs": [],
           "Columns": 1,
-          "ColumnGap": 5.67
+          "ColumnGap": 5.67,
+          "VerticalAlign": "Top"
         },
         {
           "$kind": "text",
@@ -559,7 +570,8 @@
           "SpaceAfter": 0,
           "Paragraphs": [],
           "Columns": 1,
-          "ColumnGap": 5.67
+          "ColumnGap": 5.67,
+          "VerticalAlign": "Top"
         },
         {
           "$kind": "text",
@@ -595,7 +607,8 @@
           "SpaceAfter": 0,
           "Paragraphs": [],
           "Columns": 1,
-          "ColumnGap": 5.67
+          "ColumnGap": 5.67,
+          "VerticalAlign": "Top"
         },
         {
           "$kind": "text",
@@ -631,7 +644,8 @@
           "SpaceAfter": 0,
           "Paragraphs": [],
           "Columns": 1,
-          "ColumnGap": 5.67
+          "ColumnGap": 5.67,
+          "VerticalAlign": "Top"
         },
         {
           "$kind": "shape",
@@ -682,7 +696,8 @@
           "SpaceAfter": 0,
           "Paragraphs": [],
           "Columns": 1,
-          "ColumnGap": 5.67
+          "ColumnGap": 5.67,
+          "VerticalAlign": "Top"
         }
       ]
     }
