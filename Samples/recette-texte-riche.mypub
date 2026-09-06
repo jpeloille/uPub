@@ -86,7 +86,13 @@
           "PaddingTop": 0,
           "PaddingRight": 0,
           "PaddingBottom": 0,
-          "Field": "None"
+          "Field": "None",
+          "IndentLeft": 0,
+          "IndentRight": 0,
+          "IndentFirstLine": 0,
+          "SpaceBefore": 0,
+          "SpaceAfter": 0,
+          "Paragraphs": []
         },
         {
           "$kind": "text",
@@ -135,7 +141,13 @@
           "PaddingTop": 0,
           "PaddingRight": 0,
           "PaddingBottom": 0,
-          "Field": "None"
+          "Field": "None",
+          "IndentLeft": 0,
+          "IndentRight": 0,
+          "IndentFirstLine": 0,
+          "SpaceBefore": 0,
+          "SpaceAfter": 0,
+          "Paragraphs": []
         },
         {
           "$kind": "text",
@@ -174,7 +186,13 @@
           "PaddingTop": 0,
           "PaddingRight": 0,
           "PaddingBottom": 0,
-          "Field": "None"
+          "Field": "None",
+          "IndentLeft": 0,
+          "IndentRight": 0,
+          "IndentFirstLine": 0,
+          "SpaceBefore": 0,
+          "SpaceAfter": 0,
+          "Paragraphs": []
         }
       ]
     }

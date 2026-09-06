@@ -25,7 +25,12 @@ public class CompositeurTests
 
     private static IReadOnlyList<LigneComposee> Composer(
         string texte, double largeur, params StyleSpan[] fragments) =>
-        Compositeur.Composer(texte, fragments, Commun, largeur, new ChasseFixe());
+        Compositeur.Composer(texte, fragments, Commun, [], default, largeur, new ChasseFixe());
+
+    /// <summary>La même chose, avec des réglages de paragraphe plutôt que de style.</summary>
+    private static IReadOnlyList<LigneComposee> Composer(
+        string texte, double largeur, ParagrapheEffectif commun, params ParagraphSpan[] ecarts) =>
+        Compositeur.Composer(texte, [], Commun, ecarts, commun, largeur, new ChasseFixe());
 
     private static string[] Textes(string texte, double largeur, params StyleSpan[] fragments) =>
         Composer(texte, largeur, fragments).Select(l => l.Texte).ToArray();
@@ -192,7 +197,7 @@ public class CompositeurTests
         // même calcul et se trompent donc ensemble. Elle prouve l'accord, pas la
         // justesse — d'où ce test-ci.
         var ligne = Composer("un deux trois", 100)[0];
-        var decalages = Compositeur.Decalages(ligne, 100);
+        var decalages = Compositeur.Decalages(ligne);
 
         var dernier = ligne.Morceaux[^1];
         var droite = dernier.X + decalages[^1] + dernier.Largeur;
@@ -206,7 +211,7 @@ public class CompositeurTests
         // « un deux trois » : 13 unités d'encre, deux blancs à élargir. Pour aller
         // à 100, il manque 87, soit 43,5 par blanc.
         var ligne = Composer("un deux trois", 100)[0];
-        var decalages = Compositeur.Decalages(ligne, 100);
+        var decalages = Compositeur.Decalages(ligne);
 
         Assert.Equal(0, decalages[0], precision: 9);
         Assert.Equal([0, 43.5, 87], decalages.Select(d => Math.Round(d, 9)).ToArray());
@@ -220,7 +225,7 @@ public class CompositeurTests
         // Compter les morceaux décalerait le texte à chaque changement de style.
         var ligne = Composer("un deux trois", 100,
             new StyleSpan { Start = 3, Length = 4, Bold = true })[0];
-        var decalages = Compositeur.Decalages(ligne, 100);
+        var decalages = Compositeur.Decalages(ligne);
 
         Assert.True(ligne.Morceaux.Count > 3, "le fragment doit bien découper la ligne");
         Assert.Equal(87, decalages[^1], precision: 9);
@@ -232,16 +237,18 @@ public class CompositeurTests
     {
         var ligne = Composer("seul", 100)[0];
 
-        Assert.All(Compositeur.Decalages(ligne, 100), d => Assert.Equal(0, d));
+        Assert.All(Compositeur.Decalages(ligne), d => Assert.Equal(0, d));
     }
 
     [Fact]
     public void Une_ligne_deja_trop_large_ne_se_retrecit_pas()
     {
-        // Un blanc négatif superposerait les mots ; on laisse déborder.
-        var ligne = Composer("un deux trois", 5)[^1];
+        // Un blanc négatif superposerait les mots ; on laisse déborder. La découpe
+        // gloutonne ne produit pas d'elle-même une telle ligne — un mot trop large
+        // reste seul sur la sienne — d'où le rétrécissement à la main.
+        var ligne = Composer("un deux trois", 100)[0] with { Disponible = 1 };
 
-        Assert.All(Compositeur.Decalages(ligne, 1), d => Assert.Equal(0, d));
+        Assert.All(Compositeur.Decalages(ligne), d => Assert.Equal(0, d));
     }
 
     // ---------------------------------------------------------------- interligne
@@ -271,5 +278,194 @@ public class CompositeurTests
 
         // Une ligne à 4, une ligne à 1, interligne 1 : cinq unités.
         Assert.Equal(5, Compositeur.Hauteur(lignes, 1), precision: 9);
+    }
+
+    // ----------------------------------------------- retraits et espacement (R2)
+
+    /// <summary>Un réglage de paragraphe écrit en clair, plutôt que cinq nombres.</summary>
+    private static ParagrapheEffectif Reglage(
+        double gauche = 0, double droite = 0, double premiere = 0,
+        double avant = 0, double apres = 0) => new(gauche, droite, premiere, avant, apres);
+
+    [Fact]
+    public void Sans_reglage_une_ligne_occupe_toute_la_largeur()
+    {
+        // Le cas de tous les documents écrits avant R2 : rien ne doit bouger.
+        var lignes = Composer("un deux trois", 10);
+
+        Assert.All(lignes, l => Assert.Equal(0, l.Retrait));
+        Assert.All(lignes, l => Assert.Equal(10, l.Disponible));
+        Assert.All(lignes, l => Assert.Equal(0, l.EspaceAvant + l.EspaceApres));
+    }
+
+    [Fact]
+    public void Un_retrait_gauche_decale_toutes_les_lignes_du_paragraphe()
+    {
+        var lignes = Composer("un deux trois", 12, Reglage(gauche: 2));
+
+        Assert.True(lignes.Count > 1, "il faut au moins deux lignes pour comparer");
+        Assert.All(lignes, l => Assert.Equal(2, l.Retrait));
+        Assert.All(lignes, l => Assert.Equal(10, l.Disponible));
+    }
+
+    [Fact]
+    public void Un_retrait_de_premiere_ligne_ne_decale_que_la_premiere()
+    {
+        var lignes = Composer("un deux trois quatre", 12, Reglage(premiere: 3));
+
+        Assert.Equal(3, lignes[0].Retrait, precision: 9);
+        Assert.All(lignes.Skip(1), l => Assert.Equal(0, l.Retrait));
+    }
+
+    [Fact]
+    public void Un_retrait_negatif_fait_pendre_la_premiere_ligne_a_gauche()
+    {
+        // C'est la liste à puces des trente-six paragraphes d'ATA 21 : la puce se pose
+        // dans le creux, le texte qui suit s'aligne plus à droite.
+        var lignes = Composer("un deux trois quatre", 12, Reglage(gauche: 4, premiere: -4));
+
+        Assert.Equal(0, lignes[0].Retrait, precision: 9);
+        Assert.All(lignes.Skip(1), l => Assert.Equal(4, l.Retrait));
+    }
+
+    [Theory]
+    [InlineData(5)]
+    [InlineData(-5)]
+    public void Le_bord_droit_ne_depend_pas_du_retrait_de_premiere_ligne(double premiere)
+    {
+        // Ce que « fo:text-indent » veut dire : la première ligne se déplace, le bord
+        // droit ne bouge pas. Retirer le retrait des deux côtés donnerait un paragraphe
+        // qui rentre à droite en même temps qu'à gauche — et la comparaison écran ↔ PDF
+        // n'y verrait rien, puisque les deux rendus lisent la même mesure.
+        var lignes = Composer("un deux trois quatre cinq six", 24,
+            Reglage(gauche: 6, droite: 3, premiere: premiere));
+
+        Assert.True(lignes.Count > 1, "il faut au moins deux lignes pour comparer");
+        Assert.All(lignes, l => Assert.Equal(21, l.Retrait + l.Disponible, precision: 9));
+    }
+
+    [Fact]
+    public void Un_retrait_coupe_les_lignes_plus_tot()
+    {
+        // Le retrait n'est pas qu'un décalage : il rétrécit la ligne, donc la découpe.
+        Assert.Equal(["un deux", "trois"], Composer("un deux trois", 10).Select(l => l.Texte));
+
+        var serre = Composer("un deux trois", 10, Reglage(gauche: 4));
+        Assert.Equal(["un", "deux", "trois"], serre.Select(l => l.Texte));
+    }
+
+    [Fact]
+    public void Une_ligne_justifiee_en_retrait_sarrete_au_retrait_de_droite()
+    {
+        // Le piège annoncé du poste : un retrait change la largeur cible d'une ligne
+        // justifiée. La cible n'est plus la largeur du bloc mais ce qui reste entre les
+        // deux retraits, et elle est portée par la ligne — les deux rendus ne peuvent
+        // donc plus la calculer chacun de leur côté.
+        var lignes = Composer("un deux trois quatre cinq", 20,
+            Reglage(gauche: 6, droite: 4, premiere: -6));
+
+        var premiere = lignes[0];
+        var decalages = Compositeur.Decalages(premiere);
+        var dernier = premiere.Morceaux[^1];
+
+        Assert.False(premiere.FinDeParagraphe);
+        Assert.Equal(0, premiere.Retrait, precision: 9);
+        Assert.Equal(16, premiere.Disponible, precision: 9);
+        Assert.Equal(16, dernier.X + decalages[^1] + dernier.Largeur, precision: 9);
+    }
+
+    [Fact]
+    public void Lespace_avant_ne_porte_que_sur_la_premiere_ligne_du_paragraphe()
+    {
+        // Deux lignes dans le premier paragraphe, une dans le second : l'espace ne
+        // s'ajoute qu'à l'entrée d'un paragraphe, pas à chaque renvoi à la ligne.
+        var lignes = Composer("un deux trois\nsuite", 10, Reglage(avant: 5));
+
+        Assert.Equal([5, 0, 5], lignes.Select(l => l.EspaceAvant));
+    }
+
+    [Fact]
+    public void Lespace_apres_ne_porte_que_sur_la_derniere_ligne_du_paragraphe()
+    {
+        var lignes = Composer("un deux trois\nsuite", 10, Reglage(apres: 7));
+
+        Assert.Equal([0, 7, 7], lignes.Select(l => l.EspaceApres));
+    }
+
+    [Fact]
+    public void Lespacement_sajoute_a_la_hauteur_du_texte()
+    {
+        // Deux paragraphes d'une ligne, corps 1, interligne 1, cinq d'espace après
+        // chacun : douze unités. Sans cela, la mesure de débordement mentirait dès
+        // qu'un document se sert de l'espacement — les vingt-neuf paragraphes des
+        // Fiches, par exemple.
+        var lignes = Composer("un\ndeux", 100, Reglage(apres: 5));
+
+        Assert.Equal(12, Compositeur.Hauteur(lignes, 1), precision: 9);
+    }
+
+    [Fact]
+    public void Un_ecart_ne_change_que_ses_paragraphes()
+    {
+        // Dans les documents réels, les paragraphes d'un même bloc n'ont pas tous le
+        // même retrait : c'est toute la raison d'être des écarts.
+        var lignes = Composer("a\nb\nc", 100, Reglage(),
+            new ParagraphSpan { Start = 1, Length = 1, IndentLeft = 6 });
+
+        Assert.Equal([0, 6, 0], lignes.Select(l => l.Retrait));
+    }
+
+    [Fact]
+    public void Un_ecart_sans_longueur_porte_sur_son_seul_paragraphe()
+    {
+        var lignes = Composer("a\nb\nc", 100, Reglage(),
+            new ParagraphSpan { Start = 1, IndentLeft = 6 });
+
+        Assert.Equal([0, 6, 0], lignes.Select(l => l.Retrait));
+    }
+
+    [Fact]
+    public void Un_ecart_nherite_que_de_ce_quil_ne_dit_pas()
+    {
+        // Il change le retrait gauche ; l'espace après reste celui du bloc.
+        var lignes = Composer("a\nb", 100, Reglage(gauche: 2, apres: 4),
+            new ParagraphSpan { Start = 0, IndentLeft = 9 });
+
+        Assert.Equal(9, lignes[0].Retrait, precision: 9);
+        Assert.Equal(4, lignes[0].EspaceApres, precision: 9);
+        Assert.Equal(2, lignes[1].Retrait, precision: 9);
+    }
+
+    [Fact]
+    public void Le_dernier_ecart_pose_lemporte()
+    {
+        var lignes = Composer("a\nb", 100, Reglage(),
+            new ParagraphSpan { Start = 0, Length = 2, IndentLeft = 3 },
+            new ParagraphSpan { Start = 1, Length = 1, IndentLeft = 8 });
+
+        Assert.Equal([3, 8], lignes.Select(l => l.Retrait));
+    }
+
+    [Fact]
+    public void Un_ecart_aux_bornes_absurdes_est_ignore_sans_bruit()
+    {
+        // Un import qui compte mal ses paragraphes doit donner un document laid,
+        // jamais un document illisible — ni une addition qui déborde.
+        var lignes = Composer("a\nb", 100, Reglage(),
+            new ParagraphSpan { Start = -5, Length = 2, IndentLeft = 99 },
+            new ParagraphSpan { Start = 100, Length = 3, IndentLeft = 99 },
+            new ParagraphSpan { Start = int.MaxValue, Length = 5, IndentLeft = 99 });
+
+        Assert.Equal(2, lignes.Count);
+        Assert.All(lignes, l => Assert.Equal(0, l.Retrait));
+    }
+
+    [Fact]
+    public void Un_retrait_plus_large_que_le_bloc_ne_fait_pas_boucler_la_decoupe()
+    {
+        var lignes = Composer("un deux trois", 10, Reglage(gauche: 40));
+
+        Assert.Equal(["un", "deux", "trois"], lignes.Select(l => l.Texte));
+        Assert.All(lignes, l => Assert.Equal(1, l.Disponible));
     }
 }

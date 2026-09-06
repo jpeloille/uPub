@@ -9,7 +9,8 @@ public readonly record struct Morceau(string Texte, StyleEffectif Style, double 
 
 /// <summary>
 /// Une ligne composée : ses morceaux, la largeur qu'elle occupe, la hauteur naturelle
-/// qu'elle réclame, et si elle termine son paragraphe.
+/// qu'elle réclame, si elle termine son paragraphe, et le cadre que son paragraphe lui
+/// donne.
 ///
 /// La hauteur est celle du plus grand style de la ligne : une ligne portant un mot en
 /// 18 pt au milieu d'un texte en 10 pt doit laisser passer le 18 pt.
@@ -17,9 +18,22 @@ public readonly record struct Morceau(string Texte, StyleEffectif Style, double 
 /// Le drapeau de fin de paragraphe n'est pas un détail : la dernière ligne d'un
 /// paragraphe justifié ne se justifie pas, sinon « fin. » s'étirerait sur toute la
 /// largeur du bloc.
+///
+/// <paramref name="Retrait"/> est l'abscisse où la ligne commence, comptée depuis le
+/// bord gauche de la zone de texte ; <paramref name="Disponible"/> ce qui lui reste
+/// jusqu'au bord droit. Les deux sont calculés ici, une fois, et non dans chacun des
+/// deux rendus : la cible d'une ligne justifiée, d'un fer à droite ou d'un centrage
+/// est cette largeur-là et non celle du bloc. C'est le point où l'écran et l'export
+/// auraient divergé le plus facilement, et sans que rien ne le signale — ils se
+/// seraient trompés ensemble.
+///
+/// <paramref name="EspaceAvant"/> et <paramref name="EspaceApres"/> ne portent que sur
+/// la première et la dernière ligne du paragraphe : les lignes du milieu valent zéro,
+/// si bien qu'un rendu peut les ajouter sans se demander où il en est.
 /// </summary>
 public readonly record struct LigneComposee(
-    IReadOnlyList<Morceau> Morceaux, double Largeur, double Naturelle, bool FinDeParagraphe)
+    IReadOnlyList<Morceau> Morceaux, double Largeur, double Naturelle, bool FinDeParagraphe,
+    double Retrait, double Disponible, double EspaceAvant, double EspaceApres)
 {
     public string Texte => string.Concat(Morceaux.Select(m => m.Texte));
 }
@@ -55,10 +69,19 @@ public static class Compositeur
 
     /// <summary>
     /// Compose un bloc : découpe le texte selon ses fragments de style, puis répartit
-    /// les morceaux en lignes qui tiennent dans <paramref name="largeur"/>.
+    /// les morceaux en lignes qui tiennent dans <paramref name="largeur"/>, retraits de
+    /// paragraphe déduits.
+    ///
+    /// Les cinq paramètres de contenu sont ce que le bloc dit — le style commun et ses
+    /// écarts, les réglages de paragraphe communs et les leurs — et les deux derniers
+    /// ce que la page impose. Aucun n'est facultatif : un paramètre à valeur par défaut
+    /// serait exactement le moyen pour un des deux rendus de garder l'ancien
+    /// comportement sans que rien ne l'annonce, et c'est ce que R1 a été écrit pour
+    /// empêcher.
     /// </summary>
     public static IReadOnlyList<LigneComposee> Composer(
         string texte, IReadOnlyList<StyleSpan> fragments, StyleEffectif commun,
+        IReadOnlyList<ParagraphSpan> ecarts, ParagrapheEffectif communParagraphe,
         double largeur, IMetriques metriques)
     {
         var lignes = new List<LigneComposee>();
@@ -69,8 +92,35 @@ public static class Compositeur
         // insécables — d'où le drapeau.
         var mots = Decouper(texte, fragments, commun, metriques);
 
+        // Le compte des paragraphes sort de la découpe elle-même et non d'un second
+        // parcours du texte : c'est elle qui décide où ils commencent, et les deux ne
+        // doivent pas pouvoir se contredire.
+        var reglages = ParagrapheEffectif.Resoudre(
+            mots.Count(u => u.FinDeLigne) + 1, ecarts, communParagraphe);
+
         var courante = new List<Morceau>();
         var largeurCourante = 0.0;
+
+        var paragraphe = 0;
+        var premiereLigne = true;
+        var retrait = 0.0;
+        var disponible = largeur;
+        Cadrer();
+
+        // Le cadre de la ligne à venir. Il change deux fois : au passage à la ligne,
+        // parce que la première ligne d'un paragraphe n'a pas le même retrait que les
+        // suivantes, et au changement de paragraphe.
+        void Cadrer()
+        {
+            var reglage = Reglage();
+            retrait = reglage.IndentLeft + (premiereLigne ? reglage.IndentFirstLine : 0);
+            // Une largeur nulle ou négative — un retrait plus large que le bloc — ferait
+            // renvoyer à la ligne un mot qui n'y tiendrait pas davantage. On laisse un
+            // point plutôt que de refuser de composer.
+            disponible = Math.Max(1, largeur - retrait - reglage.IndentRight);
+        }
+
+        ParagrapheEffectif Reglage() => reglages[Math.Min(paragraphe, reglages.Count - 1)];
 
         void Fermer(bool finDeParagraphe)
         {
@@ -97,9 +147,22 @@ public static class Compositeur
                 ? metriques.Naturelle(commun)
                 : courante.Max(m => metriques.Naturelle(m.Style));
 
-            lignes.Add(new LigneComposee([.. courante], largeurCourante, naturelle, finDeParagraphe));
+            var reglage = Reglage();
+
+            lignes.Add(new LigneComposee(
+                [.. courante], largeurCourante, naturelle, finDeParagraphe,
+                retrait, disponible,
+                premiereLigne ? reglage.SpaceBefore : 0,
+                finDeParagraphe ? reglage.SpaceAfter : 0));
+
             courante.Clear();
             largeurCourante = 0;
+
+            // Fermer sur une fin de paragraphe ouvre le suivant ; fermer sur un renvoi
+            // à la ligne reste dans le même paragraphe, mais n'est plus sa première.
+            if (finDeParagraphe) paragraphe++;
+            premiereLigne = finDeParagraphe;
+            Cadrer();
         }
 
         foreach (var mot in mots)
@@ -110,7 +173,7 @@ public static class Compositeur
 
             // On ne renvoie à la ligne que si quelque chose y est déjà : un mot plus
             // large que la boîte garde sa ligne plutôt que d'être coupé au milieu.
-            if (courante.Count > 0 && largeurCourante + metriques.Largeur(mot.Texte.TrimEnd(), mot.Style) > largeur)
+            if (courante.Count > 0 && largeurCourante + metriques.Largeur(mot.Texte.TrimEnd(), mot.Style) > disponible)
             {
                 Fermer(finDeParagraphe: false);
                 var debut = mot.Texte.TrimStart();
@@ -212,7 +275,15 @@ public static class Compositeur
     /// élargir ; distribuer par morceau décalerait le texte d'un tiers de blanc à
     /// chaque changement de style, sans que rien ne le signale.
     /// </summary>
-    public static IReadOnlyList<double> Decalages(LigneComposee ligne, double largeurCible)
+    /// <remarks>
+    /// La cible n'est plus un paramètre depuis R2 : c'est <c>ligne.Disponible</c>, que
+    /// la composition a calculé. Un rendu qui aurait passé la largeur du bloc au lieu
+    /// de celle de la ligne aurait étiré chaque paragraphe en retrait jusque sous son
+    /// voisin — et l'autre rendu aurait fait la même erreur, donc la comparaison
+    /// écran ↔ PDF n'aurait rien vu. Ôter le paramètre rend la faute impossible plutôt
+    /// que détectable.
+    /// </remarks>
+    public static IReadOnlyList<double> Decalages(LigneComposee ligne)
     {
         var decalages = new double[ligne.Morceaux.Count];
         if (ligne.Morceaux.Count == 0) return decalages;
@@ -226,7 +297,7 @@ public static class Compositeur
             if (texte[i] == ' ' && texte[i + 1] != ' ') blancs++;
         }
 
-        var manque = largeurCible - ligne.Largeur;
+        var manque = ligne.Disponible - ligne.Largeur;
         if (blancs == 0 || manque <= 0) return decalages;
 
         var part = manque / blancs;
@@ -256,10 +327,12 @@ public static class Compositeur
     /// <summary>
     /// Hauteur totale d'un texte composé. L'avance d'une ligne dépend de sa propre
     /// hauteur naturelle : un paragraphe qui contient un mot en gros corps s'ouvre
-    /// à cet endroit-là et pas ailleurs.
+    /// à cet endroit-là et pas ailleurs. L'espace avant et après le paragraphe s'y
+    /// ajoute, comme il s'ajoute au rendu — c'est la même somme, sinon la mesure de
+    /// débordement mentirait dès qu'un document se sert de l'espacement.
     /// </summary>
     public static double Hauteur(IReadOnlyList<LigneComposee> lignes, double multiple) =>
-        lignes.Sum(l => Avance(l.Naturelle, multiple));
+        lignes.Sum(l => l.EspaceAvant + Avance(l.Naturelle, multiple) + l.EspaceApres);
 
     /// <summary>
     /// Avance d'une ligne à la suivante. <paramref name="naturelle"/> est la hauteur

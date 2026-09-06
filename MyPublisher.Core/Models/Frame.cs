@@ -433,6 +433,58 @@ public partial class TextFrame : Frame
     [property: JsonPropertyOrder(230)]
     private FieldKind _field = FieldKind.None;
 
+    /// <summary>
+    /// Retraits et espacement valant pour tous les paragraphes du bloc, en points. Zéro
+    /// partout est le cas de tous les documents écrits jusqu'ici, et compose exactement
+    /// comme avant : c'est pourquoi cette addition ne demande aucune migration et laisse
+    /// <c>FormatVersion</c> à 3.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Paragraph))]
+    [property: JsonPropertyOrder(240)]
+    private double _indentLeft;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Paragraph))]
+    [property: JsonPropertyOrder(250)]
+    private double _indentRight;
+
+    /// <summary>
+    /// Retrait de la première ligne, compté à partir du retrait gauche. Négatif, la
+    /// première ligne pend à gauche des suivantes — la puce se pose dans ce creux.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Paragraph))]
+    [property: JsonPropertyOrder(260)]
+    private double _indentFirstLine;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Paragraph))]
+    [property: JsonPropertyOrder(270)]
+    private double _spaceBefore;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Paragraph))]
+    [property: JsonPropertyOrder(280)]
+    private double _spaceAfter;
+
+    /// <summary>
+    /// Paragraphes qui s'écartent des réglages ci-dessus, repérés par indice. Vide veut
+    /// dire que le bloc est d'un seul tenant — et dans les documents réels, il ne l'est
+    /// pas : un même bloc d'ATA 21 mêle des paragraphes au fer à gauche et des listes à
+    /// puces en retrait négatif.
+    /// </summary>
+    [JsonPropertyOrder(290)]
+    public ObservableCollection<ParagraphSpan> Paragraphs { get; set; } = [];
+
+    /// <summary>
+    /// Les cinq réglages d'un seul tenant, pour la composition — comme
+    /// <see cref="Padding"/> pour les marges.
+    /// </summary>
+    [JsonIgnore]
+    public ParagrapheEffectif Paragraph =>
+        new(IndentLeft, IndentRight, IndentFirstLine, SpaceBefore, SpaceAfter);
+
     /// <summary>Le texte de ce bloc est calculé : il ne se saisit pas sur la page.</summary>
     [JsonIgnore] public bool HasField => Field != FieldKind.None;
 
@@ -452,11 +504,14 @@ public partial class TextFrame : Frame
             Text = Text, FontFamily = FontFamily, FontSize = FontSize, Bold = Bold,
             Italic = Italic, Foreground = Foreground, Align = Align,
             LineHeight = LineHeight, PaddingLeft = PaddingLeft, PaddingTop = PaddingTop,
-            PaddingRight = PaddingRight, PaddingBottom = PaddingBottom, Field = Field
+            PaddingRight = PaddingRight, PaddingBottom = PaddingBottom, Field = Field,
+            IndentLeft = IndentLeft, IndentRight = IndentRight,
+            IndentFirstLine = IndentFirstLine, SpaceBefore = SpaceBefore, SpaceAfter = SpaceAfter
         };
-        // Les fragments sont copiés et non partagés : deux blocs issus d'une
-        // duplication doivent pouvoir diverger.
+        // Les fragments comme les écarts de paragraphe sont copiés et non partagés :
+        // deux blocs issus d'une duplication doivent pouvoir diverger.
         foreach (var span in Spans) c.Spans.Add(span.Clone());
+        foreach (var paragraphe in Paragraphs) c.Paragraphs.Add(paragraphe.Clone());
         CopyBaseTo(c);
         return c;
     }

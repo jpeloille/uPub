@@ -483,6 +483,43 @@
                                                        Value="{Binding PaddingBottom, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
                                     </Grid>
 
+                                    <!-- Retraits et espacement valent pour tout le bloc. Les
+                                         écarts paragraphe par paragraphe se lisent et
+                                         s'écrivent dans le fichier, mais ne se règlent pas
+                                         encore ici : ce serait un geste sur le texte, pas
+                                         sur le bloc, et il n'y a pas de sélection de texte. -->
+                                    <TextBlock Classes="field" Text="Retraits (pt)" Margin="0,8,0,2"/>
+                                    <Grid ColumnDefinitions="*,8,*" RowDefinitions="Auto,Auto,Auto,Auto">
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Classes="field" Text="Gauche"/>
+                                        <TextBlock Grid.Row="0" Grid.Column="2" Classes="field" Text="Droite"/>
+                                        <NumericUpDown Grid.Row="1" Grid.Column="0" FormatString="0.#" Increment="1" Minimum="-1000"
+                                                       Value="{Binding IndentLeft, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
+                                        <NumericUpDown Grid.Row="1" Grid.Column="2" FormatString="0.#" Increment="1" Minimum="-1000"
+                                                       Value="{Binding IndentRight, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
+                                        <TextBlock Grid.Row="2" Grid.Column="0" Classes="field" Text="Première ligne"/>
+                                        <!-- Minimum négatif, et ce n'est pas un détail : le
+                                             retrait de première ligne négatif est la seule
+                                             façon de composer une liste à puces, et un
+                                             minimum à zéro le rendrait inatteignable au
+                                             panneau tout en marchant dans le fichier. -->
+                                        <NumericUpDown Grid.Row="3" Grid.Column="0" x:Name="RetraitPremiereLigne"
+                                                       FormatString="0.#" Increment="1" Minimum="-1000"
+                                                       Value="{Binding IndentFirstLine, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
+                                    </Grid>
+                                    <TextBlock Text="Un retrait de première ligne négatif la fait pendre à gauche des suivantes : c'est ainsi qu'on aligne une liste à puces."
+                                               FontSize="11" Foreground="#FF8A929E"
+                                               TextWrapping="Wrap" Margin="0,4,0,0"/>
+
+                                    <TextBlock Classes="field" Text="Espacement des paragraphes (pt)" Margin="0,8,0,2"/>
+                                    <Grid ColumnDefinitions="*,8,*" RowDefinitions="Auto,Auto">
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Classes="field" Text="Avant"/>
+                                        <TextBlock Grid.Row="0" Grid.Column="2" Classes="field" Text="Après"/>
+                                        <NumericUpDown Grid.Row="1" Grid.Column="0" FormatString="0.#" Increment="1" Minimum="0"
+                                                       Value="{Binding SpaceBefore, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
+                                        <NumericUpDown Grid.Row="1" Grid.Column="2" FormatString="0.#" Increment="1" Minimum="0"
+                                                       Value="{Binding SpaceAfter, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
+                                    </Grid>
+
                                     <TextBlock Classes="field" Text="Couleur" Margin="0,8,0,2"/>
                                     <ColorPicker HorizontalAlignment="Left"
                                                  Color="{Binding Foreground, Converter={x:Static conv:HexToColor.Instance}}"/>

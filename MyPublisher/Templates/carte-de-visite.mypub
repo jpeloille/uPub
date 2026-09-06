@@ -77,7 +77,13 @@
           "PaddingTop": 0,
           "PaddingRight": 0,
           "PaddingBottom": 0,
-          "Field": "ContactOrganisation"
+          "Field": "ContactOrganisation",
+          "IndentLeft": 0,
+          "IndentRight": 0,
+          "IndentFirstLine": 0,
+          "SpaceBefore": 0,
+          "SpaceAfter": 0,
+          "Paragraphs": []
         },
         {
           "$kind": "text",
@@ -105,7 +111,13 @@
           "PaddingTop": 0,
           "PaddingRight": 0,
           "PaddingBottom": 0,
-          "Field": "ContactTagline"
+          "Field": "ContactTagline",
+          "IndentLeft": 0,
+          "IndentRight": 0,
+          "IndentFirstLine": 0,
+          "SpaceBefore": 0,
+          "SpaceAfter": 0,
+          "Paragraphs": []
         },
         {
           "$kind": "shape",
@@ -148,7 +160,13 @@
           "PaddingTop": 0,
           "PaddingRight": 0,
           "PaddingBottom": 0,
-          "Field": "ContactName"
+          "Field": "ContactName",
+          "IndentLeft": 0,
+          "IndentRight": 0,
+          "IndentFirstLine": 0,
+          "SpaceBefore": 0,
+          "SpaceAfter": 0,
+          "Paragraphs": []
         },
         {
           "$kind": "text",
@@ -176,7 +194,13 @@
           "PaddingTop": 0,
           "PaddingRight": 0,
           "PaddingBottom": 0,
-          "Field": "ContactTitle"
+          "Field": "ContactTitle",
+          "IndentLeft": 0,
+          "IndentRight": 0,
+          "IndentFirstLine": 0,
+          "SpaceBefore": 0,
+          "SpaceAfter": 0,
+          "Paragraphs": []
         },
         {
           "$kind": "text",
@@ -204,7 +228,13 @@
           "PaddingTop": 0,
           "PaddingRight": 0,
           "PaddingBottom": 0,
-          "Field": "ContactAddress"
+          "Field": "ContactAddress",
+          "IndentLeft": 0,
+          "IndentRight": 0,
+          "IndentFirstLine": 0,
+          "SpaceBefore": 0,
+          "SpaceAfter": 0,
+          "Paragraphs": []
         },
         {
           "$kind": "text",
@@ -232,7 +262,13 @@
           "PaddingTop": 0,
           "PaddingRight": 0,
           "PaddingBottom": 0,
-          "Field": "ContactPhone"
+          "Field": "ContactPhone",
+          "IndentLeft": 0,
+          "IndentRight": 0,
+          "IndentFirstLine": 0,
+          "SpaceBefore": 0,
+          "SpaceAfter": 0,
+          "Paragraphs": []
         }
       ]
     }

@@ -107,6 +107,12 @@ la barre du haut regroupe les commandes du document : fichier, annulation, zoom.
   L'interligne s'exprime en multiple de la hauteur **naturelle** de la police — « 1,25 »
   veut dire une fois et quart ce que la police demande, jamais une fois et quart le
   corps.
+- **Retraits et espacement de paragraphe** : retrait à gauche, à droite, et retrait de
+  première ligne — négatif, il fait pendre cette ligne à gauche des suivantes, ce qui
+  est la façon d'aligner une liste à puces. Plus un espace avant et un espace après le
+  paragraphe. Le panneau les règle pour le bloc entier ; le fichier, lui, sait déjà les
+  porter paragraphe par paragraphe, ce dont les documents Publisher se servent
+  abondamment.
 - Tout bloc — texte, image, forme, groupe — porte un fond, avec son opacité, et un
   contour : épaisseur, trait continu, tirets ou points, angles arrondis. Encadrer
   une image d'un filet ne demande donc plus de lui superposer une forme.
@@ -214,6 +220,12 @@ version plus récente est refusé plutôt que lu de travers.
 
 Le document porte le format de page, les marges, la grille de composition et les
 repères libres — ces derniers sont communs à toutes les pages, comme dans Publisher.
+Un bloc de texte porte deux collections d'écarts à ce qu'il dit pour tout le monde :
+`Spans`, des portions de texte repérées **par position de caractère**, et `Paragraphs`,
+des retraits repérés **par indice de paragraphe**. Le repérage diffère à dessein — un
+retrait appartient au paragraphe entier, et un indice de paragraphe ne bouge pas quand on
+tape un mot. Vides, les deux collections ne changent rien.
+
 Chaque bloc porte un discriminant `$kind` (`text`, `image`, `shape`, `group`) et, pour
 un texte, un `Field` éventuel — de même pour un bloc image, dont le champ ne peut valoir
 que le logo. Renseigné, il fait calculer le contenu à l'affichage plutôt que de lire le
@@ -230,7 +242,10 @@ liens.
 - Pas de chaînage du texte entre blocs : un texte trop long est coupé au bloc.
 - Les fragments de style se lisent, s'écrivent et se rendent, mais ne se saisissent pas
   encore à la souris : on ne peut pas sélectionner trois mots dans un bloc pour les
-  mettre en gras. Le panneau agit sur le bloc entier.
+  mettre en gras. Le panneau agit sur le bloc entier. Il en va de même des retraits
+  posés paragraphe par paragraphe.
+- L'alignement — gauche, centré, droite, justifié — reste une propriété du bloc, alors
+  qu'un document Publisher le fait varier d'un paragraphe à l'autre.
 - Pas de pages maîtres.
 - Les images sont liées, pas embarquées dans le `.mypub`.
 - Pas de gestion des couleurs CMJN ni de fond perdu : l'export est en RVB.

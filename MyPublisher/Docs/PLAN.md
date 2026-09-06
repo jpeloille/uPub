@@ -24,7 +24,7 @@ Où en est chaque poste. Une seule règle pour la colonne d'avancement : un post
 on écrit ce qui est fait plutôt qu'un pourcentage inventé — un poste à moitié écrit n'est
 pas un poste à moitié livré. La colonne se met à jour dans le commit qui clôt le poste.
 
-*Dernière mise à jour : 5 septembre 2026.*
+*Dernière mise à jour : 6 septembre 2026.*
 
 | Poste | Intitulé | Avancement | Où ça en est |
 |---|---|:---:|---|
@@ -52,15 +52,17 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **C6** | Marges intérieures par côté | **100 %** | Quatre marges sur le bloc de texte ; `FormatVersion` 3 |
 | **C7** | Bibliothèque de blocs | 0 % | Débloqué depuis C3a |
 | **R1** | Texte riche : fragments de style | **100 %** | `Spans` sur le bloc ; l'écran et l'export passent par la même composition ; recette dans `Scripts/recettes/` |
-| **R2** | Retraits et espacement de paragraphe | 0 % | Retrait négatif (listes à puces), retrait gauche, espace après |
+| **R2** | Retraits et espacement de paragraphe | **100 %** | Cinq réglages sur le bloc, des écarts par indice de paragraphe ; la ligne composée porte son retrait et sa largeur |
 | **R3** | Colonnes à l'intérieur d'un bloc | 0 % | Posées sur 25 des 27 blocs de texte réels. Autre chose que C2a |
 | **R4** | Interligne : une seule mesure | **100 %** | Multiple de la hauteur naturelle ; écran et PDF concordent au pixel |
 | **R5** | **Ouvrir un `.pub`** | 0 % | Exigé le 6 septembre 2026. Lecture par `pub2raw` ; ce que l'import restitue mesure l'avancement de R1–R4 et C9 |
 | **D** | Moteur de composition | — | Décision non ouverte ; à rouvrir quand A, B et C sont livrées |
 
-**Par phase** — P : 3 sur 3 · A : 0 sur 7 · B : 1 sur 5 · C : 5 sur 7 · D : non planifié.
+**Par phase** — P : 3 sur 3 · A : 0 sur 7 · B : 1 sur 5 · C : 5 sur 7 · R : 3 sur 5 ·
+D : non planifié. La ligne comptait 22 postes et ignorait la phase R, apparue le
+6 septembre 2026 ; elle la compte désormais.
 
-Soit **9 postes sur 22**. C'est un compte de postes et non d'effort : C3 pesait à lui
+Soit **12 postes sur 27**. C'est un compte de postes et non d'effort : C3 pesait à lui
 seul plus que toute la phase A, et les préalables ne produisaient aucune fonctionnalité.
 Le tableau dit ce qui est clos, pas ce qui reste à peiner.
 
@@ -674,6 +676,78 @@ besoin — garder un logo sous la main — mais persistant et inter-documents. �
 dans le même panneau qu'une éventuelle bibliothèque d'images locale (fiche 13).
 
 *Recette* : enregistrer un bloc-titre composé, ouvrir un autre document, le reposer.
+
+---
+
+## Phase R — Ce que les documents réels ont ajouté
+
+Cinq postes qu'aucune fiche n'annonçait, tous établis sur les deux `.pub` ATR déposés le
+6 septembre 2026 — voir [`Documents-reels.md`](Documents-reels.md), qui les décrit et dit
+pourquoi ils passent devant le reste. R1 et R4 sont clos ; ce qu'ils ont trouvé est dans
+leurs commits et dans le relevé.
+
+### R2 — Retraits et espacement de paragraphe
+
+*Fait le 6 septembre 2026.* Le bloc de texte gagne cinq réglages en points — retrait
+gauche, retrait droit, retrait de première ligne, espace avant, espace après — et une
+collection d'écarts, `Paragraphs`, qui les redit autrement pour une suite de paragraphes.
+Trente-six paragraphes d'ATA 21 portent un retrait de première ligne **négatif** : c'est
+ainsi que Publisher compose une liste à puces, la puce se posant dans le creux. Sans lui,
+elles retombent au fer à gauche et la structure du document disparaît.
+
+**Le repérage était le choix à faire, et il diverge de R1.** Un fragment de style repère
+des positions de caractères ; un écart de paragraphe repère des **indices de paragraphe**.
+Trois raisons : un retrait appartient au paragraphe entier et n'en a pas de moitié, si
+bien qu'un repérage par caractère obligerait à inventer une règle pour le paragraphe à
+demi couvert — et une règle inventée s'applique en silence ; un indice survit à la frappe
+ordinaire, là où taper un mot décale toutes les positions de caractères qui suivent ; et
+c'est ce que la source donne, `pub2raw` énumérant des paragraphes. Le prix est réel et il
+est dit dans le code : le fichier porte désormais deux systèmes de repérage, et l'import
+de R5 devra tenir les deux dans la même passe.
+
+**La ligne composée porte désormais son cadre** — son retrait et la largeur qui lui
+reste. Ce n'est pas une commodité de rendu. La cible d'une ligne justifiée n'est plus la
+largeur du bloc mais celle-là, et `Compositeur.Decalages` a **perdu son paramètre de
+largeur** : il lit celle de la ligne. Un rendu ne peut donc plus se tromper de cible tout
+seul. C'est le piège que le poste annonçait, et il est de ceux que la comparaison écran ↔
+PDF ne voit pas : les deux rendus appelant le même calcul, ils se seraient trompés
+ensemble.
+
+`FormatVersion` reste à 3. Cinq réglages à zéro et une collection vide composent
+exactement comme avant, et c'est ce qui dispense de migration — le même mécanisme qu'a
+employé R1.
+
+*Recette jouée*, et elle est un script : `Scripts/recettes/R2-retraits.sh`. Les retraits
+sont **mesurés** dans le PDF par `pdftotext -bbox-layout`, qui rend la boîte de chaque
+ligne à l'origine du crayon : 18,000 pt de retrait négatif, 24,000 pt de retrait de
+paragraphe à gauche, 24,015 pt à droite — le bord droit d'une ligne justifiée rentre
+d'autant, ce qui est le point délicat — et 12,000 pt d'espace après, à un quart de point
+près. L'écran est ensuite mesuré de la même façon, encre contre encre, bande par bande :
+les quatre grandeurs y sont identiques à celles du PDF, à moins d'un pixel.
+
+**Le pourcentage de pixels différents ne suffisait pas, et c'est un enseignement.** Sur
+ce document, l'accord écran ↔ PDF donne 2,94 % — le seul lissage des glyphes d'une page
+de texte — tandis qu'une divergence de retrait simulée, l'écran composant sans retraits
+et le PDF avec, n'en donne que 3,93 %. Le filet global ne sépare pas les deux. Il reste
+dans la recette pour ce qu'il attrape — un bloc qui cesserait d'être dessiné — mais ce
+n'est pas lui qui éprouve le poste.
+
+La recette a été éprouvée en la faisant échouer, quatre fois : l'écran ignorant le
+retrait, le retrait de première ligne appliqué à toutes les lignes, l'export oubliant
+l'espace après, et la justification visant la largeur du bloc. Quatre sabotages, quatre
+attrapés. Les tests d'interface l'ont été de même, sur les deux sabotages qui ne touchent
+que l'écran.
+
+*Trouvé au passage.* Le test d'exhaustivité de `Clone()` par réflexion **ne couvre pas
+les collections** : la fabrique de valeurs rend `null` pour elles, si bien qu'elles
+restent vides des deux côtés et que l'égalité des deux JSON passe sans rien prouver.
+`Spans` était dans ce cas depuis R1. Un test propre aux deux collections du bloc de texte
+comble le trou, et vérifie au passage que les éléments sont copiés et non partagés.
+
+*Laissé de côté, et à noter pour R5* : `fo:text-align` varie **par paragraphe** dans
+ATA 21 — 31 justifiés contre 21 au fer à gauche — alors que l'alignement reste une
+propriété du bloc. `ParagraphSpan` le porterait pour presque rien, mais le poste énumère
+quatre propriétés et s'y tient.
 
 ---
 

@@ -70,31 +70,45 @@ public sealed class TexteCompose : Control
             bloc.FontFamily, bloc.FontSize, bloc.Bold, bloc.Italic, bloc.Foreground, 0);
 
         // Les fragments repèrent des positions dans le texte saisi ; un champ résolu
-        // n'a pas les mêmes caractères, et n'est jamais qu'un seul style.
+        // n'a pas les mêmes caractères, et n'est jamais qu'un seul style. Les écarts de
+        // paragraphe tombent pour la même raison — un champ n'a pas les mêmes
+        // paragraphes. Les réglages du bloc, eux, valent toujours : ce sont des
+        // propriétés du bloc, comme ses marges intérieures.
         var fragments = Contenu == bloc.Text ? bloc.Spans : (IReadOnlyList<StyleSpan>)[];
+        var ecarts = Contenu == bloc.Text ? bloc.Paragraphs : (IReadOnlyList<ParagraphSpan>)[];
 
-        var lignes = Compositeur.Composer(Contenu, fragments, commun, largeur, metriques);
+        var lignes = Compositeur.Composer(
+            Contenu, fragments, commun, ecarts, bloc.Paragraph, largeur, metriques);
 
         var haut = bloc.PaddingTop;
 
         foreach (var ligne in lignes)
         {
+            // L'espace avant le paragraphe s'ajoute avant de poser la ligne, celui
+            // d'après une fois l'avance faite. Le même ordre qu'à l'export : l'inverser
+            // d'un côté décalerait tout ce qui suit.
+            haut += ligne.EspaceAvant;
+
             var avance = Compositeur.Avance(ligne.Naturelle, bloc.LineHeight);
 
             if (ligne.Morceaux.Count > 0)
             {
                 var justifiee = bloc.Align == TextAlign.Justify && !ligne.FinDeParagraphe;
-                var origine = bloc.PaddingLeft + (justifiee ? 0 : bloc.Align switch
+                // Le retrait déplace le bord gauche de la ligne ; « Disponible » est ce
+                // qui reste entre les deux retraits. C'est cette largeur-là, et non
+                // celle du bloc, qui cale un centrage ou un fer à droite.
+                var gauche = bloc.PaddingLeft + ligne.Retrait;
+                var origine = justifiee ? gauche : bloc.Align switch
                 {
-                    TextAlign.Center => (largeur - ligne.Largeur) / 2,
-                    TextAlign.Right => largeur - ligne.Largeur,
-                    _ => 0,
-                });
+                    TextAlign.Center => gauche + (ligne.Disponible - ligne.Largeur) / 2,
+                    TextAlign.Right => gauche + ligne.Disponible - ligne.Largeur,
+                    _ => gauche,
+                };
 
                 // Le blanc se répartit entre les mots, pas entre les morceaux :
                 // même calcul que l'export, et il vient du noyau.
                 var decalages = justifiee
-                    ? Compositeur.Decalages(ligne, largeur)
+                    ? Compositeur.Decalages(ligne)
                     : new double[ligne.Morceaux.Count];
 
                 // Tous les morceaux d'une ligne se calent sur la même ligne de base,
@@ -123,7 +137,7 @@ public sealed class TexteCompose : Control
                 }
             }
 
-            haut += avance;
+            haut += avance + ligne.EspaceApres;
         }
     }
 

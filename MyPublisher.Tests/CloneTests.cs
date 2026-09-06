@@ -53,6 +53,27 @@ public class CloneTests
         Assert.NotSame(groupe.Children[0], copie.Children[0]);
     }
 
+    [Fact]
+    public void Une_copie_de_bloc_de_texte_emporte_ses_fragments_et_ses_paragraphes()
+    {
+        // Le test par réflexion ci-dessus ne couvre PAS les collections : « Valeur »
+        // rend null pour elles, si bien qu'elles restent vides des deux côtés et que
+        // l'égalité passe sans rien prouver. Les deux collections du bloc de texte
+        // demandent donc leur propre test — celui-ci aurait attrapé un oubli sur
+        // « Spans » depuis R1 comme il attrape aujourd'hui « Paragraphs ».
+        var bloc = new TextFrame { Name = "Riche", Text = "un deux\ntrois quatre" };
+        bloc.Spans.Add(new StyleSpan { Start = 3, Length = 4, Bold = true });
+        bloc.Paragraphs.Add(new ParagraphSpan { Start = 1, Length = 1, IndentLeft = 18, IndentFirstLine = -18 });
+
+        var copie = (TextFrame)bloc.Clone();
+
+        Assert.Equal(Ecrire(bloc), Ecrire(copie));
+        // Une copie de surface partagerait les éléments : retoucher la copie
+        // modifierait l'original.
+        Assert.NotSame(bloc.Spans[0], copie.Spans[0]);
+        Assert.NotSame(bloc.Paragraphs[0], copie.Paragraphs[0]);
+    }
+
     /// <summary>
     /// Donne à chaque propriété sérialisée une valeur qui ne soit pas son défaut :
     /// une copie qui oublierait une propriété restée à sa valeur d'origine ne se

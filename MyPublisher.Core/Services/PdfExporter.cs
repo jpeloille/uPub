@@ -202,12 +202,15 @@ public static class PdfExporter
         // Un bloc portant un champ résolu n'a pas les mêmes caractères que son texte
         // saisi : les fragments de style, qui repèrent des positions dans le texte,
         // ne s'y appliquent pas. Un folio ou une date sont d'un seul style, et c'est
-        // bien ainsi.
+        // bien ainsi. Les écarts de paragraphe tombent de même — un champ n'a pas les
+        // mêmes paragraphes — alors que les réglages du bloc, eux, valent toujours.
         var fragments = content == text.Text ? text.Spans : (IReadOnlyList<StyleSpan>)[];
+        var ecarts = content == text.Text ? text.Paragraphs : (IReadOnlyList<ParagraphSpan>)[];
 
         var metriques = new MetriquesPdf(gfx);
         var commun = Commun(text);
-        var lignes = Compositeur.Composer(content, fragments, commun, box.Width, metriques);
+        var lignes = Compositeur.Composer(
+            content, fragments, commun, ecarts, text.Paragraph, box.Width, metriques);
         if (lignes.Count == 0) return;
 
         // L'interligne supplémentaire se répartit de part et d'autre de la ligne et
@@ -218,17 +221,26 @@ public static class PdfExporter
 
         foreach (var ligne in lignes)
         {
+            // L'espace avant le paragraphe s'ajoute avant de poser la ligne, celui
+            // d'après une fois l'avance faite. Le même ordre qu'à l'écran : l'inverser
+            // d'un côté décalerait tout ce qui suit.
+            haut += ligne.EspaceAvant;
+
             var avance = Compositeur.Avance(ligne.Naturelle, text.LineHeight);
             var ligneDeBase = haut + (avance - ligne.Naturelle) / 2 + Montee(ligne, metriques);
 
             if (ligne.Morceaux.Count > 0)
             {
                 var justifiee = text.Align == TextAlign.Justify && !ligne.FinDeParagraphe;
-                var origine = justifiee ? box.Left : text.Align switch
+                // Le retrait déplace le bord gauche de la ligne ; « Disponible » est ce
+                // qui reste entre les deux retraits. C'est cette largeur-là, et non
+                // celle du bloc, qui cale un centrage ou un fer à droite.
+                var gauche = box.Left + ligne.Retrait;
+                var origine = justifiee ? gauche : text.Align switch
                 {
-                    TextAlign.Center => box.Left + (box.Width - ligne.Largeur) / 2,
-                    TextAlign.Right => box.Right - ligne.Largeur,
-                    _ => box.Left,
+                    TextAlign.Center => gauche + (ligne.Disponible - ligne.Largeur) / 2,
+                    TextAlign.Right => gauche + ligne.Disponible - ligne.Largeur,
+                    _ => gauche,
                 };
 
                 // Justifier : répartir le blanc qui manque entre les morceaux. La
@@ -237,7 +249,7 @@ public static class PdfExporter
                 // Le blanc se répartit entre les mots, pas entre les morceaux : le
                 // calcul est celui du noyau, partagé avec l'écran.
                 var decalages = justifiee
-                    ? Compositeur.Decalages(ligne, box.Width)
+                    ? Compositeur.Decalages(ligne)
                     : new double[ligne.Morceaux.Count];
 
                 for (var m = 0; m < ligne.Morceaux.Count; m++)
@@ -255,7 +267,7 @@ public static class PdfExporter
                 }
             }
 
-            haut += avance;
+            haut += avance + ligne.EspaceApres;
         }
     }
 
