@@ -60,9 +60,16 @@ PY
         echo "  ✗  $intitule — NON DÉTECTÉ" >&2
         trous=$((trous + 1))
     else
-        echo -n "  ✓  $intitule — attrapé par "
-        grep -oE "[A-Za-z_]+Tests\.[A-Za-z_]+|Contrôle|[a-z0-9-]+ : ÉCHOUE" /tmp/juge-$$.txt \
-            | head -1 || echo "la vérification"
+        # Qui l'a attrapé, précisément. Un nom de test s'il y en a un ; sinon
+        # l'étape qui a crié. Sans cette précision, on croirait le filet plus
+        # large qu'il n'est — trois sabotages « attrapés par le contrôle »
+        # peuvent n'être qu'un seul et même garde-fou.
+        coupable="$(grep -oE "[A-Za-z_]+Tests\.[A-Za-z_]+" /tmp/juge-$$.txt | head -1 || true)"
+        [ -z "$coupable" ] && coupable="$(grep -oE '^ÉCHEC : .*' /tmp/juge-$$.txt | head -1 || true)"
+        [ -z "$coupable" ] && coupable="$(grep -oE '  [a-z0-9-]+ : ÉCHOUE' /tmp/juge-$$.txt | head -1 || true)"
+        [ -z "$coupable" ] && coupable="la compilation"
+        echo "  ✓  $intitule"
+        echo "       attrapé par : $coupable"
     fi
 
     rm -f /tmp/juge-$$.txt
@@ -89,8 +96,13 @@ saboter "la migration de la version 1 ne fait plus rien" \
 
 saboter "le JSON n'est plus écrit en clair" \
     MyPublisher.Core/Services/DocumentSerializer.cs \
-    'Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,' \
-    ''
+    'Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping' \
+    'Encoder = null'
+
+saboter "un groupe ne met plus ses blocs à l'échelle" \
+    MyPublisher.Core/Models/Frame.cs \
+    'var factor = newSize / oldSize;' \
+    'var factor = 1.0;'
 
 echo
 if [ "$trous" = 0 ]; then
