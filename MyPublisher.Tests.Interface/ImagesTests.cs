@@ -326,6 +326,51 @@ public class ImagesTests : IDisposable
     }
 
     /// <summary>
+    /// L'empreinte se prend AVANT la lecture. Un fichier réécrit pendant qu'on le lit —
+    /// un outil qui enregistre au moment où le document s'ouvre — laisse au cache
+    /// l'image d'avant ; prise avant, l'empreinte est celle d'avant aussi, et la
+    /// réouverture suivante relit le fichier. Prise après, elle serait celle du fichier
+    /// neuf, et l'image d'avant resterait pour toujours. Le lecteur injecté joue cette
+    /// réécriture, sur ce seul fichier, après avoir lu l'image.
+    /// </summary>
+    [AvaloniaFact]
+    [Trait("poste", "Q15")]
+    public void Une_image_reecrite_pendant_sa_lecture_se_relit_a_l_ouverture_suivante()
+    {
+        var chemin = Composer("pendant", "photo.png", Magenta);
+        var photo = Path.GetFullPath(Path.Combine(_travail, "pendant", "photo.png"));
+
+        var lecteur = BitmapCache.Lecteur;
+        BitmapCache.Lecteur = fichier =>
+        {
+            var image = lecteur(fichier);
+            if (fichier == photo) Retoucher(photo, Cyan, memeDate: false);
+            return image;
+        };
+
+        Bitmap? lue;
+        try
+        {
+            lue = Conv.Bitmap(photo);
+        }
+        finally
+        {
+            BitmapCache.Lecteur = lecteur;
+        }
+
+        Assert.NotNull(lue);
+        var (fenetre, vm) = Fenetre(Document.CreateDefault());
+        vm.LoadFrom(chemin);
+        Rendu.Battre(8);
+        using (fenetre.CaptureRenderedFrame()) { }
+
+        Assert.NotSame(lue, Conv.Bitmap(photo));
+        var nouvelle = Compter(fenetre, Cyan);
+        Assert.True(nouvelle > 1000, $"l'image réécrite pendant sa lecture ne se relit pas ({nouvelle} pixels)");
+        Assert.Equal(0, Compter(fenetre, Magenta));
+    }
+
+    /// <summary>
     /// Réécrit une image d'une autre couleur. <paramref name="memeDate"/> faux : même
     /// taille de fichier, et une date qui avance — la retouche ordinaire, que seule la
     /// date trahit. Vrai : une autre taille, et la date d'avant remise — la retouche

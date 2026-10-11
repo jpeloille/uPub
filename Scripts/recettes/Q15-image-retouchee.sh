@@ -21,6 +21,9 @@
 #     au même instant porte une image cyan, relue dans le fichier par PDFsharp ;
 #   · une retouche qui garde la date — la même seconde, sur un système de fichiers
 #     qui compte à la seconde — se relit aussi : la taille le dit.
+#   · un fichier réécrit PENDANT sa lecture se relit à l'ouverture suivante :
+#     l'empreinte est prise avant la lecture. Un lecteur injecté dans le cache joue la
+#     réécriture.
 #
 # Chacun des deux cas de retouche ne trahit qu'une moitié de l'empreinte : le premier
 # la date, le second la taille. Le compte des tests joués est vérifié.
@@ -44,7 +47,7 @@ if [ -z "${MYPUBLISHER_DEJA_COMPILE:-}" ] && ! dotnet build MyPublisher.sln --no
     exit 1
 fi
 
-attendus=2
+attendus=3
 if ! dotnet test MyPublisher.Tests.Interface/MyPublisher.Tests.Interface.csproj ${MYPUBLISHER_DEJA_COMPILE:+--no-build} \
         --nologo -v q --filter "poste=Q15" > "$travail/tests.txt" 2>&1; then
     sed 's/^/    /' "$travail/tests.txt" >&2

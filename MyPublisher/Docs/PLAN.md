@@ -2876,7 +2876,7 @@ vient de la relecture : retirer les cases de la descente de la passe laissait
 second bloc dont la police propre est absente, plus exigeant que le bloc en Noto Sans,
 qui est installée ici et ne dirait rien de toute façon. Elle relève les polices du PDF,
 rejoue le document découvert, et compte les tests. Trois sabotages au juge : l'héritage
-relu pour son compte (la recette tombe, et cinq des six premiers tests), les fragments
+relu pour son compte (la recette tombe, et huit des neuf tests), les fragments
 d'un champ lus comme s'ils étaient dessinés (seul le test du folio tombe), et les cases
 de tableau retirées de la descente (seul le test de la case tombe).
 
@@ -3059,14 +3059,19 @@ PDF exporté au même instant porte une image cyan, relue par PDFsharp dans le f
 Les deux PNG de 8 pixels, magenta puis cyan, écrits par Avalonia ont la même taille de
 fichier : le test le vérifie, puisque c'est la date seule qui doit trahir ce cas.
 
-Deux tests d'interface sous `poste=Q15`, dans `ImagesTests`. Le premier fait la retouche
+Trois tests d'interface sous `poste=Q15`, dans `ImagesTests`. Le premier fait la retouche
 ordinaire : même taille, date plus récente. Il épingle aussi l'instance rendue sans
 retouche (Q3) et l'annulation qui ne relit pas. Le second fait la retouche qui garde la
 date, avec une autre taille. Chacun ne trahit ainsi qu'une moitié de l'empreinte, et
 les deux sabotages qui en retirent une moitié le prouvent : la taille oubliée ne fait
-tomber que le second, la date oubliée que le premier. *Recette* :
-`Scripts/recettes/Q15-image-retouchee.sh`. Trois sabotages au juge : l'appel retiré, la
-taille oubliée, la date oubliée.
+tomber que le second, la date oubliée que le premier. Le troisième test, ajouté après la
+relecture, éprouve l'ordre. Un lecteur injecté dans le cache (`BitmapCache.Lecteur`,
+interne, visible du seul banc d'interface) réécrit le fichier en cyan juste après
+l'avoir lu en magenta. L'ouverture suivante doit montrer le cyan. L'empreinte prise
+après la lecture le fait tomber, et lui seul : sans ce test, rien ne gardait l'ordre.
+*Recette* : `Scripts/recettes/Q15-image-retouchee.sh`. Quatre sabotages au juge :
+l'appel retiré, la taille oubliée, la date oubliée, l'empreinte prise après la
+lecture.
 
 *Choisi sans certitude.* Le test pose lui-même les dates. Quand l'horloge des fichiers
 n'a pas avancé entre deux écritures rapprochées, il avance la date d'une seconde ; pour

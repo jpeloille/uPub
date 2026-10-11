@@ -8,6 +8,10 @@ using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using MyPublisher.Models;
 
+// Le banc d'interface atteint le cache d'images et son lecteur, pour éprouver l'ordre
+// de l'empreinte et de la lecture (poste Q15).
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("MyPublisher.Tests.Interface")]
+
 namespace MyPublisher.Converters;
 
 /// <summary>
@@ -140,6 +144,13 @@ internal static class BitmapCache
 
     private static readonly Dictionary<string, Entree> Cache = new();
 
+    /// <summary>
+    /// Ce qui lit une image sur le disque. Un point d'injection pour le seul banc
+    /// d'interface : il lui permet de réécrire le fichier PENDANT la lecture, et
+    /// d'éprouver ainsi que l'empreinte est prise avant elle (poste Q15).
+    /// </summary>
+    internal static Func<string, Bitmap> Lecteur { get; set; } = chemin => new Bitmap(chemin);
+
     public static Bitmap? Get(string path)
     {
         // Deux graphies du même fichier ne font qu'une entrée. Ce n'est pas seulement
@@ -159,7 +170,7 @@ internal static class BitmapCache
             Bitmap? bitmap = null;
             try
             {
-                bitmap = new Bitmap(cle);
+                bitmap = Lecteur(cle);
             }
             catch (Exception)
             {

@@ -395,7 +395,7 @@ saboter "un collage qui porte du texte est poussé à gauche comme un saut" \
 # la recette de son poste avant d'être écrit ici.
 
 # Q8 : le défaut d'origine, rétabli tel quel — la passe relit l'héritage des fragments
-# pour son compte au lieu des styles composés. Cinq des six tests de Q8 tombent, et
+# pour son compte au lieu des styles composés. Huit des neuf tests de Q8 tombent, et
 # la recette, sur le document du plan.
 saboter "la passe des polices relit l'héritage des fragments au lieu des styles composés" \
     MyPublisher.Core/Services/PdfExporter.cs \
@@ -439,6 +439,14 @@ saboter "l'empreinte d'une image oublie la date de son fichier" \
     MyPublisher/Converters/Conv.cs \
     'new Empreinte(fichier.LastWriteTimeUtc, fichier.Length)' \
     'new Empreinte(default, fichier.Length)' \
+    'Q15-image|ImagesTests'
+
+# Q15 : l'empreinte prise APRÈS la lecture. Seul un fichier réécrit pendant qu'on le
+# lit le trahit ; le lecteur injecté du test le joue. Trouvé par la relecture.
+saboter "l'empreinte d'une image se prend après sa lecture" \
+    MyPublisher/Converters/Conv.cs \
+    'Cache[cle] = new Entree(bitmap, empreinte);' \
+    'Cache[cle] = new Entree(bitmap, Prendre(cle));' \
     'Q15-image|ImagesTests'
 
 # Q17 : l'accesseur des fragments rouvert. Tout compile, rien ne casse à l'écran

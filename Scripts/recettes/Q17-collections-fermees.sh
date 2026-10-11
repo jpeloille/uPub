@@ -69,7 +69,23 @@ sonder() {
 </Project>
 XML
     printf '%s\n' "$2" > "$1/Sonde.cs"
-    dotnet build "$1/Sonde.csproj" --nologo -v q -o "$1/sortie" > "$1/sortie.txt" 2>&1
+
+    # Un plantage du compilateur lui-même (« Internal CLR error », vu quand plusieurs
+    # copies compilent à la fois) ne dit rien du code : on relance une fois, comme
+    # verifier.sh. S'il persiste, la recette échoue en le nommant — une sonde
+    # « interdite » qui plante n'a rien refusé.
+    local code=0
+    dotnet build "$1/Sonde.csproj" --nologo -v q -o "$1/sortie" > "$1/sortie.txt" 2>&1 || code=$?
+    if grep -qE "Internal CLR error|0x80131506|MSB4166" "$1/sortie.txt"; then
+        code=0
+        dotnet build "$1/Sonde.csproj" --nologo -v q -o "$1/sortie" > "$1/sortie.txt" 2>&1 || code=$?
+        if grep -qE "Internal CLR error|0x80131506|MSB4166" "$1/sortie.txt"; then
+            echo "ÉCHEC : le compilateur a planté deux fois sur la sonde — l'environnement, pas le code." >&2
+            tail -5 "$1/sortie.txt" >&2
+            exit 1
+        fi
+    fi
+    return "$code"
 }
 
 interdite='using System.Collections.ObjectModel;
