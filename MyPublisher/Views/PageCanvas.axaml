@@ -205,7 +205,17 @@
                    RenderTransformOrigin="50%,50%"
                    RenderTransform="{Binding Rotation, Converter={x:Static conv:Conv.Rotate}}">
                 <views:FondBloc Classes="frameFill"/>
-                <ItemsControl Classes="frames" ItemsSource="{Binding Children}">
+                <!-- Les blocs sont découpés à la zone que le noyau calcule, la même qu'à
+                     l'export (poste Q5), et non au cadre du groupe comme le ferait le
+                     thème : un filet centré sur le bord du groupe y perdrait sa moitié. -->
+                <ItemsControl Classes="frames" ItemsSource="{Binding Children}" ClipToBounds="False">
+                    <ItemsControl.Clip>
+                        <MultiBinding Converter="{x:Static conv:DecoupeDesBlocs.Instance}">
+                            <Binding/>
+                            <Binding Path="Width"/>
+                            <Binding Path="Height"/>
+                        </MultiBinding>
+                    </ItemsControl.Clip>
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
                             <Canvas/>
@@ -226,7 +236,16 @@
                    RenderTransformOrigin="50%,50%"
                    RenderTransform="{Binding Rotation, Converter={x:Static conv:Conv.Rotate}}">
                 <views:FondBloc Classes="frameFill"/>
-                <ItemsControl Classes="frames" ItemsSource="{Binding CellFrames}">
+                <!-- Même découpe qu'un groupe, lue au même endroit. -->
+                <ItemsControl Classes="frames" ItemsSource="{Binding CellFrames}" ClipToBounds="False">
+                    <ItemsControl.Clip>
+                        <MultiBinding Converter="{x:Static conv:DecoupeDesBlocs.Instance}">
+                            <Binding/>
+                            <Binding Path="Width"/>
+                            <Binding Path="Height"/>
+                            <Binding Path="CellFrames"/>
+                        </MultiBinding>
+                    </ItemsControl.Clip>
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
                             <Canvas/>
