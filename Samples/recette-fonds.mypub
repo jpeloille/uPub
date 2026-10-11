@@ -101,6 +101,26 @@
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
           "Shape": "Ellipse"
+        },
+        {
+          "$kind": "shape",
+          "Name": "Image arrondie",
+          "X": 60,
+          "Y": 600,
+          "Width": 200,
+          "Height": 120,
+          "Rotation": 0,
+          "Fill": {
+            "$kind": "image",
+            "Path": "recette-fonds-trame.png",
+            "Fit": "Fill",
+            "Rotation": 0
+          },
+          "Stroke": null,
+          "StrokeThickness": 1,
+          "StrokeStyle": "Solid",
+          "CornerRadius": 30,
+          "Shape": "Rectangle"
         }
       ]
     }

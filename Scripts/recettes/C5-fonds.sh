@@ -17,7 +17,9 @@
 # 2. Samples/recette-fonds.mypub, pour le dégradé, la teinte et le fond de page —
 #    qu'aucun des deux documents réels ne porte, et il faut le dire : sur ces trois-là
 #    la recette éprouve le mécanisme, pas des valeurs relevées. Les couleurs sont
-#    MESURÉES au pixel, dans le PDF puis à l'écran, aux mêmes points.
+#    MESURÉES au pixel, dans le PDF puis à l'écran, aux mêmes points. Depuis le poste
+#    Q6, la page porte aussi un bloc arrondi rempli d'une image, dont on mesure les
+#    coins : c'est le seul endroit qui voie la découpe d'un remplissage par image.
 #
 # Pourquoi mesurer plutôt que comparer les deux images. Parce que l'écran et l'export
 # appellent les mêmes calculs — « GradientFill.Extremites », « TintFill.Uniforme » — et
@@ -253,6 +255,19 @@ points = [
     # Dans le coin qu'arrondit le bloc, c'est le fond de page qui doit passer : un
     # arrondi perdu par le fond le peindrait de l'aplat.
     ("coin arrondi",         321, 101,   (231, 237, 243), 8),
+    # Poste Q6 : un bloc arrondi rempli d'une IMAGE. Jusque-là, la page ne portait que
+    # des rectangles à angles droits sous ses remplissages par image — ceux d'ATA 21 —,
+    # et une découpe qui aurait oublié l'arrondi traversait toute la vérification.
+    # L'image est un aplat magenta (« recette-fonds-trame.png »), étiré au bloc ; dans
+    # les deux coins mesurés, à 2 pt des bords et à 9,6 pt hors de l'arc de 30 pt, c'est
+    # le fond de page qui doit passer. Sa couleur se calcule comme plus haut : du blanc
+    # au #336699 sur les 841,89 pt de la page, soit aux deux tiers et quelque.
+    ("image arrondie, centre",   160, 660, (255,   0, 255), 2),
+    # Contre-épreuve : à 2 pt du bord gauche du bloc, juste sous l'arc du coin, l'image est là. Une
+    # découpe trop large (un arrondi pris pour un diamètre, par exemple) la rognerait.
+    ("image arrondie, bord",      62, 640, (255,   0, 255), 8),
+    ("coin de l'image, haut",     62, 602, (109, 146, 182), 8),
+    ("coin de l'image, bas",     258, 718, ( 81, 125, 168), 8),
 ]
 
 echec = False
@@ -283,11 +298,13 @@ PY
 # aplats — c'est justement pourquoi les mesures ci-dessus existent — mais elle attrape
 # ce qu'aucune d'elles ne regarde : un fond qui disparaîtrait ailleurs sur la page.
 #
-# Le seuil est à 2 % et non à 1 : les deux filets ajoutés au document — celui de
-# l'ellipse surtout, qui est une longue courbe — portent l'écart de 0,08 % à 0,99 %, à
-# eux seuls et sur le seul lissage de leurs bords. Un seuil qui frôlerait la mesure
-# tomberait un jour sur une autre machine, pour rien.
-Scripts/comparer-rendus.sh "$document" 1 2.0 > "$travail/comparaison.txt" 2>&1 || {
+# Les deux filets ajoutés au document avaient porté l'écart de 0,08 % à 0,99 %, et le
+# seuil avait été mis à 2 %. Ce n'était pas, comme on l'avait cru, le seul lissage de
+# leurs bords : l'écran les rentrait d'une demi-épaisseur dans leur forme (poste Q4).
+# Q4 réparé, le 12 octobre 2026 : 0,35 %, bloc arrondi de Q6 compris — le lissage de
+# la longue courbe de l'ellipse et de son dégradé. Le seuil passe à 1 % : près de trois
+# fois ce relevé, et sous ce que coûtait Q4.
+Scripts/comparer-rendus.sh "$document" 1 1.0 > "$travail/comparaison.txt" 2>&1 || {
     echo "ÉCHEC : l'écran et le PDF divergent sur l'ensemble de la page." >&2
     cat "$travail/comparaison.txt" >&2
     exit 1
