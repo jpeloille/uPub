@@ -137,6 +137,9 @@ la barre du haut regroupe les commandes du document : fichier, annulation, zoom.
   son rang — « L1 · C2 ».
 - **Plusieurs styles dans un même bloc** : une portion de texte porte sa propre police,
   son corps, son gras, son italique, sa couleur, et se pose en indice ou en exposant.
+  Ces styles suivent la frappe : un mot tapé dans un bloc importé laisse ses gras sur
+  leurs mots, et un saut de ligne laisse chaque retrait à son paragraphe. Un caractère
+  tapé prend le style de celui qui le précède, comme dans Publisher.
   L'interligne s'exprime en multiple de la hauteur **naturelle** de la police — « 1,25 »
   veut dire une fois et quart ce que la police demande, jamais une fois et quart le
   corps.
@@ -363,12 +366,6 @@ partout ailleurs — à l'écran, à l'export — un chemin d'image est absolu.
   colonnes coulent à l'intérieur d'un bloc, jamais d'un bloc au suivant. Un texte trop
   LARGE, lui, est coupé sans rien dire : le signalement ne porte que sur la hauteur,
   comme le marqueur de Publisher.
-- **Taper dans un bloc qui porte des fragments de style les décale.** Les fragments
-  sont repérés par position de caractère et les écarts de paragraphe par indice, et
-  rien ne les met à jour à la frappe : un mot ajouté en tête d'un bloc importé fait
-  glisser ses gras, et un saut de ligne décale ses retraits d'un paragraphe.
-  L'enregistrement fixe le décalage. En attendant le poste Q1, retoucher un document
-  importé se fait dans les blocs sans fragments, ou sur une copie.
 - Les fragments de style se lisent, s'écrivent et se rendent, mais ne se saisissent pas
   encore à la souris : on ne peut pas sélectionner trois mots dans un bloc pour les
   mettre en gras. Le panneau agit sur le bloc entier.

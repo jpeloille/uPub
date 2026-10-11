@@ -127,6 +127,30 @@ saboter "l interligne redevient un multiple du corps" \
     "naturelle * (multiple > 0 ? multiple : 1);" \
     "multiple;"
 
+# Le poste Q1. Quatre sabotages et non un : le calcul peut être juste et le
+# branchement faux, et chacun des deux se casse à sa façon. La recette de PLAN.md
+# demande que neutraliser le décalage fasse tomber le test pur, le test d'interface et
+# la recette ; le premier sabotage le fait, les trois autres trouent le branchement.
+saboter "taper devant un fragment ne le décale plus" \
+    MyPublisher.Core/Models/Recalage.cs \
+    '(debut, fin) = (debut + edition.Inseres, fin + edition.Inseres);' \
+    '(debut, fin) = (debut, fin);'
+
+saboter "un saut de ligne tapé ne décale plus les écarts de paragraphe" \
+    MyPublisher.Core/Models/Recalage.cs \
+    'Inseres: Sauts(apres, point, point + edition.Inseres),' \
+    'Inseres: 0,'
+
+saboter "la saisie sur la page ne passe plus par le recalage" \
+    MyPublisher/Views/PageCanvas.axaml \
+    'Text="{Binding Saisie, Mode=TwoWay}"' \
+    'Text="{Binding Text, Mode=TwoWay}"'
+
+saboter "une case de tableau ne recale plus ses fragments à la saisie" \
+    MyPublisher.Core/Models/Table.cs \
+    'Recalage.Appliquer(Text, nouveau, Spans, null);' \
+    ''
+
 echo
 if [ "$trous" = 0 ]; then
     echo "Le juge sait échouer : $sabotages sabotages, $sabotages attrapés."

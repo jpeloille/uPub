@@ -2376,6 +2376,76 @@ du noyau.
 Effort : moyen. **À faire en premier** : R6 et R7 en dépendent, et chaque jour sans lui
 est un jour où l'on peut abîmer un document importé.
 
+*Fait le 11 octobre 2026.* Le calcul est une fonction pure du noyau,
+`Models/Recalage.cs` : `Edition.Deduire` tire des deux textes un seul remplacement —
+préfixe commun, puis suffixe commun dans ce qui reste —, `Recalage.Caractere` et
+`Recalage.Paragraphe` en déduisent la plage d'après de chaque fragment et de chaque écart,
+ou rien s'il est vidé. Seul `Recalage.Appliquer` touche au modèle : il change les plages
+sur place et retire les vides, avant que le texte change. La règle est celle du poste, à
+la lettre : un caractère tapé prend le style de celui qui le précède ; en tête de texte,
+rien ne précède, il prend celui du bloc.
+
+**Le recalage n'a lieu qu'à la saisie, et c'est le choix qui règle tous les pièges.**
+`Text` reste ce qu'il était, le texte tel qu'il s'écrit, et l'écrire ne recale rien. Une
+propriété neuve, `Saisie` — sur `TextFrame` et sur `TableCell`, jamais écrite dans le
+fichier —, recale puis écrit `Text`, et seules les trois zones où l'on tape s'y lient :
+la saisie sur la page, le champ « Contenu » du panneau, le champ d'une case. Recaler à
+chaque écriture de `Text` aurait demandé de deviner chaque fois si l'écriture était une
+édition, et chacun des écrivains qui n'éditent pas se serait trompé à sa façon : le
+sérialiseur pose les propriétés dans l'ordre du **fichier**, et un fichier qui donne les
+fragments avant le texte les aurait tous poussés au-delà de lui ; l'import pose le texte
+puis ses collections ; `CellFrames` reconstruit à chaque lecture un bloc auquel il
+**prête** les fragments de la case, et un recalage à sa construction les aurait déplacés
+à chaque redessin ; l'annulation relit un instantané. Par construction, aucun ne recale
+— et un test épingle chacun, pour que la construction ne s'oublie pas. Aucune propriété
+n'entre dans le format : `FormatVersion` reste à 4.
+
+Ce que le poste a trouvé en route :
+
+- **La règle de fusion, écrite telle quelle, reproduisait le défaut.** « Le paragraphe
+  fusionné garde l'écart du premier » est juste pour l'effacement en tête de ligne. Mais
+  une ligne sélectionnée de bout en bout, saut compris, et effacée, fusionne elle aussi
+  deux paragraphes — et le suivant prenait alors le retrait de la ligne effacée. Quand la
+  suppression part du début d'un paragraphe, ce sont des paragraphes entiers qui
+  partent, et celui qui reste garde le sien. Les deux lectures d'un saut effacé parmi
+  plusieurs donnent alors le même résultat.
+- **La déduction est ambiguë, et l'ambiguïté tombait sur le geste le plus courant.**
+  « Un\nDeux » qui devient « Un\n\nDeux » se lit aussi bien comme un retour tapé au bout
+  de « Un » que comme un retour tapé en tête de « Deux ». La déduction place l'insertion
+  le plus à droite ; pour les paragraphes, on la repousse le plus à gauche : un retour
+  tapé au bout d'un élément de liste ouvre un élément de liste, et non un paragraphe au
+  réglage du suivant. Le prix est sur le geste inverse — un retour tapé en tête d'un
+  paragraphe donne au paragraphe **vide** le réglage de celui d'au-dessus. Aucun
+  paragraphe qui porte du texte ne change de réglage, dans un cas comme dans l'autre.
+  Pour les caractères, l'ambiguïté reste à droite : elle ne départage que deux
+  caractères identiques à la frontière d'un fragment.
+- **Un double-clic sur un bloc importé empile un pas d'annulation.** Le premier clic
+  ouvre le geste de déplacement, qui réécrit l'ordonnée du bloc à son dernier chiffre
+  près sans que le pointeur ait bougé (`107.15039999999999` devient `107.1504`) : le
+  document change, l'historique le compte. Sans conséquence visible, hors du périmètre, non corrigé ; le test
+  d'annulation prend donc son état de référence une fois la saisie ouverte.
+
+Choisi sans certitude : un **remplacement** suit la même règle que la frappe —
+supprimer, puis insérer au style du caractère d'avant. Sélectionner un mot gras et le
+retaper le rend donc au style de ce qui le précède, là où Word garde celui du premier
+caractère remplacé. La règle unique a pour elle de rendre propre le remplacement de tout
+le texte, que B2 fera : aucun fragment n'y survit, aucun ne sort des bornes. Retenu aussi
+sans mesure : un fragment qui débordait le texte avant l'édition y est ramené, comme la
+composition le ramenait déjà en le dessinant.
+
+Laissé tel quel : un fragment vidé par une suppression ne revient pas si l'on retape le
+texte — y compris par l'annulation propre à la zone de saisie, quand elle a la main. Le
+recalage ne voit que des textes ; l'annulation de l'application, elle, relit un
+instantané et rend texte et fragments au caractère près. La saisie sur la page dessine
+toujours le texte d'un seul style pendant qu'on tape : c'est R7.
+
+*Recette* : `Scripts/recettes/Q1-styles-frappe.sh` joue au clavier les cinq tests
+d'interface du poste sur ATA 21 importé, exporte le document tapé et relève dans le flux
+du PDF, par le nom de police, que les mêmes mots sont en gras au même corps ; puis elle
+rejoue la mesure sur une contrefaçon aux fragments laissés en place, qui doit échouer.
+Quatre sabotages dans `eprouver-le-juge.sh` : le décalage neutralisé, le saut de ligne
+ignoré, la saisie de la page reliée à `Text`, la case qui ne recale plus.
+
 ### Q2 — Le texte composé se détache de son bloc
 
 `ControleDeBloc` s'abonne au bloc et à ses deux collections, mais ne se désabonne
