@@ -9,8 +9,10 @@
 #
 #   Scripts/verifier.sh
 #
-# Trois étapes, de la plus rapide à la plus lente, pour que l'échec le plus probable
-# tombe le premier :
+# D'abord la compilation de toute la solution, banc compris : « dotnet test » ne
+# compile pas MyPublisher.Banc, et les recettes A1 et A2 mesuraient le banc de
+# l'exécution précédente — sous le juge, celui du sabotage d'avant. Puis trois étapes,
+# de la plus rapide à la plus lente, pour que l'échec le plus probable tombe le premier :
 #
 #   1. les tests — quelques centaines de millisecondes pour le noyau, quelques
 #      secondes pour l'interface,
@@ -34,6 +36,31 @@ etape() {
     echo
     echo "── $1"
 }
+
+etape "Compilation"
+# Un plantage du compilateur lui-même (« Internal CLR error », vu quand plusieurs
+# copies compilent à la fois) ne dit rien du code : on recompile une fois avant de
+# conclure, et s'il persiste on le nomme pour ce qu'il est, sans le confondre avec
+# une erreur du code — le juge compterait sinon un sabotage pour attrapé.
+compiler() { dotnet build MyPublisher.sln --nologo -v q > /tmp/compilation-$$.txt 2>&1; }
+if ! compiler; then
+    if grep -qE "Internal CLR error|0x80131506|MSB4166" /tmp/compilation-$$.txt && compiler; then
+        echo "  passe (au second essai : le compilateur avait planté)"
+    elif grep -qE "Internal CLR error|0x80131506|MSB4166" /tmp/compilation-$$.txt; then
+        sed 's/^/    /' /tmp/compilation-$$.txt | tail -20 >&2
+        echo "ÉCHEC : le compilateur a planté deux fois — l'environnement, pas le code." >&2
+        rm -f /tmp/compilation-$$.txt
+        exit 3
+    else
+        grep -E "error" /tmp/compilation-$$.txt | sort -u | head -20 | sed 's/^/    /' >&2
+        echo "ÉCHEC : la compilation ne passe pas." >&2
+        rm -f /tmp/compilation-$$.txt
+        exit 1
+    fi
+else
+    echo "  passe"
+fi
+rm -f /tmp/compilation-$$.txt
 
 etape "Tests"
 if ! dotnet test MyPublisher.sln --nologo -v q 2>&1 | grep -E "^(Passed!|Failed!|Erreur|error)"; then

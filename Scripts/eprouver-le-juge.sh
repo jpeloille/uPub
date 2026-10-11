@@ -51,8 +51,11 @@ trous=0
 sabotages=0
 
 # $1 intitulé · $2 fichier · $3 texte d'origine · $4 texte saboté
+# $5, facultatif : le garde-fou attendu (motif grep -E). Un sabotage attrapé par un
+# autre que lui est compté comme un trou : la recette d'un poste qui n'attrape pas son
+# propre sabotage ne prouve rien, même si un test voisin le voit à sa place.
 saboter() {
-    local intitule="$1" fichier="$2" avant="$3" apres="$4"
+    local intitule="$1" fichier="$2" avant="$3" apres="$4" attendu="${5:-}"
     sabotages=$((sabotages + 1))
 
     if ! grep -qF "$avant" "$fichier"; then
@@ -69,23 +72,37 @@ p = pathlib.Path(f)
 p.write_text(p.read_text().replace(avant, apres, 1))
 PY
 
-    if Scripts/verifier.sh > /tmp/juge-$$.txt 2>&1; then
+    local sortie=0
+    Scripts/verifier.sh > /tmp/juge-$$.txt 2>&1 || sortie=$?
+    if [ "$sortie" = 0 ]; then
         echo "  ✗  $intitule — NON DÉTECTÉ" >&2
         trous=$((trous + 1))
+    elif [ "$sortie" = 3 ]; then
+        # verifier.sh sort en 3 quand le compilateur a planté deux fois : rien n'a
+        # été jugé, ce n'est pas une prise.
+        echo "  ?  $intitule — le compilateur a planté, rien n'a été jugé" >&2
+        trous=$((trous + 1))
     else
-        # Qui l'a attrapé, précisément. Un nom de test s'il y en a un ; sinon
-        # l'étape qui a crié. Sans cette précision, on croirait le filet plus
-        # large qu'il n'est — trois sabotages « attrapés par le contrôle »
-        # peuvent n'être qu'un seul et même garde-fou.
-        coupable="$(grep -oE "[A-Za-z_]+Tests\.[A-Za-z_]+" /tmp/juge-$$.txt | head -1 || true)"
+        # Qui l'a attrapé, précisément : tous les tests et toutes les recettes en
+        # échec, pas le premier venu. Sans cette précision, on croirait le filet plus
+        # large qu'il n'est — trois sabotages « attrapés par le contrôle » peuvent
+        # n'être qu'un seul et même garde-fou. Les recettes portent le code de leur
+        # poste en majuscule (« Q12-dependances »).
+        local tests recettes autres coupable
+        tests="$(grep -oE "[A-Za-z_]+Tests\.[A-Za-z_]+" /tmp/juge-$$.txt | sort -u | head -4 | paste -sd' ' || true)"
+        recettes="$(grep -oE '^  [A-Za-z0-9-]+ : ÉCHOUE' /tmp/juge-$$.txt | sed 's/^  //; s/ : ÉCHOUE//' | paste -sd' ' || true)"
+        autres="$(grep -oE '^ÉCHEC : .*' /tmp/juge-$$.txt | grep -v 'les tests ne passent pas' | head -1 || true)"
+        coupable="$(printf '%s\n' "$tests" "$recettes" "$autres" | sed '/^$/d' | paste -sd' ' )"
         [ -z "$coupable" ] && coupable="$(grep -oE '^ÉCHEC : .*' /tmp/juge-$$.txt | head -1 || true)"
-        # Les recettes portent le code de leur poste en majuscule (« Q12-dependances ») :
-        # sans les majuscules dans la classe, aucune n'était jamais nommée ici, et un
-        # sabotage pris par une recette s'affichait « attrapé par la compilation ».
-        [ -z "$coupable" ] && coupable="$(grep -oE '  [A-Za-z0-9-]+ : ÉCHOUE' /tmp/juge-$$.txt | head -1 || true)"
-        [ -z "$coupable" ] && coupable="la compilation"
-        echo "  ✓  $intitule"
-        echo "       attrapé par : $coupable"
+        [ -z "$coupable" ] && coupable="(inconnu : voir la sortie de verifier.sh)"
+        if [ -n "$attendu" ] && ! grep -qE "$attendu" <<< "$coupable"; then
+            echo "  ✗  $intitule — attrapé, mais pas par « $attendu »" >&2
+            echo "       attrapé par : $coupable" >&2
+            trous=$((trous + 1))
+        else
+            echo "  ✓  $intitule"
+            echo "       attrapé par : $coupable"
+        fi
     fi
 
     rm -f /tmp/juge-$$.txt
@@ -137,7 +154,8 @@ saboter "l interligne redevient un multiple du corps" \
 saboter "la dépendance vulnérable revient (Tmds.DBus.Protocol 0.21.2)" \
     MyPublisher/MyPublisher.csproj \
     '<PackageReference Include="Tmds.DBus.Protocol" Version="0.21.3"/>' \
-    '<PackageReference Include="Tmds.DBus.Protocol" Version="0.21.2"/>'
+    '<PackageReference Include="Tmds.DBus.Protocol" Version="0.21.2"/>' \
+    'Q12-dependances'
 
 echo
 if [ "$trous" = 0 ]; then
