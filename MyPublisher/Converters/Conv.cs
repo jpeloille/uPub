@@ -102,6 +102,21 @@ public static class Conv
     public static readonly FuncValueConverter<StrokeStyle, AvaloniaList<double>?> Dash =
         new(style => Frame.DashPattern(style) is { } pattern ? new AvaloniaList<double>(pattern) : null);
 
+    /// <summary>
+    /// La marge qui centre un filet sur le bord de son bloc : une demi-épaisseur, vers
+    /// l'extérieur.
+    ///
+    /// Un <c>Rectangle</c> ou une <c>Ellipse</c> d'Avalonia RENTRENT leur trait dans leurs
+    /// limites : leur géométrie est le cadre diminué d'une demi-épaisseur. Posés sur le
+    /// cadre du bloc, ils traçaient donc un filet de 2 pt sur [bord, bord + 2] quand
+    /// l'export, qui dit vrai (« centré sur le bord », <see cref="Frame.StrokeThickness"/>),
+    /// le trace sur [bord − 1, bord + 1] — poste Q4. Élargir l'élément de la même
+    /// demi-épaisseur ramène sa géométrie exactement sur le cadre, arrondi compris : les
+    /// rayons s'appliquent à la géométrie, qui est désormais celle que trace l'export.
+    /// </summary>
+    public static readonly FuncValueConverter<double, Thickness> FiletCentre =
+        new(epaisseur => new Thickness(-Math.Max(0, epaisseur) / 2));
+
     public static readonly FuncValueConverter<string?, Bitmap?> Image =
         new(path => string.IsNullOrWhiteSpace(path) ? null : BitmapCache.Get(path));
 

@@ -27,8 +27,8 @@
 #      elle exactement là. Puis son épaisseur : 2 pt, soit quatre pixels exactement —
 #      un filet de 1,5 ou de 2,5 pt, ou rogné de moitié par une découpe, tombe ;
 #   2. SA POSITION. Au PDF, le filet est centré sur le bord, à un quart de point près :
-#      c'est ce que dit la documentation de « Frame.StrokeThickness ». À l'écran, voir
-#      plus bas ;
+#      c'est ce que dit la documentation de « Frame.StrokeThickness ». À l'écran, il est
+#      au même endroit qu'au PDF, au même quart de point — voir plus bas ;
 #   3. LE FOND ET LE CONTENU. Le fond jaune du portrait se relève de part et d'autre de
 #      l'image, celui de la légende à côté du mot, et chaque image en son centre ; ce
 #      que la photo aurait de trop, au-dessus et au-dessous du bloc, n'est pas dessiné ;
@@ -37,33 +37,34 @@
 #
 # ── Le filet à l'écran, et le poste Q4 ──────────────────────────────────────────────
 #
-# L'écran ne centre pas le filet sur le bord : il le RENTRE dans le bloc d'une demi-
-# épaisseur (Avalonia décale la géométrie d'un Rectangle pour que son trait tienne dans
-# ses limites). Mesuré sur cette page : au PDF, le filet de 2 pt couvre [bord − 1,
-# bord + 1] ; à l'écran, [bord, bord + 2]. C'est le défaut que le poste Q4 consigne, et
-# il n'est pas de ce poste-ci.
+# Jusqu'au 12 octobre 2026, l'écran ne centrait pas le filet sur le bord : il le
+# RENTRAIT dans le bloc d'une demi-épaisseur (Avalonia diminue la géométrie d'un
+# Rectangle pour que son trait tienne dans ses limites). Mesuré sur cette page : au PDF,
+# le filet de 2 pt couvrait [bord − 1, bord + 1] ; à l'écran, [bord, bord + 2]. C'était
+# le défaut du poste Q4, et cette recette le TOLÉRAIT, pour ne pas tomber sur un défaut
+# qui n'était pas de son poste : un écart écran − PDF admis de 0 à +1 pt, et une
+# comparaison d'images à 1,2 %, calculée sur ce que Q4 coûtait.
 #
-# Tranché ainsi, pour que la recette ne tombe pas sur Q4 sans pour autant l'enterrer :
+# Q4 est réparé — l'écran élargit l'élément du filet d'une demi-épaisseur, ce qui ramène
+# sa géométrie sur le cadre —, et ce que la recette tolérait, elle le refuse désormais :
 #
-#   · ce que C1 promet est exigé des deux côtés sans indulgence — la couleur sur le
-#     bord, côté intérieur, et l'épaisseur. Ces deux mesures-là ne dépendent pas de Q4 :
-#     les deux filets se recouvrent sur la moitié intérieure de 1 pt ;
-#   · la position est exigée au quart de point là où le code dit vrai (le PDF) ;
-#   · à l'écran, l'écart au PDF est MESURÉ, imprimé, et borné à ce que Q4 explique et à
-#     rien d'autre : entre 0 (Q4 réparé) et une demi-épaisseur vers l'INTÉRIEUR (Q4 tel
-#     qu'il est), au quart de point près. Un filet qui sortirait du bloc, ou rentrerait
-#     plus que sa demi-épaisseur, n'est pas Q4 : il fait tomber la recette ;
-#   · la tolérance de la comparaison d'images est celle que Q4 coûte, calculée plutôt
-#     que constatée : un filet décalé d'un point sur le pourtour des trois blocs laisse
-#     deux bandes d'un point de large — l'une blanche d'un côté, l'autre couverte de
-#     l'autre — sur 2 120 pt de pourtour, soit 2 × 2 120 × 4 px/pt² = 16 960 pixels,
-#     0,84 % de la page. Relevé : 0,88 %, le reste étant le lissage du mot. Le seuil est
-#     à 1,2 % : il laisse au lissage la marge qu'il demande, et un fond perdu de part
-#     et d'autre du portrait (5,4 % de la page) ne passerait pas.
+#   · l'écart écran − PDF est exigé à 0 ± 0,25 pt sur chaque côté, comme la position du
+#     PDF sur le bord. Une tolérance laissée de 0 à +1 pt laisserait Q4 revenir sans un
+#     mot : c'est exactement l'intervalle qu'il occupait ;
+#   · le seuil de la comparaison d'images est recalculé sans Q4. Ce que Q4 coûtait : un
+#     filet décalé d'un point sur le pourtour des trois blocs laisse deux bandes d'un
+#     point de large sur 2 120 pt de pourtour, soit 2 × 2 120 × 4 px/pt² = 16 960 pixels,
+#     0,84 % de la page (relevé : 0,88 %). Ce qui reste sans lui : 0,04 %, relevé le
+#     12 octobre 2026 — le lissage du mot « Légende » et une colonne de pixels au bord
+#     droit du portrait, que les deux moteurs ne rééchantillonnent pas pareil. Le seuil
+#     est à 0,25 % : six fois ce relevé, pour que le lissage d'une autre machine ne le
+#     fasse pas tomber, et plus de trois fois sous le coût de Q4 — qui ne se cache donc
+#     plus dans la marge de la comparaison. Un fond perdu de part et d'autre du portrait
+#     (5,4 % de la page) tombe a fortiori.
 #
-# Quand Q4 sera réparé, l'écart imprimé tombera à 0 et la comparaison à quelques
-# centièmes de pour cent : c'est la recette de Q4, et non celle-ci, qui resserrera alors
-# l'exigence sur la position à l'écran.
+# La recette du poste Q4 lui-même (« Scripts/recettes/Q4-filet-centre.sh ») mesure le
+# filet sur tous les chemins qui en tracent un — formes, ellipse, arrondi, groupe ;
+# celle-ci ne garde que les deux blocs de C1.
 #
 set -euo pipefail
 export LC_ALL=C
@@ -269,13 +270,13 @@ for bloc in blocs:
             refuser(f"PDF — « {nom} », côté {cote} : filet centré à {centres['PDF']:+.2f} pt "
                     f"du bord, 0 attendu (« centré sur le bord »).")
 
-        # 2 — à l'écran, l'écart au PDF est celui de Q4 et rien d'autre : de 0 à une
-        # demi-épaisseur, vers l'intérieur.
+        # 2 — à l'écran, le filet est au même endroit qu'au PDF : Q4 est réparé, et un
+        # écart d'une demi-épaisseur vers l'intérieur serait son retour.
         ecart = centres["écran"] - centres["PDF"]
         ecarts.append(ecart)
-        if not -0.25 <= ecart <= 1.25:
-            refuser(f"écran — « {nom} », côté {cote} : filet à {ecart:+.2f} pt de celui du PDF. "
-                    f"Q4 explique de 0 à +1 pt (rentré d'une demi-épaisseur), pas davantage.")
+        if abs(ecart) > 0.25:
+            refuser(f"écran — « {nom} », côté {cote} : filet à {ecart:+.2f} pt de celui du PDF "
+                    f"(positif : rentré dans le bloc). 0 ± 0,25 attendu — à +1 pt, c'est Q4 qui revient.")
 
 # On s'arrête ici en cas d'échec : la suite résumerait comme acquis ce qui vient de
 # tomber.
@@ -283,12 +284,10 @@ if echec:
     sys.exit(1)
 
 print(f"  1. douze côtés, deux rendus : le filet est sur le bord, côté intérieur, et fait 2 pt")
-# L'écart est imprimé à chaque passage, pour que Q4 se lise ici tant qu'il est ouvert —
-# et qu'on voie le jour où il ne l'est plus.
-etendue = (f"{min(ecarts):.2f} pt" if max(ecarts) - min(ecarts) < 0.01
-           else f"de {min(ecarts):.2f} à {max(ecarts):.2f} pt")
-print(f"  2. PDF : filet centré sur le bord ; écran : rentré de {etendue} vers l'intérieur"
-      + (" — c'est Q4, ouvert" if max(ecarts) > 0.25 else " — Q4 semble réparé"))
+# L'écart est imprimé à chaque passage : c'est la mesure qui garde Q4 fermé.
+etendue = (f"{min(ecarts):+.2f} pt" if max(ecarts) - min(ecarts) < 0.01
+           else f"de {min(ecarts):+.2f} à {max(ecarts):+.2f} pt")
+print(f"  2. PDF : filet centré sur le bord ; écran : à {etendue} du PDF (0 ± 0,25 admis)")
 
 # 3 — le fond et le contenu, relevés là où rien d'autre ne passe.
 JAUNE, VERT, MAGENTA, CIEL, BLANC = (255, 204, 0), (0, 160, 0), (255, 0, 255), (191, 227, 245), (255, 255, 255)
@@ -316,6 +315,6 @@ PY
 
 # ------------------------------------------------------------------------- 4. filet
 
-Scripts/comparer-rendus.sh "$document" 1 1.2
+Scripts/comparer-rendus.sh "$document" 1 0.25
 
 echo "C1 : fond et filet sur une image et sur un texte, à l'écran comme au PDF ; le filet passe sur le contenu."
