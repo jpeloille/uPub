@@ -92,7 +92,7 @@ PY
         # n'être qu'un seul et même garde-fou. Les recettes portent le code de leur
         # poste en majuscule (« C4-champs »).
         local tests recettes autres coupable
-        tests="$(grep -oE "[A-Za-z_]+Tests\.[A-Za-z_]+" /tmp/juge-$$.txt | sort -u | head -4 | paste -sd' ' || true)"
+        tests="$(grep -oE "[A-Za-z0-9_]+Tests\.[A-Za-z0-9_]+" /tmp/juge-$$.txt | sort -u | head -4 | paste -sd' ' || true)"
         recettes="$(grep -oE '^  [A-Za-z0-9-]+ : ÉCHOUE' /tmp/juge-$$.txt | sed 's/^  //; s/ : ÉCHOUE//' | paste -sd' ' || true)"
         autres="$(grep -oE '^ÉCHEC : .*' /tmp/juge-$$.txt | grep -v 'les tests ne passent pas' | head -1 || true)"
         coupable="$(printf '%s\n' "$tests" "$recettes" "$autres" | sed '/^$/d' | paste -sd' ' )"
