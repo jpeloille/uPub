@@ -19,16 +19,48 @@ namespace MyPublisher.Converters;
 /// 4,2333 mm — devenait 11,99 pt à la seule ouverture du document, sans geste ni
 /// pas d'annulation. L'affichage est arrondi là où il doit l'être, par le
 /// « FormatString » du champ, qui ne touche pas à la valeur.
+///
+/// Ne pas arrondir ne suffisait pas encore, et c'est le poste Q14 qui l'a mesuré : le
+/// champ renvoie au modèle la valeur qu'il vient de recevoir, dès qu'un bloc est
+/// sélectionné, et l'aller-retour points → millimètres → points n'est pas l'identité
+/// en virgule flottante. L'ordonnée d'un bloc d'ATA 21, 107.15039999999999, revenait
+/// 107.1504 ; un bloc à 100 revenait 100.00000000000007. Rien ne se voyait, mais le
+/// document n'était plus le même au caractère près, à la seule sélection.
+///
+/// Aucune arithmétique ne rend cet aller-retour exact : le décimal ne garde que quinze
+/// chiffres d'un double, et multiplier puis diviser par 25,4/72 perd un ulp. Le
+/// convertisseur se souvient donc des points dont il a tiré chaque nombre de
+/// millimètres affiché, et rend ces points-là quand ce même nombre lui revient. Un
+/// nombre qu'il n'a jamais affiché — une frappe, une flèche du champ — est converti
+/// comme avant.
 /// </summary>
 public sealed class PointsToMillimetres : IValueConverter
 {
     public static readonly PointsToMillimetres Instance = new();
 
-    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
-        value is double points ? (decimal)Units.PointsToMm(points) : null;
+    /// <summary>
+    /// Au-delà, la mémoire repart de zéro. Elle ne sert qu'à reconnaître un nombre que
+    /// le panneau affiche encore — une vingtaine de champs —, pas à tout garder d'une
+    /// session.
+    /// </summary>
+    private const int Capacite = 256;
+
+    /// <summary>Le nombre affiché, et les points exacts dont il a été tiré.</summary>
+    private readonly Dictionary<decimal, double> _affiches = [];
+
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (value is not double points) return null;
+
+        var millimetres = (decimal)Units.PointsToMm(points);
+        if (_affiches.Count >= Capacite) _affiches.Clear();
+        _affiches[millimetres] = points;
+        return millimetres;
+    }
 
     public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => value switch
     {
+        decimal millimetres when _affiches.TryGetValue(millimetres, out var points) => points,
         decimal millimetres => Units.MmToPoints((double)millimetres),
         double millimetres => Units.MmToPoints(millimetres),
         _ => AvaloniaProperty.UnsetValue
