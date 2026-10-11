@@ -396,7 +396,7 @@ saboter "un collage qui porte du texte est poussé à gauche comme un saut" \
 
 # Q4 : l'écran rentrait le filet d'une demi-épaisseur. La marge qui le recentre ôtée,
 # le contour commun des blocs rentre de nouveau d'une demi-épaisseur — la recette de Q4
-# le voit sur douze côtés sur vingt-quatre (image, texte, groupe), celle de C1,
+# le voit sur vingt côtés sur quarante-huit (image, textes, groupe), celle de C1,
 # resserrée, sur ses douze.
 saboter "à l'écran, le filet d'un bloc rentre de nouveau dans le bloc" \
     MyPublisher/Views/PageCanvas.axaml \
