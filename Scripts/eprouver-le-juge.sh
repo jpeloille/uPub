@@ -452,6 +452,20 @@ saboter "changer de jeu ne repeint plus un texte du jeu à l'écran" \
     '' \
     'JeuxTests'
 
+# Trouvés par la relecture de C5b : deux trous que les neuf sabotages ci-dessus ne
+# couvraient pas.
+saboter "la migration ne surveille plus la seconde couleur d'un dégradé" \
+    MyPublisher.Core/Services/FormatMigrations.cs \
+    '["Color", "From", "To", "Stroke", "Foreground", "FontFamily"];' \
+    '["Color", "From", "Stroke", "Foreground", "FontFamily"];' \
+    'JeuxTests'
+
+saboter "une pastille du jeu perd l'opacité propre du fond" \
+    MyPublisher/Views/SelecteurDeCouleur.cs \
+    'Valeur = ReferenceDuJeu.Couleur(emplacement, alpha is { } a && a != 0xFF ? a : null);' \
+    'Valeur = ReferenceDuJeu.Couleur(emplacement);' \
+    'JeuxTests'
+
 echo
 if [ "$trous" = 0 ]; then
     echo "Le juge sait échouer : $sabotages sabotages, $sabotages attrapés."

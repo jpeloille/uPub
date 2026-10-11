@@ -273,6 +273,25 @@ public class JeuxTests
     }
 
     [AvaloniaFact]
+    public void Une_pastille_garde_lopacite_propre_du_fond()
+    {
+        // Un fond à 50 % qu'on passe à l'accent 3 reste à 50 % : l'opacité se règle sur
+        // le bloc, et Publisher la garde quand on change de couleur.
+        var forme = Forme(40, 40, new SolidFill("#80123456"));
+        var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(forme));
+        vm.Selected = forme;
+        Rendu.Battre();
+
+        var selecteur = fenetre.GetVisualDescendants().OfType<SelecteurDeCouleur>()
+            .Single(s => ReferenceEquals(s.DataContext, forme) && s.Valeur == "#80123456");
+        Cliquer(fenetre, selecteur.GetVisualDescendants().OfType<Button>()
+            .Single(b => b.Tag is EmplacementDeCouleur.Accent3));
+
+        Assert.Equal("scheme:accent3/80", ((SolidFill)forme.Fill!).Color);
+        Assert.Equal(50, forme.FillOpacity);
+    }
+
+    [AvaloniaFact]
     public void Une_couleur_choisie_au_selecteur_libre_reste_libre()
     {
         var forme = Forme(40, 40, new SolidFill("scheme:accent1"));

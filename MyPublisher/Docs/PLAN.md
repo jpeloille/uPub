@@ -2086,8 +2086,9 @@ désormais le pixel affiché au point même, et tombe sans l'invalidation du fon
 celle du texte.
 
 **Choisi sans certitude.** La référence dans la chaîne plutôt qu'un type de couleur : rien
-dans le modèle n'empêche d'écrire `scheme:accent9`, que la résolution rend illisible — et
-qui ne se dessine pas, comme une couleur illisible. Cinq emplacements, la principale et
+dans le modèle n'empêche d'écrire `scheme:accent9`, que la résolution rend illisible et
+qui se traite comme une couleur illisible : un fond ou un contour ne se dessine pas, un
+texte retombe au noir. Cinq emplacements, la principale et
 quatre accents, comme le demandait le plan ; Publisher 2007 en a huit, liens compris.
 L'échappement par `!` des valeurs v4 en forme de référence : aucun document connu n'en
 porte, et le préfixe ne change ni une couleur illisible ni une police introuvable. Une

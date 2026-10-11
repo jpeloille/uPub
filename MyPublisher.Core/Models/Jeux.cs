@@ -187,8 +187,9 @@ public sealed record Charte(JeuDeCouleurs Couleurs, JeuDePolices Polices)
 
     /// <summary>
     /// La couleur à dessiner : celle du jeu pour une référence, la valeur elle-même pour
-    /// une couleur libre. Une référence illisible rend null — comme une couleur
-    /// illisible, que les deux rendus ne dessinent pas.
+    /// une couleur libre. Une référence illisible rend null, et les deux rendus la
+    /// traitent comme une couleur illisible : un fond ou un contour ne se dessine pas, un
+    /// texte retombe au noir.
     /// </summary>
     public string? Couleur(string? valeur)
     {

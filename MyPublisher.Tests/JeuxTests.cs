@@ -63,10 +63,10 @@ public class JeuxTests
     }
 
     [Fact]
-    public void Une_reference_illisible_ne_se_dessine_pas()
+    public void Une_reference_illisible_ne_rend_aucune_couleur()
     {
-        // Comme une couleur illisible : les deux rendus ne dessinent pas ce qu'ils ne
-        // savent pas lire, plutôt que d'inventer une couleur.
+        // Comme une couleur illisible, plutôt qu'une couleur inventée : les deux rendus
+        // ne posent alors ni fond ni contour, et mettent le texte au noir.
         Assert.Null(Avec(Ardoise).Couleur("scheme:accent9"));
         Assert.Null(Avec(Ardoise).Couleur("scheme:accent1/zz"));
     }
@@ -303,6 +303,11 @@ public class JeuxTests
     private static string[] Demandees(Document document, Charte charte)
     {
         var valeurs = new System.Collections.Generic.List<string?> { document.Background?.UniformeSelon(charte) };
+        if (document.Background is GradientFill fond)
+        {
+            valeurs.Add(charte.Couleur(fond.From));
+            valeurs.Add(charte.Couleur(fond.To));
+        }
 
         foreach (var bloc in document.Pages.SelectMany(p => p.Frames).SelectMany(Descendance))
         {
@@ -347,17 +352,22 @@ public class JeuxTests
         // La version 4 ne connaissait pas les références : une chaîne « scheme:… » y était
         // une couleur illisible ou une police introuvable. La version 5 la lirait comme
         // une référence et lui donnerait une couleur ; la migration la garde libre, où
-        // qu'elle soit — fond, dégradé, contour, texte, fragment, case, fond de page.
+        // qu'elle soit — fond, les deux extrémités d'un dégradé, contour, texte,
+        // fragment, case et son contour, police et couleur d'un tableau, fond de page
+        // dégradé. Chaque nom de propriété que la migration surveille paraît ici au
+        // moins une fois : en retirer un de sa liste fait tomber ce test.
         var racine = JsonNode.Parse("""
             {
               "FormatVersion": 4,
-              "Background": { "$kind": "solid", "Color": "scheme:accent1" },
+              "Background": { "$kind": "gradient", "From": "scheme:accent1", "To": "scheme:accent2" },
               "Pages": [ { "Frames": [
-                { "$kind": "shape", "Fill": { "$kind": "gradient", "From": "scheme:main", "To": "#FF000000" },
+                { "$kind": "shape", "Fill": { "$kind": "gradient", "From": "scheme:main", "To": "scheme:accent4" },
                   "Stroke": "scheme:accent2" },
                 { "$kind": "text", "FontFamily": "scheme:heading", "Foreground": "scheme:accent3", "Text": "scheme:accent4",
                   "Spans": [ { "Start": 0, "Length": 1, "FontFamily": "scheme:body", "Foreground": "scheme:accent4" } ] },
-                { "$kind": "table", "Cells": [ { "Row": 0, "Column": 0, "Fill": { "$kind": "tint", "Color": "scheme:accent1" } } ] }
+                { "$kind": "table", "FontFamily": "scheme:body", "Foreground": "scheme:main",
+                  "Cells": [ { "Row": 0, "Column": 0, "Fill": { "$kind": "tint", "Color": "scheme:accent1" },
+                               "Stroke": "scheme:accent3" } ] }
               ] } ]
             }
             """)!.AsObject();
@@ -366,13 +376,15 @@ public class JeuxTests
         var document = DocumentSerializer.FromJson(racine.ToJsonString());
         var charte = document.Charte;
 
-        Assert.Equal("!scheme:accent1", ((SolidFill)document.Background!).Color);
+        var fondDePage = (GradientFill)document.Background!;
+        Assert.Equal("!scheme:accent1", fondDePage.From);
+        Assert.Equal("!scheme:accent2", fondDePage.To);
         // Illisible avant la migration, illisible après : la page n'a pas plus de fond.
-        Assert.False(HexColor.TryParse(
-            document.Background!.UniformeSelon(charte), out _, out _, out _, out _));
+        Assert.False(HexColor.TryParse(charte.Couleur(fondDePage.From), out _, out _, out _, out _));
 
         var forme = document.Pages[0].Frames[0];
         Assert.Equal("!scheme:main", ((GradientFill)forme.Fill!).From);
+        Assert.Equal("!scheme:accent4", ((GradientFill)forme.Fill!).To);
         Assert.Equal("!scheme:accent2", forme.Stroke);
 
         var texte = (TextFrame)document.Pages[0].Frames[1];
@@ -385,6 +397,9 @@ public class JeuxTests
 
         var tableau = (TableFrame)document.Pages[0].Frames[2];
         Assert.Equal("!scheme:accent1", ((TintFill)tableau.Cells[0].Fill!).Color);
+        Assert.Equal("!scheme:accent3", tableau.Cells[0].Stroke);
+        Assert.Equal("!scheme:body", tableau.FontFamily);
+        Assert.Equal("!scheme:main", tableau.Foreground);
 
         // Aucune ne se résout plus à une couleur du jeu.
         Assert.DoesNotContain(Ardoise.Couleurs, couleur => Demandees(document, charte).Contains(couleur));
