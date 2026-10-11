@@ -2814,23 +2814,40 @@ bord » : c'est donc l'écran qui a tort.
 *Fait le 12 octobre 2026.* Un `Rectangle` ou une `Ellipse` d'Avalonia tracent leur
 trait sur leur cadre **diminué d'une demi-épaisseur** : posés sur le cadre du bloc, ils
 le rentraient d'autant. L'élément du filet est donc élargi d'une demi-épaisseur vers
-l'extérieur (`Conv.FiletCentre`, une marge négative), ce qui ramène sa géométrie
-exactement sur le cadre, rayons des angles compris : c'est le chemin même que trace
-l'export. Trois éléments en profitent — le contour commun des blocs
-(`Rectangle.frameStroke` : image, texte, groupe, tableau, cases), le rectangle et
-l'ellipse des formes. L'export n'a pas bougé : il disait vrai.
+l'extérieur (`Conv.FiletCentre`, une marge négative), **et rendu sans arrondi de mise
+en page** (`UseLayoutRounding="False"`). Sans ce second point, Avalonia arrondit la
+marge au pixel de mise en page — un point, sous la mise à l'échelle — en arrondi
+bancaire : seule une demi-épaisseur entière était respectée. Trois éléments sont
+concernés : le contour commun des blocs (`Rectangle.frameStroke` : image, texte,
+groupe, tableau, cases), le rectangle et l'ellipse des formes. L'export n'a pas bougé :
+il disait vrai.
 
-*Mesuré.* Recette `Q4-filet-centre.sh` : six blocs filés de 4 pt (image cadrée pour
-remplir, texte, forme, forme arrondie, ellipse, groupe), vingt-quatre côtés relevés à
-l'écran et au PDF à deux pixels par point. Avant : l'écran à +2,00 pt du PDF, vers
-l'intérieur, sur les vingt-quatre ; la comparaison de la page à 2,81 %, pour 2,77 %
-calculés. Après : 0,00 pt sur les vingt-quatre, 4 pt d'épaisseur partout, et 0,03 %.
-Seuil de comparaison : 0,3 %. La recette de C1, qui tolérait l'écart de 0 à +1,25 pt,
-l'exige désormais à 0 ± 0,25 pt ; sa comparaison est passée de 0,88 % à 0,04 % — le
-lissage du mot « Légende » et une colonne de pixels au bord droit du portrait —, et son
-seuil de 1,2 % à 0,25 %, recalculé sans Q4 et écrit dans la recette. Celle de C5 est
-passée de 0,99 % à 0,35 % : l'écart que son commentaire prêtait au « seul lissage » de
-ses filets était Q4 ; son seuil passe de 2 % à 1 % (avec Q6, plus bas).
+*Ce que la relecture a trouvé.* La première version ne portait que la marge, et sa
+recette que des filets de 4 pt, dont la demi-épaisseur est entière : elle passait. La
+relecture a mesuré, écran − PDF, +0,50 pt pour un filet de 1 pt, −0,25 pour 1,5, −0,50
+pour 3, +0,50 pour 5. Or 1 pt est le filet du modèle, et 77 des 88 filets des Samples.
+Le sabotage du relecteur — la demi-épaisseur arrondie à l'entier inférieur — passait
+toute la vérification ; il fait désormais tomber la recette de Q4 sur 24 côtés.
+
+*Mesuré.* Recette `Q4-filet-centre.sh` : douze blocs, 48 côtés relevés à l'écran et au
+PDF à deux pixels par point — six chemins filés de 4 pt (image cadrée pour remplir,
+texte, forme, forme arrondie, ellipse, groupe) et une rangée de 1 pt et de 3 pt (forme,
+texte, ellipse). Avant ce poste : 48 côtés en échec, la comparaison de la page à
+3,41 % pour 3,34 % calculés. Avec la seule marge : 24 côtés en échec, les filets de 1
+et 3 pt, et 0,36 %. Après : 0,00 pt sur les 48 côtés et 0,04 %, seuil à 0,3 %. Le
+script de la relecture, appliqué de 0,5 à 5 pt sur des formes, des textes et des
+ellipses (84 côtés) : |écran − PDF| ≤ 0,01 pt à huit pixels par point. À deux pixels par point, les
+filets de 0,5 et 1,5 pt montrent ±0,25 pt **au PDF seul** — pdftoppm cale sur le pixel
+entier un trait dont le bord tombe au milieu d'un pixel —, et c'est pourquoi la recette
+mesure 1 et 3 pt plutôt que 1,5.
+
+La recette de C1, qui tolérait l'écart de 0 à +1,25 pt, l'exige désormais à
+0 ± 0,25 pt ; sa comparaison est passée de 0,88 % à 0,04 % — le lissage du mot
+« Légende » et une colonne de pixels au bord droit du portrait —, et son seuil de
+1,2 % à 0,25 %, recalculé sans Q4 et écrit dans la recette. Celle de C5 est passée de
+0,99 % à 0,09 %. Le premier relevé, 0,35 %, avait été pris pour le lissage de
+l'ellipse : c'était encore Q4, son filet de 3 pt restant à −0,5 pt. Son seuil passe de
+2 % à 0,2 %, sous ces 0,35 %.
 
 *Ce que la réparation a déplacé.* Centré, le filet d'un bloc posé sur le bord d'un
 groupe ou d'un tableau en sort d'une demi-épaisseur — et la découpe du groupe, faite au
@@ -2838,12 +2855,21 @@ cadre exact, l'aurait rogné de moitié à l'écran, là où il était entier, r
 ce qui a fixé la découpe de Q5, qui en tient compte.
 
 *Choisi sans certitude.* La marge se calcule sur l'épaisseur seule, que le filet soit
-tracé ou non : sans filet, elle n'a rien à déplacer. Le départ des tirets n'a pas été
-mesuré : la géométrie est désormais la même des deux côtés, mais pas forcément l'origine
-du motif.
+tracé ou non : sans filet, elle n'a rien à déplacer.
 
-Deux sabotages au juge : la marge du contour commun ôtée (attrapée par Q4 et C1), celle
-de l'ellipse ôtée (Q4 seule).
+*Trouvé et laissé tel quel* (relevés par la relecture, non corrigés) :
+- **la phase des tirets** diffère entre l'écran et le PDF : la géométrie d'un filet en
+  tirets est la même des deux côtés, pas l'origine de son motif ;
+- **les positions fractionnaires** sont arrondies à l'écran : `Canvas.Left` et
+  `Canvas.Top` passent par le même arrondi de mise en page, au point entier ; un bloc à
+  une abscisse fractionnaire se dessine à l'écran jusqu'à ≈ 0,3 pt de sa place au PDF.
+  Le même remède — retirer l'arrondi — porterait sur tout le canevas, et demande sa
+  propre mesure.
+
+Six sabotages au juge : la marge du contour commun ôtée (Q4 et C1) ; celle de
+l'ellipse ôtée (Q4) ; l'arrondi de mise en page rétabli sur le contour commun, sur le
+rectangle des formes, sur l'ellipse (Q4 ; C5 aussi pour l'ellipse) ; la demi-épaisseur
+arrondie à l'entier inférieur (Q4).
 
 ### Q5 — Un groupe rogne pareil à l'écran et au PDF
 
@@ -2867,14 +2893,22 @@ large demi-filet des blocs qu'il porte, groupes imbriqués et cases comprises. G
 ajuste le groupe aux cadres de ses blocs, filets non compris ; depuis Q4, le filet d'un
 bloc posé sur le bord en sort d'une demi-épaisseur, et une découpe au cadre exact le
 rogne de moitié — mesuré en l'y ramenant : 2 pt sur un filet de 4, à l'écran comme au
-PDF.
+PDF. **Un bloc tourné compte pour √2 fois** : le filet est joint en onglet, et la pointe
+de l'angle d'un bloc tourné sort de t/2·√2 — à 45°, c'est elle qui dépasse le plus. La
+première version comptait t/2 pour tous : la relecture a trouvé la pointe d'un losange
+émoussée dans son groupe. Ce qu'un bloc tourné porte compte de même.
 
 *Mesuré.* Recette `Q5-groupe-rogne.sh`, sur le cas du plan : un texte de 400 pt à fond
 jaune dans un groupe de 120. Avant : 67 200 pixels dessinés au-delà du groupe dans le
 PDF — les 280 pt de fond qui dépassent, sur 60 pt de haut —, aucun à l'écran ; la
 comparaison de la page à 4,35 %. Après : aucun pixel des deux côtés, et 0,05 %. La même
 page porte un groupe et un tableau filés de 4 pt sur leur bord : 4 pt mesurés des deux
-côtés. Sept tests du noyau sous `poste=Q5`, que la recette joue d'abord.
+côtés. Ajoutés après la relecture, sur ses documents : un groupe tourné de 30°, un
+groupe dans un groupe — chacun découpe à sa marge, rien au-delà ni de l'un ni de
+l'autre — et un losange filé de 6 pt dans un groupe ajusté à son empreinte, dont la
+pointe d'onglet est relevée bleue à 3,25 pt au-dessus de l'angle, des deux côtés. Page
+à six blocs : 8,03 % avant le poste, 0,13 % après, seuil 0,3 %. Douze tests du noyau
+sous `poste=Q5`, que la recette joue d'abord.
 
 *Choisi sans certitude.* Une marge commune au groupe et non propre à chaque bloc : un
 bloc sans filet qui dépasse d'un groupe dont un autre bloc est filé s'arrête à un
@@ -2884,10 +2918,19 @@ reçoivent la même découpe que les groupes, bien que leurs cases ne dépassent
 c'est le même chemin de rendu des deux côtés, et le seul effet est de laisser entiers
 les filets des cases du bord. Le premier pixel au-delà de la découpe, dans le PDF, porte
 un soupçon de la couleur coupée — (255, 249, 223) sur un fond (255, 204, 0) — : c'est le
-lissage de `pdftoppm`, que la recette tolère et dit.
+lissage de `pdftoppm`, que la recette tolère et dit. La marge commune a été acceptée
+par le propriétaire le 12 octobre 2026.
 
-Deux sabotages au juge : la découpe ôtée de l'export (Q5), la découpe ramenée au cadre
-exact (Q5 et `DecoupeTests`).
+*Laissé tel quel.* À l'écran, la découpe n'est liée qu'au porteur et à sa taille — et,
+pour un tableau, à ses cases —, non à `Children` ni aux filets des blocs portés : elle
+ne se recalcule pas si l'on change le filet d'un bloc déjà groupé, ou si l'on remplace
+les blocs d'un groupe affiché. Aucun geste ne le fait aujourd'hui — un bloc groupé ne se
+sélectionne pas, et grouper ou dissocier recrée le groupe —, mais un futur geste qui le
+ferait trouverait l'écran en retard sur l'export.
+
+Trois sabotages au juge : la découpe ôtée de l'export (Q5), la découpe ramenée au cadre
+exact (Q5 et `DecoupeTests`), le facteur √2 des blocs tournés ôté (Q5 et
+`DecoupeTests`).
 
 ### Q6 — Mesurer la découpe d'un remplissage par image
 
@@ -2910,8 +2953,9 @@ dégradé de page, du blanc au #336699 — et concorde avec le relevé.
 La découpe de l'export privée de son arrondi : l'ancienne recette passe, la nouvelle
 tombe sur les deux coins (magenta au lieu du fond, et l'écran en désaccord avec le PDF).
 La même chose à l'écran (`FondBloc`) : la nouvelle tombe sur le désaccord écran ≠ PDF.
-La comparaison de la page reste à 0,35 % avec ce bloc : un coin rogné de travers ne
-pèse que quelques centaines de pixels, et c'est bien pourquoi la mesure est ponctuelle.
+La comparaison de la page n'avait pas bougé en ajoutant ce bloc (0,35 %, alors), et elle
+est à 0,09 % depuis la seconde réparation de Q4 : un coin rogné de travers ne pèse que
+quelques centaines de pixels, et c'est bien pourquoi la mesure est ponctuelle.
 
 ### Q7 — La recette de A6 sur le cas réel
 

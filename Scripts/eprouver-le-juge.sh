@@ -456,6 +456,45 @@ saboter "le pointillé d'un bloc image n'obéit plus aux repères" \
     '                            <Binding Path="#Photo.Source"' \
     'Q16-pointille|PointilleTests'
 
+# Relecture du lot « rendu », 12 octobre 2026. La marge seule ne centrait que les filets
+# dont la demi-épaisseur est un point entier : Avalonia l'arrondissait au point, en
+# arrondi bancaire. Rétabli sur l'un des trois éléments du filet, l'arrondi remet les
+# filets de 1 et de 3 pt à un demi-point du PDF.
+saboter "à l'écran, le contour commun reprend l'arrondi de mise en page" \
+    MyPublisher/Views/PageCanvas.axaml \
+    $'            <Setter Property="UseLayoutRounding" Value="False"/>\n' \
+    '' \
+    'Q4-filet'
+
+saboter "à l'écran, le rectangle d'une forme reprend l'arrondi de mise en page" \
+    MyPublisher/Views/PageCanvas.axaml \
+    $'                           Margin="{Binding StrokeThickness, Converter={x:Static conv:Conv.FiletCentre}}"\n                           UseLayoutRounding="False"' \
+    '                           Margin="{Binding StrokeThickness, Converter={x:Static conv:Conv.FiletCentre}}"' \
+    'Q4-filet'
+
+saboter "à l'écran, l'ellipse d'une forme reprend l'arrondi de mise en page" \
+    MyPublisher/Views/PageCanvas.axaml \
+    $'                         Margin="{Binding StrokeThickness, Converter={x:Static conv:Conv.FiletCentre}}"\n                         UseLayoutRounding="False"' \
+    '                         Margin="{Binding StrokeThickness, Converter={x:Static conv:Conv.FiletCentre}}"' \
+    'Q4-filet|C5-fonds'
+
+# Le sabotage du relecteur, qui passait toute la vérification : la demi-épaisseur
+# arrondie à l'entier inférieur. Les filets de 4 pt restent justes ; ceux de 1 et de
+# 3 pt, non.
+saboter "la marge qui centre le filet est arrondie à l'entier inférieur" \
+    MyPublisher/Converters/Conv.cs \
+    'new(epaisseur => new Thickness(-Math.Max(0, epaisseur) / 2));' \
+    'new(epaisseur => new Thickness(-Math.Floor(Math.Max(0, epaisseur) / 2)));' \
+    'Q4-filet'
+
+# Q5 : un bloc tourné ne compte plus que t/2. La pointe d'onglet de son angle, qui sort
+# de t/2·√2, est émoussée par la découpe du groupe.
+saboter "la découpe d'un groupe émousse la pointe d'un bloc tourné" \
+    MyPublisher.Core/Models/Decoupe.cs \
+    'marge = Math.Max(marge, Tourne(bloc) ? propre * Math.Sqrt(2) : propre);' \
+    'marge = Math.Max(marge, propre);' \
+    'Q5-groupe|DecoupeTests'
+
 echo
 if [ "$trous" = 0 ]; then
     echo "Le juge sait échouer : $sabotages sabotages, $sabotages attrapés."

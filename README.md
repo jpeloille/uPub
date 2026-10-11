@@ -167,7 +167,8 @@ la barre du haut regroupe les commandes du document : fichier, annulation, zoom.
 - Tout bloc — texte, image, forme, groupe — porte un fond et un contour : épaisseur,
   trait continu, tirets ou points, angles arrondis. Encadrer une image d'un filet ne
   demande donc plus de lui superposer une forme. Le contour est centré sur le bord du
-  bloc, à l'écran comme au PDF.
+  bloc, à l'écran comme au PDF — mesuré de 0,5 à 5 pt sur des blocs de texte, des
+  rectangles et des ellipses ; un contour en tirets ne commence pas son motif au même point des deux côtés.
 - **Le fond n'est pas forcément uni** : c'est au choix un aplat avec son opacité, un
   dégradé de deux couleurs le long d'un angle, une image, ou une teinte dérivée d'une
   couleur de base. Textures et motifs : non, délibérément.
