@@ -21,16 +21,26 @@
 #                    cadre, pas sur un cadre rentré ;
 #   · « Ellipse »  — une forme ellipse, son propre élément ;
 #   · « Groupe »   — un groupe filé, qui porte un bloc sans filet : le contour du groupe
-#                    est tracé hors de sa découpe (poste Q5), et ne doit pas en souffrir.
+#                    est tracé hors de sa découpe (poste Q5), et ne doit pas en souffrir ;
+#   · une rangée de filets de 1 pt et de 3 pt — forme, texte, ellipse pour chacun. C'est
+#     la relecture du 12 octobre 2026 qui les a demandés : la première version de la
+#     réparation ne centrait que les filets dont la demi-épaisseur tombe sur un point
+#     entier. Sous la mise à l'échelle, Avalonia arrondissait la marge négative au point
+#     entier, en arrondi bancaire : +0,5 pt d'écart pour 1 pt, −0,5 pour 3, et la page
+#     ne portait que des filets de 4. Le filet de 1 pt est celui du modèle, et 77 des
+#     88 filets des Samples. Les épaisseurs de 0,5 ou 1,5 pt ne sont pas mesurées ici :
+#     à deux pixels par point, leurs bords tombent au milieu d'un pixel, et pdftoppm
+#     cale le trait sur le pixel entier — ±0,25 pt au PDF seul, qui disparaît à huit
+#     pixels par point (mesuré le 12 octobre 2026, écart écran − PDF de 0,00 pt).
 #
 # Ce qu'elle mesure, sur l'écran (le banc) ET sur le PDF (pdftoppm), à deux pixels par
-# point, au milieu de chacun des vingt-quatre côtés :
+# point, au milieu de chacun des quarante-huit côtés :
 #
-#   1. l'épaisseur : 4 pt, au quart de point près, des deux côtés — un filet rogné de sa
-#      moitié par une découpe en donnerait 2 ;
+#   1. l'épaisseur : celle du modèle, au quart de point près, des deux côtés — un filet
+#      rogné de sa moitié par une découpe en donnerait la moitié ;
 #   2. la position : au PDF, le filet est centré sur le bord à 0,25 pt près ; à l'écran,
-#      son centre est à 0,25 pt au plus de celui du PDF. Avant ce poste, l'écart était de
-#      2 pt vers l'intérieur sur un filet de 4 : la recette tombait sur chaque côté ;
+#      son centre est à 0,25 pt au plus de celui du PDF. Avant ce poste, l'écart était
+#      d'une demi-épaisseur vers l'intérieur : la recette tombait sur chaque côté ;
 #   3. le filet grossier : « Scripts/comparer-rendus.sh », à un seuil CALCULÉ — voir
 #      plus bas, au moment de l'appeler.
 #
@@ -102,7 +112,19 @@ cat > "$document" <<'JSON'
           "Children": [
             { "$kind": "shape", "Name": "Dedans", "X": 40, "Y": 30, "Width": 80, "Height": 60,
               "Fill": { "$kind": "solid", "Color": "#FFFFF2B3" }, "Stroke": null, "Shape": "Rectangle" }
-          ] }
+          ] },
+        { "$kind": "shape", "Name": "Aplat 1", "X": 40, "Y": 680, "Width": 70, "Height": 60,
+          "Stroke": "#FF0000FF", "StrokeThickness": 1, "Shape": "Rectangle" },
+        { "$kind": "text", "Name": "Texte 1", "X": 130, "Y": 680, "Width": 70, "Height": 60,
+          "Stroke": "#FF0000FF", "StrokeThickness": 1, "Text": "" },
+        { "$kind": "shape", "Name": "Ellipse 1", "X": 220, "Y": 680, "Width": 70, "Height": 60,
+          "Stroke": "#FF0000FF", "StrokeThickness": 1, "Shape": "Ellipse" },
+        { "$kind": "shape", "Name": "Aplat 3", "X": 310, "Y": 680, "Width": 70, "Height": 60,
+          "Stroke": "#FF0000FF", "StrokeThickness": 3, "Shape": "Rectangle" },
+        { "$kind": "text", "Name": "Texte 3", "X": 400, "Y": 680, "Width": 70, "Height": 60,
+          "Stroke": "#FF0000FF", "StrokeThickness": 3, "Text": "" },
+        { "$kind": "shape", "Name": "Ellipse 3", "X": 490, "Y": 680, "Width": 70, "Height": 60,
+          "Stroke": "#FF0000FF", "StrokeThickness": 3, "Shape": "Ellipse" }
       ]
     }
   ]
@@ -115,11 +137,12 @@ JSON
 python3 - "$travail/relu.mypub" <<'PY'
 import json, sys
 blocs = json.load(open(sys.argv[1], encoding="utf-8"))["Pages"][0]["Frames"]
-if len(blocs) != 6:
-    sys.exit(f"ÉCHEC : relu, {len(blocs)} blocs au lieu de 6.")
+if len(blocs) != 12:
+    sys.exit(f"ÉCHEC : relu, {len(blocs)} blocs au lieu de 12.")
 for bloc in blocs:
-    if not bloc.get("Stroke") or bloc.get("StrokeThickness") != 4:
-        sys.exit(f"ÉCHEC : relu, « {bloc['Name']} » a perdu son filet de 4 pt.")
+    voulue = int(bloc["Name"][-1]) if bloc["Name"][-1].isdigit() else 4
+    if not bloc.get("Stroke") or bloc.get("StrokeThickness") != voulue:
+        sys.exit(f"ÉCHEC : relu, « {bloc['Name']} » a perdu son filet de {voulue} pt.")
 if next(b for b in blocs if b["Name"] == "Arrondi").get("CornerRadius") != 20:
     sys.exit("ÉCHEC : relu, « Arrondi » a perdu ses angles.")
 PY
@@ -168,18 +191,24 @@ rendus = {"PDF": lire(sys.argv[1]), "écran": lire(sys.argv[2])}
 
 PX = 2
 BLEU = (0, 0, 255)
-EPAISSEUR = 4
 
 def proche(c, voulue, seuil=60):
     return max(abs(a - b) for a, b in zip(c, voulue)) <= seuil
 
+# (nom, x, y, largeur, hauteur, épaisseur du filet), en points.
 blocs = [
-    ("Photo",   100, 100, 200, 120),
-    ("Légende", 360, 100, 160, 120),
-    ("Aplat",   100, 300, 200, 120),
-    ("Arrondi", 360, 300, 160, 120),
-    ("Ellipse", 100, 500, 200, 120),
-    ("Groupe",  360, 500, 160, 120),
+    ("Photo",     100, 100, 200, 120, 4),
+    ("Légende",   360, 100, 160, 120, 4),
+    ("Aplat",     100, 300, 200, 120, 4),
+    ("Arrondi",   360, 300, 160, 120, 4),
+    ("Ellipse",   100, 500, 200, 120, 4),
+    ("Groupe",    360, 500, 160, 120, 4),
+    ("Aplat 1",    40, 680,  70,  60, 1),
+    ("Texte 1",   130, 680,  70,  60, 1),
+    ("Ellipse 1", 220, 680,  70,  60, 1),
+    ("Aplat 3",   310, 680,  70,  60, 3),
+    ("Texte 3",   400, 680,  70,  60, 3),
+    ("Ellipse 3", 490, 680,  70,  60, 3),
 ]
 
 def traversee(couleur, bloc, cote):
@@ -188,7 +217,7 @@ def traversee(couleur, bloc, cote):
     distance de chacun au bord en points, positive vers l'INTÉRIEUR. Chaque pixel est
     pris en son centre ; ±6 pt autour du bord.
     """
-    _, x, y, l, h = bloc
+    _, x, y, l, h, _ = bloc
     milieu_x, milieu_y = int((x + l / 2) * PX), int((y + h / 2) * PX)
     bord = {"gauche": x, "droite": x + l, "haut": y, "bas": y + h}[cote] * PX
     for d in range(-12, 13):
@@ -209,7 +238,7 @@ def refuser(message):
 
 ecarts = []
 for bloc in blocs:
-    nom = bloc[0]
+    nom, voulue = bloc[0], bloc[5]
     for cote in ("gauche", "droite", "haut", "bas"):
         centres = {}
         for rendu, couleur in rendus.items():
@@ -218,11 +247,11 @@ for bloc in blocs:
                 refuser(f"{rendu} — « {nom} », côté {cote} : aucun filet sur le bord.")
                 continue
 
-            # 1 — l'épaisseur, au quart de point : huit pixels exactement.
+            # 1 — l'épaisseur, au quart de point : deux pixels par point exactement.
             epaisseur = len(pris) / PX
-            if abs(epaisseur - EPAISSEUR) > 0.25:
+            if abs(epaisseur - voulue) > 0.25:
                 refuser(f"{rendu} — « {nom} », côté {cote} : filet de {epaisseur} pt, "
-                        f"{EPAISSEUR} attendus.")
+                        f"{voulue} attendus.")
 
             centres[rendu] = (min(pris) + max(pris)) / 2
 
@@ -242,7 +271,7 @@ for bloc in blocs:
 if echec:
     sys.exit(1)
 
-print(f"  1. vingt-quatre côtés, six blocs, deux rendus : le filet fait {EPAISSEUR} pt")
+print("  1. quarante-huit côtés, douze blocs, filets de 1, 3 et 4 pt, deux rendus : chacun a son épaisseur")
 print(f"  2. PDF centré sur le bord ; écran à {max(ecarts):.2f} pt au plus du PDF (0,25 admis)")
 PY
 
@@ -262,4 +291,4 @@ PY
 # les premières.
 Scripts/comparer-rendus.sh "$document" 1 0.3
 
-echo "Q4 : un filet de 4 pt est centré sur le bord à l'écran comme au PDF, sur tous les chemins qui en tracent un."
+echo "Q4 : des filets de 1, 3 et 4 pt sont centrés sur le bord à l'écran comme au PDF, sur les six chemins éprouvés."
