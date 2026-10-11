@@ -391,6 +391,41 @@ saboter "un collage qui porte du texte est poussé à gauche comme un saut" \
     '' \
     'Q1-styles-frappe|RecalageTests|FrappeTests'
 
+# Le poste B2. Le décodage peut être juste et le branchement faux : deux sabotages
+# visent le noyau, trois le modèle de vue. Chacun joué à la main contre la recette du
+# poste et ses tests avant d'être écrit ici.
+saboter "un fichier Latin-1 est lu en UTF-8 et perd ses accents" \
+    MyPublisher.Core/Services/TexteImporte.cs \
+    'texte = Windows1252.GetString(octets);' \
+    'texte = Encoding.UTF8.GetString(octets);' \
+    'B2-import-texte|TexteImporteTests|ImportTexteTests'
+
+saboter "un texte importé garde ses fins de ligne CRLF" \
+    MyPublisher.Core/Services/TexteImporte.cs \
+    "var lignes = texte.Replace(\"\\r\\n\", \"\\n\").Replace('\\r', '\\n');" \
+    'var lignes = texte;' \
+    'B2-import-texte|TexteImporteTests|ImportTexteTests'
+
+saboter "importer un texte ne s'annule plus en un pas" \
+    MyPublisher/ViewModels/MainWindowViewModel.cs \
+    $'        BeginEdit();\n        bloc.Spans.Clear();' \
+    $'        bloc.Spans.Clear();' \
+    'B2-import-texte|TexteImporteTests|ImportTexteTests'
+
+# Posé par la seule saisie, le texte importé garderait le style du début qu'il partage
+# avec l'ancien : un titre gras resterait gras.
+saboter "le texte importé garde les fragments d'avant" \
+    MyPublisher/ViewModels/MainWindowViewModel.cs \
+    $'        bloc.Spans.Clear();\n        bloc.Paragraphs.Clear();\n' \
+    '' \
+    'B2-import-texte|TexteImporteTests|ImportTexteTests'
+
+saboter "le menu offre l'import à tout bloc sélectionné" \
+    MyPublisher/ViewModels/MainWindowViewModel.cs \
+    'public bool PeutImporterTexte => SingleSelected is TextFrame { HasField: false };' \
+    'public bool PeutImporterTexte => SingleSelected is not null;' \
+    'B2-import-texte|TexteImporteTests|ImportTexteTests'
+
 echo
 if [ "$trous" = 0 ]; then
     echo "Le juge sait échouer : $sabotages sabotages, $sabotages attrapés."

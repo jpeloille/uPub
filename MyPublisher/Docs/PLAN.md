@@ -1482,6 +1482,90 @@ repartir du style du bloc, vider `Spans` et `Paragraphs` avant d'écrire `Text`.
 
 *Recette* : un `.txt` de 3 000 signes arrive dans un bloc, et A2 signale qu'il déborde.
 
+*Fait le 12 octobre 2026.* « Importer un texte… » est au menu *Insertion*, à la place
+qu'y tient « Text File… » chez Publisher, et en bouton au panneau du bloc de texte. Les
+deux mènent au même sélecteur de fichier (filtre « Texte », puis « Tous les
+fichiers »), et la fenêtre ne fait rien d'autre : le chemin passe au modèle de vue,
+`ImporterTexte(chemin)`, où un test l'atteint sans dialogue — le partage que Q3 a fait
+pour `ChoisirImageDeFond`. Le décodage est une fonction pure du noyau,
+`Services/TexteImporte.cs`.
+
+**Le texte repart du style du bloc** : `Spans` et `Paragraphs` sont vidés, puis le texte
+est posé par `Saisie`, qui n'a alors plus rien à recaler. C'est l'une des deux lectures
+que cette section ouvrait, et la raison du choix est que l'autre fait dépendre le résultat
+de ce qui était là. Par la seule `Saisie`, trois mille signes prendraient le gras et le
+corps du titre qui ouvrait le bloc. Et comme la déduction de Q1 retient le plus long
+début et la plus longue fin communs aux deux textes, quelques caractères y garderaient
+par hasard leur style d'avant : « Titre » importé sur « Titre » resterait gras, et un test
+l'épingle. Un fichier texte ne porte aucun style ; il prend celui du bloc, qu'on règle
+ensuite au panneau.
+
+L'encodage se devine dans cet ordre : une marque UTF-8 (EF BB BF) est retirée et le reste
+lu en UTF-8 ; sans marque, un fichier qui est de l'UTF-8 **valide** se lit en UTF-8 ;
+sinon, c'est du Latin-1. Les fins de ligne CRLF, et le `\r` seul, deviennent `\n`. La
+barre d'état dit l'encodage retenu et le nombre de signes. Un seul pas d'annulation,
+ouvert et refermé par `ImporterTexte`. Un bloc dont le texte est calculé par un champ
+refuse l'import, menu et bouton grisés : le texte y est caché et gardé pour le jour où
+l'on retire le champ.
+
+*Mesuré.* Quinze tests sous `poste=B2` : dix purs (`TexteImporteTests` : UTF-8 avec et
+sans marque, Latin-1, octets 80 à 9F, ASCII, marque suivie d'une séquence invalide,
+CRLF, `\r` seul, saut final, fichier vide) et cinq dans la fenêtre (`ImportTexteTests`).
+Le premier de ceux-ci joue la recette du plan sur le fichier le moins commode : trois
+mille signes en Latin-1, fins de ligne CRLF, une fin de ligne en fin de fichier. Le bloc
+porte le texte au signe près, le marqueur rouge de A2 paraît sur la page, qui n'y était
+pas avant, et une annulation rend le document d'avant, sans autre pas dans la pile. Les
+autres éprouvent l'annulation d'un bloc riche (fragment et écart compris, puis
+rétablissement), le style du bloc, le refus sous un champ ou sur un fichier absent, et
+le menu et le bouton : offerts au seul bloc de texte, retirés quand on lui pose un champ.
+
+*Recette jouée* : `Scripts/recettes/B2-import-texte.sh`. Elle joue les quinze tests et
+mesure, sur les documents que le premier test d'interface écrit pour elle :
+- le fichier n'est pas de l'UTF-8 valide, il porte des CRLF, il fait 3 000 signes une
+  fois les sauts ramenés à un caractère, et le bloc porte exactement ce texte, sans
+  fragment ni écart ;
+- l'export écrit « Page 1 · Article : le texte déborde du bloc de 894 pt », et le
+  document d'avant ne déborde pas ;
+- seize mots accentués du début du texte se relisent dans le PDF (`pdftotext`). La
+  contre-épreuve relit le même fichier en UTF-8 sans repli, chaque accent devenu
+  « � », et la même mesure échoue ;
+- le document après une annulation est celui d'avant l'import, octet pour octet.
+
+Cinq sabotages au juge, éprouvés à la main contre la recette et les tests du poste : le
+Latin-1 lu en UTF-8, les CRLF gardés, l'import hors transaction (qui ne s'annule plus), les
+fragments d'avant gardés, le menu offert à tout bloc. Chacun fait tomber au moins un test
+du poste, et la recette avec eux. `Scripts/verifier.sh` passe en entier : 280 tests purs,
+110 d'interface, vingt-trois recettes.
+
+*Choisi sans certitude* :
+- **Windows-1252 pour « Latin-1 ».** Les deux ne diffèrent que sur les octets 80 à 9F :
+  des caractères de commande en Latin-1 strict, que nul texte n'emploie ; « ’ », « œ »,
+  « € », « … » en Windows-1252, qu'un texte français écrit sous Windows emploie partout.
+  Un fichier Latin-1 se lit donc à l'identique, et un fichier Windows garde ses
+  apostrophes. C'est aussi ce que fait un navigateur d'un document déclaré
+  « iso-8859-1 ». La barre d'état dit « Latin-1 » dans les deux cas ;
+- **le saut qui clôt le fichier est retiré**, un seul. Gardé, il ouvrirait un
+  paragraphe vide en bas du bloc, qui compte dans sa hauteur : c'est la ligne fantôme
+  que la recette de A2 a trouvée dans l'import des `.pub`, et qui faisait signaler des
+  débordements qui n'existaient pas. Une ligne vide voulue en fin de fichier en laisse
+  une ;
+- **une marque UTF-8 suivie d'octets invalides** se lit en UTF-8, les octets fautifs
+  devenant « � », plutôt que de faire relire tout le fichier en Latin-1, marque comprise.
+
+*Trouvé et laissé tel quel* :
+- un fichier UTF-16 n'est pas reconnu. Sa marque (FF FE ou FE FF) n'est jamais de
+  l'UTF-8 valide, et il se lit donc en Latin-1 : la marque devient « ÿþ » et chaque
+  octet nul un caractère nul. Non mesuré sur un fichier, déduit de l'ordre des essais.
+  Le plan ne le demandait pas ;
+- aucune borne de taille : un fichier est lu en entier et composé d'un coup. Rien n'a
+  mesuré ce que coûte un fichier de plusieurs mégaoctets ;
+- l'import remplace tout le texte du bloc, et n'insère pas au curseur de la saisie :
+  la liaison ne transmet pas le curseur (voir Q1), et le geste ne le cherche pas ;
+- une case de tableau ne s'importe pas : le poste dit « le bloc sélectionné », et une
+  case n'est pas un bloc qu'on sélectionne ;
+- la fiche 22 dit encore « `manquant` » pour « Text File… » : elle n'a pas été
+  retouchée.
+
 ### B3 — Imprimer *(fiche 22)*
 
 MyPublisher exporte un PDF mais n'imprime pas. Pour un logiciel de PAO, c'est un trou
