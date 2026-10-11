@@ -391,6 +391,34 @@ saboter "un collage qui porte du texte est poussé à gauche comme un saut" \
     '' \
     'Q1-styles-frappe|RecalageTests|FrappeTests'
 
+# Q7 : la recette de A6 trace ses blocs à l'outil. Les deux sabotages du chemin par
+# lequel un bloc naît, que l'ancienne recette — blocs posés à la main, sélectionnés
+# par le modèle de vue — laissait passer.
+saboter "le tracé ne donne plus sa largeur au bloc" \
+    MyPublisher/ViewModels/MainWindowViewModel.cs \
+    'frame.Width = width;' \
+    '' \
+    'A6-Q7-taille|PanneauEtBarreTests'
+
+saboter "le bloc tracé n'est plus sélectionné" \
+    MyPublisher/ViewModels/MainWindowViewModel.cs \
+    'SelectOnly(frame);' \
+    '' \
+    'A6-Q7-taille|PanneauEtBarreTests'
+
+# Q14 : les deux causes du double-clic qui réécrivait le bloc, chacune à sa ligne.
+saboter "le panneau réécrit la position du bloc qu'on sélectionne" \
+    MyPublisher/Converters/UnitConverters.cs \
+    'decimal millimetres when _affiches.TryGetValue(millimetres, out var points) => points,' \
+    '' \
+    'Q14-double-clic|DoubleClicTests'
+
+saboter "un mouvement nul du pointeur aimante le bloc cliqué" \
+    MyPublisher/Views/PageCanvas.axaml.cs \
+    'if (dx == 0 && dy == 0)' \
+    'if (dx == 0 && dy == 0 && _moveStart.Count < 0)' \
+    'Q14-double-clic|DoubleClicTests'
+
 echo
 if [ "$trous" = 0 ]; then
     echo "Le juge sait échouer : $sabotages sabotages, $sabotages attrapés."
