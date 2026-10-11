@@ -294,8 +294,13 @@ de `verifier.sh` ; sous l'épreuve du juge, elles mesurent un banc **périmé**,
 avant le sabotage, jusqu'à ce que A4 recompile la solution. Les quatre nouvelles recettes
 compilent elles-mêmes. Le texte de l'écran est posé 0,2 à 0,3 pt plus bas que celui du
 PDF, quel que soit l'interligne — sous le pixel. Le bloc « Société » de la carte de
-visite tient tout juste dans ses 16 pt. Une compilation a avorté une fois sur « Internal
-CLR error (0x80131506) », sans se reproduire.
+visite tient tout juste dans ses 16 pt. Des compilations avortent par intermittence sur
+« Internal CLR error (0x80131506) » — quatre fois dans la journée, pendant que d'autres
+copies de travail compilaient sur la même machine ; sous l'épreuve du juge, un tel échec
+compte le sabotage pour attrapé, et c'est arrivé une fois à celui de R4, rejoué depuis à
+part. Corrigé en revanche, parce qu'il empêchait de le voir : le juge ne savait nommer
+aucune recette parmi ceux qui attrapent — il les cherchait en minuscules —, et disait
+« attrapé par la compilation ».
 
 #### Ce que le banc a trouvé le jour où il a servi
 

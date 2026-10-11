@@ -79,7 +79,11 @@ PY
         # peuvent n'être qu'un seul et même garde-fou.
         coupable="$(grep -oE "[A-Za-z_]+Tests\.[A-Za-z_]+" /tmp/juge-$$.txt | head -1 || true)"
         [ -z "$coupable" ] && coupable="$(grep -oE '^ÉCHEC : .*' /tmp/juge-$$.txt | head -1 || true)"
-        [ -z "$coupable" ] && coupable="$(grep -oE '  [a-z0-9-]+ : ÉCHOUE' /tmp/juge-$$.txt | head -1 || true)"
+        # Les recettes s'appellent par le code de leur poste, en capitales —
+        # « C4-champs ». Une classe en minuscules seules n'en reconnaissait aucune,
+        # et un sabotage attrapé par une recette se disait « attrapé par la
+        # compilation ».
+        [ -z "$coupable" ] && coupable="$(grep -oE '  [A-Za-z0-9-]+ : ÉCHOUE' /tmp/juge-$$.txt | head -1 || true)"
         [ -z "$coupable" ] && coupable="la compilation"
         echo "  ✓  $intitule"
         echo "       attrapé par : $coupable"
