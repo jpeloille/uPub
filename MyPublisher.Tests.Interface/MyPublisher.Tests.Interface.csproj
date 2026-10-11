@@ -6,9 +6,13 @@
          et des touches sur la vraie couche de saisie.
 
          C'est ce qui remplace l'outillage monté puis jeté à chaque poste : les
-         recettes de C1, C2a, C2b, C3c et C6 ont toutes été jouées ainsi, et aucune
-         n'est aujourd'hui rejouable. Sur ce poste — session Wayland, captures d'écran
-         noires — c'est aussi la seule façon de voir ce que l'application affiche. -->
+         recettes de C1, C2a, C2b, C3c et C6 ont toutes été jouées ainsi. Celles de
+         C2 et de C3 se rejouent désormais par les tests de ce projet (ReperesTests et
+         GroupementTests, que Scripts/recettes/C2-reperes.sh et C3-selection-groupe.sh
+         appellent par leur trait), celle de C1 par le banc (C1-fond-et-filet.sh) ;
+         celle de C6 n'est aujourd'hui pas rejouable. Sur ce poste — session Wayland,
+         captures d'écran noires — c'est aussi la seule façon de voir ce que
+         l'application affiche. -->
 
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>

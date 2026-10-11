@@ -18,9 +18,12 @@ namespace MyPublisher.Banc;
 ///
 /// C'est le remplaçant permanent d'un outillage qui a été monté puis jeté à chaque
 /// poste : les recettes de C1, C2a, C2b, C3c et C6 ont toutes été jouées avec un
-/// harnais de ce genre, et aucune n'est aujourd'hui rejouable. Sur ce poste — session
-/// Wayland, où une copie d'écran d'une fenêtre Avalonia sort noire — c'est aussi le
-/// seul moyen de voir ce que l'application affiche.
+/// harnais de ce genre. Celles de C1, C2 et C3 se rejouent désormais, sous
+/// <c>Scripts/recettes/</c> : C1 rend sa page par ce banc, C2 et C3 jouent leurs
+/// gestes dans <c>MyPublisher.Tests.Interface</c>. Celle de C6 n'est aujourd'hui pas
+/// rejouable. Sur ce poste — session Wayland, où une copie d'écran d'une fenêtre
+/// Avalonia sort noire — c'est aussi le seul moyen de voir ce que l'application
+/// affiche.
 /// </summary>
 public static class Banc
 {
