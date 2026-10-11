@@ -43,6 +43,10 @@ Les recettes demandent trois outils hors .NET : `pdftoppm` (poppler-utils), `mag
 sudo apt install poppler-utils imagemagick libmspub-tools
 ```
 
+La recette de Q12 demande en outre l'accès à nuget.org : elle lit la base des
+vulnérabilités connues, et échoue en le disant quand elle ne peut pas la lire — jamais
+un vert faute de réseau. NuGet garde un temps la dernière lecture dans son cache.
+
 Le dépôt se travaille sur un disque local. Un partage réseau monté en CIFS ne garde
 pas le bit d'exécution : les scripts et le binaire compilé y tombent tous en
 `Permission denied`, et `git status` y montre des fichiers modifiés qui ne le sont pas.

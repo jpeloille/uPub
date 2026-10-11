@@ -79,7 +79,10 @@ PY
         # peuvent n'être qu'un seul et même garde-fou.
         coupable="$(grep -oE "[A-Za-z_]+Tests\.[A-Za-z_]+" /tmp/juge-$$.txt | head -1 || true)"
         [ -z "$coupable" ] && coupable="$(grep -oE '^ÉCHEC : .*' /tmp/juge-$$.txt | head -1 || true)"
-        [ -z "$coupable" ] && coupable="$(grep -oE '  [a-z0-9-]+ : ÉCHOUE' /tmp/juge-$$.txt | head -1 || true)"
+        # Les recettes portent le code de leur poste en majuscule (« Q12-dependances ») :
+        # sans les majuscules dans la classe, aucune n'était jamais nommée ici, et un
+        # sabotage pris par une recette s'affichait « attrapé par la compilation ».
+        [ -z "$coupable" ] && coupable="$(grep -oE '  [A-Za-z0-9-]+ : ÉCHOUE' /tmp/juge-$$.txt | head -1 || true)"
         [ -z "$coupable" ] && coupable="la compilation"
         echo "  ✓  $intitule"
         echo "       attrapé par : $coupable"
@@ -126,6 +129,15 @@ saboter "l interligne redevient un multiple du corps" \
     MyPublisher.Core/Models/Compositeur.cs \
     "naturelle * (multiple > 0 ? multiple : 1);" \
     "multiple;"
+
+# Q12 : la version fautive revient. Le paquet n'est appelé nulle part dans le code :
+# sa référence a tout d'une ligne morte, qu'on retire ou qu'on rétrograde en croyant
+# faire le ménage. La recette doit le voir dans la base des vulnérabilités, sur les
+# trois projets qui tirent le paquet.
+saboter "la dépendance vulnérable revient (Tmds.DBus.Protocol 0.21.2)" \
+    MyPublisher/MyPublisher.csproj \
+    '<PackageReference Include="Tmds.DBus.Protocol" Version="0.21.3"/>' \
+    '<PackageReference Include="Tmds.DBus.Protocol" Version="0.21.2"/>'
 
 echo
 if [ "$trous" = 0 ]; then
