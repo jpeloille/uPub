@@ -36,20 +36,20 @@ public static class PdfExporter
 
         var warnings = new List<string>();
 
+        // Une seule lecture de l'horloge : toutes les pages d'un même export portent
+        // la même date, même si le document est long à écrire.
+        var now = date ?? DateTime.Now;
+
         // Avant les pages, et non pendant : la barre d'état ne montre que le premier
         // avertissement, et une flèche de procédure d'urgence remplacée par une lettre
         // passe avant une image manquante.
-        AvertirSurLesPolices(document, warnings);
+        AvertirSurLesPolices(document, warnings, now, contact ?? new BusinessInfo());
 
         // Pas de « using » ici : PDFsharp invalide le document lors du Save et
         // lève une exception si on tente ensuite de le libérer.
         var pdf = new PdfDocument();
         pdf.Info.Title = document.Title;
         pdf.Info.Creator = "MyPublisher";
-
-        // Une seule lecture de l'horloge : toutes les pages d'un même export portent
-        // la même date, même si le document est long à écrire.
-        var now = date ?? DateTime.Now;
 
         for (var index = 0; index < document.Pages.Count; index++)
         {
@@ -88,58 +88,69 @@ public static class PdfExporter
     /// fragments en Wingdings, qui feraient 119 lignes disant la même chose. C'est la
     /// police qui est substituée, pas le bloc — comme « Image introuvable » nomme le
     /// fichier et non le cadre qui l'affiche.
+    ///
+    /// Et seulement les polices que l'export dessine — poste Q8. La passe relisait
+    /// l'héritage des fragments pour son compte : un fragment entièrement recouvert par
+    /// un autre, ou un bloc dont tout le texte est recouvert, faisait avertir d'une
+    /// police que rien ne dessine. Elle lit maintenant les styles composés, par la
+    /// découpe même que la composition emploie, sur le contenu même que
+    /// <see cref="DrawText"/> compose — d'où la date et les coordonnées, qui résolvent
+    /// les champs page par page comme le dessin les résout.
     /// </summary>
-    private static void AvertirSurLesPolices(Document document, List<string> warnings)
+    private static void AvertirSurLesPolices(
+        Document document, List<string> warnings, DateTime date, BusinessInfo contact)
     {
         // La paire demandée/employée, et non le libellé : le romain et le gras d'une
         // même famille absente tombent souvent sur le même substitut, et ne valent
         // alors qu'un avertissement.
         var vues = new HashSet<(string, string)>();
 
-        foreach (var bloc in Blocs(document).OfType<TextFrame>())
+        for (var index = 0; index < document.Pages.Count; index++)
         {
-            foreach (var (police, gras, italique) in Polices(bloc))
+            var context = new FieldContext(index + 1, document.Pages.Count, date, contact);
+            var blocs = document.Pages[index].Frames.SelectMany(Descendance).OfType<TextFrame>();
+
+            foreach (var bloc in blocs)
             {
-                if (string.IsNullOrWhiteSpace(police)) continue;
+                var content = FieldResolver.Resolve(bloc.Field, bloc.Text, context);
 
-                var resolution = FontconfigFontResolver.Resoudre(police, gras, italique);
-                if (resolution.Exacte) continue;
-                if (!vues.Add((resolution.Demandee, resolution.Employee))) continue;
+                foreach (var style in StylesDessines(bloc, content))
+                {
+                    if (string.IsNullOrWhiteSpace(style.FontFamily)) continue;
 
-                warnings.Add(resolution.Employee.Length == 0
-                    ? $"Police introuvable : « {resolution.Demandee} » — aucune police sur cette machine."
-                    : $"Police substituée : « {resolution.Demandee} » demandée, "
-                      + $"« {resolution.Employee} » employée ({resolution.Motif}).");
+                    var resolution = FontconfigFontResolver.Resoudre(style.FontFamily, style.Bold, style.Italic);
+                    if (resolution.Exacte) continue;
+                    if (!vues.Add((resolution.Demandee, resolution.Employee))) continue;
+
+                    warnings.Add(resolution.Employee.Length == 0
+                        ? $"Police introuvable : « {resolution.Demandee} » — aucune police sur cette machine."
+                        : $"Police substituée : « {resolution.Demandee} » demandée, "
+                          + $"« {resolution.Employee} » employée ({resolution.Motif}).");
+                }
             }
         }
     }
 
     /// <summary>
-    /// Les polices qu'un bloc de texte demande : la sienne, et celle de chacun de ses
-    /// fragments — une propriété nulle sur un fragment voulant dire « comme le bloc ».
+    /// Les styles qu'un bloc de texte dessine : ceux de la découpe que la composition
+    /// fait elle-même (<see cref="StyleEffectif.Decouper"/>), sur le contenu résolu et
+    /// les fragments qui s'y appliquent (<see cref="Fragments"/>), comme
+    /// <see cref="DrawText"/>. Le fragment recouvert, celui qui tombe hors du texte, la
+    /// police d'un bloc dont chaque caractère porte un fragment, les fragments d'un
+    /// bloc qui affiche un champ : rien de tout cela n'est dessiné, et rien de tout cela
+    /// n'avertit plus.
     ///
-    /// On les lit sur le modèle et non sur le texte réellement composé. Un fragment
-    /// hors des bornes du texte, ou un bloc portant un champ, fait ainsi un
-    /// avertissement de trop plutôt qu'un de moins. Le déséquilibre est voulu : une
-    /// police annoncée à tort est du bruit, une flèche de procédure d'urgence
-    /// silencieusement remplacée par une lettre ne l'est pas.
+    /// Un morceau fait de seuls sauts de ligne ne compte pas : aucun glyphe n'en sort.
+    /// Un morceau fait d'espaces compte, lui : sa largeur se mesure dans sa police, et
+    /// une police substituée y déplace le texte qui suit.
     /// </summary>
-    private static IEnumerable<(string Police, bool Gras, bool Italique)> Polices(TextFrame bloc)
+    private static IEnumerable<StyleEffectif> StylesDessines(TextFrame text, string content)
     {
-        yield return (bloc.FontFamily, bloc.Bold, bloc.Italic);
-
-        foreach (var fragment in bloc.Spans)
+        foreach (var (morceau, style) in StyleEffectif.Decouper(content, Fragments(text, content), Commun(text)))
         {
-            yield return (
-                fragment.FontFamily ?? bloc.FontFamily,
-                fragment.Bold ?? bloc.Bold,
-                fragment.Italic ?? bloc.Italic);
+            if (morceau.AsSpan().ContainsAnyExcept('\n', '\r')) yield return style;
         }
     }
-
-    /// <summary>Tous les blocs du document, groupes traversés.</summary>
-    private static IEnumerable<Frame> Blocs(Document document) =>
-        document.Pages.SelectMany(page => page.Frames).SelectMany(Descendance);
 
     /// <summary>
     /// Le bloc et tout ce qu'il contient. Les deux types qui portent des enfants sont
@@ -508,7 +519,7 @@ public static class PdfExporter
         // ne s'y appliquent pas. Un folio ou une date sont d'un seul style, et c'est
         // bien ainsi. Les écarts de paragraphe tombent de même — un champ n'a pas les
         // mêmes paragraphes — alors que les réglages du bloc, eux, valent toujours.
-        var fragments = content == text.Text ? text.Spans : (IReadOnlyList<StyleSpan>)[];
+        var fragments = Fragments(text, content);
         var ecarts = content == text.Text ? text.Paragraphs : (IReadOnlyList<ParagraphSpan>)[];
 
         var metriques = new MetriquesPdf(gfx);
@@ -609,6 +620,14 @@ public static class PdfExporter
             }
         }
     }
+
+    /// <summary>
+    /// Les fragments qui s'appliquent au contenu dessiné : ceux du bloc s'il montre son
+    /// texte saisi, aucun s'il montre un champ résolu. Une seule règle pour le dessin et
+    /// pour la passe des polices, qui doivent parler du même texte.
+    /// </summary>
+    private static IReadOnlyList<StyleSpan> Fragments(TextFrame text, string content) =>
+        content == text.Text ? text.Spans : [];
 
     /// <summary>Le style du bloc, celui dont les fragments s'écartent.</summary>
     private static StyleEffectif Commun(TextFrame text) =>

@@ -178,6 +178,106 @@ public class PolicesTests
         Assert.Single(Exporter(document));
     }
 
+    // ------------------------------------------- seulement ce qui est dessiné (Q8)
+
+    /// <summary>
+    /// La recette de Q8 telle que le plan l'écrit, la police du bloc en plus absente :
+    /// un fragment en DejaVu Sans recouvre tout le texte, et un fragment intermédiaire
+    /// dans une police inexistante est lui-même recouvert. Rien n'est dessiné ni dans
+    /// la police du bloc ni dans l'inexistante : rien ne doit avertir. La passe d'avant
+    /// relisait l'héritage des fragments pour son compte, et en nommait deux.
+    /// </summary>
+    [Fact]
+    [Trait("poste", "Q8")]
+    public void Une_police_entierement_recouverte_n_avertit_de_rien()
+    {
+        var bloc = Bloc(Absente);
+        bloc.Spans.Add(new StyleSpan { Start = 2, Length = 5, FontFamily = "Police Inexistante" });
+        bloc.Spans.Add(new StyleSpan { Start = 0, Length = bloc.Text.Length, FontFamily = Presente });
+
+        Assert.Empty(Exporter(Document(bloc)));
+    }
+
+    /// <summary>
+    /// L'autre moitié, sans laquelle une passe muette passerait le test précédent : ce
+    /// que le recouvrement laisse à découvert se dessine dans sa police, et se signale.
+    /// </summary>
+    [Fact]
+    [Trait("poste", "Q8")]
+    public void Ce_que_le_recouvrement_laisse_a_decouvert_se_signale()
+    {
+        var bloc = Bloc(Absente);
+        bloc.Spans.Add(new StyleSpan { Start = 0, Length = 3, FontFamily = "Police Inexistante" });
+        bloc.Spans.Add(new StyleSpan { Start = 0, Length = 2, FontFamily = Presente });
+
+        var avertissements = Exporter(Document(bloc));
+
+        Assert.Equal(2, avertissements.Count);
+        Assert.Contains(avertissements, ligne => ligne.Contains($"« {Absente} »"));
+        Assert.Contains(avertissements, ligne => ligne.Contains("« Police Inexistante »"));
+    }
+
+    [Fact]
+    [Trait("poste", "Q8")]
+    public void Un_fragment_hors_du_texte_n_avertit_de_rien()
+    {
+        var bloc = Bloc(Presente);
+        bloc.Spans.Add(new StyleSpan { Start = bloc.Text.Length + 4, Length = 3, FontFamily = Absente });
+
+        Assert.Empty(Exporter(Document(bloc)));
+    }
+
+    /// <summary>
+    /// Un bloc qui montre un champ ne dessine pas ses fragments : ils repèrent des
+    /// positions dans le texte saisi, pas dans le folio. C'est la règle de
+    /// <c>DrawText</c>, et la passe la suit. La police du bloc, elle, dessine le folio.
+    /// </summary>
+    [Fact]
+    [Trait("poste", "Q8")]
+    public void Un_champ_ne_dessine_que_la_police_de_son_bloc()
+    {
+        var folio = Bloc(Presente);
+        folio.Field = FieldKind.PageNumber;
+        folio.Spans.Add(new StyleSpan { Start = 0, Length = 3, FontFamily = Absente });
+        Assert.Empty(Exporter(Document(folio)));
+
+        var absent = Bloc(Absente);
+        absent.Field = FieldKind.PageNumber;
+        Assert.Contains(Absente, Assert.Single(Exporter(Document(absent))));
+    }
+
+    /// <summary>
+    /// Un champ de coordonnées vide ne dessine rien du tout — le jeu de coordonnées par
+    /// défaut est vide —, pas même dans la police du bloc.
+    /// </summary>
+    [Fact]
+    [Trait("poste", "Q8")]
+    public void Un_champ_qui_ne_rend_rien_n_avertit_de_rien()
+    {
+        var nom = Bloc(Absente);
+        nom.Field = FieldKind.ContactName;
+
+        Assert.Empty(Exporter(Document(nom)));
+    }
+
+    /// <summary>
+    /// Un fragment qui ne porte qu'un saut de ligne ne dessine aucun glyphe. Choisi :
+    /// un fragment d'espaces, lui, avertit, parce que sa largeur se mesure dans sa
+    /// police.
+    /// </summary>
+    [Fact]
+    [Trait("poste", "Q8")]
+    public void Un_fragment_qui_ne_porte_qu_un_saut_de_ligne_n_avertit_de_rien()
+    {
+        var bloc = Bloc(Presente);
+        bloc.Text = "Descendre.\nMonter.";
+        bloc.Spans.Add(new StyleSpan { Start = 10, Length = 1, FontFamily = Absente });
+        Assert.Empty(Exporter(Document(bloc)));
+
+        bloc.Text = "Descendre. Monter.";
+        Assert.Single(Exporter(Document(bloc)));
+    }
+
     // ------------------------------------------------------------------ outillage
 
     /// <summary>
