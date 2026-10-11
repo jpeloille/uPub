@@ -363,16 +363,20 @@ partout ailleurs — à l'écran, à l'export — un chemin d'image est absolu.
   colonnes coulent à l'intérieur d'un bloc, jamais d'un bloc au suivant. Un texte trop
   LARGE, lui, est coupé sans rien dire : le signalement ne porte que sur la hauteur,
   comme le marqueur de Publisher.
+- **Taper dans un bloc qui porte des fragments de style les décale.** Les fragments
+  sont repérés par position de caractère et les écarts de paragraphe par indice, et
+  rien ne les met à jour à la frappe : un mot ajouté en tête d'un bloc importé fait
+  glisser ses gras, et un saut de ligne décale ses retraits d'un paragraphe.
+  L'enregistrement fixe le décalage. En attendant le poste Q1, retoucher un document
+  importé se fait dans les blocs sans fragments, ou sur une copie.
 - Les fragments de style se lisent, s'écrivent et se rendent, mais ne se saisissent pas
   encore à la souris : on ne peut pas sélectionner trois mots dans un bloc pour les
-  mettre en gras. Le panneau agit sur le bloc entier. Il en va de même des retraits
-  posés paragraphe par paragraphe.
-- L'alignement — gauche, centré, droite, justifié — reste une propriété du bloc, alors
-  qu'un document Publisher le fait varier d'un paragraphe à l'autre.
-- Les réglages typographiques du panneau — police, corps, gras, alignement, interligne,
-  marges, retraits, colonnes — s'enregistrent et s'exportent bien, mais la page ne se
-  redessine pas au moment où on les change : il faut retoucher le texte, ou rouvrir le
-  document, pour les voir. Seul le contenu rafraîchit l'affichage.
+  mettre en gras. Le panneau agit sur le bloc entier.
+- L'alignement, les retraits et l'espacement varient d'un paragraphe à l'autre — un
+  document Publisher importé les garde, et ils s'affichent et s'exportent —, mais le
+  panneau ne règle que le bloc entier.
+- L'écran et le PDF mesurent les mots chacun avec sa bibliothèque : une ligne peut être
+  coupée à un mot différent de part et d'autre. Le document d'exemple le montre.
 - Les tableaux ne fusionnent pas de cellules, ne s'imbriquent pas et ne se scindent pas
   entre deux pages : ce sont des bandes de cases, ce dont les documents à reprendre ont
   besoin, et rien de plus.
@@ -384,7 +388,7 @@ partout ailleurs — à l'écran, à l'export — un chemin d'image est absolu.
   (`apt install libmspub-tools`) : le format est fermé, et c'est le lecteur qu'emploie
   tout le monde libre. Sans droits d'installation, `Scripts/outils-pub.sh` l'extrait
   localement. Ne sont pas repris : les taquets de tabulation autres que ceux
-  par défaut, et la rotation des formes et des blocs de texte.
+  par défaut.
 - Pas de textures ni de motifs de remplissage : écartés délibérément.
 
 Ces limites, et une trentaine d'autres écarts fonctionnels, sont détaillées fiche par

@@ -18,9 +18,10 @@
 #   3. les recettes des postes, une par poste.
 #
 # La comparaison écran ↔ PDF n'est PAS lancée ici sur tous les documents : sur une page
-# de texte elle échoue aujourd'hui pour une raison connue et écrite (l'interligne n'est
-# pas appliqué à l'export, cf. PLAN.md, poste P3). Elle est appelée par les recettes qui
-# la concernent, avec leur document et leur tolérance.
+# de texte elle échoue aujourd'hui pour une raison connue et écrite — l'écran et le PDF
+# mesurent les mots chacun avec sa bibliothèque, et peuvent couper une ligne à un mot
+# différent (cf. PLAN.md, poste Q13). Elle est appelée par les recettes qui la
+# concernent, avec leur document et leur tolérance.
 #
 set -euo pipefail
 export LC_ALL=C

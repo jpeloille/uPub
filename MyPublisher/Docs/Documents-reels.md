@@ -106,6 +106,10 @@ et c'est la seconde qui sert.
 
 ### R4 — Les tableaux sont nécessaires, mais bien plus simples qu'annoncé
 
+> *Note du 11 octobre 2026* : dans [`PLAN.md`](PLAN.md), les tableaux sont devenus le
+> poste C9, et le numéro R4 y désigne l'interligne. Ce relevé garde sa numérotation
+> d'origine.
+
 *Rectifié le 6 septembre 2026, après avoir compté au lieu d'estimer.* Un premier
 relevé disait « 19 tableaux, 51 cellules contre 18 blocs de texte : c'est le
 document ». C'était mal lu.

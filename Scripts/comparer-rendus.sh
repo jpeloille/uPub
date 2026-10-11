@@ -20,9 +20,12 @@
 # l'on garde de la marge pour le lissage.
 #
 # ATTENTION — sur une page portant du texte, cette comparaison ÉCHOUE aujourd'hui, et
-# c'est une vraie trouvaille, pas un défaut du banc : l'interligne n'est pas appliqué à
-# l'export (cf. MyPublisher/Docs/PLAN.md, poste P3). Formes seules : 0,38 %. Avec le
-# texte : 8 %. C'est pourquoi ce script n'est pas appelé en bloc par verifier.sh, mais
+# c'est une vraie trouvaille, pas un défaut du banc. Elle a d'abord trouvé que
+# l'interligne n'était pas appliqué à l'export : R4 l'a corrigé, et la page 1 du
+# document d'exemple est passée de 8 % à 4,87 %. Il reste que l'écran et le PDF
+# mesurent les mots chacun avec sa bibliothèque, et coupent une ligne de la première
+# colonne à un mot différent (cf. MyPublisher/Docs/PLAN.md, poste Q13). Formes seules :
+# 0,38 %. C'est pourquoi ce script n'est pas appelé en bloc par verifier.sh, mais
 # recette par recette, avec son document et sa tolérance.
 #
 set -euo pipefail

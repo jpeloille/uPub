@@ -2,7 +2,7 @@
 
 > **À lire avant ce plan** : [`Documents-reels.md`](Documents-reels.md), relevé des deux
 > documents ATR réellement composés sous Publisher. Les fiches disent ce que Publisher
-> *sait faire* ; ces documents-là disent ce dont on *se sert*. Ils ajoutent quatre postes
+> *sait faire* ; ces documents-là disent ce dont on *se sert*. Ils ajoutent cinq postes
 > que ce plan ne prévoyait pas — dont le texte riche, sans lequel aucun des deux ne se
 > reproduit — et ils déclassent le seuil D.
 
@@ -24,7 +24,7 @@ Où en est chaque poste. Une seule règle pour la colonne d'avancement : un post
 on écrit ce qui est fait plutôt qu'un pourcentage inventé — un poste à moitié écrit n'est
 pas un poste à moitié livré. La colonne se met à jour dans le commit qui clôt le poste.
 
-*Dernière mise à jour : 11 octobre 2026 (P3, le bilan).*
+*Dernière mise à jour : 11 octobre 2026 (étape 1 : les postes spécifiés).*
 
 | Poste | Intitulé | Avancement | Où ça en est |
 |---|---|:---:|---|
@@ -39,32 +39,61 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **A5** | Formats de page | **100 %** | B4, B5, Executive, Tabloid au catalogue, et largeur/hauteur libres au panneau. `FormatVersion` reste à 3 |
 | **A6** | Taille du bloc dans la barre d'état | **100 %** | Position **et** taille du bloc, suivies pendant le geste et non seulement à sa fin |
 | **A7** | Alignement vertical du texte | **100 %** | Haut, milieu, bas sur le bloc de texte ; le calage est borné à zéro. `FormatVersion` reste à 3 |
+| **A8** | Insérer des pages : nombre, position, contenu | 0 % | Spécifié le 11 octobre 2026 |
+| **A9** | Rotation par quart de tour | 0 % | Spécifié le 11 octobre 2026 |
+| **A10** | Objet trait, et flèche | 0 % | Spécifié le 11 octobre 2026 ; l'import simule le trait par un rectangle |
+| **A11** | Aimantation réglable, et aux autres blocs | 0 % | Spécifié le 11 octobre 2026 |
+| **A12** | Menu contextuel du bloc | 0 % | Spécifié le 11 octobre 2026 |
+| **A13** | Rognage manuel de l'image | 0 % | Spécifié le 11 octobre 2026 |
+| **A14** | Contour et ombre du caractère | 0 % | Spécifié le 11 octobre 2026 ; PDFsharp à éprouver d'abord |
+| **A15** | Sections : numérotation qui repart | 0 % | Spécifié le 11 octobre 2026 |
 | **B1** | Modèles | **100 %** | Catalogue au démarrage et sur `Ctrl+N` ; quatre modèles composés dans `Templates/` |
 | **B2** | Importer un fichier texte | 0 % | — |
 | **B3** | Imprimer | 0 % | — |
 | **B4** | Archive `.mypubz` | 0 % | — |
 | **B5** | Avertir sur les substitutions de polices | **100 %** | L'export nomme la police demandée et celle employée ; recette dans `Scripts/recettes/` |
+| **B6** | Aperçu avant impression | 0 % | Spécifié le 11 octobre 2026 |
+| **B7** | Replier les panneaux | 0 % | Spécifié le 11 octobre 2026 |
 | **C1** | Fond et bordure au niveau de `Frame` | **100 %** | Fond, contour, trait, arrondi et opacité sur tout bloc ; `FormatVersion` 2, migration à l'ouverture |
 | **C2** | Repères | **100 %** | C2a grille de composition · C2b règles graduées et repères libres |
 | **C3** | Sélection multiple, puis groupement | **100 %** | C3a sélection · C3b alignement et répartition · C3c groupe persistant |
-| **C4** | Champs | **100 %** | Folio, nombre de pages, date, coordonnées et logo ; les coordonnées attendent B1 pour servir vraiment |
+| **C4** | Champs | **100 %** | Folio, nombre de pages, date, coordonnées et logo ; les coordonnées servent depuis B1 |
 | **C5** | Remplissage riche et cohérence visuelle | C5a et C5c faits | Fond de page, et remplissage uni, dégradé, image ou teinte sur tout bloc ; `FormatVersion` 4. Les cinq images d'ATA 21 sont portées. **C5b — jeux de couleurs et de polices — reste ouvert** |
 | **C6** | Marges intérieures par côté | **100 %** | Quatre marges sur le bloc de texte ; `FormatVersion` 3 |
 | **C7** | Bibliothèque de blocs | 0 % | Débloqué depuis C3a |
+| **C8** | Miroir horizontal et vertical | 0 % | Spécifié le 11 octobre 2026 |
 | **C9** | Le bloc tableau | **100 %** | Bande de cases : colonnes, lignes, contenu, fond et contour par case. `FormatVersion` reste à 3 |
 | **R1** | Texte riche : fragments de style | **100 %** | `Spans` sur le bloc ; l'écran et l'export passent par la même composition ; recette dans `Scripts/recettes/` |
 | **R2** | Retraits et espacement de paragraphe | **100 %** | Cinq réglages sur le bloc, des écarts par indice de paragraphe ; la ligne composée porte son retrait et sa largeur |
 | **R3** | Colonnes à l'intérieur d'un bloc | **100 %** | Nombre et gouttière sur le bloc ; la ligne composée porte sa colonne et son ordonnée. Autre chose que C2a |
 | **R4** | Interligne : une seule mesure | **100 %** | Multiple de la hauteur naturelle ; écran et PDF concordent au pixel |
 | **R5** | **Ouvrir un `.pub`** | **100 %** | Lecture déléguée à libmspub. Les deux documents ATR s'ouvrent objet pour objet, sans perdre un style |
+| **R6** | Alignement par paragraphe | 0 % | Spécifié le 11 octobre 2026 |
+| **R7** | Éditer le texte riche à la souris | 0 % | Spécifié le 11 octobre 2026 ; attend Q1 |
+| **Q1** | Les styles suivent la frappe | 0 % | **Défaut de données** : taper dans un bloc importé décale ses gras |
+| **Q2** | Le texte composé se détache de son bloc | 0 % | Fuite relevée en C5, non corrigée |
+| **Q3** | Le cache d'images oublie ses échecs | 0 % | Relevé en A3 |
+| **Q4** | Un filet au même endroit à l'écran et au PDF | 0 % | Relevé en A2 et à la relecture du 7 septembre |
+| **Q5** | Un groupe rogne pareil à l'écran et au PDF | 0 % | Relevé en C9 |
+| **Q6** | Mesurer la découpe d'un remplissage par image | 0 % | Relevé à la relecture du 7 septembre |
+| **Q7** | La recette de A6 sur le cas réel | 0 % | Relevé à la relecture du 7 septembre |
+| **Q8** | N'avertir que des polices dessinées | 0 % | Relevé à la relecture du 6 septembre |
+| **Q9** | Retirer `AbsoluteLineHeight` | 0 % | Relevé en A2 : survivant de l'ancienne sémantique de l'interligne |
+| **Q10** | Saisir une poignée hors de la page | 0 % | Relevé en A1 |
+| **Q11** | La liste des blocs défile pendant le glissé | 0 % | Relevé en A4 |
+| **Q12** | Dépendance vulnérable | 0 % | `Tmds.DBus.Protocol` 0.21.2, tiré par Avalonia |
+| **Q13** | Couper la ligne au même mot à l'écran et au PDF | 0 % | Trouvé le 11 octobre 2026 : le document d'exemple coupe une ligne différemment |
 | **D** | Moteur de composition | — | Décision non ouverte ; à rouvrir quand A, B et C sont livrées |
 
-**Par phase** — P : 3 sur 4 · A : 7 sur 7 · B : 2 sur 5 · C : 6 sur 8 · R : 5 sur 5 · D : non planifié. La ligne comptait 22 postes et
-ignorait la phase R, apparue le 6 septembre 2026 ; elle la compte désormais.
+**Par phase** — P : 3 sur 4 · A : 7 sur 15 · B : 2 sur 7 · C : 6 sur 9 · R : 5 sur 7 ·
+Q : 0 sur 13 · D : non planifié.
 
-Soit **23 postes sur 29**. Le tableau ne porte pas encore les onze
-postes que l'audit des fiches a fait apparaître le 6 septembre 2026 — A8 à A15, B6,
-B7, C8 — et qui sont au périmètre : ils y entreront quand ils seront spécifiés.
+Soit **23 postes sur 55**. Le compte a doublé le 11 octobre 2026 sans que rien ne
+recule : il porte désormais les onze postes de l'audit des fiches (A8 à A15, B6, B7,
+C8), deux postes que les documents réels demandaient (R6, R7), et la phase Q, qui
+recense les défauts que les postes et les relectures ont **trouvés et consignés sans les
+corriger**. Ces derniers étaient écrits, mais dispersés dans la prose de leurs postes :
+rien ne les comptait, et `Scripts/bilan.sh` ne lit que ce tableau.
 C'est un compte de postes et non d'effort : C3 pesait à lui seul plus que toute la
 phase A, et les préalables ne produisaient aucune fonctionnalité.
 Le tableau dit ce qui est clos, pas ce qui reste à peiner.
@@ -185,6 +214,28 @@ machine où .NET 9 n'était plus installé, **aucun** test ne se lançait ; sur 
 CIFS, aucun script ni le binaire compilé ne s'exécutait, faute de bit d'exécution. Les
 304 tests et le contrôle repassent tels quels sous .NET 10, sans une ligne de code
 changée.
+
+#### Les sept recettes qui manquent
+
+Chacune reprend le critère que son poste avait écrit, et le rend rejouable. Le nom du
+script commence par le code du poste : c'est ainsi que `Scripts/bilan.sh` le reconnaît.
+Là où le geste a été joué au pointeur synthétisé, la recette appelle les tests
+d'interface qui le jouent déjà — filtre `dotnet test --filter`, comme celles de A4 et
+A6 — plutôt que de le réécrire en shell.
+
+| Script | Ce qu'il mesure |
+|---|---|
+| `B1-modeles.sh` | Les quatre modèles s'ouvrent en copie, sans chemin ; le fichier du modèle reste identique octet pour octet après une retouche enregistrée ailleurs ; les quatre s'exportent **sans un avertissement** |
+| `C1-fond-et-filet.sh` | Une image encadrée d'un filet de 2 pt, sans forme superposée : l'écran et le PDF concordent (`comparer-rendus.sh`), et la couleur du filet se relève sur le bord |
+| `C2-reperes.sh` | Les tests d'aimantation et de repères au pointeur synthétisé passent ; le même document exporté avec la grille la plus dense et sans grille donne deux images identiques au pixel près, avec et sans repères libres |
+| `C3-selection-groupe.sh` | Quatre blocs alignés à gauche ont le même X ; groupés, déplacés de (30, 20) pt puis exportés, chacun se retrouve exactement déplacé de (30, 20) dans le PDF (`pdftotext -bbox`) |
+| `C4-champs.sh` | Un folio sur huit pages se lit 1 à 8 page par page dans le PDF (`pdftotext`), posé seul **et** posé dans un groupe ; les coordonnées d'un jeu enregistré apparaissent dans le PDF d'un modèle de B1 |
+| `C6-marges.sh` | Un texte avec 12 pt de marge à gauche seulement : le fer gauche est décalé de 12 pt, le fer droit ne bouge pas, à l'écran comme au PDF, à 0,05 pt près |
+| `R4-interligne.sh` | Un bloc de neuf lignes à l'interligne 1,0 puis 1,5 : l'avance mesurée entre deux lignes est la même à l'écran et au PDF, et vaut le multiple de la hauteur naturelle |
+
+Chaque recette reçoit au moins un sabotage dans `Scripts/eprouver-le-juge.sh`. Une
+recette qu'on n'a jamais vue échouer ne prouve rien. P3 passe à 100 % quand le bilan
+ne nomme plus aucun poste clos sans recette.
 
 #### Ce que le banc a trouvé le jour où il a servi
 
@@ -407,8 +458,9 @@ Deux remarques que le graphe rend visibles :
 
 ## Phase A — Finitions à mécanique existante
 
-Sept postes qui n'inventent aucune structure : la mécanique est déjà écrite, il manque
-le geste, le message ou le champ. Aucun ne touche au format de fichier autrement qu'en
+Postes qui n'inventent aucune structure : la mécanique est déjà écrite, il manque
+le geste, le message ou le champ. Ils étaient sept ; l'audit des fiches en a ajouté
+huit, A8 à A15, dont deux — A10 et A14 — touchent au rendu plus que les autres. Aucun ne touche au format de fichier autrement qu'en
 ajoutant une propriété facultative. Ils peuvent se faire dans n'importe quel ordre, et
 même avant P1 — mais autant commencer par P1.
 
@@ -1083,6 +1135,116 @@ migration. Immédiat à l'écran, calculable à l'export à partir de la hauteur
 *Fait le 6 septembre 2026*, **avec A2 et le rognage à l'export** : les trois demandent la
 même mesure, et le compte rendu est [au poste A2](#a2--signaler-le-débordement-du-texte-fiche-12).
 
+### A8 à A15 — ce que l'audit des fiches avait trouvé
+
+*Reconstitué le 11 octobre 2026.* L'audit du 6 septembre avait nommé onze postes sans en
+écrire la liste, et elle s'est perdue avec les transcriptions de la machine où il a été
+fait. Un seul numéro a survécu, dans un commentaire de `PubImporter` : **A10, l'objet
+trait**. Les autres ont été retrouvés en reprenant les 22 fiches une à une, puis en
+classant chaque écart : couvert par un poste, écarté, renvoyé au seuil D, ou sans poste.
+Les écarts sans poste se regroupent d'eux-mêmes en onze postes. L'attribution des
+numéros, hors A10, est donc refaite et non retrouvée.
+
+#### A8 — Insérer des pages : nombre, position, contenu *(fiche 08)*
+
+`AddPage` insère une page vierge après la page courante, et `DuplicatePage` copie la
+page courante. Publisher demande dans un même dialogue un **nombre** de pages, une
+**position** (avant ou après) et un **contenu** : page vierge, une zone de texte par
+page, ou copie des objets d'une page désignée.
+
+*Recette* : document de 3 pages, page 2 courante ; insérer 4 pages *avant*, copiées de la
+page 1. On doit trouver 7 pages, et les pages 2 à 5 portent autant de blocs que la
+page 1, en instances distinctes. Les noms sont renumérotés, et une seule annulation rend
+les 3 pages. L'option « zone de texte » pose exactement un bloc de texte, égal à la zone
+des marges. Effort : faible.
+
+#### A9 — Rotation par quart de tour *(fiches 14, 22)*
+
+Deux commandes, +90° et −90°, au menu Disposition et au panneau. La rotation, sa poignée
+et l'export tourné existent depuis A1 : il manque le geste rapide.
+
+*Recette* : 350° plus 90° donne 80°, et 0° moins 90° donne 270°. Une image tournée d'un
+quart de tour passe `comparer-rendus.sh` sous la tolérance, et chaque commande
+s'annule en un pas. Effort : faible.
+
+#### A10 — Objet trait, et flèche *(fiche 02)*
+
+`ShapeKind` ne connaît que le rectangle et l'ellipse. L'import des « Fiches
+limitations » rend ses cinq traits par des rectangles sans épaisseur, ce qui se voit
+juste mais se manipule mal. Il faut un `ShapeKind.Line`, une pointe de flèche
+facultative à chaque bout, et un survol qui tolère quelques points autour du trait.
+
+*Piège* : `Snap.MinFrameSize` vaut 2 mm, alors qu'un trait horizontal a une hauteur
+nulle. Le trait se définit donc par ses deux extrémités, et non par un cadre.
+
+*Recette* :
+- `"Shape": "Line"` fait l'aller-retour JSON au caractère près ;
+- dans le flux PDF, le bloc est un tracé (`m … l S`) et non un rectangle rempli ;
+- le survol répond à moins de 3 pt du trait, et plus au-delà ;
+- l'import des Fiches rend 5 traits et 0 rectangle de substitution, et la recette R5
+  est ajustée en conséquence.
+
+Effort : moyen.
+
+#### A11 — Aimantation réglable, et aux autres blocs *(fiche 22)*
+
+Seul `Alt` coupe aujourd'hui l'aimantation, et seulement le temps d'un geste. Publisher
+offre un réglage durable, et l'aimantation aux autres objets. `Snap.Edge` est une
+fonction pure ; il suffit de lui donner, en plus des repères, les bords et les milieux
+des blocs non sélectionnés.
+
+*Recette* (test pur) : un bloc A en x = 100, de 50 de large ; un bloc B lâché en x = 148
+se cale à 150 quand l'aimantation aux objets est active, et reste à 148 sinon. Avec
+l'aimantation coupée, rien ne se cale, pas même sur la marge. Le réglage survit à la
+relecture des préférences. Effort : moyen.
+
+#### A12 — Menu contextuel du bloc *(fiche 11)*
+
+Un clic droit sur un bloc le sélectionne et ouvre un menu qui reprend les commandes
+d'Édition et de Disposition. Aucun `ContextMenu` n'existe dans les vues. Le poste est à
+faire **après** A9 et B2, pour reprendre leurs commandes.
+
+*Recette* :
+- un clic droit synthétisé au centre d'un bloc le sélectionne et ouvre le menu ;
+- un clic droit hors de tout bloc vide la sélection ;
+- un script vérifie que chaque commande du menu est liée à la même commande que son
+  pendant dans les menus Édition et Disposition.
+
+Effort : faible.
+
+#### A13 — Rognage manuel de l'image *(fiche 14)*
+
+Un rognage facultatif sur les quatre côtés d'un `ImageFrame`, réglé au panneau puis par
+un mode de poignées. La découpe existe déjà pour le remplissage par image (C5c) : les
+deux doivent partager le même calcul, dans le noyau.
+
+*Recette* : une image de 200 × 100 px rognée de 50 % à gauche. À l'écran comme au PDF,
+le rendu est la moitié droite de la source (écart ImageMagick sous un seuil). Un
+fichier sans rognage reste identique octet pour octet. Effort : moyen.
+
+#### A14 — Contour et ombre du caractère *(fiche 17)*
+
+C'est ce que « Ce que ce plan ne fait pas » promettait à la place de WordArt : « un
+titre qui se voit », par le contour, l'ombre et le dégradé. La ligne renvoyait à C5c,
+qui n'a fait que des fonds de bloc : le texte, lui, n'a rien reçu. Le poste porte le
+contour (couleur, épaisseur) et l'ombre (décalage, couleur) sur le bloc de texte.
+
+*À éprouver d'abord* : que PDFsharp sache écrire un texte en mode contour. Faute de
+quoi, il faudrait tracer les glyphes un par un, et le poste change de taille.
+
+*Recette* : avec contour, le flux PDF porte un mode de rendu `1 Tr` ou `2 Tr` ; avec
+ombre, le texte est écrit deux fois, au décalage demandé ; `comparer-rendus.sh` passe
+sous la tolérance. Effort : moyen, voire lourd si PDFsharp ne suit pas.
+
+#### A15 — Sections : numérotation qui repart *(fiches 08, 22)*
+
+Un début de section, facultatif, sur `Page`, avec son premier numéro. Le folio de C4
+compte alors depuis la dernière section ouverte.
+
+*Recette* : 8 pages, une section ouverte en page 3 et numérotée à partir de 1.
+`pdftotext`, page par page, lit 1, 2, 1, 2, 3, 4, 5, 6 ; un document sans section se
+numérote comme avant. Effort : faible.
+
 ---
 
 ## Phase B — Démarrage et transport
@@ -1247,6 +1409,30 @@ Un cinquième a servi : la comparaison de chaînes réécrite **dans** la résol
 `Correspond` restant juste mais n'étant plus appelée. Les tests sur chaînes figées ne
 voyaient rien passer — un test qui traverse tout le chemin de résolution avec une
 famille à noms multiples cherchée sur la machine a été ajouté pour cela.
+
+### B6 — Aperçu avant impression *(fiche 22)*
+
+Une fenêtre qui montre les pages telles qu'elles sortiront, sans repère, sans marqueur
+de débordement et sans sélection. Le banc sait déjà rendre une page hors champ : c'est
+le même rendu, montré au lieu d'être comparé. À faire avec B3 ou juste après.
+
+*Recette* : chaque page de l'aperçu, comparée au `pdftoppm` de l'export par la logique
+de `comparer-rendus.sh`, reste sous la tolérance. Aucun pixel n'a la couleur des
+repères ni celle du marqueur rouge. Effort : faible à moyen.
+
+### B7 — Replier les panneaux *(fiche 04)*
+
+La seule chose que « Ce que ce plan ne fait pas » retenait du volet Office, et
+qu'aucun poste ne portait : masquer les deux colonnes latérales pour rendre leur place
+à la planche, sur `Ctrl+F1` comme dans Publisher.
+
+*Recette* :
+- après `Ctrl+F1`, la planche gagne au moins la largeur des deux panneaux, et ceux-ci
+  sont invisibles ; un second `Ctrl+F1` rend l'état d'avant ;
+- le raccourci figure au README et n'en double aucun autre.
+
+À vérifier d'abord : que le bureau ne capte pas `Ctrl+F1`, comme il captait `Alt+F6`
+en A4. Effort : faible.
 
 ---
 
@@ -1685,6 +1871,26 @@ dans le même panneau qu'une éventuelle bibliothèque d'images locale (fiche 13
 
 *Recette* : enregistrer un bloc-titre composé, ouvrir un autre document, le reposer.
 
+### C8 — Miroir horizontal et vertical *(fiche 22)*
+
+La notion n'existe pas dans le modèle. Elle traverse le cœur géométrique — survol,
+poignées, redimensionnement, composition avec la rotation, groupes — et les deux rendus :
+c'est pourquoi elle relève de la phase C et non de la phase A. Une question reste à
+trancher avant d'écrire une ligne, et les fiches ne la tranchent pas : un bloc de texte
+en miroir montre-t-il son texte à l'envers, ou seulement son cadre ?
+
+Dépend de C3c, A1 et A9.
+
+*Recette* :
+- test pur : sur des blocs tirés au hasard, rotation et miroir compris, passer du
+  repère de la page à celui du bloc puis revenir rend le même point ;
+- un groupe en miroir porte son bloc de gauche à droite ;
+- une image en miroir horizontal : la première colonne de son rendu est la dernière de
+  la source, à l'écran comme au PDF ;
+- `comparer-rendus.sh` passe sous la tolérance.
+
+Effort : moyen à lourd.
+
 ### C9 — Le bloc tableau
 
 Poste que ce plan ne portait pas : il vient de
@@ -2053,6 +2259,280 @@ piège du banc — `PageRoot` mesuré en points mais vivant sous la mise à l'é
 zoom — n'est ainsi gardé qu'à un seul endroit. Deux copies, et la seconde oublie
 l'assertion.
 
+### R6 — Le panneau règle le paragraphe du curseur
+
+*Spécifié le 11 octobre 2026.* Le README range parmi les limites que « l'alignement
+reste une propriété du bloc ». **Ce n'est plus vrai du modèle.** Depuis R5,
+`ParagraphSpan` porte un `Align`, l'import le remplit et la composition le lit. Les
+documents réels en tirent parti : 31 paragraphes justifiés dans ATA 21, et 16 centrés
+dans les Fiches. Ce qui manque est le geste : le panneau agit sur le bloc entier, et
+rien ne crée ni ne modifie un écart de paragraphe depuis l'interface. Il en va de même
+des cinq réglages de R2.
+
+Le poste : pendant l'édition d'un bloc de texte, l'alignement, les retraits et les
+espacements du panneau s'appliquent aux paragraphes que touche la sélection, ou au
+paragraphe du curseur, sous forme d'écarts `ParagraphSpan`. Hors édition, ils restent
+réglages du bloc, comme aujourd'hui. Deux écarts voisins identiques fusionnent, et un
+écart qui ne s'écarte plus de rien disparaît.
+
+Dépend de Q1 : tant qu'un saut de ligne tapé ne décale pas les indices de paragraphe,
+un écart posé à la main glisse sur le paragraphe voisin à la frappe suivante.
+
+*Recette* :
+- tests d'interface : curseur dans le 2e de trois paragraphes, clic sur « centré » ;
+  un seul écart `{Start 1, Length 1, Align Center}` ;
+- l'écran et le PDF centrent ce paragraphe et lui seul, à 0,05 pt près ;
+- un pas d'annulation rend le bloc d'avant ;
+- les 16 paragraphes centrés des Fiches survivent à un aller-retour par l'interface.
+
+Effort : moyen.
+
+### R7 — Éditer le texte riche à la souris
+
+*Spécifié le 11 octobre 2026.* Le pendant de R6 à l'échelle du caractère, et la limite
+qui pèse le plus sur la reprise des documents réels. Les 402 fragments des deux
+documents ATR s'importent, se rendent et s'exportent, mais on ne peut pas mettre trois
+mots en gras. Il faut appliquer la police, le corps, le gras, l'italique, le souligné
+et la couleur à la sélection, en découpant, en fusionnant et en retirant des
+`StyleSpan`.
+
+**Une question à trancher avant d'écrire du code.** Pendant l'édition, l'écran montre
+le `TextBox` en texte brut, et `TexteCompose` est masqué. Éditer du texte riche dans
+une vue qui n'en montre rien n'a pas de sens. Deux voies :
+- **garder le `TextBox` pour le curseur et la sélection seulement, transparent, et
+  laisser `TexteCompose` dessiner dessous**. C'est la plus sobre. Le risque : que le
+  curseur ne tombe pas où le texte composé est dessiné, puisque les deux mesures
+  diffèrent ;
+- **écrire un éditeur sur `Compositeur`**, avec le curseur, la sélection et la saisie
+  calculés sur les lignes composées. C'est plus juste, et beaucoup plus lourd. Cette
+  voie rejoint le seuil D.
+
+Le poste commence par mesurer l'écart de la première voie sur les documents réels :
+l'écart, en points, entre la position du curseur du `TextBox` et celle du caractère
+composé. Si l'écart reste sous le pixel, on prend la première voie. Sinon, on revient
+vers le propriétaire du projet pour décider.
+
+Dépend de Q1.
+
+*Recette* :
+- tests d'interface : sélection des caractères 4 à 7 au pointeur synthétisé, puis
+  `Ctrl+B`. On obtient un seul fragment `{Start 4, Length 3, Bold}`, et le PDF montre
+  ces trois caractères seuls dans la fonte grasse (relevé du flux) ;
+- `Ctrl+B` sur une sélection déjà grasse retire le gras, et le fragment disparaît s'il
+  ne porte plus rien ;
+- un pas d'annulation par commande.
+
+Effort : lourd.
+
+---
+
+## Phase Q — Dettes consignées
+
+*Ouverte le 11 octobre 2026.* Les postes et les relectures adversariales ont trouvé
+des défauts qu'ils ont **écrits sans les corriger**, avec une raison chaque fois juste :
+ce n'était pas leur périmètre. Écrits, ils étaient pourtant dispersés dans la prose de
+douze sections, et rien ne les comptait. Cette phase les rassemble, chacun avec la
+recette qui le prouvera corrigé. Les sections d'origine restent ce qu'elles sont : le
+récit de ce qui a été trouvé, et quand.
+
+Un défaut n'entre ici que s'il est **vérifié encore présent** dans le code du
+11 octobre 2026. Plusieurs défauts consignés ont été corrigés depuis par une relecture :
+le rafraîchissement du panneau, la rotation à l'import. Ils n'y figurent donc pas.
+
+Ne sont pas repris non plus les écarts écrits comme des **choix** : les bornes du format
+libre, les cases de la barre d'état qui disparaissent sans sélection, l'échelle de la
+teinte, le dégradé semi-transparent qui sort opaque, et le débordement horizontal muet,
+qui suit Publisher. Les rouvrir est une décision, pas une réparation.
+
+### Q1 — Les styles suivent la frappe
+
+**Le seul défaut de la liste qui abîme des données.** Les fragments de style se
+repèrent par position de caractère, et les écarts de paragraphe par indice de
+paragraphe. Aucune ligne du dépôt ne les met à jour quand le texte change : les seules
+écritures de `Spans` sont dans `Clone()` et dans l'import. Quand on tape un mot en tête
+d'un bloc importé, tous ses gras glissent d'autant de caractères vers la gauche du
+texte. Un saut de ligne tapé décale de même tous les retraits, et
+l'alignement, d'un paragraphe. Le document reste lisible, l'avertissement ne dit rien,
+et l'enregistrement fixe le décalage.
+
+Cela ne se voyait pas : aucun test ne tape dans un bloc qui porte des fragments, et
+aucune recette n'enregistre un document réel après l'avoir retouché.
+
+Le poste : à chaque modification du texte, calculer l'insertion ou la suppression par
+rapport au texte d'avant, puis décaler, allonger, raccourcir ou retirer les fragments
+et les écarts concernés. Un caractère inséré au contact d'un fragment prend le style du
+caractère qui le précède, comme dans Publisher et Word. Ce calcul est une fonction pure
+du noyau.
+
+*Recette* :
+- test pur : sur « abc def », gras sur « def » `{4, 3}`, insérer « XX » en 0 donne
+  `{6, 3}` ; insérer en 5 donne `{4, 5}` ; supprimer « c d » retaille le fragment, et
+  supprimer tout « def » le retire ;
+- un saut de ligne tapé dans le 1er de trois paragraphes décale de 1 l'écart du 3e ;
+- tests d'interface : ouvrir ATA 21, taper un mot en tête du premier bloc ; le PDF rend
+  les mêmes mots en gras qu'avant la frappe (relevé du flux) ;
+- sabotage : neutraliser le décalage fait tomber les trois points.
+
+Effort : moyen. **À faire en premier** : R6 et R7 en dépendent, et chaque jour sans lui
+est un jour où l'on peut abîmer un document importé.
+
+### Q2 — Le texte composé se détache de son bloc
+
+`ControleDeBloc` s'abonne au bloc et à ses deux collections, mais ne se désabonne
+jamais quand il quitte l'arbre visuel. Chaque changement de page laisse donc un
+contrôle de plus accroché à chaque bloc de texte. C'est la fuite que C5 a refermée sur
+`FondBloc`, et le remède est le même : suivre l'attachement.
+
+*Recette* : après vingt changements de page, chaque bloc de texte n'a plus qu'un seul
+abonné, compté par réflexion comme pour `FondBloc`. Effort : faible.
+
+### Q3 — Le cache d'images oublie ses échecs
+
+Une image absente à l'ouverture est retenue comme absente pour toute la durée du
+processus : la remettre en place puis rouvrir le document laisse le bloc vide, sans
+rien signaler. `Conv.Invalidate` existe, mais personne ne l'appelle. L'ouverture d'un
+document est le bon endroit pour vider le cache.
+
+*Recette* : ouvrir un document dont l'image manque, remettre le fichier, rouvrir ; la
+couleur de l'image se relève dans la page rendue. Effort : faible.
+
+### Q4 — Un filet au même endroit à l'écran et au PDF
+
+Mesuré en A2 sur un filet de 2 pt : l'écran le rentre dans le bloc, alors que l'export
+le centre sur le bord. La documentation de `Frame.StrokeThickness` dit « centré sur le
+bord » : c'est donc l'écran qui a tort.
+
+*Recette* : sur un filet de 4 pt, les bords relevés à l'écran et au PDF concordent à
+0,25 pt près. Effort : faible.
+
+### Q5 — Un groupe rogne pareil à l'écran et au PDF
+
+Un bloc qui dépasse de son groupe est coupé à l'écran et pas au PDF. Le geste ne
+produit pas ce cas, mais un fichier écrit à la main ou un import le peut. Il faut
+trancher dans le sens de A2 : **l'export rogne au groupe, comme l'écran**.
+
+*Recette* : groupe de 120 pt portant un texte de 400 pt ; rien n'est dessiné au-delà
+du groupe dans le PDF, et `comparer-rendus.sh` passe. Effort : faible.
+
+### Q6 — Mesurer la découpe d'un remplissage par image
+
+Le document de recette de C5 ne porte que des rectangles à angles droits : un sabotage
+de la découpe d'un remplissage par image traverse toute la vérification.
+
+*Recette* : ajouter au document de C5 un bloc arrondi rempli d'une image, relever la
+couleur du fond de page dans le coin, et ajouter à `eprouver-le-juge.sh` le sabotage
+qui doit tomber. Effort : faible.
+
+### Q7 — La recette de A6 sur le cas réel
+
+La recette de A6 fabrique ses blocs par un chemin qui évite celui de l'application :
+c'est le défaut relevé sur R2, et que la consigne nommait pourtant.
+
+*Recette* : réécrite sur la fabrique de l'application (outil armé, tracé synthétisé),
+et le sabotage qu'elle laissait passer tombe. Effort : faible.
+
+### Q8 — N'avertir que des polices dessinées
+
+La passe des polices relit l'héritage des fragments pour son compte, au lieu de lire
+les styles composés. Un fragment entièrement recouvert par un autre produit donc un
+avertissement pour une police que rien ne dessine.
+
+*Recette* : un bloc en Noto Sans, dont tout le texte est recouvert par un fragment en
+DejaVu Sans, avec un fragment intermédiaire « Police Inexistante » lui-même recouvert ;
+l'export n'avertit de rien. Effort : faible.
+
+### Q9 — Retirer `AbsoluteLineHeight`
+
+C'est le survivant de l'ancienne sémantique de l'interligne (`FontSize × LineHeight`),
+que R4 a remplacée. Seule la vignette des modèles la lit encore, et se trompe ainsi de
+16 %. Elle doit lire l'avance de `Compositeur`, ou la propriété disparaître.
+
+*Recette* : la propriété n'existe plus, et la vignette du bulletin a autant de lignes
+que son rendu réel. Effort : faible.
+
+### Q10 — Saisir une poignée hors de la page
+
+La couche de saisie s'arrête au bord de la page. Une poignée de rotation qui en sort,
+sur un bloc tourné de 180° collé en bas ou sur un bloc collé en haut règles masquées,
+ne se saisit pas. Une poignée d'angle sur un bloc posé à Y = 0 tombe sur la règle, qui
+pose un repère. Il faut étendre la couche de saisie à la zone de travail, en gardant à
+la règle son geste de C2b.
+
+*Recette* : les deux cas de A1, au pointeur synthétisé, tournent le bloc ; la poignée
+d'angle redimensionne sans poser de repère ; un clic sur la règle loin de tout bloc
+pose toujours un repère. Effort : moyen.
+
+### Q11 — La liste des blocs défile pendant le glissé
+
+La liste ne construit que les éléments visibles : on ne peut pas tirer le quarantième
+bloc jusqu'en tête.
+
+*Recette* : sur une page de 60 blocs, un glissé synthétisé maintenu en haut de la liste
+la fait défiler, et le bloc se pose au rang 0. Effort : faible.
+
+### Q12 — Dépendance vulnérable
+
+La compilation signale `Tmds.DBus.Protocol` 0.21.2, tiré par Avalonia 11.3.9 et
+affecté d'une vulnérabilité de gravité haute (GHSA-xrw6-gwf8-vvr9).
+
+*Recette* : `dotnet list package --vulnerable --include-transitive` ne rapporte rien,
+et `Scripts/verifier.sh` passe. Effort : faible, si une version corrigée existe.
+
+### Q13 — Couper la ligne au même mot à l'écran et au PDF
+
+*Trouvé le 11 octobre 2026*, en vérifiant ce que disaient les en-têtes de
+`verifier.sh` et de `comparer-rendus.sh`. Ils annoncent que la comparaison écran ↔ PDF
+échoue sur une page de texte « parce que l'interligne n'est pas appliqué à l'export ».
+R4 a corrigé l'interligne, et l'écart sur la page 1 du document d'exemple est passé de
+8 % à 4,87 %. Il reste pourtant au-dessus du seuil de 3 %, et pas seulement à cause du
+lissage des glyphes. **Dans la première colonne, l'écran et le PDF ne coupent pas la
+même ligne au même mot** : les deux versions se superposent sur l'image des écarts.
+
+R1 a fait partager aux deux rendus le *code* qui coupe les lignes (`Compositeur`), mais
+pas la *mesure* des mots : l'écran interroge Avalonia (`MetriquesAvalonia`), l'export
+interroge PDFsharp (`MetriquesPdf`). Un mot qui tient au centième de point d'un côté
+passe à la ligne de l'autre, et tout le reste du bloc se décale. C'est le défaut que la
+relecture du 6 septembre avait relevé pour les colonnes, et il vaut aussi pour les
+lignes. Le document d'exemple le produit tel quel.
+
+Le remède sûr est le seuil D : une seule source de mesure. Il existe un remède d'attente,
+moins cher, que ce poste doit éprouver : faire **décider la coupure sur la plus large
+des deux mesures**. Les deux rendus coupent alors aux mêmes mots, et chacun dessine
+ensuite avec sa propre mesure, en justifiant ou non à l'intérieur de la ligne. Le
+prix : un mot qui tiendrait de justesse passe à la ligne des deux côtés.
+
+*Recette* :
+- test pur : sur les blocs de `Samples/exemple-bulletin.mypub` et des deux documents
+  ATR, composer avec les deux métriques donne les mêmes coupures, ligne par ligne ;
+- `comparer-rendus.sh` passe sous le seuil sur les deux pages du document d'exemple.
+  Quand c'est fait, `verifier.sh` peut l'appeler en bloc.
+
+Effort : moyen. **Si la voie d'attente ne suffit pas, le poste devient la question du
+seuil D**, et l'on s'arrête pour la poser au propriétaire du projet.
+
+---
+
+## Ordre d'exécution
+
+*Arrêté le 11 octobre 2026.* Les postes partent par **salves** de quatre à huit, chacun
+dans sa copie de travail, et sont fusionnés après relecture adversariale. Une salve ne
+réunit que des postes qui ne touchent pas les mêmes fichiers ; quand deux postes se
+touchent, le second attend la salve suivante.
+
+| Salve | Postes | Pourquoi ensemble |
+|---|---|---|
+| **1** | Q1 · les sept recettes de P3 · Q2 · Q3 · Q12 | La dette qui abîme des données, le banc complet, et trois réparations courtes |
+| **2** | Q4 à Q9 · Q13 · B2 · C5b | Les écarts écran ↔ PDF, et les deux postes d'usage qui ne demandent rien |
+| **3** | R6 · A8 · A9 · A15 · B7 · B4 | Le paragraphe au panneau, et des postes courts, indépendants les uns des autres |
+| **4** | R7 · A12 · C7 · B3 + B6 | Le texte riche à la souris, et ce qui reprend les commandes des salves précédentes |
+| **5** | A10 · A11 · A13 · Q10 · Q11 | La géométrie et la couche de saisie |
+| **6** | A14 · C8 | Les deux postes à risque, chacun précédé de son essai |
+| **D** | Note de décision | Rédigée après la salve 6 ; **la décision revient au propriétaire du projet** |
+
+Trois points où l'on s'arrête pour demander, plutôt que de décider seul : le choix de
+voie au début de R7, toute rupture de `FormatVersion` sans migration, et la recette de
+B3, qui demande une vraie imprimante.
+
 ---
 
 ## Seuil D — Le moteur de composition
@@ -2079,6 +2559,12 @@ données sans couche intermédiaire. Mesurer deux fois, c'est risquer de diverge
 mesurer une fois et stocker, c'est introduire un état calculé dans un modèle qui n'en a
 aucun.
 
+*Précisé le 11 octobre 2026.* Depuis R1, les deux rendus partagent le **code** qui
+coupe les lignes (`Compositeur`), mais pas encore la **mesure** des mots : chacun
+interroge sa bibliothèque. Le risque de divergence n'est donc plus théorique. Q13 l'a
+mesuré sur le document d'exemple, et propose une voie d'attente qu'il faut éprouver
+avant de rouvrir cette décision.
+
 **Ce qui est en jeu.** C'est le seul chantier lourd du corpus, et c'est aussi celui qui
 sépare un poseur de blocs d'un logiciel de mise en page : sans lui, aucun article ne
 court sur deux colonnes ni sur deux pages. Le repousser est une position défendable —
@@ -2097,12 +2583,18 @@ par l'usage des modèles de B1, si le besoin est réel.
 | Fonction | Fiche | Raison |
 |---|---|---|
 | Barres d'outils personnalisables | 03 | Héritage d'Office 2007, abandonné par Publisher lui-même en 2010. Une barre courte et pensée vaut mieux. |
-| Volet Office commutable | 04 | Réponse au manque de place d'un écran de 2007. Deux panneaux permanents sont plus lisibles. Retenu seulement : pouvoir les replier. |
+| Volet Office commutable | 04 | Réponse au manque de place d'un écran de 2007. Deux panneaux permanents sont plus lisibles. Retenu seulement : pouvoir les replier (B7). |
 | Bibliothèque d'images en ligne | 13 | Service tiers, catalogue à maintenir, licences. Disproportionné pour un logiciel local. La variante locale rejoint C7. |
-| WordArt | 17 | Glyphes à vectoriser des deux côtés de la chaîne, pour une esthétique datée. Le besoin réel — un titre qui se voit — se traite en propriétés ordinaires : contour, ombre, dégradé (C5c). |
-| Retouche d'image (luminosité, contraste, nuances de gris) | 14 | Traitement pixel, coûteux à exporter proprement. Relève de l'éditeur d'images en amont. |
+| WordArt | 17 | Glyphes à vectoriser des deux côtés de la chaîne, pour une esthétique datée. Le besoin réel — un titre qui se voit — se traite en propriétés ordinaires : contour et ombre du caractère (A14) ; le dégradé de C5c ne porte que sur les fonds. |
+| Retouche d'image (luminosité, contraste, nuances de gris, couleur transparente) | 14 | Traitement pixel, coûteux à exporter proprement. Relève de l'éditeur d'images en amont. |
 | Zone de travail hors page | 07 | Couverte autrement, et mieux, par C7. |
 | Textures et motifs de remplissage | 09 | Ressources à embarquer, esthétique datée. |
+| Bordure par côté, BorderArt | 11 | Écarté par la fiche : un filet par côté se pose avec des traits (A10), et les bordures illustrées sont datées. |
+| Barre Image flottante | 14 | Ses commandes vont au panneau et au menu contextuel (A12) ; une barre de plus les dupliquerait. |
+| Connecteurs, points d'édition, changer de forme automatique | 22 | Dessin vectoriel : relève d'un éditeur de dessin, pas d'un poseur de blocs. |
+| Symbole, objet incorporé, lien hypertexte, signet | 22 | Hors du document imprimé que MyPublisher produit. Un symbole se tape ou se colle. |
+| Embarquer les polices | 21 | Licences. B4 écrit la liste des polices employées, et B5 avertit de leur substitution. |
+| Bibliothèque de conception (*Design Gallery*) | 20 | Contenu à dessiner et à maintenir. C7 en offre l'usage, avec le contenu de l'utilisateur. |
 | Pages maîtres | 22 | Non écarté sur le fond — simplement non planifié. À reconsidérer avec C4, dont il partage la logique de contenu répété. |
 
 ---
@@ -2115,13 +2607,17 @@ finissent toujours par se contredire.
 
 | Phase | Postes | Nature | Bloquée par |
 |---|---|---|---|
-| **P** | P0 décision de nommage · P1 git · P2 contrôle | préalables | — |
-| **A** | A1 rotation · A2 débordement · A3 chemins relatifs · A4 superposition · A5 formats · A6 barre d'état · A7 alignement vertical | finitions | — |
-| **B** | B1 modèles · B2 import texte · B3 impression · B4 archive · B5 polices | usage | — |
-| **C** | C1 remplissage · C2 repères · C3 sélection multiple · C4 champs · C5 couleurs · C6 marges · C7 bibliothèque · C9 tableau | structure | P1, P2 |
-| **D** | moteur de composition | décision | A, B, C |
+| **P** | P0 décision de nommage · P1 git · P2 contrôle · P3 banc | préalables | — |
+| **A** | A1 rotation · A2 débordement · A3 chemins relatifs · A4 superposition · A5 formats · A6 barre d'état · A7 alignement vertical · A8 insertion de pages · A9 quart de tour · A10 trait · A11 aimantation · A12 menu contextuel · A13 rognage · A14 contour du caractère · A15 sections | finitions | — |
+| **B** | B1 modèles · B2 import texte · B3 impression · B4 archive · B5 polices · B6 aperçu · B7 panneaux repliables | usage | — |
+| **C** | C1 remplissage · C2 repères · C3 sélection multiple · C4 champs · C5 couleurs · C6 marges · C7 bibliothèque · C8 miroir · C9 tableau | structure | P1, P2 |
+| **R** | R1 texte riche · R2 retraits · R3 colonnes · R4 interligne · R5 import `.pub` · R6 paragraphe au panneau · R7 texte riche à la souris | documents réels | R6 et R7 : Q1 |
+| **Q** | Q1 à Q13 | dettes consignées | — |
+| **D** | moteur de composition | décision | Q13, puis A, B, C |
 
-Trois postes à faire en premier si l'on ne devait en retenir que trois : **A2**
-(ne plus livrer un PDF amputé en silence), **B1** (les modèles, qui rendent visible tout
-le reste), **P0** (trancher le nom pendant que cela ne coûte encore rien). Le troisième
-est fait depuis le 5 septembre 2026 ; les deux autres restent en tête de liste.
+Trois postes à faire en premier si l'on ne devait en retenir que trois, au
+11 octobre 2026 : **Q1** (ne plus abîmer un document importé en tapant dedans), les
+**recettes de P3** (que tout ce qui est clos se rejoue), et **Q13** (que l'écran et le
+PDF coupent leurs lignes aux mêmes mots). Les trois que ce paragraphe nommait le
+30 août — A2, B1, P0 — sont livrés. L'ordre complet est dans
+[Ordre d'exécution](#ordre-dexécution).
