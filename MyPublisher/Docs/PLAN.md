@@ -73,9 +73,9 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **Q1** | Les styles suivent la frappe | **100 %** | Fragments et écarts recalés à la saisie par une fonction pure du noyau (`Recalage`), à la règle de Publisher : le style qui précède, celui qui suit en tête de paragraphe, le premier remplacé pour une sélection retapée. Seules les zones de saisie s'y lient ; lecture, import, copie et annulation ne recalent rien. `FormatVersion` reste à 4 ; recette dans `Scripts/recettes/` |
 | **Q2** | Le texte composé se détache de son bloc | **100 %** | `ControleDeBloc` suit l'attachement, comme `FondBloc`, et lâche l'ancien bloc quand on lui en donne un autre. Mesuré : le changement de page ne fuyait pas ; la fuite ne frappait qu'un contrôle sorti de l'arbre avec son bloc. Recette dans `Scripts/recettes/` |
 | **Q3** | Le cache d'images oublie ses échecs | **100 %** | L'ouverture d'un document (fichier ou modèle) oublie les échecs du cache, et eux seuls ; insérer une image ou la choisir pour un fond relit le fichier. L'annulation ne relit pas le disque. Recette dans `Scripts/recettes/` |
-| **Q4** | Un filet au même endroit à l'écran et au PDF | 0 % | Relevé en A2 et à la relecture du 7 septembre |
-| **Q5** | Un groupe rogne pareil à l'écran et au PDF | 0 % | Relevé en C9 |
-| **Q6** | Mesurer la découpe d'un remplissage par image | 0 % | Relevé à la relecture du 7 septembre |
+| **Q4** | Un filet au même endroit à l'écran et au PDF | **100 %** | L'écran élargit l'élément du filet d'une demi-épaisseur, sans arrondi au pixel de mise en page : centré sur le bord comme à l'export, de 0,5 à 5 pt (écart ≤ 0,01 pt mesuré à 8 px/pt). Les recettes de C1 et C5 resserrées en conséquence. Recette dans `Scripts/recettes/` |
+| **Q5** | Un groupe rogne pareil à l'écran et au PDF | **100 %** | Découpe calculée dans le noyau (`Decoupe`), lue par l'écran et l'export, groupes et tableaux, tournés et imbriqués ; elle déborde du plus large demi-filet des blocs portés (√2 fois pour un bloc tourné). Recette dans `Scripts/recettes/` |
+| **Q6** | Mesurer la découpe d'un remplissage par image | **100 %** | Bloc arrondi rempli d'une image dans le document de C5 ; ses coins sont relevés au PDF et à l'écran, et les deux sabotages de la découpe tombent |
 | **Q7** | La recette de A6 sur le cas réel | 0 % | Relevé à la relecture du 7 septembre |
 | **Q8** | N'avertir que des polices dessinées | **100 %** | La passe des polices lit les styles composés (`StyleEffectif.Decouper`) sur le contenu que `DrawText` compose, cases de tableau comprises ; un fragment recouvert, blanc, hors du texte, ou celui d'un champ n'avertit plus. Une seule règle `Fragments` pour la passe et le dessin. Recette dans `Scripts/recettes/` |
 | **Q9** | Retirer `AbsoluteLineHeight` | 0 % | Relevé en A2 : survivant de l'ancienne sémantique de l'interligne |
@@ -85,16 +85,16 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **Q13** | Couper la ligne au même mot à l'écran et au PDF | 0 % | Trouvé le 11 octobre 2026 : le document d'exemple coupe une ligne différemment |
 | **Q14** | Un double-clic ne déplace pas le bloc | 0 % | Trouvé par Q1 : un double-clic sur un bloc importé réécrit son ordonnée et empile un pas d'annulation |
 | **Q15** | Une image modifiée sur le disque se relit | **100 %** | Chaque image du cache garde l'empreinte de son fichier (date et taille, prise avant la lecture) ; l'ouverture oublie les retouchées, une image intacte reste la même instance, l'annulation ne relit rien. Recette dans `Scripts/recettes/` |
-| **Q16** | Le pointillé d'un bloc image obéit aux repères | 0 % | Trouvé par la recette de C1 : toujours dessiné, image chargée ou non, repères allumés ou non |
+| **Q16** | Le pointillé d'un bloc image obéit aux repères | **100 %** | Dessiné seulement repères allumés et sans image affichée ; recette dans `Scripts/recettes/` |
 | **Q17** | Le texte composé suit une collection remplacée | **100 %** | Accesseur fermé (`init`) sur `TextFrame.Spans`, `TextFrame.Paragraphs` et `TableCell.Spans` : le remplacement ne compile plus (CS8852), le sérialiseur les pose encore. Recette dans `Scripts/recettes/` |
 | **Q18** | Paquets marqués « Legacy » | 0 % | Trouvé par Q12 : `Avalonia.Diagnostics` et xunit 2 ont des remplaçants ; aucun n'est vulnérable |
 | **Q19** | Les autres collections ne se remplacent plus | 0 % | Trouvé par Q17 : `Page.Frames`, `GroupFrame.Children`, `Document.Pages` et les listes de repères ont un setter public que des `ItemsControl` lient sans l'écouter |
 | **D** | Moteur de composition | — | Décision non ouverte ; à rouvrir quand A, B et C sont livrées |
 
 **Par phase** — P : 4 sur 4 · A : 7 sur 15 · B : 2 sur 7 · C : 6 sur 9 · R : 5 sur 7 ·
-Q : 7 sur 19 · D : non planifié.
+Q : 11 sur 19 · D : non planifié.
 
-Soit **31 postes sur 61**. Le compte a doublé le 11 octobre 2026 sans que rien ne
+Soit **35 postes sur 61**. Le compte a doublé le 11 octobre 2026 sans que rien ne
 recule : il porte désormais les onze postes de l'audit des fiches (A8 à A15, B6, B7,
 C8), deux postes que les documents réels demandaient (R6, R7), et la phase Q, qui
 recense les défauts que les postes et les relectures ont **trouvés et consignés sans les
@@ -2812,6 +2812,66 @@ bord » : c'est donc l'écran qui a tort.
 *Recette* : sur un filet de 4 pt, les bords relevés à l'écran et au PDF concordent à
 0,25 pt près. Effort : faible.
 
+*Fait le 12 octobre 2026.* Un `Rectangle` ou une `Ellipse` d'Avalonia tracent leur
+trait sur leur cadre **diminué d'une demi-épaisseur** : posés sur le cadre du bloc, ils
+le rentraient d'autant. L'élément du filet est donc élargi d'une demi-épaisseur vers
+l'extérieur (`Conv.FiletCentre`, une marge négative), **et rendu sans arrondi de mise
+en page** (`UseLayoutRounding="False"`). Sans ce second point, Avalonia arrondit la
+marge au pixel de mise en page — un point, sous la mise à l'échelle — en arrondi
+bancaire : seule une demi-épaisseur entière était respectée. Trois éléments sont
+concernés : le contour commun des blocs (`Rectangle.frameStroke` : image, texte,
+groupe, tableau, cases), le rectangle et l'ellipse des formes. L'export n'a pas bougé :
+il disait vrai.
+
+*Ce que la relecture a trouvé.* La première version ne portait que la marge, et sa
+recette que des filets de 4 pt, dont la demi-épaisseur est entière : elle passait. La
+relecture a mesuré, écran − PDF, +0,50 pt pour un filet de 1 pt, −0,25 pour 1,5, −0,50
+pour 3, +0,50 pour 5. Or 1 pt est le filet du modèle, et 77 des 88 filets des Samples.
+Le sabotage du relecteur — la demi-épaisseur arrondie à l'entier inférieur — passait
+toute la vérification ; il fait désormais tomber la recette de Q4 sur 24 côtés.
+
+*Mesuré.* Recette `Q4-filet-centre.sh` : douze blocs, 48 côtés relevés à l'écran et au
+PDF à deux pixels par point — six chemins filés de 4 pt (image cadrée pour remplir,
+texte, forme, forme arrondie, ellipse, groupe) et une rangée de 1 pt et de 3 pt (forme,
+texte, ellipse). Avant ce poste : 48 côtés en échec, la comparaison de la page à
+3,41 % pour 3,34 % calculés. Avec la seule marge : 24 côtés en échec, les filets de 1
+et 3 pt, et 0,36 %. Après : 0,00 pt sur les 48 côtés et 0,04 %, seuil à 0,3 %. Le
+script de la relecture, appliqué de 0,5 à 5 pt sur des formes, des textes et des
+ellipses (84 côtés) : |écran − PDF| ≤ 0,01 pt à huit pixels par point. À deux pixels par point, les
+filets de 0,5 et 1,5 pt montrent ±0,25 pt **au PDF seul** — pdftoppm cale sur le pixel
+entier un trait dont le bord tombe au milieu d'un pixel —, et c'est pourquoi la recette
+mesure 1 et 3 pt plutôt que 1,5.
+
+La recette de C1, qui tolérait l'écart de 0 à +1,25 pt, l'exige désormais à
+0 ± 0,25 pt ; sa comparaison est passée de 0,88 % à 0,04 % — le lissage du mot
+« Légende » et une colonne de pixels au bord droit du portrait —, et son seuil de
+1,2 % à 0,25 %, recalculé sans Q4 et écrit dans la recette. Celle de C5 est passée de
+0,99 % à 0,09 %. Le premier relevé, 0,35 %, avait été pris pour le lissage de
+l'ellipse : c'était encore Q4, son filet de 3 pt restant à −0,5 pt. Son seuil passe de
+2 % à 0,2 %, sous ces 0,35 %.
+
+*Ce que la réparation a déplacé.* Centré, le filet d'un bloc posé sur le bord d'un
+groupe ou d'un tableau en sort d'une demi-épaisseur — et la découpe du groupe, faite au
+cadre exact, l'aurait rogné de moitié à l'écran, là où il était entier, rentré. C'est
+ce qui a fixé la découpe de Q5, qui en tient compte.
+
+*Choisi sans certitude.* La marge se calcule sur l'épaisseur seule, que le filet soit
+tracé ou non : sans filet, elle n'a rien à déplacer.
+
+*Trouvé et laissé tel quel* (relevés par la relecture, non corrigés) :
+- **la phase des tirets** diffère entre l'écran et le PDF : la géométrie d'un filet en
+  tirets est la même des deux côtés, pas l'origine de son motif ;
+- **les positions fractionnaires** sont arrondies à l'écran : `Canvas.Left` et
+  `Canvas.Top` passent par le même arrondi de mise en page, au point entier ; un bloc à
+  une abscisse fractionnaire se dessine à l'écran jusqu'à ≈ 0,3 pt de sa place au PDF.
+  Le même remède — retirer l'arrondi — porterait sur tout le canevas, et demande sa
+  propre mesure.
+
+Six sabotages au juge : la marge du contour commun ôtée (Q4 et C1) ; celle de
+l'ellipse ôtée (Q4) ; l'arrondi de mise en page rétabli sur le contour commun, sur le
+rectangle des formes, sur l'ellipse (Q4 ; C5 aussi pour l'ellipse) ; la demi-épaisseur
+arrondie à l'entier inférieur (Q4).
+
 ### Q5 — Un groupe rogne pareil à l'écran et au PDF
 
 Un bloc qui dépasse de son groupe est coupé à l'écran et pas au PDF. Le geste ne
@@ -2821,6 +2881,58 @@ trancher dans le sens de A2 : **l'export rogne au groupe, comme l'écran**.
 *Recette* : groupe de 120 pt portant un texte de 400 pt ; rien n'est dessiné au-delà
 du groupe dans le PDF, et `comparer-rendus.sh` passe. Effort : faible.
 
+*Fait le 12 octobre 2026.* L'écran découpait les blocs d'un groupe sans qu'aucune
+ligne du dépôt le dise : c'est le thème d'Avalonia qui pose `ClipToBounds` sur la liste
+qui les porte — mesuré en le retirant. La découpe est désormais calculée dans le noyau,
+`Decoupe.DesBlocs`, et les deux rendus la lisent : l'export la pose par
+`IntersectClip` avant de dessiner les blocs d'un groupe ou les cases d'un tableau, et
+l'écran la pose sur la liste, dont le `ClipToBounds` du thème est éteint
+(`DecoupeDesBlocs`, liée au porteur, à sa taille et, pour un tableau, à ses cases).
+
+**La découpe n'est pas le cadre du groupe.** Elle en déborde, de chaque côté, du plus
+large demi-filet des blocs qu'il porte, groupes imbriqués et cases comprises. Grouper
+ajuste le groupe aux cadres de ses blocs, filets non compris ; depuis Q4, le filet d'un
+bloc posé sur le bord en sort d'une demi-épaisseur, et une découpe au cadre exact le
+rogne de moitié — mesuré en l'y ramenant : 2 pt sur un filet de 4, à l'écran comme au
+PDF. **Un bloc tourné compte pour √2 fois** : le filet est joint en onglet, et la pointe
+de l'angle d'un bloc tourné sort de t/2·√2 — à 45°, c'est elle qui dépasse le plus. La
+première version comptait t/2 pour tous : la relecture a trouvé la pointe d'un losange
+émoussée dans son groupe. Ce qu'un bloc tourné porte compte de même.
+
+*Mesuré.* Recette `Q5-groupe-rogne.sh`, sur le cas du plan : un texte de 400 pt à fond
+jaune dans un groupe de 120. Avant : 67 200 pixels dessinés au-delà du groupe dans le
+PDF — les 280 pt de fond qui dépassent, sur 60 pt de haut —, aucun à l'écran ; la
+comparaison de la page à 4,35 %. Après : aucun pixel des deux côtés, et 0,05 %. La même
+page porte un groupe et un tableau filés de 4 pt sur leur bord : 4 pt mesurés des deux
+côtés. Ajoutés après la relecture, sur ses documents : un groupe tourné de 30°, un
+groupe dans un groupe — chacun découpe à sa marge, rien au-delà ni de l'un ni de
+l'autre — et un losange filé de 6 pt dans un groupe ajusté à son empreinte, dont la
+pointe d'onglet est relevée bleue à 3,25 pt au-dessus de l'angle, des deux côtés. Page
+à six blocs : 8,03 % avant le poste, 0,13 % après, seuil 0,3 %. Douze tests du noyau
+sous `poste=Q5`, que la recette joue d'abord.
+
+*Choisi sans certitude.* Une marge commune au groupe et non propre à chaque bloc : un
+bloc sans filet qui dépasse d'un groupe dont un autre bloc est filé s'arrête à un
+demi-filet au-delà du bord, et non sur le bord. Une découpe par bloc l'éviterait, au
+prix d'une découpe par enfant à l'écran ; aucun geste ne produit ce cas. Les tableaux
+reçoivent la même découpe que les groupes, bien que leurs cases ne dépassent jamais :
+c'est le même chemin de rendu des deux côtés, et le seul effet est de laisser entiers
+les filets des cases du bord. Le premier pixel au-delà de la découpe, dans le PDF, porte
+un soupçon de la couleur coupée — (255, 249, 223) sur un fond (255, 204, 0) — : c'est le
+lissage de `pdftoppm`, que la recette tolère et dit. La marge commune a été acceptée
+par le propriétaire le 12 octobre 2026.
+
+*Laissé tel quel.* À l'écran, la découpe n'est liée qu'au porteur et à sa taille — et,
+pour un tableau, à ses cases —, non à `Children` ni aux filets des blocs portés : elle
+ne se recalcule pas si l'on change le filet d'un bloc déjà groupé, ou si l'on remplace
+les blocs d'un groupe affiché. Aucun geste ne le fait aujourd'hui — un bloc groupé ne se
+sélectionne pas, et grouper ou dissocier recrée le groupe —, mais un futur geste qui le
+ferait trouverait l'écran en retard sur l'export.
+
+Trois sabotages au juge : la découpe ôtée de l'export (Q5), la découpe ramenée au cadre
+exact (Q5 et `DecoupeTests`), le facteur √2 des blocs tournés ôté (Q5 et
+`DecoupeTests`).
+
 ### Q6 — Mesurer la découpe d'un remplissage par image
 
 Le document de recette de C5 ne porte que des rectangles à angles droits : un sabotage
@@ -2829,6 +2941,22 @@ de la découpe d'un remplissage par image traverse toute la vérification.
 *Recette* : ajouter au document de C5 un bloc arrondi rempli d'une image, relever la
 couleur du fond de page dans le coin, et ajouter à `eprouver-le-juge.sh` le sabotage
 qui doit tomber. Effort : faible.
+
+*Fait le 12 octobre 2026.* `Samples/recette-fonds.mypub` porte un bloc de 200 × 120 pt
+aux angles arrondis de 30 pt, rempli d'une image — un aplat magenta,
+`Samples/recette-fonds-trame.png`, étiré au bloc —, sans filet. La recette de C5 y
+relève quatre points de plus, au PDF puis à l'écran : l'image au centre et à 2 pt du
+bord gauche, juste sous l'arc ; le fond de page dans les coins haut-gauche et
+bas-droite, à 9,6 pt hors de l'arc. La couleur attendue dans les coins se calcule — le
+dégradé de page, du blanc au #336699 — et concorde avec le relevé.
+
+*Mesuré.* Deux sabotages, joués à la main sur l'ancienne recette puis sur la nouvelle.
+La découpe de l'export privée de son arrondi : l'ancienne recette passe, la nouvelle
+tombe sur les deux coins (magenta au lieu du fond, et l'écran en désaccord avec le PDF).
+La même chose à l'écran (`FondBloc`) : la nouvelle tombe sur le désaccord écran ≠ PDF.
+La comparaison de la page n'avait pas bougé en ajoutant ce bloc (0,35 %, alors), et elle
+est à 0,09 % depuis la seconde réparation de Q4 : un coin rogné de travers ne pèse que
+quelques centaines de pixels, et c'est bien pourquoi la mesure est ponctuelle.
 
 ### Q7 — La recette de A6 sur le cas réel
 
@@ -3103,6 +3231,27 @@ comparaison écran ↔ PDF (0,06 % de la page pour un bloc seul).
 *Recette* : un bloc image chargé, rendu par le banc repères éteints, ne porte aucun
 pixel de la couleur du pointillé ; un bloc image sans fichier le montre repères
 allumés et le cache repères éteints. Effort : faible.
+
+*Fait le 12 octobre 2026.* Le pointillé n'est plus dessiné que si les repères sont
+allumés **et** qu'aucune image n'est affichée dans le bloc : sa visibilité est le « et »
+de `ShowGuides` et d'une source d'image nulle, lue sur l'élément image du gabarit. Une
+image introuvable sur le disque donne une source nulle : le bloc montre alors sa place,
+comme un bloc sans chemin.
+
+*Mesuré.* Trois tests d'interface sous `poste=Q16` et la recette
+`Q16-pointille-image.sh`, qui les joue puis rend au banc une page portant un bloc
+chargé et un bloc sans fichier. Pixels du gris du pointillé sur le pourtour : bloc
+chargé, 0 repères éteints comme allumés ; bloc sans fichier, 616 repères allumés, 0
+éteints. La comparaison de la page de C1, où le défaut a été trouvé, tombe à 0,04 %
+avec Q4.
+
+*Choisi sans certitude.* Une image chargée cache le pointillé même repères allumés :
+c'est ce que dit le commentaire d'origine (« tant qu'aucune image n'est chargée »), et
+le cadre du bloc reste visible à la sélection. Publisher n'a pas été consulté sur ce
+point.
+
+Deux sabotages au juge, un par condition : la source d'image retirée de la condition,
+puis l'interrupteur des repères ; chacun fait tomber un test différent.
 
 ### Q17 — Le texte composé suit une collection remplacée
 

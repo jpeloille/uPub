@@ -270,14 +270,36 @@ public static class PdfExporter
     }
 
     private static void DrawChildren(
-        XGraphics gfx, GroupFrame group, List<string> warnings, FieldContext context, string repere)
+        XGraphics gfx, GroupFrame group, List<string> warnings, FieldContext context, string repere) =>
+        DessinerPortes(gfx, group, group.Children, warnings, context, repere);
+
+    /// <summary>
+    /// Les blocs d'un groupe ou les cases d'un tableau, dans le repère de leur porteur et
+    /// découpés à lui.
+    ///
+    /// La translation et la découpe ne valent que pour eux : le contour du porteur, tracé
+    /// ensuite, est en coordonnées de page comme son fond, et ne doit pas être rogné.
+    ///
+    /// La découpe est celle de l'écran, lue au même endroit (<see cref="Decoupe"/>) :
+    /// jusqu'au poste Q5, un bloc plus large que son groupe s'arrêtait au bord du groupe
+    /// à l'écran et courait jusqu'au bout dans le PDF.
+    /// </summary>
+    private static void DessinerPortes(
+        XGraphics gfx, Frame porteur, IReadOnlyList<Frame> blocs, List<string> warnings,
+        FieldContext context, string repere)
     {
-        // La translation ne vaut que pour les enfants : le contour du groupe, tracé
-        // ensuite, est en coordonnées de page comme son fond.
         var state = gfx.Save();
-        gfx.TranslateTransform(group.X, group.Y);
-        DessinerTous(gfx, group.Children, warnings, context, repere);
-        gfx.Restore(state);
+        try
+        {
+            gfx.TranslateTransform(porteur.X, porteur.Y);
+            var zone = Decoupe.DesBlocs(porteur.Width, porteur.Height, blocs);
+            gfx.IntersectClip(new XRect(zone.Left, zone.Top, zone.Width, zone.Height));
+            DessinerTous(gfx, blocs, warnings, context, repere);
+        }
+        finally
+        {
+            gfx.Restore(state);
+        }
     }
 
     /// <summary>
@@ -289,13 +311,8 @@ public static class PdfExporter
     /// comparer pour s'en assurer.
     /// </summary>
     private static void DrawTable(
-        XGraphics gfx, TableFrame table, List<string> warnings, FieldContext context, string repere)
-    {
-        var state = gfx.Save();
-        gfx.TranslateTransform(table.X, table.Y);
-        DessinerTous(gfx, table.CellFrames, warnings, context, repere);
-        gfx.Restore(state);
-    }
+        XGraphics gfx, TableFrame table, List<string> warnings, FieldContext context, string repere) =>
+        DessinerPortes(gfx, table, table.CellFrames, warnings, context, repere);
 
     /// <summary>
     /// La zone qu'un remplissage doit couvrir, et sa forme. Un bloc, une case ou la page
