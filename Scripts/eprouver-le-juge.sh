@@ -391,6 +391,57 @@ saboter "un collage qui porte du texte est poussé à gauche comme un saut" \
     '' \
     'Q1-styles-frappe|RecalageTests|FrappeTests'
 
+# Salve 2, lot « noyau » : Q8, Q15 et Q17. Chaque sabotage a été joué à la main contre
+# la recette de son poste avant d'être écrit ici.
+
+# Q8 : le défaut d'origine, rétabli tel quel — la passe relit l'héritage des fragments
+# pour son compte au lieu des styles composés. Cinq des six tests de Q8 tombent, et
+# la recette, sur le document du plan.
+saboter "la passe des polices relit l'héritage des fragments au lieu des styles composés" \
+    MyPublisher.Core/Services/PdfExporter.cs \
+    'foreach (var style in StylesDessines(bloc, content))' \
+    'foreach (var style in bloc.Spans.Select(f => Commun(bloc) with { FontFamily = f.FontFamily ?? bloc.FontFamily, Bold = f.Bold ?? bloc.Bold, Italic = f.Italic ?? bloc.Italic }).Prepend(Commun(bloc)))' \
+    'Q8-polices|PolicesTests'
+
+# Q8 : la passe lit les fragments d'un bloc qui montre un champ, que le dessin ignore.
+# Seul le test du folio le voit.
+saboter "la passe des polices lit les fragments d'un champ, que le dessin ignore" \
+    MyPublisher.Core/Services/PdfExporter.cs \
+    'StyleEffectif.Decouper(content, Fragments(text, content), Commun(text))' \
+    'StyleEffectif.Decouper(content, text.Spans, Commun(text))' \
+    'Q8-polices|PolicesTests'
+
+# Q15 : l'ouverture ne compare plus les empreintes. L'écran garde l'image d'avant la
+# retouche, le PDF montre la nouvelle.
+saboter "rouvrir un document ne relit plus une image retouchée" \
+    MyPublisher/ViewModels/MainWindowViewModel.cs \
+    'BitmapCache.OublierLesRetouchees();' \
+    '' \
+    'Q15-image|ImagesTests'
+
+# Q15 : chaque moitié de l'empreinte a son test. La taille oubliée, seule la retouche
+# qui garde sa date passe ; la date oubliée, seule la retouche de même taille passe.
+saboter "l'empreinte d'une image oublie la taille de son fichier" \
+    MyPublisher/Converters/Conv.cs \
+    'new Empreinte(fichier.LastWriteTimeUtc, fichier.Length)' \
+    'new Empreinte(fichier.LastWriteTimeUtc, 0)' \
+    'Q15-image|ImagesTests'
+
+saboter "l'empreinte d'une image oublie la date de son fichier" \
+    MyPublisher/Converters/Conv.cs \
+    'new Empreinte(fichier.LastWriteTimeUtc, fichier.Length)' \
+    'new Empreinte(default, fichier.Length)' \
+    'Q15-image|ImagesTests'
+
+# Q17 : l'accesseur des fragments rouvert. Tout compile, rien ne casse à l'écran
+# aujourd'hui ; la sonde de la recette compile le remplacement, et la réflexion voit
+# la marque « init » disparaître.
+saboter "les fragments d'un bloc se remplacent de nouveau après la construction" \
+    MyPublisher.Core/Models/Frame.cs \
+    'public ObservableCollection<StyleSpan> Spans { get; init; } = [];' \
+    'public ObservableCollection<StyleSpan> Spans { get; set; } = [];' \
+    'Q17-collections|CollectionsFermeesTests'
+
 echo
 if [ "$trous" = 0 ]; then
     echo "Le juge sait échouer : $sabotages sabotages, $sabotages attrapés."

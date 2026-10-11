@@ -205,6 +205,9 @@ la barre du haut regroupe les commandes du document : fichier, annulation, zoom.
 - **Un dossier de travail se déplace sans casser ses images** : les images rangées à
   côté du document — ou sous son dossier — y sont référencées relativement à lui.
   Celles qui vivent ailleurs gardent leur chemin absolu.
+- **Une image retouchée dans un autre outil se relit en rouvrant le document.** Tant
+  qu'on ne le rouvre pas, l'écran garde l'image qu'il a lue, alors que l'export relit
+  toujours le fichier ; l'annulation ne relit rien.
 - **Ouverture des documents Microsoft Publisher (`.pub`)** : pages, blocs de texte avec
   leurs fragments de style, retraits et fers par paragraphe, tabulations, tableaux,
   cadres, traits, et les **images posées en remplissage de forme** — c'est ainsi que
@@ -219,7 +222,8 @@ la barre du haut regroupe les commandes du document : fichier, annulation, zoom.
 - **L'export dit quelles polices il n'a pas trouvées**, et par quoi il les a
   remplacées : « Police substituée : « Wingdings » demandée, « DejaVu Sans »
   employée ». Une substitution muette ne dégrade pas seulement l'allure — sur une
-  fiche de procédure, elle remplace une flèche par une lettre.
+  fiche de procédure, elle remplace une flèche par une lettre. Il ne nomme que les
+  polices qu'il dessine : un fragment entièrement recouvert par un autre ne dit rien.
 
 ## Raccourcis
 
