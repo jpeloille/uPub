@@ -111,11 +111,22 @@
                    RenderTransformOrigin="50%,50%"
                    RenderTransform="{Binding Rotation, Converter={x:Static conv:Conv.Rotate}}">
                 <views:FondBloc Classes="frameFill"/>
-                <!-- Repère visible tant qu'aucune image n'est chargée. -->
-                <Rectangle Stroke="#FFB0B0B0" StrokeThickness="0.5" StrokeDashArray="4,3"/>
+                <!-- Repère visible tant qu'aucune image n'est chargée, et seulement si les
+                     repères le sont : il ne s'imprime pas. Jusqu'au poste Q16, il était
+                     toujours dessiné — une image cadrée sans déformation le laissait voir
+                     sur le bord du bloc, et il entrait dans toute comparaison au PDF. -->
+                <Rectangle Classes="emplacementImage"
+                           Stroke="#FFB0B0B0" StrokeThickness="0.5" StrokeDashArray="4,3">
+                    <Rectangle.IsVisible>
+                        <MultiBinding Converter="{x:Static BoolConverters.And}">
+                            <Binding Path="#Board.((vm:MainWindowViewModel)DataContext).ShowGuides"/>
+                            <Binding Path="#Photo.Source" Converter="{x:Static ObjectConverters.IsNull}"/>
+                        </MultiBinding>
+                    </Rectangle.IsVisible>
+                </Rectangle>
                 <!-- Même découpage que pour le texte : le chemin passe par le résolveur,
                      ce qui permet à un bloc de porter le logo du jeu de coordonnées. -->
-                <Image Stretch="{Binding Fit, Converter={x:Static conv:Conv.Fit}}">
+                <Image x:Name="Photo" Stretch="{Binding Fit, Converter={x:Static conv:Conv.Fit}}">
                     <Image.Source>
                         <MultiBinding Converter="{x:Static conv:FieldToImage.Instance}">
                             <Binding Path="Path"/>
