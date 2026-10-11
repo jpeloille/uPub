@@ -34,6 +34,7 @@ Scripts/controle.sh --enregistrer   # remplace le relevé de référence, après
 Scripts/eprouver-le-juge.sh         # sabote le code et vérifie qu'on s'en aperçoit
 Scripts/comparer-rendus.sh doc.mypub 1   # l'écran contre le PDF, à deux pixels par point
 Scripts/bilan.sh                    # poste par poste : clos ou non, recette ou non
+Scripts/verifier-dependances.sh     # aucune dépendance vulnérable (réseau ; à part)
 ```
 
 Les recettes demandent trois outils hors .NET : `pdftoppm` (poppler-utils), `magick`
@@ -43,9 +44,10 @@ Les recettes demandent trois outils hors .NET : `pdftoppm` (poppler-utils), `mag
 sudo apt install poppler-utils imagemagick libmspub-tools
 ```
 
-La recette de Q12 demande en outre l'accès à nuget.org : elle lit la base des
-vulnérabilités connues, et échoue en le disant quand elle ne peut pas la lire — jamais
-un vert faute de réseau. NuGet garde un temps la dernière lecture dans son cache.
+La recette de Q12, `Scripts/verifier-dependances.sh`, se lance à part : elle demande
+l'accès à nuget.org pour lire la base des vulnérabilités connues, et échoue en le disant
+quand elle ne peut pas la lire — jamais un vert faute de réseau. À jouer avant une
+livraison, et chaque fois qu'on touche aux paquets.
 
 Le dépôt se travaille sur un disque local. Un partage réseau monté en CIFS ne garde
 pas le bit d'exécution : les scripts et le binaire compilé y tombent tous en

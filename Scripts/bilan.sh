@@ -13,7 +13,8 @@
 # « A2-A7-debordement-et-rognage.sh » couvre A2 et A7. Quatre postes n'ont pas de
 # recette au sens des autres, et c'est voulu : P0 est une décision, P1 un « git init »,
 # P2 est lui-même le contrôle, P3 se rejoue par « eprouver-le-juge.sh ». D n'est pas un
-# poste mais une décision à prendre.
+# poste mais une décision à prendre. Q12 a sa recette hors de Scripts/recettes/,
+# parce qu'elle demande le réseau : « verifier-dependances.sh », lancée à part.
 #
 # Le bilan informe, il ne juge pas : il sort en code 0 quoi qu'il trouve. Ce qui fait
 # autorité reste « Scripts/verifier.sh ».
@@ -58,6 +59,7 @@ while IFS='|' read -r _ code intitule avancement _; do
         P0|P1|D) recette="sans objet" ;;
         P2)      recette="controle.sh" ;;
         P3)      recette="eprouver-le-juge.sh" ;;
+        Q12)     recette="verifier-dependances.sh" ;;
         *)       if [[ "$couverts" == *" $code "* ]]; then recette="présente"; else recette="ABSENTE"; fi ;;
     esac
 

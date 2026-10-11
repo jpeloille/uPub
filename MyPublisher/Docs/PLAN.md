@@ -24,14 +24,14 @@ Où en est chaque poste. Une seule règle pour la colonne d'avancement : un post
 on écrit ce qui est fait plutôt qu'un pourcentage inventé — un poste à moitié écrit n'est
 pas un poste à moitié livré. La colonne se met à jour dans le commit qui clôt le poste.
 
-*Dernière mise à jour : 11 octobre 2026 (étape 1 : les postes spécifiés).*
+*Dernière mise à jour : 11 octobre 2026 (salve 1 fusionnée).*
 
 | Poste | Intitulé | Avancement | Où ça en est |
 |---|---|:---:|---|
 | **P0** | Nom du remplissage | **100 %** | `Fill` retenu et daté ; renommage fait en C1 |
 | **P1** | Dépôt sous git | **100 %** | Branche `main`, commit initial `cc098e0` |
 | **P2** | Contrôle de non-régression | **100 %** | `Scripts/controle.sh`, référence dans `Scripts/reference.txt` |
-| **P3** | Banc de vérification | en cours | Noyau séparé, banc de rendu, comparaison écran ↔ PDF, export déterministe, 20 tests, `Scripts/verifier.sh`, bilan dans `Scripts/bilan.sh`. Reste : les recettes de B1, C1, C2, C3, C4, C6 et R4, clos sans recette rejouable |
+| **P3** | Banc de vérification | **100 %** | Noyau séparé, banc de rendu, comparaison écran ↔ PDF, export déterministe, `Scripts/verifier.sh`, bilan dans `Scripts/bilan.sh`. Les sept recettes qui manquaient sont écrites, chacune éprouvée par son sabotage ; le bilan ne nomme plus aucun poste clos sans recette |
 | **A1** | Poignée de rotation | **100 %** | Neuvième poignée au-dessus du bloc, aimantée sur 15° sous Maj ; recette dans `Scripts/recettes/` |
 | **A2** | Signaler le débordement du texte | **100 %** | Marqueur rouge à l'écran, avertissement à l'export, et l'export rogne au bloc comme l'écran |
 | **A3** | Chemins d'images relatifs | **100 %** | Relatif sous le dossier du document, absolu ailleurs ; résolu à l'ouverture. `FormatVersion` reste à 3 |
@@ -81,14 +81,19 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **Q9** | Retirer `AbsoluteLineHeight` | 0 % | Relevé en A2 : survivant de l'ancienne sémantique de l'interligne |
 | **Q10** | Saisir une poignée hors de la page | 0 % | Relevé en A1 |
 | **Q11** | La liste des blocs défile pendant le glissé | 0 % | Relevé en A4 |
-| **Q12** | Dépendance vulnérable | **100 %** | `Tmds.DBus.Protocol` relevé à 0.21.3 (correctif rétroporté) par une référence directe dans `MyPublisher` ; Avalonia reste en 11.3.9. Recette dans `Scripts/recettes/`, qui lit la base des vulnérabilités et le prouve sur un projet témoin |
+| **Q12** | Dépendance vulnérable | **100 %** | `Tmds.DBus.Protocol` relevé à 0.21.3 (correctif rétroporté) par une référence directe dans `MyPublisher` ; Avalonia reste en 11.3.9. Recette à part, `Scripts/verifier-dependances.sh`, parce qu'elle demande le réseau : elle lit la base des vulnérabilités et le prouve sur un projet témoin |
 | **Q13** | Couper la ligne au même mot à l'écran et au PDF | 0 % | Trouvé le 11 octobre 2026 : le document d'exemple coupe une ligne différemment |
+| **Q14** | Un double-clic ne déplace pas le bloc | 0 % | Trouvé par Q1 : un double-clic sur un bloc importé réécrit son ordonnée et empile un pas d'annulation |
+| **Q15** | Une image modifiée sur le disque se relit | 0 % | Trouvé par Q3 : le cache garde ses réussites, l'écran reste périmé quand le PDF relit le fichier |
+| **Q16** | Le pointillé d'un bloc image obéit aux repères | 0 % | Trouvé par la recette de C1 : toujours dessiné, image chargée ou non, repères allumés ou non |
+| **Q17** | Le texte composé suit une collection remplacée | 0 % | Trouvé par Q2 : `Spans` et `Paragraphs` ont un setter public, qu'aucun contrôle n'écoute |
+| **Q18** | Paquets marqués « Legacy » | 0 % | Trouvé par Q12 : `Avalonia.Diagnostics` et xunit 2 ont des remplaçants ; aucun n'est vulnérable |
 | **D** | Moteur de composition | — | Décision non ouverte ; à rouvrir quand A, B et C sont livrées |
 
-**Par phase** — P : 3 sur 4 · A : 7 sur 15 · B : 2 sur 7 · C : 6 sur 9 · R : 5 sur 7 ·
-Q : 0 sur 13 · D : non planifié.
+**Par phase** — P : 4 sur 4 · A : 7 sur 15 · B : 2 sur 7 · C : 6 sur 9 · R : 5 sur 7 ·
+Q : 4 sur 18 · D : non planifié.
 
-Soit **23 postes sur 55**. Le compte a doublé le 11 octobre 2026 sans que rien ne
+Soit **28 postes sur 60**. Le compte a doublé le 11 octobre 2026 sans que rien ne
 recule : il porte désormais les onze postes de l'audit des fiches (A8 à A15, B6, B7,
 C8), deux postes que les documents réels demandaient (R6, R7), et la phase Q, qui
 recense les défauts que les postes et les relectures ont **trouvés et consignés sans les
@@ -2898,7 +2903,7 @@ au pixel n'avait de raison de bouger — aucune n'a bougé.
 ce seul projet, et la règle « la dépendance la plus proche l'emporte » la transmet aux
 deux autres. La base ne signalait rien d'autre sur les cinq projets.
 
-**La recette lit la base, puis prouve qu'elle l'a lue.** `Scripts/recettes/Q12-dependances.sh`
+**La recette lit la base, puis prouve qu'elle l'a lue.** `Scripts/verifier-dependances.sh`
 lit le relevé JSON plutôt que la phrase « has no vulnerable packages », qui se dit aussi
 bien d'une base saine que d'une base vide ; elle échoue sur tout problème signalé, sur
 tout projet manquant au relevé, et nommément sur l'absence de réseau. Elle fait ensuite
@@ -2906,13 +2911,19 @@ tirer la 0.21.2 à un projet jetable et exige qu'elle y soit signalée : sans ce
 contre-épreuve, un outil qui ne sait plus rien signaler passerait pour un dépôt sain.
 Enfin elle compare ce que la compilation a copié à ce que la restauration a résolu, paquet
 par paquet : le premier essai l'a montré utile, sur un binaire compilé avant la
-correction qui embarquait encore la 0.21.2. Le sabotage ajouté au juge remet la 0.21.2
-dans le projet.
+correction qui embarquait encore la 0.21.2.
 
 *Choisi sans certitude.* La recette dépend du réseau, ou d'un cache NuGet récent :
 c'est la nature d'une base qui change sans nous, et la recette tombera le jour où une
 avancée nouvelle touchera un paquet d'aujourd'hui. C'est ce qu'on veut apprendre, mais
 c'est aussi la première recette dont le rouge peut ne rien devoir au dépôt.
+
+*Tranché par le propriétaire le 11 octobre 2026* : la recette sort de `verifier.sh` et
+de `Scripts/recettes/`. Elle se lance à part, sous le nom `Scripts/verifier-dependances.sh`,
+avant une livraison et chaque fois qu'on touche aux paquets ; `bilan.sh` la reconnaît
+pour Q12. Le juge perd du même coup son sabotage de Q12, qui ne passait que par elle :
+la contre-épreuve du projet témoin en tient lieu, puisqu'elle la fait échouer sur la
+version fautive à chaque passage.
 
 *Laissé tel quel.* La référence directe est une ligne qu'aucun code n'appelle, et qu'on
 serait tenté de retirer au premier ménage. Elle pourra partir quand une version
@@ -2951,6 +2962,67 @@ prix : un mot qui tiendrait de justesse passe à la ligne des deux côtés.
 Effort : moyen. **Si la voie d'attente ne suffit pas, le poste devient la question du
 seuil D**, et l'on s'arrête pour la poser au propriétaire du projet.
 
+### Q14 — Un double-clic ne déplace pas le bloc
+
+*Trouvé le 11 octobre 2026 par Q1.* Un double-clic sur un bloc importé, pour y entrer
+en saisie, passe par le geste de déplacement (`PageCanvas.ApplyMove`) sans que le
+pointeur ait bougé : l'ordonnée est réécrite à son dernier chiffre près
+(107.15039999999999 devient 107.1504), le document passe pour modifié et un pas
+d'annulation est empilé. Rien ne se voit, mais « annuler » ne défait plus ce qu'on
+attend, et la fermeture demande d'enregistrer un document qu'on n'a pas touché.
+
+*Recette* : sur ATA 21 importé, un double-clic synthétisé au centre d'un bloc ouvre la
+saisie ; le JSON du bloc est identique au caractère près, `CanUndo` reste faux et le
+document n'est pas marqué modifié. Un glissé de 1 pt, lui, empile toujours son pas.
+Effort : faible.
+
+### Q15 — Une image modifiée sur le disque se relit
+
+*Trouvé le 11 octobre 2026 par Q3*, qui a choisi d'oublier les échecs du cache à la
+réouverture et de garder ses réussites. Une image retouchée sur le disque pendant la
+session reste donc périmée à l'écran, même après réouverture, alors que l'export PDF
+relit le fichier à chaque fois : c'est un écart écran ↔ PDF. Remède probable : la clé
+du cache porte la date de modification du fichier en plus de son chemin.
+
+*Recette* : une image posée, puis réécrite sur le disque d'une autre couleur ; après
+réouverture, l'écran et le PDF montrent la nouvelle couleur. Sans retouche, le cache
+rend la même instance (l'épingle de Q3 tient). Effort : faible.
+
+### Q16 — Le pointillé d'un bloc image obéit aux repères
+
+*Trouvé le 11 octobre 2026 par la recette de C1.* Le pointillé gris d'un bloc image,
+« repère visible tant qu'aucune image n'est chargée » selon `PageCanvas.axaml`, est en
+réalité toujours dessiné. Une image cadrée sans déformation le laisse voir sur le bord
+du bloc, et il n'obéit pas à l'interrupteur des repères : il entre dans toute
+comparaison écran ↔ PDF (0,06 % de la page pour un bloc seul).
+
+*Recette* : un bloc image chargé, rendu par le banc repères éteints, ne porte aucun
+pixel de la couleur du pointillé ; un bloc image sans fichier le montre repères
+allumés et le cache repères éteints. Effort : faible.
+
+### Q17 — Le texte composé suit une collection remplacée
+
+*Trouvé le 11 octobre 2026 par Q2.* `Spans` et `Paragraphs` ont un setter public.
+Remplacer la collection d'un bloc affiché laisserait `ControleDeBloc` abonné à
+l'ancienne et sourd à la nouvelle. Rien ne le fait aujourd'hui hors de `Clone()` et de
+l'import, qui travaillent sur des blocs pas encore affichés : c'est une mine, pas un
+défaut visible. Remède : écouter le changement de la propriété elle-même, ou fermer
+le setter.
+
+*Recette* : un contrôle affiché, dont on remplace les `Spans` du bloc, redessine au
+style de la nouvelle collection ; l'ancienne n'a plus d'abonné. Effort : faible.
+
+### Q18 — Paquets marqués « Legacy »
+
+*Trouvé le 11 octobre 2026 par Q12.* `dotnet list package --deprecated` signale
+`Avalonia.Diagnostics` 11.3.9 (remplaçant proposé : `AvaloniaUI.DiagnosticsSupport`) et
+xunit, xunit.assert et xunit.core 2.9.3 (remplaçants : xunit.v3). Aucun n'est
+vulnérable. Passer à xunit.v3 touche les deux projets de tests et leur harnais
+d'interface : à faire seul, et pas au milieu d'une salve.
+
+*Recette* : `dotnet list package --deprecated` ne signale plus rien, et les deux
+projets de tests comptent autant de tests qu'avant. Effort : moyen.
+
 ---
 
 ## Ordre d'exécution
@@ -2962,12 +3034,12 @@ touchent, le second attend la salve suivante.
 
 | Salve | Postes | Pourquoi ensemble |
 |---|---|---|
-| **1** | Q1 · les sept recettes de P3 · Q2 · Q3 · Q12 | La dette qui abîme des données, le banc complet, et trois réparations courtes |
-| **2** | Q4 à Q9 · Q13 · B2 · C5b | Les écarts écran ↔ PDF, et les deux postes d'usage qui ne demandent rien |
+| **1** | Q1 · les sept recettes de P3 · Q2 · Q3 · Q12 | La dette qui abîme des données, le banc complet, et trois réparations courtes. **Fusionnée le 11 octobre 2026** |
+| **2** | Q4 à Q9 · Q13 à Q17 · B2 · C5b | Les écarts écran ↔ PDF, et les deux postes d'usage qui ne demandent rien |
 | **3** | R6 · A8 · A9 · A15 · B7 · B4 | Le paragraphe au panneau, et des postes courts, indépendants les uns des autres |
 | **4** | R7 · A12 · C7 · B3 + B6 | Le texte riche à la souris, et ce qui reprend les commandes des salves précédentes |
 | **5** | A10 · A11 · A13 · Q10 · Q11 | La géométrie et la couche de saisie |
-| **6** | A14 · C8 | Les deux postes à risque, chacun précédé de son essai |
+| **6** | A14 · C8 · Q18 | Les deux postes à risque, chacun précédé de son essai |
 | **D** | Note de décision | Rédigée après la salve 6 ; **la décision revient au propriétaire du projet** |
 
 Trois points où l'on s'arrête pour demander, plutôt que de décider seul : le choix de
@@ -3053,12 +3125,13 @@ finissent toujours par se contredire.
 | **B** | B1 modèles · B2 import texte · B3 impression · B4 archive · B5 polices · B6 aperçu · B7 panneaux repliables | usage | — |
 | **C** | C1 remplissage · C2 repères · C3 sélection multiple · C4 champs · C5 couleurs · C6 marges · C7 bibliothèque · C8 miroir · C9 tableau | structure | P1, P2 |
 | **R** | R1 texte riche · R2 retraits · R3 colonnes · R4 interligne · R5 import `.pub` · R6 paragraphe au panneau · R7 texte riche à la souris | documents réels | R6 et R7 : Q1 |
-| **Q** | Q1 à Q13 | dettes consignées | — |
+| **Q** | Q1 à Q18 | dettes consignées | — |
 | **D** | moteur de composition | décision | Q13, puis A, B, C |
 
 Trois postes à faire en premier si l'on ne devait en retenir que trois, au
 11 octobre 2026 : **Q1** (ne plus abîmer un document importé en tapant dedans), les
 **recettes de P3** (que tout ce qui est clos se rejoue), et **Q13** (que l'écran et le
-PDF coupent leurs lignes aux mêmes mots). Les trois que ce paragraphe nommait le
+PDF coupent leurs lignes aux mêmes mots). Les deux premiers sont livrés avec la salve 1,
+le jour même : reste Q13, en tête de la salve 2. Les trois que ce paragraphe nommait le
 30 août — A2, B1, P0 — sont livrés. L'ordre complet est dans
 [Ordre d'exécution](#ordre-dexécution).

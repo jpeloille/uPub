@@ -2,6 +2,14 @@
 #
 # Recette du poste Q12 — aucune dépendance vulnérable connue.
 #
+#   Scripts/verifier-dependances.sh
+#
+# Elle se lance À PART, et non par « Scripts/verifier.sh » : elle lit la base des
+# vulnérabilités sur nuget.org, donc demande le réseau, et peut tomber un jour sans
+# qu'une ligne du dépôt ait changé. Le propriétaire l'a sortie de la vérification le
+# 11 octobre 2026. À jouer avant une livraison, et quand on touche aux paquets.
+# Le juge ne l'éprouve pas : sa contre-épreuve (point 3) le fait à chaque passage.
+#
 # Ce qu'elle éprouve :
 #
 #   1. la base des vulnérabilités NuGet a bien été consultée : la commande a abouti,
@@ -40,7 +48,7 @@ export LC_ALL=C
 export DOTNET_CLI_UI_LANGUAGE=en
 export DOTNET_NOLOGO=1
 
-racine="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+racine="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$racine"
 
 travail="$(mktemp -d)"
@@ -172,12 +180,13 @@ echo "  3. contre-épreuve : la 0.21.2 est bien signalée sur un projet témoin.
 # (« MyPublisher.deps.json ») à ce que la restauration a résolu (« project.assets.json »).
 # Aucune version n'est écrite en dur : le jour où Avalonia tirera de lui-même une
 # version corrigée et que la référence directe partira, ce point n'aura rien à changer.
-# Scripts/verifier.sh compile l'application (par Scripts/controle.sh) avant les recettes.
-deps="MyPublisher/bin/Debug/net10.0/MyPublisher.deps.json"
-if [ ! -f "$deps" ]; then
-    echo "ÉCHEC : $deps introuvable. Compiler d'abord." >&2
+# Jouée à part, elle compile elle-même : un binaire d'avant la correction ferait mentir
+# ce point.
+if ! dotnet build MyPublisher/MyPublisher.csproj -c Debug --nologo -v q > /dev/null 2>&1; then
+    echo "ÉCHEC : la compilation ne passe pas." >&2
     exit 1
 fi
+deps="MyPublisher/bin/Debug/net10.0/MyPublisher.deps.json"
 
 python3 - "$deps" MyPublisher/obj/project.assets.json <<'PY'
 import json, sys

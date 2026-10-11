@@ -87,7 +87,7 @@ PY
         # échec, pas le premier venu. Sans cette précision, on croirait le filet plus
         # large qu'il n'est — trois sabotages « attrapés par le contrôle » peuvent
         # n'être qu'un seul et même garde-fou. Les recettes portent le code de leur
-        # poste en majuscule (« Q12-dependances »).
+        # poste en majuscule (« C4-champs »).
         local tests recettes autres coupable
         tests="$(grep -oE "[A-Za-z_]+Tests\.[A-Za-z_]+" /tmp/juge-$$.txt | sort -u | head -4 | paste -sd' ' || true)"
         recettes="$(grep -oE '^  [A-Za-z0-9-]+ : ÉCHOUE' /tmp/juge-$$.txt | sed 's/^  //; s/ : ÉCHOUE//' | paste -sd' ' || true)"
@@ -147,15 +147,9 @@ saboter "l interligne redevient un multiple du corps" \
     "naturelle * (multiple > 0 ? multiple : 1);" \
     "multiple;"
 
-# Q12 : la version fautive revient. Le paquet n'est appelé nulle part dans le code :
-# sa référence a tout d'une ligne morte, qu'on retire ou qu'on rétrograde en croyant
-# faire le ménage. La recette doit le voir dans la base des vulnérabilités, sur les
-# trois projets qui tirent le paquet.
-saboter "la dépendance vulnérable revient (Tmds.DBus.Protocol 0.21.2)" \
-    MyPublisher/MyPublisher.csproj \
-    '<PackageReference Include="Tmds.DBus.Protocol" Version="0.21.3"/>' \
-    '<PackageReference Include="Tmds.DBus.Protocol" Version="0.21.2"/>' \
-    'Q12-dependances'
+# Q12 n'a pas de sabotage ici : sa recette, « verifier-dependances.sh », demande le
+# réseau et se lance à part. Sa contre-épreuve — un projet témoin qui tire la version
+# fautive doit y être signalé — la fait échouer à chaque passage.
 
 # Les recettes de C1, C2 et C3, écrites au poste P3 : un sabotage chacune, sur ce que
 # son poste avait promis et que rien d'autre ne gardait.
