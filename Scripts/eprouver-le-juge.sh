@@ -165,6 +165,25 @@ saboter "l écran reprend le corps pour hauteur naturelle" \
     'return (-metriques.Ascent + metriques.Descent + metriques.LineGap) * corps / em;' \
     'return corps;'
 
+# Les deux suivants viennent de la relecture des recettes de C4 et de C6 : chacun
+# passait les tests, le contrôle et les dix-sept recettes d'alors. Les deux recettes
+# ont été reprises pour les voir, et chaque sabotage joué à la main contre la sienne
+# avant d'être écrit ici.
+
+# Le jeu de coordonnées que nomme « ActiveSetName » est ignoré : on imprime le dernier.
+# La recette de C4 exporte la carte trois fois, chaque jeu actif à son tour.
+saboter "on prend le dernier jeu de coordonnées au lieu de l actif" \
+    MyPublisher.Core/Services/BusinessInfoStore.cs \
+    'Sets.FirstOrDefault(set => set.SetName == ActiveSetName) ?? Sets.FirstOrDefault() ?? new BusinessInfo();' \
+    'Sets.LastOrDefault() ?? new BusinessInfo();'
+
+# La marge du haut oubliée à l'écran, le PDF restant juste : seul le bloc « 20 pt en
+# haut » de la recette de C6 le voit.
+saboter "l écran ignore la marge du haut" \
+    MyPublisher/Views/TexteCompose.cs \
+    'var ligneDeBase = bloc.PaddingTop + descente' \
+    'var ligneDeBase = descente'
+
 echo
 if [ "$trous" = 0 ]; then
     echo "Le juge sait échouer : $sabotages sabotages, $sabotages attrapés."

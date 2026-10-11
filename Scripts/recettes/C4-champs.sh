@@ -21,17 +21,23 @@
 #    tourne sous une locale anglaise : le PDF est le livrable, il ne doit pas changer
 #    de sens selon qui l'exporte.
 #
-#    À l'écran, le folio se calcule pour la page AFFICHÉE : c'est en changeant de page
-#    dans la vraie fenêtre qu'on l'éprouve, et un script de shell ne le fait pas. Les
-#    tests « poste=C4 » de MyPublisher.Tests.Interface le jouent ; la recette les
-#    appelle et compte ceux qui ont tourné.
+#    À l'écran, le folio se calcule pour la page AFFICHÉE : on l'éprouve en changeant
+#    la page courante de la fenêtre, ce qu'un script de shell ne fait pas. Les tests
+#    « poste=C4 » de MyPublisher.Tests.Interface le font — par le modèle de vue, et non
+#    par un geste de l'utilisateur — et relisent le contenu résolu que chaque bloc
+#    reçoit pour la page courante, non les pixels dessinés. La recette les appelle et
+#    compte ceux qui ont tourné.
 #
 # 2. LES COORDONNÉES (C4b) — « les coordonnées d'un jeu enregistré apparaissent dans
 #    le PDF d'un modèle de B1 ». Le plan disait que cette moitié attendait les modèles ;
-#    ils sont là. Un fichier de coordonnées porte DEUX jeux, l'actif étant le second :
-#    la carte de visite doit imprimer les six champs du jeu actif, aucun de l'autre, et
-#    son logo — un aplat cyan qu'on relève au pixel, au centre du bloc. Un jeu qu'on
-#    prendrait au hasard, ou le premier venu, ne passerait pas.
+#    ils sont là. Un fichier de coordonnées porte TROIS jeux, et la carte de visite
+#    s'exporte trois fois : le premier jeu actif, puis celui du milieu, puis le dernier.
+#    Chaque fois, elle doit imprimer les six champs du jeu actif, aucun des douze
+#    autres, et son logo — un aplat de couleur propre à chaque jeu (cyan, magenta,
+#    jaune), qu'on relève au pixel au centre du bloc. Un code qui prendrait le premier
+#    jeu, ou le dernier, au lieu de celui que nomme « ActiveSetName », tomberait sur
+#    l'un des trois exports. (Avec deux jeux et l'actif en second, prendre le dernier
+#    passait.)
 #
 set -euo pipefail
 export LC_ALL=C
@@ -152,67 +158,30 @@ if [ "${joues:-0}" -lt "$attendus" ]; then
     echo "Un filtre qui ne désigne plus rien sort en 0 : la recette ne peut pas s'en contenter." >&2
     exit 1
 fi
-echo "  à l'écran : $joues tests joués sur la vraie fenêtre, page par page"
+echo "  à l'écran : $joues tests joués sur la fenêtre, contenu résolu page par page"
 
 # --------------------------------------------- 2. les coordonnées, dans un modèle
 
 modele="MyPublisher/Templates/carte-de-visite.mypub"
 
-# Le logo : un aplat cyan de huit pixels, qu'aucun autre élément de la carte ne porte.
-python3 - "$travail/logo.png" <<'PY'
+# Les logos : un aplat de huit pixels par jeu, d'une couleur qu'aucun autre élément de
+# la carte ne porte. La couleur relevée dit de quel jeu vient le logo.
+python3 - "$travail" <<'PY'
 import struct, sys, zlib
 
-cote = 8
-brut = b"".join(b"\x00" + bytes([0, 255, 255]) * cote for _ in range(cote))
-def bloc(tag, donnees):
-    corps = tag + donnees
-    return struct.pack(">I", len(donnees)) + corps + struct.pack(">I", zlib.crc32(corps) & 0xFFFFFFFF)
-entete = struct.pack(">IIBBBBB", cote, cote, 8, 2, 0, 0, 0)
-open(sys.argv[1], "wb").write(b"\x89PNG\r\n\x1a\n" + bloc(b"IHDR", entete)
-                               + bloc(b"IDAT", zlib.compress(brut)) + bloc(b"IEND", b""))
+def png(chemin, rvb):
+    cote = 8
+    brut = b"".join(b"\x00" + bytes(rvb) * cote for _ in range(cote))
+    def bloc(tag, donnees):
+        corps = tag + donnees
+        return struct.pack(">I", len(donnees)) + corps + struct.pack(">I", zlib.crc32(corps) & 0xFFFFFFFF)
+    entete = struct.pack(">IIBBBBB", cote, cote, 8, 2, 0, 0, 0)
+    open(chemin, "wb").write(b"\x89PNG\r\n\x1a\n" + bloc(b"IHDR", entete)
+                             + bloc(b"IDAT", zlib.compress(brut)) + bloc(b"IEND", b""))
+
+for nom, rvb in (("cyan", (0, 255, 255)), ("magenta", (255, 0, 255)), ("jaune", (255, 255, 0))):
+    png(f"{sys.argv[1]}/logo-{nom}.png", rvb)
 PY
-
-# Le fichier tel que le dialogue des coordonnées l'écrit : deux jeux, le second actif.
-cat > "$travail/coordonnees.json" <<JSON
-{
-  "ActiveSetName": "Antenne de Nouméa",
-  "Sets": [
-    { "SetName": "Siège", "Name": "Marcel Siegeot", "Title": "Directeur",
-      "Organisation": "Ateliers du Siège", "Address": "1 rue du Siège",
-      "Phone": "01 00 00 00 00", "Tagline": "Le siège parle", "LogoPath": "" },
-    { "SetName": "Antenne de Nouméa", "Name": "Jeanne Antenne", "Title": "Responsable",
-      "Organisation": "Antenne Sud", "Address": "12 rue Lagarde",
-      "Phone": "687 26 26 26", "Tagline": "Au plus près", "LogoPath": "$travail/logo.png" }
-  ]
-}
-JSON
-
-"$binaire" "$modele" --export "$travail/carte.pdf" --date 2026-09-06 \
-    --contacts "$travail/coordonnees.json" > /dev/null 2> "$travail/avertissements-carte.txt"
-
-if [ -s "$travail/avertissements-carte.txt" ]; then
-    echo "ÉCHEC : la carte de visite s'exporte avec des avertissements." >&2
-    cat "$travail/avertissements-carte.txt" >&2
-    exit 1
-fi
-
-pdftotext -layout "$travail/carte.pdf" "$travail/carte.txt"
-texte="$(tr -s ' \n' '  ' < "$travail/carte.txt")"
-
-for attendu in "Jeanne Antenne" "Responsable" "Antenne Sud" "12 rue Lagarde" "687 26 26 26" "Au plus près"; do
-    if [[ "$texte" != *"$attendu"* ]]; then
-        echo "ÉCHEC : « $attendu », du jeu actif, n'est pas sur la carte de visite." >&2
-        echo "    $texte" >&2
-        exit 1
-    fi
-done
-for intrus in "Siegeot" "Directeur" "Ateliers du Siège" "Le siège parle"; do
-    if [[ "$texte" == *"$intrus"* ]]; then
-        echo "ÉCHEC : « $intrus » vient du jeu qui n'est pas actif." >&2
-        exit 1
-    fi
-done
-echo "  carte de visite : les six champs du jeu actif, aucun de l'autre"
 
 # Le logo, au centre de son bloc, lu dans le modèle lui-même plutôt qu'écrit ici : si
 # le modèle déplace son logo, la recette le suit.
@@ -225,14 +194,89 @@ PY
 )"
 read -r cx cy <<< "$centre"
 
-# Deux pixels par point, comme partout ailleurs dans ce dépôt.
-pdftoppm -r 144 -f 1 -l 1 -png -singlefile "$travail/carte.pdf" "$travail/carte"
-couleur="$(magick "$travail/carte.png" -format "%[fx:int(255*p{$cx,$cy}.r)] %[fx:int(255*p{$cx,$cy}.g)] %[fx:int(255*p{$cx,$cy}.b)]" info:)"
-read -r r v b <<< "$couleur"
-echo "  logo du jeu actif, au centre de son bloc ($cx, $cy px) : ($r, $v, $b), attendu cyan"
-if [ "$r" -gt 12 ] || [ "$v" -lt 243 ] || [ "$b" -lt 243 ]; then
-    echo "ÉCHEC : le logo du jeu actif n'est pas sur la carte de visite." >&2
-    exit 1
-fi
+# Les trois jeux. Aucune valeur de l'un n'est contenue dans une valeur d'un autre : un
+# intrus trouvé dans le texte vient bien de son jeu.
+champs_siege=("Marcel Siegeot" "Directeur" "Ateliers du Siège" "1 rue du Siège" "01 00 00 00 00" "Le siège parle")
+champs_antenne=("Jeanne Antenne" "Responsable" "Antenne Sud" "12 rue Lagarde" "687 26 26 26" "Au plus près")
+champs_agence=("Paul Nordin" "Gérant" "Comptoir Boréal" "7 quai de l'Est" "687 47 47 47" "Cap au nord")
+
+# $1 nom du jeu actif · $2 couleur de son logo · $3 nom du tableau de ses six champs
+exporter_la_carte() {
+    local actif="$1" teinte="$2"
+    local -n champs_actifs="$3"
+
+    # Le fichier tel que le dialogue des coordonnées l'écrit ; seul « ActiveSetName »
+    # change d'un export à l'autre.
+    cat > "$travail/coordonnees.json" <<JSON
+{
+  "ActiveSetName": "$actif",
+  "Sets": [
+    { "SetName": "Siège", "Name": "${champs_siege[0]}", "Title": "${champs_siege[1]}",
+      "Organisation": "${champs_siege[2]}", "Address": "${champs_siege[3]}",
+      "Phone": "${champs_siege[4]}", "Tagline": "${champs_siege[5]}", "LogoPath": "$travail/logo-cyan.png" },
+    { "SetName": "Antenne de Nouméa", "Name": "${champs_antenne[0]}", "Title": "${champs_antenne[1]}",
+      "Organisation": "${champs_antenne[2]}", "Address": "${champs_antenne[3]}",
+      "Phone": "${champs_antenne[4]}", "Tagline": "${champs_antenne[5]}", "LogoPath": "$travail/logo-magenta.png" },
+    { "SetName": "Agence du Nord", "Name": "${champs_agence[0]}", "Title": "${champs_agence[1]}",
+      "Organisation": "${champs_agence[2]}", "Address": "${champs_agence[3]}",
+      "Phone": "${champs_agence[4]}", "Tagline": "${champs_agence[5]}", "LogoPath": "$travail/logo-jaune.png" }
+  ]
+}
+JSON
+
+    "$binaire" "$modele" --export "$travail/carte.pdf" --date 2026-09-06 \
+        --contacts "$travail/coordonnees.json" > /dev/null 2> "$travail/avertissements-carte.txt"
+
+    if [ -s "$travail/avertissements-carte.txt" ]; then
+        echo "ÉCHEC : jeu « $actif » actif, la carte de visite s'exporte avec des avertissements." >&2
+        cat "$travail/avertissements-carte.txt" >&2
+        exit 1
+    fi
+
+    pdftotext -layout "$travail/carte.pdf" "$travail/carte.txt"
+    local texte
+    texte="$(tr -s ' \n' '  ' < "$travail/carte.txt")"
+
+    local valeur autre du_jeu
+    for valeur in "${champs_actifs[@]}"; do
+        if [[ "$texte" != *"$valeur"* ]]; then
+            echo "ÉCHEC : jeu « $actif » actif, « $valeur », de ce jeu, n'est pas sur la carte de visite." >&2
+            echo "    $texte" >&2
+            exit 1
+        fi
+    done
+    # Les intrus : les dix-huit valeurs, moins les six du jeu actif.
+    for valeur in "${champs_siege[@]}" "${champs_antenne[@]}" "${champs_agence[@]}"; do
+        du_jeu=0
+        for autre in "${champs_actifs[@]}"; do [ "$autre" = "$valeur" ] && du_jeu=1; done
+        if [ "$du_jeu" = 0 ] && [[ "$texte" == *"$valeur"* ]]; then
+            echo "ÉCHEC : jeu « $actif » actif, « $valeur » vient d'un jeu qui n'est pas actif." >&2
+            exit 1
+        fi
+    done
+
+    # Deux pixels par point, comme partout ailleurs dans ce dépôt.
+    pdftoppm -r 144 -f 1 -l 1 -png -singlefile "$travail/carte.pdf" "$travail/carte"
+    local couleur r v b juste=0
+    couleur="$(magick "$travail/carte.png" -format "%[fx:int(255*p{$cx,$cy}.r)] %[fx:int(255*p{$cx,$cy}.g)] %[fx:int(255*p{$cx,$cy}.b)]" info:)"
+    read -r r v b <<< "$couleur"
+    case "$teinte" in
+        cyan)    [ "$r" -le 12 ] && [ "$v" -ge 243 ] && [ "$b" -ge 243 ] && juste=1 ;;
+        magenta) [ "$r" -ge 243 ] && [ "$v" -le 12 ] && [ "$b" -ge 243 ] && juste=1 ;;
+        jaune)   [ "$r" -ge 243 ] && [ "$v" -ge 243 ] && [ "$b" -le 12 ] && juste=1 ;;
+    esac
+
+    echo "  jeu « $actif » actif : ses six champs, aucun des deux autres jeux ; logo ($r, $v, $b) au centre de son bloc, attendu $teinte"
+    if [ "$juste" = 0 ]; then
+        echo "ÉCHEC : jeu « $actif » actif, le logo relevé en ($cx, $cy px) n'est pas le sien ($teinte attendu)." >&2
+        exit 1
+    fi
+}
+
+# Le premier, le milieu, le dernier : prendre le premier jeu tombe sur le deuxième
+# export, prendre le dernier sur le premier.
+exporter_la_carte "Siège" cyan champs_siege
+exporter_la_carte "Antenne de Nouméa" magenta champs_antenne
+exporter_la_carte "Agence du Nord" jaune champs_agence
 
 echo "C4 : le folio se numérote seul sur huit pages, groupe compris ; les coordonnées remplissent un modèle."

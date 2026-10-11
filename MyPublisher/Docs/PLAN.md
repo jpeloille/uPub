@@ -229,8 +229,8 @@ A6 — plutôt que de le réécrire en shell.
 | `C1-fond-et-filet.sh` | Une image encadrée d'un filet de 2 pt, sans forme superposée : l'écran et le PDF concordent (`comparer-rendus.sh`), et la couleur du filet se relève sur le bord |
 | `C2-reperes.sh` | Les tests d'aimantation et de repères au pointeur synthétisé passent ; le même document exporté avec la grille la plus dense et sans grille donne deux images identiques au pixel près, avec et sans repères libres |
 | `C3-selection-groupe.sh` | Quatre blocs alignés à gauche ont le même X ; groupés, déplacés de (30, 20) pt puis exportés, chacun se retrouve exactement déplacé de (30, 20) dans le PDF (`pdftotext -bbox`) |
-| `C4-champs.sh` | Un folio sur huit pages se lit 1 à 8 page par page dans le PDF (`pdftotext`), posé seul **et** posé dans un groupe ; les coordonnées d'un jeu enregistré apparaissent dans le PDF d'un modèle de B1 |
-| `C6-marges.sh` | Un texte avec 12 pt de marge à gauche seulement : le fer gauche est décalé de 12 pt, le fer droit ne bouge pas, à l'écran comme au PDF, à 0,05 pt près |
+| `C4-champs.sh` | Un folio sur huit pages se lit 1 à 8 page par page dans le PDF (`pdftotext`), posé seul **et** posé dans un groupe ; les coordonnées du jeu actif, et de lui seul, apparaissent dans le PDF d'un modèle de B1, chacun de trois jeux actif à son tour |
+| `C6-marges.sh` | 12 pt de marge à gauche seulement : le fer gauche est décalé de 12 pt, le fer droit ne bouge pas ; 20 pt en haut seulement : le texte descend de 20 pt ; 12 pt à droite seulement : le fer droit recule de 12 pt — à l'écran comme au PDF, à 0,05 pt près |
 | `R4-interligne.sh` | Un bloc de neuf lignes à l'interligne 1,0 puis 1,5 : l'avance mesurée entre deux lignes est la même à l'écran et au PDF, et vaut le multiple de la hauteur naturelle |
 
 Chaque recette reçoit au moins un sabotage dans `Scripts/eprouver-le-juge.sh`. Une
@@ -242,24 +242,34 @@ ne nomme plus aucun poste clos sans recette.
 `Scripts/eprouver-le-juge.sh`. Les gestes que le shell ne sait pas jouer sont dans deux
 fichiers de tests d'interface, appelés par filtre et comptés comme ceux de A4 :
 `ModelesTests` (`poste=B1`) frappe `Ctrl+N`, choisit le dépliant, part de lui sans son
-chemin, puis retouche chacun des quatre modèles et frappe `Ctrl+S` — sur des **copies**
-rangées à part, parce qu'un sabotage qui rendrait au document le chemin de son modèle
-écraserait sinon le fichier du répertoire de sortie, que la compilation suivante ne
-remplacerait pas, la source étant plus ancienne que lui. `ChampsTests` (`poste=C4`)
-change de page dans la vraie fenêtre et relit ce que chaque bloc dessine.
+chemin ; puis, pour chacun des quatre modèles, `Ctrl+N`, le choix dans le catalogue,
+Entrée, une retouche et `Ctrl+S`. Le modèle éprouvé est donc celui que le catalogue lit,
+dans le répertoire de sortie : chaque test le remet en état en sortant, parce qu'un
+sabotage qui rendrait au document le chemin de son modèle l'écraserait, et que la
+compilation suivante ne le remplacerait pas, la source étant plus ancienne que lui. Le
+`Ctrl+S` n'est pas une seconde garantie : le test vérifie juste avant que le document
+n'a pas de chemin, et sans chemin `Ctrl+S` passe par « Enregistrer sous », que la
+plate-forme sans affichage referme. `ChampsTests` (`poste=C4`) change la page courante
+par le modèle de vue — et non par un geste — et relit le contenu résolu que chaque bloc
+reçoit pour cette page, non les pixels dessinés.
 
 Ce que les recettes mesurent, et contre quoi. Le folio de C4 se lit au PDF page par page
 **à sa place**, posé seul et dans un groupe — trouver « 1 » à « 8 » quelque part dans le
 texte passerait sur un folio qui suivrait l'ordre de lecture —, la date sous une locale
-anglaise, et les coordonnées d'un fichier à deux jeux, dont seul l'actif doit paraître
-sur la carte de visite, logo relevé au pixel. C6 pose quatre blocs, dont deux calés à
-droite : c'est le fer droit qui distingue quatre marges d'une marge unique appliquée des
-deux côtés. R4 ne lit pas la hauteur naturelle dans le code qu'il éprouve, mais dans la
+anglaise, et les coordonnées d'un fichier à trois jeux : la carte de visite s'exporte
+trois fois, chaque jeu actif à son tour, et seuls ses six champs doivent paraître, aucun
+des douze autres, son logo relevé au pixel à sa couleur. Un code qui prendrait le premier
+jeu, ou le dernier, tombe sur l'un des trois exports. C6 pose six blocs : quatre pour la
+marge gauche, dont deux calés à droite — c'est le fer droit qui distingue quatre marges
+d'une marge unique appliquée des deux côtés —, un avec 20 pt en haut seulement, comme la
+recette jouée à la main le 5 septembre, et un calé à droite avec 12 pt à droite. La
+marge du bas n'est pas éprouvée : sous un calage en haut, elle ne déplace rien. R4 ne lit pas la hauteur naturelle dans le code qu'il éprouve, mais dans la
 table `hhea` du fichier de police que fontconfig désigne — 13,96875 pt pour DejaVu Sans
 12 —, puisque les deux rendus appellent le même `Compositeur.Avance` et que les comparer
-entre eux prouverait leur accord, jamais leur justesse. Mesuré : 13,9688 et 20,9531 pt au
-PDF, au dix-millième ; pour C6, un déplacement de 12,000 pt à gauche et de 0,000 pt à
-droite, des deux côtés.
+entre eux prouverait leur accord, jamais leur justesse. Mesuré au PDF : 13,9688 et
+20,9531 pt, pour une tolérance de 0,05 pt. Pour C6, des deux côtés : 12,000 pt de
+déplacement du fer gauche et 0,000 pt du fer droit sous la marge gauche, 20,000 pt du
+haut sous la marge du haut, −12,000 pt du fer droit sous la marge droite.
 
 Les deux recettes à l'encre mesurent à **quatre** pixels par point, au centre de l'encre
 pondéré par la noirceur et non à son bord : le plan demande 0,05 pt, soit un dixième de
@@ -273,6 +283,13 @@ recette. Celui de R4 — le défaut d'origine, l'écran qui avance du corps — 
 tests et tombe sur les recettes de R2, R3 et R4. Celui de B1 tombe sur les tests
 `poste=B1`.
 
+La relecture en a trouvé deux que rien ne voyait : la carte de visite imprimant le
+**dernier** jeu de coordonnées au lieu de l'actif (le fichier de la recette n'avait que
+deux jeux, l'actif en second), et l'écran ignorant la marge du **haut** (la recette
+n'éprouvait que la marge gauche). Les recettes de C4 et de C6 ont été reprises comme dit
+plus haut ; chacun de ces deux sabotages a été joué à la main contre sa recette, qui
+tombe, puis ajouté au juge.
+
 **La recette de B1 a trouvé un défaut, corrigé dans un commit à part.** La carte de
 visite s'exportait avec un avertissement dès qu'on y mettait un nom : le bloc « Nom »,
 16 pt de haut en gras 12 pt à l'interligne 1,25, réclame 17,46 pt depuis R4. C'est la
@@ -280,6 +297,11 @@ retombée qu'A2 avait corrigée sur les documents d'exemple, et qu'elle ne pouva
 ici : le test des documents livrés mesure le texte *saisi*, vide sous un champ. « Les
 quatre modèles s'exportent sans un avertissement » était donc faux depuis le 6 septembre.
 Le bloc ne porte qu'une ligne : son interligne passe à 1, ce qui ne déplace aucun bloc.
+Le rendu de la carte change pourtant : le demi-interligne que la composition place
+au-dessus de la première ligne disparaît, et le nom **remonte de 1,75 pt** dans son bloc
+(1,746 pt relevés par `pdftotext -bbox`). Sa boîte, qui chevauchait de 0,4 pt celle de
+« Fonction », posée juste dessous, s'en écarte désormais de 1,4 pt. Le message du commit
+du correctif ne le dit pas ; c'est ici qu'il est consigné.
 
 *Choisi sans certitude* — corriger le modèle plutôt que de le signaler seulement : sans
 cela la recette restait rouge, et la relâcher était exclu ; le correctif est isolé pour

@@ -14,11 +14,12 @@ namespace MyPublisher.Tests.Interface;
 /// sur huit pages, à l'écran et dans le PDF ». Le PDF est relu par la recette, avec
 /// <c>pdftotext</c> ; ce qui demande la fenêtre est ici.
 ///
-/// Ce qu'on relève, c'est le contenu que <see cref="TexteCompose"/> reçoit et dessine —
-/// le texte déjà passé par le résolveur, avec le contexte de la page affichée. Le folio
-/// se calcule à partir de la page COURANTE de la fenêtre, et non d'un rang que le bloc
-/// porterait : un bloc ignore sur quelle page il est. C'est donc en changeant de page
-/// qu'on l'éprouve, comme l'utilisateur le voit.
+/// Ce qu'on relève, c'est le contenu que <see cref="TexteCompose"/> reçoit pour le
+/// dessiner — le texte déjà passé par le résolveur, avec le contexte de la page
+/// affichée —, et non les pixels. Le folio se calcule à partir de la page COURANTE de la
+/// fenêtre, et non d'un rang que le bloc porterait : un bloc ignore sur quelle page il
+/// est. C'est donc en changeant de page qu'on l'éprouve — par le modèle de vue
+/// (<c>CurrentPage</c>), et non par un geste de l'utilisateur.
 /// </summary>
 public class ChampsTests
 {

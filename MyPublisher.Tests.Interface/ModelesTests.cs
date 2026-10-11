@@ -23,10 +23,13 @@ namespace MyPublisher.Tests.Interface;
 /// part de <c>Ctrl+S</c>, qui est précisément le geste qui écraserait le modèle si le
 /// document en avait gardé le chemin.
 ///
-/// Les modèles éprouvés au <c>Ctrl+S</c> sont des COPIES rangées dans un dossier de
-/// travail, jamais ceux du répertoire de sortie : un sabotage qui rendrait au document
-/// le chemin de son modèle écraserait sinon le fichier que les tests suivants
-/// liraient, et la copie de compilation, plus ancienne que lui, ne le remplacerait pas.
+/// Chacun des quatre modèles passe par ce geste-là : <c>Ctrl+N</c>, le choix dans le
+/// catalogue, Entrée. C'est donc le fichier que le catalogue a lu — celui du répertoire
+/// de sortie — qui est éprouvé, et non une copie ouverte par un appel de méthode. Un
+/// sabotage qui rendrait au document le chemin de son modèle l'écraserait : chaque
+/// test le remet en état en sortant, faute de quoi la copie de compilation, plus
+/// ancienne que lui, ne le remplacerait pas, et les tests suivants liraient un modèle
+/// retouché.
 /// </summary>
 public sealed class ModelesTests : IDisposable
 {
@@ -82,47 +85,70 @@ public sealed class ModelesTests : IDisposable
     [AvaloniaTheory]
     [MemberData(nameof(Modeles))]
     [Trait("poste", "B1")]
-    public void Un_modele_retouche_puis_enregistre_reste_intact_octet_pour_octet(string fichier)
+    public void Un_modele_choisi_au_catalogue_puis_retouche_reste_intact_octet_pour_octet(string fichier)
     {
-        var modele = Path.Combine(_travail, fichier);
-        File.Copy(Path.Combine(TemplateStore.Folder, fichier), modele);
+        var modele = Path.Combine(TemplateStore.Folder, fichier);
         var avant = File.ReadAllBytes(modele);
 
-        var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille());
-        vm.StartFromTemplate(modele);
-        Rendu.Battre();
+        try
+        {
+            var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille());
 
-        Assert.Null(vm.FilePath);
+            // Le geste de l'utilisateur : Ctrl+N, le modèle choisi dans le catalogue,
+            // puis « Créer », le bouton par défaut, donc Entrée.
+            fenetre.KeyPressQwerty(PhysicalKey.N, RawInputModifiers.Control);
+            Rendu.Battre();
 
-        // Le premier bloc de texte du document : le titre dans trois modèles, le nom de
-        // la société sur la carte de visite, dont tous les textes sont des champs. Le
-        // texte saisi sous un champ s'enregistre tout de même — il reparaît quand on
-        // retire le champ —, si bien que la retouche se lit dans le fichier dans les
-        // quatre cas.
-        var bloc = vm.Document.Pages
-            .SelectMany(page => page.Frames)
-            .OfType<TextFrame>()
-            .First();
-        bloc.Text = Retouche;
-        Rendu.Battre();
+            var catalogue = fenetre.OwnedWindows.OfType<TemplateChooserWindow>().SingleOrDefault();
+            Assert.NotNull(catalogue);
+            var choix = Assert.IsType<TemplateChooserViewModel>(catalogue.DataContext);
+            choix.Selected = choix.Choices.Single(c => c.Path is { } chemin && Path.GetFileName(chemin) == fichier);
+            Rendu.Battre();
+            catalogue.KeyPressQwerty(PhysicalKey.Enter, RawInputModifiers.None);
+            Rendu.Battre();
 
-        // « Enregistrer » : le geste qui écraserait le modèle si le document en avait
-        // gardé le chemin. Sans chemin, il propose « Enregistrer sous », que la
-        // plate-forme sans affichage referme sans rien rendre.
-        fenetre.KeyPressQwerty(PhysicalKey.S, RawInputModifiers.Control);
-        Rendu.Battre();
+            Assert.Empty(fenetre.OwnedWindows.OfType<TemplateChooserWindow>());
+            // La garantie du poste : le document est parti du modèle sans en prendre le
+            // chemin.
+            Assert.Null(vm.FilePath);
 
-        Assert.Equal(avant, File.ReadAllBytes(modele));
-        Assert.Null(vm.FilePath);
+            // Le premier bloc de texte du document : le titre dans trois modèles, le nom
+            // de la société sur la carte de visite, dont tous les textes sont des champs.
+            // Le texte saisi sous un champ s'enregistre tout de même — il reparaît quand
+            // on retire le champ —, si bien que la retouche se lit dans le fichier dans
+            // les quatre cas.
+            var bloc = vm.Document.Pages
+                .SelectMany(page => page.Frames)
+                .OfType<TextFrame>()
+                .First();
+            bloc.Text = Retouche;
+            Rendu.Battre();
 
-        // « Enregistrer sous », ailleurs : la retouche part dans la copie, et dans elle
-        // seule.
-        var copie = Path.Combine(_travail, "copie-" + fichier);
-        vm.SaveTo(copie);
+            // « Enregistrer », le geste qui écraserait le modèle si le document en avait
+            // gardé le chemin. Ce n'est PAS une seconde garantie : sans chemin — et
+            // l'assertion ci-dessus vient de le vérifier —, Ctrl+S passe par « Enregistrer
+            // sous », que la plate-forme sans affichage referme sans rien rendre. Ce pas ne
+            // peut donc pas tomber seul ; il est là pour jouer la séquence de l'utilisateur
+            // jusqu'au bout.
+            fenetre.KeyPressQwerty(PhysicalKey.S, RawInputModifiers.Control);
+            Rendu.Battre();
 
-        Assert.Equal(avant, File.ReadAllBytes(modele));
-        Assert.Equal(copie, vm.FilePath);
-        Assert.Contains(Retouche, File.ReadAllText(copie));
-        Assert.DoesNotContain(Retouche, File.ReadAllText(modele));
+            Assert.Equal(avant, File.ReadAllBytes(modele));
+            Assert.Null(vm.FilePath);
+
+            // « Enregistrer sous », ailleurs : la retouche part dans la copie, et dans
+            // elle seule.
+            var copie = Path.Combine(_travail, "copie-" + fichier);
+            vm.SaveTo(copie);
+
+            Assert.Equal(avant, File.ReadAllBytes(modele));
+            Assert.Equal(copie, vm.FilePath);
+            Assert.Contains(Retouche, File.ReadAllText(copie));
+            Assert.DoesNotContain(Retouche, File.ReadAllText(modele));
+        }
+        finally
+        {
+            if (!File.ReadAllBytes(modele).AsSpan().SequenceEqual(avant)) File.WriteAllBytes(modele, avant);
+        }
     }
 }

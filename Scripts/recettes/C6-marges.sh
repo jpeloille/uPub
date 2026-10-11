@@ -3,29 +3,36 @@
 # Recette du poste C6 — marges intérieures par côté.
 #
 # « Un texte décalé de 12 pt à gauche seulement, à l'écran comme au PDF. » Elle était
-# jouée à la main le 5 septembre 2026, en mesurant l'encre, puis jetée. La voici
-# rejouable, sur quatre blocs du même texte en DejaVu Sans 14 pt :
+# jouée à la main le 5 septembre 2026, en mesurant l'encre, avec un troisième bloc
+# portant « 20 pt en haut seulement », puis jetée. La voici rejouable, sur six blocs
+# du même texte en DejaVu Sans 14 pt :
 #
 #   · fer à gauche, sans marge          — le témoin du fer gauche ;
 #   · fer à gauche, 12 pt à gauche      — le sujet ;
 #   · fer à droite, sans marge          — le témoin du fer droit ;
-#   · fer à droite, 12 pt à gauche      — le sujet, vu par l'autre bord.
+#   · fer à droite, 12 pt à gauche      — le sujet, vu par l'autre bord ;
+#   · fer à gauche, 20 pt en haut       — la marge du haut, comparée au premier témoin ;
+#   · fer à droite, 12 pt à droite      — la marge droite, comparée au second.
 #
 # Ce qu'elle éprouve :
 #
-#   1. la marge s'écrit et se relit : réécrit par « --resave », le bloc porte ses
-#      quatre marges, 12 à gauche et zéro ailleurs ;
-#   2. au PDF, relevé par « pdftotext -bbox » au millième de point : le fer gauche est
-#      à X + 12, le fer droit n'a pas bougé, le haut non plus ;
-#   3. à l'écran comme au PDF, mesuré dans l'ENCRE : les mêmes trois déplacements —
-#      12 pt à gauche, rien à droite, rien en haut —, à 0,05 pt près ;
+#   1. les marges s'écrivent et se relisent : réécrit par « --resave », chaque bloc
+#      porte ses quatre marges, et zéro sur les côtés qu'on n'a pas touchés ;
+#   2. au PDF, relevé par « pdftotext -bbox » au millième de point : 12 pt à gauche
+#      mettent le fer gauche à X + 12 sans bouger ni le fer droit ni le haut ; 20 pt en
+#      haut descendent le texte de 20 pt sans bouger le fer gauche ; 12 pt à droite
+#      ramènent le fer droit de 12 pt sans bouger le haut ;
+#   3. à l'écran comme au PDF, mesuré dans l'ENCRE : les mêmes déplacements, à 0,05 pt
+#      près ;
 #   4. l'écran et le PDF posent le texte au même endroit à 0,5 pt près — un pixel à
 #      deux pixels par point.
+#
+# La marge du bas n'est pas éprouvée : sous un calage en haut, elle ne déplace rien.
 #
 # Le fer droit est ce qui distingue « quatre marges » d'« une marge » : une marge
 # unique, appliquée des deux côtés, décalerait AUSSI le fer gauche de 12 pt. Seul un
 # texte calé à droite dit si la marge de gauche a mordu sur la droite. C'est pourquoi
-# il y a quatre blocs et non deux.
+# le fer droit a son propre témoin, et son propre sujet.
 #
 # Pourquoi le centre de l'encre, et pas son bord : le bord se lit au pixel près, que le
 # lissage déplace d'un cran selon la lettre ; le centre pondéré par la noirceur se lit
@@ -64,17 +71,17 @@ for outil in "$binaire" "$banc"; do
     fi
 done
 
-# Quatre blocs de 300 × 40 pt, en X = 60, l'un sous l'autre à 60 pt d'intervalle. Une
+# Six blocs de 300 × 40 pt, en X = 60, l'un sous l'autre à 60 pt d'intervalle. Une
 # seule ligne chacun : le bloc est assez large pour que rien ne se coupe, avec ou sans
 # marge, et une coupure déplacée ne peut pas se faire passer pour un décalage.
 python3 - "$travail/marges.mypub" <<'PY'
 import json, sys
 
-def bloc(nom, y, fer, gauche):
+def bloc(nom, y, fer, gauche, haut=0, droite=0):
     return {"$kind": "text", "Name": nom, "X": 60, "Y": y, "Width": 300, "Height": 40,
             "Text": "Marge interieure", "FontFamily": "DejaVu Sans", "FontSize": 14,
             "Foreground": "#FF000000", "Align": fer, "LineHeight": 1.0,
-            "PaddingLeft": gauche, "PaddingTop": 0, "PaddingRight": 0, "PaddingBottom": 0,
+            "PaddingLeft": gauche, "PaddingTop": haut, "PaddingRight": droite, "PaddingBottom": 0,
             "VerticalAlign": "Top"}
 
 document = {"FormatVersion": 4, "Title": "Recette C6 — marges intérieures",
@@ -82,7 +89,9 @@ document = {"FormatVersion": 4, "Title": "Recette C6 — marges intérieures",
                 bloc("Gauche, temoin", 60, "Left", 0),
                 bloc("Gauche, 12 pt", 120, "Left", 12),
                 bloc("Droite, temoin", 180, "Right", 0),
-                bloc("Droite, 12 pt", 240, "Right", 12)]}]}
+                bloc("Droite, 12 pt", 240, "Right", 12),
+                bloc("Gauche, 20 pt en haut", 300, "Left", 0, haut=20),
+                bloc("Droite, 12 pt a droite", 360, "Right", 0, droite=12)]}]}
 json.dump(document, open(sys.argv[1], "w", encoding="utf-8"), ensure_ascii=False, indent=2)
 PY
 
@@ -93,11 +102,14 @@ python3 - "$travail/relu.mypub" <<'PY'
 import json, sys
 
 blocs = {b["Name"]: b for b in json.load(open(sys.argv[1], encoding="utf-8"))["Pages"][0]["Frames"]}
-for nom in ("Gauche, 12 pt", "Droite, 12 pt"):
+attendues = {"Gauche, 12 pt": (12, 0, 0, 0), "Droite, 12 pt": (12, 0, 0, 0),
+             "Gauche, 20 pt en haut": (0, 20, 0, 0), "Droite, 12 pt a droite": (0, 0, 12, 0)}
+for nom, attendu in attendues.items():
     marges = tuple(blocs[nom].get(cote) for cote in ("PaddingLeft", "PaddingTop", "PaddingRight", "PaddingBottom"))
-    if marges != (12, 0, 0, 0):
-        sys.exit(f"ÉCHEC : « {nom} » se réécrit avec les marges {marges}, et non (12, 0, 0, 0).")
-print("  1. réécrit, chaque bloc garde ses quatre marges : 12 à gauche, zéro ailleurs")
+    if marges != attendu:
+        sys.exit(f"ÉCHEC : « {nom} » se réécrit avec les marges {marges}, et non {attendu}.")
+print("  1. réécrit, chaque bloc garde ses quatre marges (gauche, haut, droite, bas) :"
+      " (12, 0, 0, 0) deux fois, (0, 20, 0, 0) et (0, 0, 12, 0)")
 PY
 
 "$binaire" "$travail/marges.mypub" --export "$travail/sortie.pdf" \
@@ -136,13 +148,18 @@ def verifier(libelle, mesure, attendu):
         echec = True
 
 gt, g12, dt, d12 = ligne(60), ligne(120), ligne(180), ligne(240)
+h20, dd12 = ligne(300), ligne(360)
 # Le fer gauche se lit à sa place absolue : X + marge, puisque le crayon part de là.
 verifier("fer gauche du témoin, bloc en X = 60", gt[0], 60)
 verifier("fer gauche avec 12 pt de marge", g12[0], 72)
+verifier("fer gauche avec 20 pt en haut", h20[0], 60)
 # Le fer droit et le haut se lisent par différence : pdftotext les déduit des chasses
 # qu'il lit dans la police, et ce sont celles du témoin qui servent de zéro.
 verifier("fer droit : déplacement dû à la marge gauche", d12[2] - dt[2], 0)
 verifier("haut : déplacement dû à la marge gauche", g12[1] - 120 - (gt[1] - 60), 0)
+verifier("haut : déplacement dû à 20 pt en haut", h20[1] - 300 - (gt[1] - 60), 20)
+verifier("fer droit : déplacement dû à 12 pt à droite", dd12[2] - dt[2], -12)
+verifier("haut : déplacement dû à la marge droite", dd12[1] - 360 - (dt[1] - 180), 0)
 sys.exit(1 if echec else 0)
 PY
 
@@ -195,7 +212,8 @@ def centre(image, haut):
     return sx / total / pp, sy / total / pp - haut
 
 images = {"écran": lire(sys.argv[1]), "PDF": lire(sys.argv[2])}
-centres = {cote: [centre(image, haut) for haut in (60, 120, 180, 240)] for cote, image in images.items()}
+centres = {cote: [centre(image, haut) for haut in (60, 120, 180, 240, 300, 360)]
+           for cote, image in images.items()}
 
 echec = False
 def verifier(libelle, mesure, attendu, tolerance):
@@ -206,16 +224,21 @@ def verifier(libelle, mesure, attendu, tolerance):
               f" (tolérance {tolerance:g}).", file=sys.stderr)
         echec = True
 
-for cote, (gt, g12, dt, d12) in centres.items():
-    verifier(f"3. {cote:5} — fer gauche, déplacé de", g12[0] - gt[0], 12, 0.05)
-    verifier(f"3. {cote:5} — fer droit, déplacé de", d12[0] - dt[0], 0, 0.05)
-    verifier(f"3. {cote:5} — haut du texte, déplacé de", g12[1] - gt[1], 0, 0.05)
+for cote, (gt, g12, dt, d12, h20, dd12) in centres.items():
+    verifier(f"3. {cote:5} — 12 pt à gauche : fer gauche, déplacé de", g12[0] - gt[0], 12, 0.05)
+    verifier(f"3. {cote:5} — 12 pt à gauche : fer droit, déplacé de", d12[0] - dt[0], 0, 0.05)
+    verifier(f"3. {cote:5} — 12 pt à gauche : haut, déplacé de", g12[1] - gt[1], 0, 0.05)
+    verifier(f"3. {cote:5} — 20 pt en haut : haut, déplacé de", h20[1] - gt[1], 20, 0.05)
+    verifier(f"3. {cote:5} — 20 pt en haut : fer gauche, déplacé de", h20[0] - gt[0], 0, 0.05)
+    verifier(f"3. {cote:5} — 12 pt à droite : fer droit, déplacé de", dd12[0] - dt[0], -12, 0.05)
+    verifier(f"3. {cote:5} — 12 pt à droite : haut, déplacé de", dd12[1] - dt[1], 0, 0.05)
 
-for i, nom in enumerate(("gauche, témoin", "gauche, 12 pt", "droite, témoin", "droite, 12 pt")):
+for i, nom in enumerate(("gauche, témoin", "gauche, 12 pt", "droite, témoin", "droite, 12 pt",
+                         "gauche, 20 pt en haut", "droite, 12 pt à droite")):
     (ex, ey), (px, py) = centres["écran"][i], centres["PDF"][i]
     verifier(f"4. écran/PDF — bloc {nom}, écart", max(abs(ex - px), abs(ey - py)), 0, 0.5)
 
 sys.exit(1 if echec else 0)
 PY
 
-echo "C6 : 12 pt de marge à gauche décalent le fer gauche et lui seul, à l'écran comme au PDF."
+echo "C6 : les marges gauche, haute et droite déplacent chacune leur bord et lui seul, à l'écran comme au PDF."

@@ -16,8 +16,9 @@
 #   2. LE GESTE, joué par MyPublisher.Tests.Interface sur la vraie fenêtre, filtre
 #      « poste=B1 » : Ctrl+N ouvre le catalogue — la page blanche et les quatre
 #      modèles —, Entrée part du dépliant, et le document n'a pas de chemin ; puis,
-#      pour chacun des quatre, une retouche, Ctrl+S, puis un enregistrement ailleurs :
-#      le modèle est identique octet pour octet, et la copie porte la retouche. Un
+#      chacun des quatre choisi par Ctrl+N et Entrée, une retouche, Ctrl+S, puis un
+#      enregistrement ailleurs : le modèle est identique octet pour octet, et la copie
+#      porte la retouche. Un
 #      script de shell ne frappe pas de touches ; il appelle les tests qui le font, et
 #      compte ceux qui ont tourné.
 #
