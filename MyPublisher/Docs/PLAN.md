@@ -2865,19 +2865,26 @@ machine pour une famille inconnue. Corrigé, l'export ne dit rien, et `pdffonts`
 dans le PDF la seule DejaVu Sans. La contre-épreuve retire le fragment qui recouvre
 tout : les deux polices sont nommées, et Noto Sans entre dans le PDF.
 
-Six tests sous `poste=Q8`, dans `PolicesTests` : le cas du plan, le texte laissé à
+Neuf tests sous `poste=Q8`, dans `PolicesTests` : le cas du plan, le texte laissé à
 découvert (qui avertit toujours), le fragment hors du texte, le champ dont les fragments
 ne sont pas dessinés alors que sa police l'est, le champ de coordonnées vide qui ne
-dessine rien, et le fragment qui ne porte qu'un saut de ligne. *Recette* :
+dessine rien, le fragment blanc — saut de ligne, espace, tabulation — et la case de
+tableau, où un fragment absent dessiné avertit et le même recouvert se tait. Ce dernier
+vient de la relecture : retirer les cases de la descente de la passe laissait
+`verifier.sh` vert. *Recette* :
 `Scripts/recettes/Q8-polices-dessinees.sh`. Elle joue le document du plan, avec un
 second bloc dont la police propre est absente, plus exigeant que le bloc en Noto Sans,
 qui est installée ici et ne dirait rien de toute façon. Elle relève les polices du PDF,
-rejoue le document découvert, et compte les tests. Deux sabotages au juge : l'héritage
-relu pour son compte (cinq des six tests tombent, et la recette), et les fragments d'un
-champ lus comme s'ils étaient dessinés (seul le test du folio tombe).
+rejoue le document découvert, et compte les tests. Trois sabotages au juge : l'héritage
+relu pour son compte (la recette tombe, et cinq des six premiers tests), les fragments
+d'un champ lus comme s'ils étaient dessinés (seul le test du folio tombe), et les cases
+de tableau retirées de la descente (seul le test de la case tombe).
 
-*Choisi sans certitude.* Un morceau fait de seuls sauts de ligne ne compte pas, et un
-morceau fait d'espaces compte : sa largeur se mesure dans sa police. Une ligne vide prend
+*Choisi sans certitude.* Un morceau blanc — espaces, tabulations, sauts de ligne — ne
+compte pas, comme `Tracer` le saute en dessinant : `pdffonts` ne relève pas sa police.
+Sa largeur se mesure pourtant dans cette police, substituée ou non ; c'est le seul
+effet d'une police que la passe tait. La première version comptait les espaces ; la
+relecture a demandé de s'aligner sur le dessin et sur ce que dit le README. Une ligne vide prend
 sa hauteur dans la police du bloc (`Naturelle(commun)` dans `Compositeur`) : un bloc
 dont tout le texte est recouvert mais qui porte une ligne vide fait mesurer sa police
 sans la dessiner, et ne la nomme pas. Le texte coupé par le bord du bloc est compté

@@ -22,7 +22,8 @@
 #      polices redeviennent dessinées, et l'export les nomme — « Police Inexistante »
 #      comprise. Sans ce point, une passe devenue muette passerait le premier ;
 #   4. les tests du noyau marqués « poste=Q8 » : à découvert, hors du texte, champ,
-#      champ vide, saut de ligne. Leur compte est vérifié.
+#      champ vide, fragment blanc (saut de ligne, espace, tabulation), case de tableau.
+#      Leur compte est vérifié.
 #
 set -euo pipefail
 export LC_ALL=C
@@ -141,7 +142,7 @@ echo "  3. contre-épreuve : découvertes, les deux polices absentes sont nommé
 
 # ------------------------------------------------------------------------- 4
 
-attendus=6
+attendus=9
 if ! dotnet test MyPublisher.Tests/MyPublisher.Tests.csproj ${MYPUBLISHER_DEJA_COMPILE:+--no-build} \
         --nologo -v q --filter "poste=Q8" > "$travail/tests.txt" 2>&1; then
     sed 's/^/    /' "$travail/tests.txt" >&2

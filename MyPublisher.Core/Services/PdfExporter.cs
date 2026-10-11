@@ -140,15 +140,16 @@ public static class PdfExporter
     /// bloc qui affiche un champ : rien de tout cela n'est dessiné, et rien de tout cela
     /// n'avertit plus.
     ///
-    /// Un morceau fait de seuls sauts de ligne ne compte pas : aucun glyphe n'en sort.
-    /// Un morceau fait d'espaces compte, lui : sa largeur se mesure dans sa police, et
-    /// une police substituée y déplace le texte qui suit.
+    /// Un morceau blanc — espaces, tabulations, sauts de ligne — ne compte pas : c'est la
+    /// règle de <see cref="Tracer"/>, qui ne le dessine pas. Sa largeur se mesure
+    /// pourtant dans sa police, substituée ou non ; c'est le seul effet d'une police
+    /// que la passe tait.
     /// </summary>
     private static IEnumerable<StyleEffectif> StylesDessines(TextFrame text, string content)
     {
         foreach (var (morceau, style) in StyleEffectif.Decouper(content, Fragments(text, content), Commun(text)))
         {
-            if (morceau.AsSpan().ContainsAnyExcept('\n', '\r')) yield return style;
+            if (!string.IsNullOrWhiteSpace(morceau)) yield return style;
         }
     }
 

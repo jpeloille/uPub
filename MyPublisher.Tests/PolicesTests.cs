@@ -261,21 +261,48 @@ public class PolicesTests
     }
 
     /// <summary>
-    /// Un fragment qui ne porte qu'un saut de ligne ne dessine aucun glyphe. Choisi :
-    /// un fragment d'espaces, lui, avertit, parce que sa largeur se mesure dans sa
-    /// police.
+    /// Un fragment blanc — saut de ligne, espace, tabulation — ne dessine aucun glyphe :
+    /// l'export le saute en traçant, et la passe aussi. Le même fragment posé sur une
+    /// lettre avertit.
     /// </summary>
-    [Fact]
+    [Theory]
     [Trait("poste", "Q8")]
-    public void Un_fragment_qui_ne_porte_qu_un_saut_de_ligne_n_avertit_de_rien()
+    [InlineData("Descendre.\nMonter.")]
+    [InlineData("Descendre. Monter.")]
+    [InlineData("Descendre.\tMonter.")]
+    public void Un_fragment_blanc_n_avertit_de_rien(string texte)
     {
         var bloc = Bloc(Presente);
-        bloc.Text = "Descendre.\nMonter.";
+        bloc.Text = texte;
         bloc.Spans.Add(new StyleSpan { Start = 10, Length = 1, FontFamily = Absente });
         Assert.Empty(Exporter(Document(bloc)));
 
-        bloc.Text = "Descendre. Monter.";
+        bloc.Spans[0].Start = 11;
         Assert.Single(Exporter(Document(bloc)));
+    }
+
+    /// <summary>
+    /// Les cases d'un tableau sont des blocs de texte que la passe doit voir : un
+    /// fragment absent et dessiné dans une case avertit, le même recouvert se tait.
+    /// </summary>
+    [Fact]
+    [Trait("poste", "Q8")]
+    public void Une_case_de_tableau_n_avertit_que_de_ce_qu_elle_dessine()
+    {
+        Assert.Contains(Absente, Assert.Single(Exporter(Document(Tableau(recouvert: false)))));
+        Assert.Empty(Exporter(Document(Tableau(recouvert: true))));
+    }
+
+    private static TableFrame Tableau(bool recouvert)
+    {
+        var tableau = new TableFrame { X = 20, Y = 20, FontFamily = Presente, FontSize = 11 };
+        tableau.Columns.Add(new TableColumn { Width = 120 });
+        tableau.Rows.Add(new TableRow { Height = 30 });
+        var cellule = new TableCell { Row = 0, Column = 0, Text = "Descendre." };
+        cellule.Spans.Add(new StyleSpan { Start = 0, Length = 4, FontFamily = Absente });
+        if (recouvert) cellule.Spans.Add(new StyleSpan { Start = 0, Length = 10, FontFamily = Presente });
+        tableau.Cells.Add(cellule);
+        return tableau;
     }
 
     // ------------------------------------------------------------------ outillage

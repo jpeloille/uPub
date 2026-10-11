@@ -411,6 +411,14 @@ saboter "la passe des polices lit les fragments d'un champ, que le dessin ignore
     'StyleEffectif.Decouper(content, text.Spans, Commun(text))' \
     'Q8-polices|PolicesTests'
 
+# Q8 : la passe ne descend plus dans les cases d'un tableau. Trouvé par la relecture :
+# rien ne le gardait. Seul le test de la case le voit.
+saboter "la passe des polices ne voit plus les cases d'un tableau" \
+    MyPublisher.Core/Services/PdfExporter.cs \
+    'TableFrame tableau => tableau.CellFrames,' \
+    '' \
+    'Q8-polices|PolicesTests'
+
 # Q15 : l'ouverture ne compare plus les empreintes. L'écran garde l'image d'avant la
 # retouche, le PDF montre la nouvelle.
 saboter "rouvrir un document ne relit plus une image retouchée" \
