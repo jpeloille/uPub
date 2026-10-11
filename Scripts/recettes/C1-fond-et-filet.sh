@@ -63,8 +63,8 @@
 #     (5,4 % de la page) tombe a fortiori.
 #
 # La recette du poste Q4 lui-même (« Scripts/recettes/Q4-filet-centre.sh ») mesure le
-# filet sur tous les chemins qui en tracent un — formes, ellipse, arrondi, groupe ;
-# celle-ci ne garde que les deux blocs de C1.
+# filet sur six chemins — image, texte, forme, forme arrondie, ellipse, groupe — et à
+# trois épaisseurs, 1, 3 et 4 pt ; celle-ci ne garde que les blocs de C1, à 2 pt.
 #
 set -euo pipefail
 export LC_ALL=C

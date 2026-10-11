@@ -277,18 +277,20 @@ PY
 
 # ------------------------------------------------------------------------- 3. filet
 
-# Le seuil se calcule. Un filet de 4 pt rentré de 2 pt — Q4 tel qu'il était — laisse
-# sur le pourtour de chaque bloc deux bandes de 2 pt, l'une couverte d'un côté, l'autre
-# de l'autre : 2 × 2 pt × (2 px/pt)² = 16 pixels par point de pourtour. Les six blocs en
-# portent 640 + 560 + 640 + 560 + 560 pt pour les rectangles, et 510 pour l'ellipse,
-# soit 3 470 pt : 55 520 pixels, 2,77 % des 2 007 330 que compte la page. Relevé avant
-# réparation : 2,81 %.
+# Le seuil se calcule. Un filet d'épaisseur e rentré de e/2 — Q4 tel qu'il était —
+# laisse sur le pourtour du bloc deux bandes de e/2, l'une couverte d'un côté, l'autre
+# de l'autre : 2 × e/2 × (2 px/pt)² = 4e pixels par point de pourtour. Les six blocs de
+# 4 pt portent 3 470 pt de pourtour (l'ellipse 510), soit 55 520 pixels ; la rangée de
+# 1 pt, 725 pt, soit 2 900 ; celle de 3 pt, autant de pourtour, soit 8 690. Total :
+# 67 110 pixels, 3,34 % des 2 007 330 de la page. Relevé avant réparation : 3,41 %.
 #
-# Relevé après : 0,03 % — le lissage de l'arrondi et de l'ellipse, que les deux moteurs
-# ne posent pas au même pixel, et le bord de la photo. Le seuil est à 0,3 % : dix fois
-# ce relevé, pour que le lissage d'une autre machine ne le fasse pas tomber, et neuf
-# fois sous ce que coûte un retour de Q4 — que les mesures ci-dessus attrapent du reste
-# les premières.
+# Relevé avec la première réparation, qui laissait l'arrondi de mise en page : 0,36 %,
+# les seuls filets de 1 et de 3 pt à un demi-point. Après la seconde : 0,04 % — le
+# lissage de l'arrondi et des ellipses, que les deux moteurs ne posent pas au même
+# pixel, et le bord de la photo. Le seuil est à 0,3 % : sept fois ce relevé, pour que le
+# lissage d'une autre machine ne le fasse pas tomber, et sous l'écart d'un demi-point
+# sur la seule rangée du bas. Ce sont pourtant les mesures ci-dessus, côté par côté, qui
+# attrapent un décalage les premières : la comparaison n'est qu'un filet.
 Scripts/comparer-rendus.sh "$document" 1 0.3
 
 echo "Q4 : des filets de 1, 3 et 4 pt sont centrés sur le bord à l'écran comme au PDF, sur les six chemins éprouvés."

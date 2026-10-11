@@ -301,10 +301,13 @@ PY
 # Les deux filets ajoutés au document avaient porté l'écart de 0,08 % à 0,99 %, et le
 # seuil avait été mis à 2 %. Ce n'était pas, comme on l'avait cru, le seul lissage de
 # leurs bords : l'écran les rentrait d'une demi-épaisseur dans leur forme (poste Q4).
-# Q4 réparé, le 12 octobre 2026 : 0,35 %, bloc arrondi de Q6 compris — le lissage de
-# la longue courbe de l'ellipse et de son dégradé. Le seuil passe à 1 % : près de trois
-# fois ce relevé, et sous ce que coûtait Q4.
-Scripts/comparer-rendus.sh "$document" 1 1.0 > "$travail/comparaison.txt" 2>&1 || {
+# Q4 réparé une première fois : 0,35 %, que l'on avait pris à son tour pour le lissage
+# de l'ellipse — c'était encore Q4 : son filet de 3 pt restait à −0,5 pt du PDF, la
+# marge qui le recentre étant arrondie au point entier. Réparé tout à fait, le
+# 12 octobre 2026 : 0,09 %, bloc arrondi de Q6 compris. Le seuil est à 0,2 % : plus du
+# double de ce relevé, et sous les 0,35 % que coûte le filet de l'ellipse décalé d'un
+# demi-point.
+Scripts/comparer-rendus.sh "$document" 1 0.2 > "$travail/comparaison.txt" 2>&1 || {
     echo "ÉCHEC : l'écran et le PDF divergent sur l'ensemble de la page." >&2
     cat "$travail/comparaison.txt" >&2
     exit 1
