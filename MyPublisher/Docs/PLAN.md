@@ -77,23 +77,24 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **Q5** | Un groupe rogne pareil à l'écran et au PDF | 0 % | Relevé en C9 |
 | **Q6** | Mesurer la découpe d'un remplissage par image | 0 % | Relevé à la relecture du 7 septembre |
 | **Q7** | La recette de A6 sur le cas réel | 0 % | Relevé à la relecture du 7 septembre |
-| **Q8** | N'avertir que des polices dessinées | 0 % | Relevé à la relecture du 6 septembre |
+| **Q8** | N'avertir que des polices dessinées | **100 %** | La passe des polices lit les styles composés (`StyleEffectif.Decouper`) sur le contenu que `DrawText` compose, cases de tableau comprises ; un fragment recouvert, blanc, hors du texte, ou celui d'un champ n'avertit plus. Une seule règle `Fragments` pour la passe et le dessin. Recette dans `Scripts/recettes/` |
 | **Q9** | Retirer `AbsoluteLineHeight` | 0 % | Relevé en A2 : survivant de l'ancienne sémantique de l'interligne |
 | **Q10** | Saisir une poignée hors de la page | 0 % | Relevé en A1 |
 | **Q11** | La liste des blocs défile pendant le glissé | 0 % | Relevé en A4 |
 | **Q12** | Dépendance vulnérable | **100 %** | `Tmds.DBus.Protocol` relevé à 0.21.3 (correctif rétroporté) par une référence directe dans `MyPublisher` ; Avalonia reste en 11.3.9. Recette à part, `Scripts/verifier-dependances.sh`, parce qu'elle demande le réseau : elle lit la base des vulnérabilités et le prouve sur un projet témoin |
 | **Q13** | Couper la ligne au même mot à l'écran et au PDF | 0 % | Trouvé le 11 octobre 2026 : le document d'exemple coupe une ligne différemment |
 | **Q14** | Un double-clic ne déplace pas le bloc | 0 % | Trouvé par Q1 : un double-clic sur un bloc importé réécrit son ordonnée et empile un pas d'annulation |
-| **Q15** | Une image modifiée sur le disque se relit | 0 % | Trouvé par Q3 : le cache garde ses réussites, l'écran reste périmé quand le PDF relit le fichier |
+| **Q15** | Une image modifiée sur le disque se relit | **100 %** | Chaque image du cache garde l'empreinte de son fichier (date et taille, prise avant la lecture) ; l'ouverture oublie les retouchées, une image intacte reste la même instance, l'annulation ne relit rien. Recette dans `Scripts/recettes/` |
 | **Q16** | Le pointillé d'un bloc image obéit aux repères | 0 % | Trouvé par la recette de C1 : toujours dessiné, image chargée ou non, repères allumés ou non |
-| **Q17** | Le texte composé suit une collection remplacée | 0 % | Trouvé par Q2 : `Spans` et `Paragraphs` ont un setter public, qu'aucun contrôle n'écoute |
+| **Q17** | Le texte composé suit une collection remplacée | **100 %** | Accesseur fermé (`init`) sur `TextFrame.Spans`, `TextFrame.Paragraphs` et `TableCell.Spans` : le remplacement ne compile plus (CS8852), le sérialiseur les pose encore. Recette dans `Scripts/recettes/` |
 | **Q18** | Paquets marqués « Legacy » | 0 % | Trouvé par Q12 : `Avalonia.Diagnostics` et xunit 2 ont des remplaçants ; aucun n'est vulnérable |
+| **Q19** | Les autres collections ne se remplacent plus | 0 % | Trouvé par Q17 : `Page.Frames`, `GroupFrame.Children`, `Document.Pages` et les listes de repères ont un setter public que des `ItemsControl` lient sans l'écouter |
 | **D** | Moteur de composition | — | Décision non ouverte ; à rouvrir quand A, B et C sont livrées |
 
 **Par phase** — P : 4 sur 4 · A : 7 sur 15 · B : 2 sur 7 · C : 6 sur 9 · R : 5 sur 7 ·
-Q : 4 sur 18 · D : non planifié.
+Q : 7 sur 19 · D : non planifié.
 
-Soit **28 postes sur 60**. Le compte a doublé le 11 octobre 2026 sans que rien ne
+Soit **31 postes sur 61**. Le compte a doublé le 11 octobre 2026 sans que rien ne
 recule : il porte désormais les onze postes de l'audit des fiches (A8 à A15, B6, B7,
 C8), deux postes que les documents réels demandaient (R6, R7), et la phase Q, qui
 recense les défauts que les postes et les relectures ont **trouvés et consignés sans les
@@ -3172,6 +3173,18 @@ d'interface : à faire seul, et pas au milieu d'une salve.
 *Recette* : `dotnet list package --deprecated` ne signale plus rien, et les deux
 projets de tests comptent autant de tests qu'avant. Effort : moyen.
 
+### Q19 — Les autres collections ne se remplacent plus
+
+*Trouvé le 12 octobre 2026 par Q17*, qui a fermé `Spans` et `Paragraphs`. La même mine
+existe ailleurs : `Page.Frames`, `GroupFrame.Children`, `Document.Pages` et les deux
+listes de repères libres ont un setter public sans notification, alors que des
+`ItemsControl` s'y lient. Aucune affectation n'existe aujourd'hui dans les sources hors
+du sérialiseur : c'est une mine, pas un défaut visible. Remède : le même que Q17,
+l'accesseur `init`.
+
+*Recette* : une sonde compilée contre le noyau obtient un refus CS8852 par collection,
+et l'aller-retour JSON des documents livrés reste identique. Effort : faible.
+
 ---
 
 ## Ordre d'exécution
@@ -3188,7 +3201,7 @@ touchent, le second attend la salve suivante.
 | **3** | R6 · A8 · A9 · A15 · B7 · B4 | Le paragraphe au panneau, et des postes courts, indépendants les uns des autres |
 | **4** | R7 · A12 · C7 · B3 + B6 | Le texte riche à la souris, et ce qui reprend les commandes des salves précédentes |
 | **5** | A10 · A11 · A13 · Q10 · Q11 | La géométrie et la couche de saisie |
-| **6** | A14 · C8 · Q18 | Les deux postes à risque, chacun précédé de son essai |
+| **6** | A14 · C8 · Q18 · Q19 | Les deux postes à risque, chacun précédé de son essai |
 | **D** | Note de décision | Rédigée après la salve 6 ; **la décision revient au propriétaire du projet** |
 
 Trois points où l'on s'arrête pour demander, plutôt que de décider seul : le choix de
@@ -3274,7 +3287,7 @@ finissent toujours par se contredire.
 | **B** | B1 modèles · B2 import texte · B3 impression · B4 archive · B5 polices · B6 aperçu · B7 panneaux repliables | usage | — |
 | **C** | C1 remplissage · C2 repères · C3 sélection multiple · C4 champs · C5 couleurs · C6 marges · C7 bibliothèque · C8 miroir · C9 tableau | structure | P1, P2 |
 | **R** | R1 texte riche · R2 retraits · R3 colonnes · R4 interligne · R5 import `.pub` · R6 paragraphe au panneau · R7 texte riche à la souris | documents réels | R6 et R7 : Q1 |
-| **Q** | Q1 à Q18 | dettes consignées | — |
+| **Q** | Q1 à Q19 | dettes consignées | — |
 | **D** | moteur de composition | décision | Q13, puis A, B, C |
 
 Trois postes à faire en premier si l'on ne devait en retenir que trois, au
