@@ -61,9 +61,13 @@ else
     echo "  passe"
 fi
 rm -f /tmp/compilation-$$.txt
+# Compilé une fois pour toutes : les recettes, qui compilent quand on les joue seules,
+# s'en dispensent ici. Onze compilations de moins par passage, et autant d'occasions
+# de moins pour le plantage du compilateur, qui frappait au milieu des recettes.
+export MYPUBLISHER_DEJA_COMPILE=1
 
 etape "Tests"
-if ! dotnet test MyPublisher.sln --nologo -v q 2>&1 | grep -E "^(Passed!|Failed!|Erreur|error)"; then
+if ! dotnet test MyPublisher.sln --no-build --nologo -v q 2>&1 | grep -E "^(Passed!|Failed!|Erreur|error)"; then
     echo "ÉCHEC : les tests ne passent pas." >&2
     echec=1
 fi

@@ -58,7 +58,7 @@ trap 'rm -rf "$travail"' EXIT
 
 # On compile : le banc n'est compilé ni par « dotnet test » ni par le contrôle, et la
 # moitié « écran » mesurerait sinon un banc périmé.
-if ! dotnet build MyPublisher.sln -c Debug --nologo -v q > "$travail/compilation.txt" 2>&1; then
+if [ -z "${MYPUBLISHER_DEJA_COMPILE:-}" ] && ! dotnet build MyPublisher.sln -c Debug --nologo -v q > "$travail/compilation.txt" 2>&1; then
     echo "ÉCHEC : la compilation ne passe pas." >&2
     cat "$travail/compilation.txt" >&2
     exit 1

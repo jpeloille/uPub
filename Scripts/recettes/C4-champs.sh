@@ -53,7 +53,7 @@ trap 'rm -rf "$travail"' EXIT
 # On compile plutôt que de lancer les tests avec « --no-build » : un binaire périmé
 # survit à une modification des sources, et la recette se déclarerait verte sur du code
 # qu'elle n'a pas éprouvé (cf. Scripts/recettes/A4-superposition.sh).
-if ! dotnet build MyPublisher.sln -c Debug --nologo -v q > "$travail/compilation.txt" 2>&1; then
+if [ -z "${MYPUBLISHER_DEJA_COMPILE:-}" ] && ! dotnet build MyPublisher.sln -c Debug --nologo -v q > "$travail/compilation.txt" 2>&1; then
     echo "ÉCHEC : la compilation ne passe pas." >&2
     cat "$travail/compilation.txt" >&2
     exit 1
@@ -145,7 +145,7 @@ PY
 # --------------------------------------------------------- 1. le folio, à l'écran
 
 attendus=2
-if ! dotnet test MyPublisher.Tests.Interface/MyPublisher.Tests.Interface.csproj \
+if ! dotnet test MyPublisher.Tests.Interface/MyPublisher.Tests.Interface.csproj ${MYPUBLISHER_DEJA_COMPILE:+--no-build} \
         --nologo -v q --filter "poste=C4" > "$travail/tests.txt" 2>&1; then
     sed 's/^/    /' "$travail/tests.txt" >&2
     echo "ÉCHEC : le folio ne se numérote pas à l'écran." >&2

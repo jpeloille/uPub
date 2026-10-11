@@ -60,7 +60,7 @@ trap 'rm -rf "$travail"' EXIT
 # On compile, plutôt que de lancer les tests avec « --no-build » : un binaire périmé
 # survit à une modification des sources, et la recette se déclarerait verte sur du
 # code qu'elle n'a pas éprouvé. C'est le piège que R3 a relevé.
-if ! dotnet build MyPublisher.sln -c Debug --nologo -v q > "$travail/compilation.txt" 2>&1; then
+if [ -z "${MYPUBLISHER_DEJA_COMPILE:-}" ] && ! dotnet build MyPublisher.sln -c Debug --nologo -v q > "$travail/compilation.txt" 2>&1; then
     echo "ÉCHEC : la compilation ne passe pas." >&2
     cat "$travail/compilation.txt" >&2
     exit 1
@@ -113,7 +113,7 @@ PY
 attendus_q2=4
 attendus_q3=3
 for poste in Q2 Q3; do
-    if ! dotnet test MyPublisher.Tests.Interface/MyPublisher.Tests.Interface.csproj \
+    if ! dotnet test MyPublisher.Tests.Interface/MyPublisher.Tests.Interface.csproj ${MYPUBLISHER_DEJA_COMPILE:+--no-build} \
             --no-build --nologo -v q --filter "poste=$poste" > "$travail/tests-$poste.txt" 2>&1; then
         sed 's/^/    /' "$travail/tests-$poste.txt" >&2
         echo "ÉCHEC : les mesures de $poste ne passent pas." >&2

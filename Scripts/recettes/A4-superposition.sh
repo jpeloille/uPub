@@ -39,7 +39,7 @@ trap 'rm -rf "$travail"' EXIT
 # code qu'elle n'a pas éprouvé. Elle est faite pour être rejouée seule, y compris par
 # quelqu'un qui vient de saboter un fichier ; elle doit donc compiler elle-même, comme
 # « Scripts/controle.sh » le fait depuis le poste P2.
-if ! dotnet build MyPublisher.sln -c Debug --nologo -v q > "$travail/compilation.txt" 2>&1; then
+if [ -z "${MYPUBLISHER_DEJA_COMPILE:-}" ] && ! dotnet build MyPublisher.sln -c Debug --nologo -v q > "$travail/compilation.txt" 2>&1; then
     echo "ÉCHEC : la compilation ne passe pas." >&2
     cat "$travail/compilation.txt" >&2
     exit 1
@@ -116,7 +116,7 @@ PY
 # -------------------------------------------------------------------- 2. les gestes
 
 attendus=5
-if ! dotnet test MyPublisher.Tests.Interface/MyPublisher.Tests.Interface.csproj \
+if ! dotnet test MyPublisher.Tests.Interface/MyPublisher.Tests.Interface.csproj ${MYPUBLISHER_DEJA_COMPILE:+--no-build} \
         --nologo -v q --filter "poste=A4" > "$travail/tests.txt" 2>&1; then
     sed 's/^/    /' "$travail/tests.txt" >&2
     echo "ÉCHEC : les gestes de A4 ne passent pas." >&2

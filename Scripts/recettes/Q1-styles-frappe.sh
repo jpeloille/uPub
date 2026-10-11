@@ -63,7 +63,7 @@ trap 'rm -rf "$travail"' EXIT
 tape="$travail/tape.mypub"
 rm -f "$tape"
 if ! MYPUBLISHER_RECETTE_FRAPPE="$tape" \
-     dotnet test MyPublisher.Tests.Interface/MyPublisher.Tests.Interface.csproj \
+     dotnet test MyPublisher.Tests.Interface/MyPublisher.Tests.Interface.csproj ${MYPUBLISHER_DEJA_COMPILE:+--no-build} \
         --nologo -v q --filter "poste=Q1" > "$travail/tests.txt" 2>&1; then
     echo "ÉCHEC : les tests de frappe ne passent pas." >&2
     sed 's/^/    /' "$travail/tests.txt" >&2

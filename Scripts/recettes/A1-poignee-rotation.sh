@@ -51,7 +51,7 @@ document="$travail/tourne.mypub"
 # un passage précédent se déclarerait verte sans avoir rien joué.
 rm -f "$document"
 if ! MYPUBLISHER_RECETTE_ROTATION="$document" \
-     dotnet test MyPublisher.Tests.Interface/MyPublisher.Tests.Interface.csproj \
+     dotnet test MyPublisher.Tests.Interface/MyPublisher.Tests.Interface.csproj ${MYPUBLISHER_DEJA_COMPILE:+--no-build} \
         --nologo -v q --filter "FullyQualifiedName~RotationTests" > "$travail/tests.txt" 2>&1; then
     echo "ÉCHEC : le geste de rotation ne passe pas." >&2
     sed 's/^/    /' "$travail/tests.txt" >&2

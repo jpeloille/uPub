@@ -54,7 +54,7 @@ trap 'rm -rf "$travail"' EXIT
 # On compile, plutôt que de lancer les tests avec « --no-build » : un binaire périmé
 # survit à une modification des sources, et la recette se déclarerait verte sur du code
 # qu'elle n'a pas éprouvé (cf. la recette de A4).
-if ! dotnet build MyPublisher.sln -c Debug --nologo -v q > "$travail/compilation.txt" 2>&1; then
+if [ -z "${MYPUBLISHER_DEJA_COMPILE:-}" ] && ! dotnet build MyPublisher.sln -c Debug --nologo -v q > "$travail/compilation.txt" 2>&1; then
     echo "ÉCHEC : la compilation ne passe pas." >&2
     cat "$travail/compilation.txt" >&2
     exit 1
@@ -63,7 +63,7 @@ fi
 # -------------------------------------------------------------------- 1. les gestes
 
 attendus=7
-if ! dotnet test MyPublisher.Tests.Interface/MyPublisher.Tests.Interface.csproj \
+if ! dotnet test MyPublisher.Tests.Interface/MyPublisher.Tests.Interface.csproj ${MYPUBLISHER_DEJA_COMPILE:+--no-build} \
         --nologo -v q --filter "poste=C2" > "$travail/tests.txt" 2>&1; then
     sed 's/^/    /' "$travail/tests.txt" >&2
     echo "ÉCHEC : les gestes de C2 ne passent pas." >&2

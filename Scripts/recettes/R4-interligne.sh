@@ -47,7 +47,7 @@ trap 'rm -rf "$travail"' EXIT
 # compilé ni par « dotnet test » ni par « Scripts/controle.sh » : sans cette étape, la
 # moitié « écran » de la recette mesurerait un banc périmé, et resterait verte sur un
 # sabotage qu'elle n'aurait pas vu.
-if ! dotnet build MyPublisher.sln -c Debug --nologo -v q > "$travail/compilation.txt" 2>&1; then
+if [ -z "${MYPUBLISHER_DEJA_COMPILE:-}" ] && ! dotnet build MyPublisher.sln -c Debug --nologo -v q > "$travail/compilation.txt" 2>&1; then
     echo "ÉCHEC : la compilation ne passe pas." >&2
     cat "$travail/compilation.txt" >&2
     exit 1

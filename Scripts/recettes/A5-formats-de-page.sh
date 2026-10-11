@@ -58,7 +58,7 @@ trap 'rm -rf "$travail"' EXIT
 # sources, et la recette se déclare verte sur du code qu'elle n'a pas éprouvé. Elle est
 # faite pour être rejouée seule, y compris par quelqu'un qui vient de saboter un
 # fichier ; elle compile donc elle-même, comme « Scripts/controle.sh » depuis P2.
-if ! dotnet build MyPublisher.sln -c Debug --nologo -v q > "$travail/compilation.txt" 2>&1; then
+if [ -z "${MYPUBLISHER_DEJA_COMPILE:-}" ] && ! dotnet build MyPublisher.sln -c Debug --nologo -v q > "$travail/compilation.txt" 2>&1; then
     echo "ÉCHEC : la compilation ne passe pas." >&2
     cat "$travail/compilation.txt" >&2
     exit 1
@@ -221,7 +221,7 @@ fi
 # que le sélecteur affiche : rien de tout cela ne s'obtient d'un shell. Vérifié en
 # faisant échouer les deux côtés séparément — voir l'en-tête.
 attendus=5
-if ! dotnet test MyPublisher.Tests.Interface/MyPublisher.Tests.Interface.csproj \
+if ! dotnet test MyPublisher.Tests.Interface/MyPublisher.Tests.Interface.csproj ${MYPUBLISHER_DEJA_COMPILE:+--no-build} \
         --nologo -v q --filter "poste=A5" > "$travail/tests.txt" 2>&1; then
     sed 's/^/    /' "$travail/tests.txt" >&2
     echo "ÉCHEC : le panneau ne tient pas le format libre." >&2

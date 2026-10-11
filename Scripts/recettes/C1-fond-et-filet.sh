@@ -81,7 +81,7 @@ trap 'rm -rf "$travail"' EXIT
 # une modification des sources, et la recette se déclarerait verte sur du code qu'elle
 # n'a pas éprouvé (cf. la recette de A4). Le banc, surtout, n'est pas reconstruit par
 # « dotnet test » quand on joue cette recette seule.
-if ! dotnet build MyPublisher.sln -c Debug --nologo -v q > "$travail/compilation.txt" 2>&1; then
+if [ -z "${MYPUBLISHER_DEJA_COMPILE:-}" ] && ! dotnet build MyPublisher.sln -c Debug --nologo -v q > "$travail/compilation.txt" 2>&1; then
     echo "ÉCHEC : la compilation ne passe pas." >&2
     cat "$travail/compilation.txt" >&2
     exit 1
