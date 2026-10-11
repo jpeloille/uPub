@@ -832,6 +832,12 @@ public partial class MainWindowViewModel : ViewModelBase
             {
                 height = width * probe.PixelSize.Height / probe.PixelSize.Width;
             }
+
+            // La sonde vient de lire le fichier : ce que le cache en retient est donc
+            // périmé s'il dit autre chose. Sans cela, une image absente à l'ouverture,
+            // remise en place puis réinsérée, donnerait un bloc vide — la liaison passe
+            // par le cache, qui rendrait l'échec d'avant. Poste Q3.
+            BitmapCache.Invalidate(path);
         }
         catch (Exception)
         {
@@ -844,6 +850,24 @@ public partial class MainWindowViewModel : ViewModelBase
             Name = Path.GetFileNameWithoutExtension(path),
             Path = path, X = x, Y = y, Width = width, Height = height
         });
+    }
+
+    /// <summary>
+    /// Donne une image à un remplissage — celui d'un bloc, d'une case ou de la page. Le
+    /// fichier vient d'être choisi : on le relit, plutôt que de croire le cache, qui a
+    /// pu retenir un échec à une ouverture précédente. C'est le même trou que
+    /// <see cref="AddImage"/>, poste Q3.
+    ///
+    /// Le pas d'annulation est ouvert et refermé ici : la transaction du panneau suit le
+    /// focus des champs, et le dialogue de fichier le prend puis le rend.
+    /// </summary>
+    public void ChoisirImageDeFond(ImageFill fond, string chemin)
+    {
+        BitmapCache.Invalidate(chemin);
+
+        BeginEdit();
+        fond.Path = chemin;
+        CommitEdit();
     }
 
     private void Insert(Frame frame)

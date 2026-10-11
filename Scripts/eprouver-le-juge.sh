@@ -147,6 +147,34 @@ saboter "rouvrir un document vide tout le cache d'images, réussites comprises" 
     'foreach (var cle in echecs) Cache.Remove(cle);' \
     'Cache.Clear();'
 
+# Q2, l'autre chemin du désabonnement : un contrôle affiché qui change de bloc sans
+# quitter l'arbre. Aucun des trois premiers tests ne le voit.
+saboter "le texte composé reste accroché à l'ancien bloc quand on lui en donne un autre" \
+    MyPublisher/Views/ControleDeBloc.cs \
+    'if (e.OldValue is TextFrame ancien) Desabonner(ancien);' \
+    '_ = e.OldValue;'
+
+# Q3 : les trois gestes qui passent par l'ouverture, et deux qui n'y passent pas.
+saboter "partir d'un modèle ne fait plus oublier les images manquantes" \
+    MyPublisher/ViewModels/MainWindowViewModel.cs \
+    'BitmapCache.OublierLesEchecs();' \
+    'if (path is not null) BitmapCache.OublierLesEchecs();'
+
+saboter "annuler un geste fait relire les images manquantes, comme une réouverture" \
+    MyPublisher/ViewModels/MainWindowViewModel.cs \
+    'newValue.PropertyChanged += OnDocumentPropertyChanged;' \
+    'newValue.PropertyChanged += OnDocumentPropertyChanged; BitmapCache.OublierLesEchecs();'
+
+saboter "une image remise en place puis réinsérée reste vide" \
+    MyPublisher/ViewModels/MainWindowViewModel.cs \
+    'BitmapCache.Invalidate(path);' \
+    '_ = path;'
+
+saboter "une image remise en place puis choisie pour un fond reste vide" \
+    MyPublisher/ViewModels/MainWindowViewModel.cs \
+    'BitmapCache.Invalidate(chemin);' \
+    '_ = chemin;'
+
 echo
 if [ "$trous" = 0 ]; then
     echo "Le juge sait échouer : $sabotages sabotages, $sabotages attrapés."

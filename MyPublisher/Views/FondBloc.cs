@@ -67,11 +67,14 @@ public sealed class FondBloc : Control
     /// <summary>
     /// L'abonnement ne vaut que tant que le contrôle est affiché.
     ///
-    /// Un remplissage vit bien plus longtemps que le contrôle qui le dessine : changer de
-    /// page reconstruit tous les gabarits, et un contrôle qui ne se désabonnerait pas
-    /// resterait accroché au bloc qu'il n'affiche plus. C'est exactement la fuite trouvée
-    /// au même poste sur les cases d'un tableau, et il n'y avait pas de raison de la
-    /// laisser ici. Mesuré : vingt passages, vingt abonnés.
+    /// Un remplissage vit bien plus longtemps que le contrôle qui le dessine : un contrôle
+    /// qui sort de l'arbre en gardant son fond, et ne se désabonnerait pas, resterait
+    /// accroché au bloc qu'il n'affiche plus. C'est exactement la fuite trouvée au même
+    /// poste sur les cases d'un tableau, et il n'y avait pas de raison de la laisser ici.
+    /// Mesuré : un contrôle posé vingt fois dans un panneau puis retiré, vingt abonnés.
+    /// Le changement de page, lui, ne la produisait pas : la liste des blocs retire le
+    /// contexte de données des gabarits qu'elle démonte et le fond retombe à null —
+    /// mesuré au poste Q2. Le remède ne dépend plus de cette conduite du conteneur.
     /// </summary>
     protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
     {

@@ -212,9 +212,10 @@ public class FondsTests
     public void Un_fond_dessine_puis_retire_de_la_page_cesse_de_lecouter()
     {
         // La même fuite que celle trouvée sur les cases d'un tableau, du côté de l'écran :
-        // un remplissage vit bien plus longtemps que le contrôle qui le dessine, et
-        // changer de page reconstruit tous les gabarits. Sans désabonnement, chaque
-        // passage laisserait un contrôle de plus accroché au fond du bloc.
+        // un remplissage vit bien plus longtemps que le contrôle qui le dessine. Sans
+        // désabonnement, chaque contrôle sorti de l'arbre en gardant son fond y resterait
+        // accroché — vingt passages, vingt abonnés, mesuré en retirant le remède. Le
+        // changement de page ne le fait pas (poste Q2) : c'est ce geste-ci qu'il faut.
         var fond = new SolidFill("#FFAABBCC");
         var planche = new Panel();
         var fenetre = new Window { Content = planche, Width = 200, Height = 200 };

@@ -29,13 +29,17 @@
 #        celui de la page quittée, aucun. Puis vingt passages d'un contrôle qui quitte
 #        l'arbre EN GARDANT son bloc — le cas que le geste réel ne produit pas, le
 #        conteneur retirant le bloc de lui-même (cf. PLAN.md, poste Q2), et le seul où
-#        le remède se voit. Et la page revenue doit se redessiner encore quand on la
-#        règle : se détacher sans se rattacher rouvrirait le défaut de R1.
+#        le remède se voit. Un contrôle qui reste affiché et change de bloc doit lâcher
+#        l'ancien. Et la page revenue doit se redessiner encore quand on la règle : se
+#        détacher sans se rattacher rouvrirait le défaut de R1.
 #      · Q3 — un document dont les deux images manquent s'ouvre, les fichiers sont
 #        remis, le document est rouvert par le geste du menu, dans la même fenêtre :
 #        la couleur des deux images se relève dans la page composée. Le bloc image et
 #        le fond illustré passent par deux chemins vers le cache ; les deux sont
-#        mesurés. Une image déjà lue, elle, n'est pas relue.
+#        mesurés. Une image déjà lue, elle, n'est pas relue, et un geste annulé entre
+#        les deux ne relit pas le disque. Le même test est joué en partant d'un modèle.
+#        Enfin, réinsérer l'image remise en place, ou la choisir pour un remplissage,
+#        la fait paraître sans rouvrir.
 #    Le compte des tests joués est vérifié : un filtre qui ne désigne plus rien sort
 #    en 0, et serait la seule façon pour cette recette de se dire verte sans avoir
 #    rien vu.
@@ -106,8 +110,8 @@ PY
 
 # -------------------------------------------------------------------- 2. les mesures
 
-attendus_q2=3
-attendus_q3=1
+attendus_q2=4
+attendus_q3=3
 for poste in Q2 Q3; do
     if ! dotnet test MyPublisher.Tests.Interface/MyPublisher.Tests.Interface.csproj \
             --no-build --nologo -v q --filter "poste=$poste" > "$travail/tests-$poste.txt" 2>&1; then
@@ -125,6 +129,6 @@ for poste in Q2 Q3; do
     fi
 done
 
-echo "  Q2 : vingt changements de page, aucun contrôle de trop ; un contrôle sorti de l'arbre se tait ($attendus_q2 tests)"
-echo "  Q3 : deux images remises en place reparaissent à la réouverture, les images lues restent ($attendus_q3 test)"
+echo "  Q2 : vingt changements de page, aucun contrôle de trop ; un contrôle sorti de l'arbre ou changé de bloc se tait ($attendus_q2 tests)"
+echo "  Q3 : des images remises en place reparaissent à la réouverture, au départ d'un modèle, à la réinsertion ; les images lues restent ($attendus_q3 tests)"
 echo "Q2-Q3 : le texte composé se détache de son bloc, et le cache d'images oublie ses échecs."

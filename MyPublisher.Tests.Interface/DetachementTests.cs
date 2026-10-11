@@ -15,10 +15,11 @@ namespace MyPublisher.Tests.Interface;
 ///
 /// <see cref="ControleDeBloc"/> s'abonne au bloc et à ses deux collections d'écarts —
 /// c'est ce qui fait que régler le corps redessine la page. Or un bloc vit bien plus
-/// longtemps que les contrôles qui le dessinent : changer de page reconstruit tous les
-/// gabarits, et chaque passage laissait un contrôle de plus accroché à chaque bloc de
-/// texte. C'est la fuite que C5 a refermée sur <see cref="FondBloc"/>, un contrôle
-/// plus loin, et que R1 avait ouverte ici.
+/// longtemps que les contrôles qui le dessinent, et le contrôle ne se désabonnait que
+/// si on lui retirait son bloc. C'est la fuite que C5 a refermée sur
+/// <see cref="FondBloc"/>, un contrôle plus loin, et que R1 avait ouverte ici. Le plan
+/// la disait produite par le changement de page, chaque passage laissant un contrôle de
+/// plus accroché à chaque bloc de texte : la mesure l'a démenti, voir plus bas.
 ///
 /// Elle ne se voit d'aucune façon depuis l'extérieur d'un événement : rien ne se
 /// dessine de travers, tout se redessine juste un peu plus souvent, et la mémoire
@@ -32,7 +33,9 @@ namespace MyPublisher.Tests.Interface;
 /// que rien ne garantit que le conteneur se conduira toujours ainsi. C'est le second
 /// qui éprouve le remède lui-même : un contrôle qui quitte l'arbre EN GARDANT son
 /// bloc — une fenêtre fermée sur un document qui reste ouvert, un aperçu, une
-/// vignette. Sans le remède, vingt passages y laissent vingt abonnés.
+/// vignette. Sans le remède, chacun de ses vingt contrôles resterait abonné. Le
+/// quatrième garde l'autre chemin du désabonnement, celui qui existait déjà : un
+/// contrôle qui reste affiché et change de bloc lâche l'ancien.
 ///
 /// Ce qui est compté, précisément : les abonnés qui SONT des contrôles de bloc. Le
 /// bloc en a d'autres — les liaisons d'Avalonia, le modèle de vue quand il est
@@ -179,6 +182,52 @@ public class DetachementTests
         Assert.Equal(0, Controles(bloc, "PropertyChanged"));
         Assert.Equal(0, Controles(bloc.Spans, "CollectionChanged"));
         Assert.Equal(0, Controles(bloc.Paragraphs, "CollectionChanged"));
+    }
+
+    [AvaloniaFact]
+    [Trait("poste", "Q2")]
+    public void Un_controle_affiche_qui_change_de_bloc_lache_l_ancien()
+    {
+        // Le désabonnement par la valeur, sans détachement : un présentateur qui
+        // recycle son gabarit donne un autre bloc au même contrôle, qui ne quitte pas
+        // l'arbre. Rien d'autre que le changement de valeur ne peut alors le défaire de
+        // l'ancien bloc — et l'ancien bloc, lui, peut vivre aussi longtemps que le
+        // document.
+        TextFrame Bloc(string texte)
+        {
+            var bloc = new TextFrame { Text = texte };
+            bloc.Spans.Add(new StyleSpan { Start = 0, Length = 3, Bold = true });
+            bloc.Paragraphs.Add(new ParagraphSpan { Start = 0, SpaceAfter = 6 });
+            return bloc;
+        }
+
+        var ancien = Bloc("Le premier bloc.");
+        var nouveau = Bloc("Le second bloc.");
+
+        var controle = new TexteCompose { Bloc = ancien, Contenu = ancien.Text };
+        var fenetre = new Window { Content = new Panel { Children = { controle } }, Width = 300, Height = 200 };
+        fenetre.Show();
+        Rendu.Battre(1);
+
+        Assert.Equal(1, Controles(ancien, "PropertyChanged"));
+        Assert.Equal(1, Controles(ancien.Spans, "CollectionChanged"));
+        Assert.Equal(1, Controles(ancien.Paragraphs, "CollectionChanged"));
+
+        controle.Bloc = nouveau;
+        controle.Contenu = nouveau.Text;
+        Rendu.Battre(1);
+
+        // Toujours affiché : c'est bien le changement de bloc qui est éprouvé, et non
+        // le détachement.
+        Assert.NotNull(controle.GetVisualRoot());
+
+        Assert.Equal(0, Controles(ancien, "PropertyChanged"));
+        Assert.Equal(0, Controles(ancien.Spans, "CollectionChanged"));
+        Assert.Equal(0, Controles(ancien.Paragraphs, "CollectionChanged"));
+
+        Assert.Equal(1, Controles(nouveau, "PropertyChanged"));
+        Assert.Equal(1, Controles(nouveau.Spans, "CollectionChanged"));
+        Assert.Equal(1, Controles(nouveau.Paragraphs, "CollectionChanged"));
     }
 
     [AvaloniaFact]
