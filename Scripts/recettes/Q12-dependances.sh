@@ -112,7 +112,7 @@ vulnerables="$(lire_releve "$travail/solution.json" solution)"
 
 # Chaque projet de la solution doit figurer au relevé : un projet que la commande
 # aurait sauté serait un projet dont le silence ne veut rien dire.
-attendus="$(dotnet sln MyPublisher.sln list | grep -c '\.csproj$')"
+attendus="$(dotnet sln MyPublisher.sln list | grep -c '\.csproj$' || true)"
 releves="$(python3 -c 'import json,sys; print(len(json.load(open(sys.argv[1])).get("projects", [])))' \
     "$travail/solution.json")"
 if [ "$attendus" = 0 ] || [ "$releves" != "$attendus" ]; then
