@@ -391,6 +391,15 @@ saboter "un collage qui porte du texte est poussé à gauche comme un saut" \
     '' \
     'Q1-styles-frappe|RecalageTests|FrappeTests'
 
+# Q9 : la vignette espace ses filets du corps, comme le faisait AbsoluteLineHeight,
+# et non de l'avance que la composition donne. Le compte des filets ne bouge pas ;
+# leur place, si.
+saboter "la vignette espace ses filets du corps et non de la hauteur naturelle" \
+    MyPublisher/Views/TemplatePreview.cs \
+    'yield return (x, descente + ligne.Haut, run, ligne.Avance);' \
+    'yield return (x, descente + ligne.Haut * text.FontSize / metriques.Naturelle(commun), run, ligne.Avance);' \
+    'Q9-vignette|VignetteTests'
+
 echo
 if [ "$trous" = 0 ]; then
     echo "Le juge sait échouer : $sabotages sabotages, $sabotages attrapés."
