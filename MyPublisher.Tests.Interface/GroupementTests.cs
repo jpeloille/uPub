@@ -153,14 +153,46 @@ public class GroupementTests
             Assert.Equal(b.Y + Dy, y, precision: 9);
         }
 
-        // Un seul pas d'annulation pour le geste, et il rend le groupe où il était.
-        Assert.True(vm.CanUndo);
-
         // La sélection ne s'écrit pas, mais elle se dessine : la recette compare
         // l'écran au PDF, et y trouverait le contour bleu du groupe.
         vm.Selection.Clear();
         Rendu.Battre();
         Ecrire(vm, "deplace.mypub");
+
+        // Puis tout se défait, un pas par geste, et dans l'ordre inverse. L'annulation
+        // rend un document relu de son instantané : on relit donc la page à chaque pas
+        // plutôt que de se fier aux blocs d'avant.
+        //
+        // Le déplacement : un pas, et le groupe revient où il était — toujours groupé.
+        Annuler(vm);
+        var rendu = Assert.IsType<GroupFrame>(Assert.Single(vm.CurrentPage!.Frames));
+        Assert.Equal(avant.X, rendu.X, precision: 9);
+        Assert.Equal(avant.Y, rendu.Y, precision: 9);
+
+        // Le groupement : un pas, et les quatre blocs reviennent, alignés.
+        Annuler(vm);
+        Assert.Equal(Blocs.Select(b => b.Mot), vm.CurrentPage!.Frames.Select(f => f.Name));
+        Assert.All(vm.CurrentPage.Frames, bloc => Assert.Equal(gauche, bloc.X, precision: 9));
+
+        // L'alignement : un pas, et chacun retrouve son abscisse d'origine. Une
+        // commande d'alignement qui n'ouvrirait pas sa transaction laisserait les blocs
+        // alignés ici, sans rien à annuler.
+        Annuler(vm);
+        foreach (var (bloc, b) in vm.CurrentPage!.Frames.Zip(Blocs))
+        {
+            Assert.Equal(b.X, bloc.X, precision: 9);
+            Assert.Equal(b.Y, bloc.Y, precision: 9);
+        }
+
+        // Et rien de plus : la sélection au clic n'avait empilé aucun pas.
+        Assert.False(vm.CanUndo);
+    }
+
+    private static void Annuler(MainWindowViewModel vm)
+    {
+        Assert.True(vm.CanUndo, "plus rien à annuler, alors qu'un geste reste à défaire");
+        vm.UndoCommand.Execute(null);
+        Rendu.Battre();
     }
 
     /// <summary>

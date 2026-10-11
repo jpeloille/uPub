@@ -241,18 +241,21 @@ ne nomme plus aucun poste clos sans recette.
 
 *Fait le 11 octobre 2026* — trois recettes, et le bilan ne nomme plus C1, C2 ni C3.
 
-- `C1-fond-et-filet.sh` fabrique sa page : une image qui remplit son bloc, une image en
-  hauteur qui laisse voir le fond jaune de son bloc, un bloc de texte à fond et à
-  filet. Sur l'écran (le banc) et sur le PDF, au milieu de chacun des douze côtés, le
-  pixel juste à l'intérieur du bord porte la couleur du filet — c'est ce qui prouve
-  qu'il passe **sur** le contenu —, le filet fait 2 pt, et le PDF le centre sur le bord
-  au quart de point. Les fonds et les images se relèvent à leur place, puis
+- `C1-fond-et-filet.sh` fabrique sa page : une image carrée cadrée pour remplir son
+  bloc sans se déformer (`UniformToFill`, le seul cadrage que l'export découpe), une
+  image en hauteur qui laisse voir le fond jaune de son bloc, un bloc de texte à fond
+  et à filet. Sur l'écran (le banc) et sur le PDF, au milieu de chacun des douze côtés,
+  le pixel juste à l'intérieur du bord porte la couleur du filet — c'est ce qui prouve
+  qu'il passe **sur** le contenu —, le filet fait exactement 2 pt (quatre pixels : 1,5
+  ou 2,5 pt tombent), et le PDF le centre sur le bord au quart de point. Les fonds et
+  les images se relèvent à leur place, la photo ne déborde pas de son bloc, puis
   `comparer-rendus.sh` passe.
-- `C2-reperes.sh` appelle six tests au pointeur synthétisé (`ReperesTests`, trait
+- `C2-reperes.sh` appelle sept tests au pointeur synthétisé (`ReperesTests`, trait
   `poste=C2`) : les quatre blocs lâchés près d'un bord de colonne de la recette de C2a,
-  Alt qui désarme, un repère tiré de la règle, aimanté sur une colonne, repris, retiré
-  hors page, et un bloc posé exactement sur un repère à 333,3 pt — chaque geste
-  annulable. Puis le document d'exemple, exporté sans grille, avec la grille la plus
+  Alt qui désarme, un repère tiré de la règle du haut, aimanté sur une colonne, repris,
+  retiré hors page, un repère horizontal tiré de la règle de gauche, aimanté sur un
+  bord de ligne puis retiré, et un bloc posé exactement sur un repère à 333,3 pt —
+  chaque geste annulable. Puis le document d'exemple, exporté sans grille, avec la grille la plus
   dense que le panneau laisse régler (24 colonnes, 24 lignes, une ligne de base par
   point) et avec des repères libres en plus : zéro pixel d'écart, page par page. La
   contre-épreuve rend les mêmes documents à l'écran, repères allumés, et exige qu'ils
@@ -261,13 +264,18 @@ ne nomme plus aucun poste clos sans recette.
   un clic et trois Maj-clics, « aligner à gauche » entre eux, Ctrl+Maj+G, puis le
   groupe glissé de (30, 20) pt. Le test écrit le document groupé puis déplacé ; la
   recette les exporte et mesure chaque mot par `pdftotext -bbox` : un même fer à
-  154 pt, puis exactement (30,000 ; 20,000) pt de décalage pour chacun.
+  154 pt, puis exactement (30,000 ; 20,000) pt de décalage pour chacun. Le test défait
+  ensuite les trois gestes, un pas chacun, jusqu'aux abscisses d'origine.
 
 Un sabotage par recette dans `eprouver-le-juge.sh` : le filet d'une image rangé sous
 elle à l'écran, les repères libres retirés de la table d'aimantation, « aligner à
 gauche » qui aligne sur le bord droit. **Les deux derniers ne tombaient sous aucun
 test** : ni la commande d'alignement, ni celle du groupement, ni le geste d'un repère
-libre n'étaient éprouvés nulle part.
+libre n'étaient éprouvés nulle part. La relecture en a trouvé trois autres que rien
+n'attrapait, et que les recettes attrapent depuis : la découpe d'une image
+`UniformToFill` qui survit au filet du PDF et le rogne de moitié, la règle de gauche
+qui ne pose plus de repère, l'alignement qui n'ouvre plus de pas d'annulation. Ils
+sont au juge aussi.
 
 *Ce que la recette de C1 a mesuré de Q4.* Sur les douze côtés, sans exception, l'écran
 rentre le filet de 2 pt d'exactement 1,00 pt — une demi-épaisseur — là où le PDF le
@@ -291,10 +299,7 @@ mauvais bord se voit ; l'alignement sur les marges, réglage par défaut, n'est 
 qu'aucune image n'est chargée », dit `PageCanvas.axaml` — est en réalité toujours
 dessiné : une image cadrée sans déformation le laisse voir sur le bord du bloc, et il
 n'obéit pas à l'interrupteur des repères. Il entre donc dans toute comparaison écran ↔
-PDF (0,06 % de la page pour un bloc seul). Les commentaires de
-`MyPublisher.Tests.Interface.csproj` et de `MyPublisher.Banc/Banc.cs` disent encore
-qu'aucune recette de C1, C2a, C2b, C3c ou C6 n'est « aujourd'hui rejouable » : ils
-seront à réécrire d'une traite quand C6 aura la sienne, plutôt qu'à moitié ici.
+PDF (0,06 % de la page pour un bloc seul).
 
 #### Ce que le banc a trouvé le jour où il a servi
 

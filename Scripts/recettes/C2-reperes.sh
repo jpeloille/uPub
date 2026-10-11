@@ -16,6 +16,9 @@
 #      · lâché près d'un bord de colonne, il s'y aimante ;
 #      · on le reprend sur la page, on le retire en le ramenant hors de la page, et
 #        les deux gestes se défont chacun d'un pas ;
+#      · tiré de la règle de GAUCHE, c'est un repère horizontal : il s'aimante sur un
+#        bord de ligne de la grille, se retire au-dessus de la page, et chaque geste
+#        s'annule ;
 #      · un bloc vient se poser exactement sur un repère choisi — 333,3 pt, une
 #        position que ni la grille ni les marges ne proposent, et qu'aucun pointeur ne
 #        viserait au chiffre.
@@ -59,7 +62,7 @@ fi
 
 # -------------------------------------------------------------------- 1. les gestes
 
-attendus=6
+attendus=7
 if ! dotnet test MyPublisher.Tests.Interface/MyPublisher.Tests.Interface.csproj \
         --nologo -v q --filter "poste=C2" > "$travail/tests.txt" 2>&1; then
     sed 's/^/    /' "$travail/tests.txt" >&2
@@ -74,7 +77,7 @@ if [ "${joues:-0}" -lt "$attendus" ]; then
     exit 1
 fi
 
-echo "  1. gestes joués sur la vraie fenêtre : $joues tests (aimantation, Alt, règle, reprise, retrait, repère choisi)"
+echo "  1. gestes joués sur la vraie fenêtre : $joues tests (aimantation, Alt, deux règles, reprise, retrait, repère choisi)"
 
 # ---------------------------------------------------- 2. les repères ne s'impriment pas
 

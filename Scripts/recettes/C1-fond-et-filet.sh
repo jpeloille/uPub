@@ -7,7 +7,11 @@
 # côtés à deux pixels par point, puis jetée. Elle se rejoue sur une page fabriquée pour
 # elle, qui porte les trois cas que C1 a ouverts :
 #
-#   · « Photo »   — une image, cadrée pour remplir son bloc, sous un filet bleu de 2 pt ;
+#   · « Photo »   — une image carrée, cadrée pour remplir son bloc sans se déformer
+#                   (« UniformToFill ») : elle en déborde en haut et en bas, et l'export
+#                   la découpe au bloc. C'est le seul cadrage qui découpe, et la
+#                   découpe doit être levée avant le filet bleu de 2 pt tracé ensuite,
+#                   sans quoi elle le rognerait de sa moitié extérieure ;
 #   · « Portrait » — une image en hauteur, cadrée sans déformation dans un bloc en
 #                    largeur : elle laisse voir à gauche et à droite le FOND jaune du
 #                    bloc, que les images n'avaient pas avant C1 ; même filet ;
@@ -20,12 +24,14 @@
 #   1. LE FILET SUR LE BORD. Au milieu de chacun des douze côtés, le pixel juste à
 #      l'intérieur du bord porte la couleur du filet. C'est ce qui prouve qu'il passe
 #      SUR l'image et non sous elle — un filet tracé avant l'image serait couvert par
-#      elle exactement là. Puis son épaisseur : 2 pt à un demi-point près ;
+#      elle exactement là. Puis son épaisseur : 2 pt, soit quatre pixels exactement —
+#      un filet de 1,5 ou de 2,5 pt, ou rogné de moitié par une découpe, tombe ;
 #   2. SA POSITION. Au PDF, le filet est centré sur le bord, à un quart de point près :
 #      c'est ce que dit la documentation de « Frame.StrokeThickness ». À l'écran, voir
 #      plus bas ;
 #   3. LE FOND ET LE CONTENU. Le fond jaune du portrait se relève de part et d'autre de
-#      l'image, celui de la légende à côté du mot, et chaque image en son centre ;
+#      l'image, celui de la légende à côté du mot, et chaque image en son centre ; ce
+#      que la photo aurait de trop, au-dessus et au-dessous du bloc, n'est pas dessiné ;
 #   4. le filet grossier : l'écran et le PDF donnent la même image
 #      (« Scripts/comparer-rendus.sh »).
 #
@@ -98,7 +104,7 @@ def png(chemin, r, v, b, largeur, hauteur):
         f.write(b"\x89PNG\r\n\x1a\n" + bloc(b"IHDR", entete)
                 + bloc(b"IDAT", zlib.compress(brut)) + bloc(b"IEND", b""))
 
-png(sys.argv[1], 255, 0, 255, 8, 8)    # magenta, carré : remplit son bloc
+png(sys.argv[1], 255, 0, 255, 8, 8)    # magenta, carré : déborde d'un bloc en largeur
 png(sys.argv[2], 0, 160, 0, 8, 16)     # vert, en hauteur : laisse voir le fond
 PY
 
@@ -114,7 +120,7 @@ cat > "$document" <<'JSON'
       "Name": "Page 1",
       "Frames": [
         { "$kind": "image", "Name": "Photo", "X": 100, "Y": 100, "Width": 240, "Height": 180,
-          "Stroke": "#FF0000FF", "StrokeThickness": 2, "Path": "photo.png", "Fit": "Fill" },
+          "Stroke": "#FF0000FF", "StrokeThickness": 2, "Path": "photo.png", "Fit": "UniformToFill" },
         { "$kind": "image", "Name": "Portrait", "X": 100, "Y": 360, "Width": 240, "Height": 180,
           "Fill": { "$kind": "solid", "Color": "#FFFFCC00" },
           "Stroke": "#FF0000FF", "StrokeThickness": 2, "Path": "portrait.png", "Fit": "Uniform" },
@@ -139,6 +145,10 @@ for bloc in blocs:
 for nom in ("Portrait", "Légende"):
     if not next(b for b in blocs if b["Name"] == nom).get("Fill"):
         sys.exit(f"ÉCHEC : relu, « {nom} » a perdu son fond.")
+# Le cadrage de la photo est ce qui met la découpe en jeu : perdu, la recette jouerait
+# un autre cas sans le dire.
+if next(b for b in blocs if b["Name"] == "Photo").get("Fit") != "UniformToFill":
+    sys.exit("ÉCHEC : relu, « Photo » n'est plus cadrée pour remplir (UniformToFill).")
 PY
 
 # ------------------------------------------------------------------- les deux rendus
@@ -239,10 +249,13 @@ for bloc in blocs:
                 refuser(f"{rendu} — « {nom} », côté {cote} : le bord, côté intérieur, "
                         f"n'a pas la couleur du filet. Le contenu passe-t-il dessus ?")
 
-            # … et le filet fait son épaisseur. Un pixel vaut un demi-point : le seuil
-            # est d'un pixel, celui du lissage.
+            # … et le filet fait son épaisseur. Un pixel vaut un demi-point, et le bord
+            # tombe sur un pixel entier : l'épaisseur se mesure donc au demi-point
+            # près, et le filet sain en donne exactement quatre pixels, des deux côtés.
+            # Un seuil d'un demi-point laisserait passer un filet de 1,5 ou de 2,5 pt ;
+            # celui-ci n'admet que 2.
             epaisseur = len(pris) / PX
-            if abs(epaisseur - 2) > 0.5:
+            if abs(epaisseur - 2) > 0.25:
                 refuser(f"{rendu} — « {nom} », côté {cote} : filet de {epaisseur} pt, 2 attendus.")
 
             # La distance du centre du filet au bord, vers l'intérieur.
@@ -278,12 +291,16 @@ print(f"  2. PDF : filet centré sur le bord ; écran : rentré de {etendue} ver
       + (" — c'est Q4, ouvert" if max(ecarts) > 0.25 else " — Q4 semble réparé"))
 
 # 3 — le fond et le contenu, relevés là où rien d'autre ne passe.
-JAUNE, VERT, MAGENTA, CIEL = (255, 204, 0), (0, 160, 0), (255, 0, 255), (191, 227, 245)
+JAUNE, VERT, MAGENTA, CIEL, BLANC = (255, 204, 0), (0, 160, 0), (255, 0, 255), (191, 227, 245), (255, 255, 255)
 releves = [
     ("le fond du portrait, à gauche de l'image",  (120, 450), JAUNE),
     ("le fond du portrait, à droite de l'image",  (320, 450), JAUNE),
     ("le portrait lui-même",                       (220, 450), VERT),
     ("la photo",                                   (220, 190), MAGENTA),
+    # Cadrée pour remplir, la photo carrée monte et descend de 30 pt hors de son bloc :
+    # à 10 pt du bord, dehors, il ne doit rester que la page.
+    ("au-dessus de la photo, ce qui déborde",      (220,  90), BLANC),
+    ("au-dessous de la photo, ce qui déborde",     (220, 290), BLANC),
     ("le fond de la légende, à côté du mot",       (520, 145), CIEL),
 ]
 for rendu, couleur in rendus.items():
@@ -293,7 +310,8 @@ for rendu, couleur in rendus.items():
             refuser(f"{rendu} — {quoi} : {obtenue} en ({x}, {y}) pt, {voulue} attendu.")
 if echec:
     sys.exit(1)
-print("  3. fond jaune autour du portrait, fond de la légende, et les deux images, des deux côtés")
+print("  3. fond jaune autour du portrait, fond de la légende, les deux images, et la photo "
+      "découpée à son bloc, des deux côtés")
 PY
 
 # ------------------------------------------------------------------------- 4. filet

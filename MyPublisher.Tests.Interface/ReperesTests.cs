@@ -25,6 +25,8 @@ namespace MyPublisher.Tests.Interface;
 ///     l'aimantation » ;
 ///   · C2b — « poser, aimanter, désarmer par Alt, reprendre, retirer hors page, et un
 ///     bloc qui vient se poser exactement sur un repère choisi. Le tout est annulable ».
+///     Depuis les deux règles : celle du haut pose les repères verticaux, celle de
+///     gauche les horizontaux, et chacune a sa branche dans le geste.
 ///
 /// Le calcul de l'aimantation est éprouvé sans fenêtre dans <c>AimantationTests</c> ;
 /// ce qui ne s'éprouve qu'ici, c'est que le GESTE l'appelle avec les bons repères —
@@ -85,6 +87,22 @@ public class ReperesTests
                       ?? throw new InvalidOperationException("la règle n'est pas dans la fenêtre");
         Assert.Equal(SurLaPage(fenetre, 0, 0).X, origine.X, precision: 6);
         return new Point(origine.X + x, origine.Y);
+    }
+
+    /// <summary>
+    /// Un point de la règle de gauche, à l'ordonnée de page donnée, à mi-largeur de la
+    /// règle. C'est l'autre branche du geste : elle pose les repères HORIZONTAUX, et
+    /// rien de ce qui se joue depuis la règle du haut ne passe par elle.
+    /// </summary>
+    private static Point SurLaRegleDeGauche(Window fenetre, double y)
+    {
+        var regle = fenetre.GetVisualDescendants().OfType<Control>().First(c => c.Name == "LeftRuler");
+        Assert.True(regle.IsVisible, "la règle de gauche est cachée : on ne peut pas en tirer un repère");
+
+        var origine = regle.TranslatePoint(new Point(regle.Bounds.Width / 2, 0), fenetre)
+                      ?? throw new InvalidOperationException("la règle n'est pas dans la fenêtre");
+        Assert.Equal(SurLaPage(fenetre, 0, 0).Y, origine.Y, precision: 6);
+        return new Point(origine.X, origine.Y + y);
     }
 
     /// <summary>Saisit en <paramref name="de"/>, mène en <paramref name="vers"/>, lâche.</summary>
@@ -239,6 +257,51 @@ public class ReperesTests
         vm.UndoCommand.Execute(null);
         Rendu.Battre();
         Assert.Equal(250, Assert.Single(vm.Document.VerticalRulerGuides).Position, precision: 6);
+    }
+
+    [AvaloniaFact]
+    [Trait("poste", "C2")]
+    public void Un_repere_tire_de_la_regle_de_gauche_saimante_sur_une_ligne_puis_se_retire()
+    {
+        // Trois lignes à gouttière de 12 pt : la grille donne aux repères horizontaux
+        // des bords de ligne où s'aimanter, comme les colonnes aux verticaux.
+        var document = Rendu.Feuille();
+        document.RowCount = 3;
+        document.RowSpacing = 12;
+        var (fenetre, vm) = Ouvrir(document);
+
+        // Le haut de la deuxième ligne, relu dans la table des repères — les bandes vont
+        // par paires (début, fin), il est donc le deuxième trait intérieur.
+        var traits = document.HorizontalGridLines.Where(ligne => !ligne.IsBaseline)
+            .Select(ligne => ligne.Position).Order().ToList();
+        Assert.Equal(4, traits.Count);
+        var ligne = traits[1];
+
+        // Poser : tiré de la règle de gauche, lâché à trois points sous le bord de la
+        // ligne. Il s'y pose exactement, et c'est un repère HORIZONTAL.
+        Glisser(fenetre, SurLaRegleDeGauche(fenetre, 200), SurLaPage(fenetre, 300, ligne + 3));
+        Assert.Equal(ligne, Assert.Single(document.HorizontalRulerGuides).Position, precision: 9);
+        Assert.Empty(document.VerticalRulerGuides);
+
+        // … et la pose s'annule d'un pas.
+        vm.UndoCommand.Execute(null);
+        Rendu.Battre();
+        Assert.Empty(vm.Document.HorizontalRulerGuides);
+
+        // Le reposer, puis le retirer en le ramenant au-dessus de la page.
+        Glisser(fenetre, SurLaRegleDeGauche(fenetre, 200), SurLaPage(fenetre, 300, ligne + 3));
+        var repere = Assert.Single(vm.Document.HorizontalRulerGuides);
+        Assert.Equal(ligne, repere.Position, precision: 9);
+
+        Glisser(fenetre, SurLaPage(fenetre, 300, ligne), SurLaPage(fenetre, 300, -15));
+        Assert.Empty(vm.Document.HorizontalRulerGuides);
+        Assert.Equal("Repère retiré", vm.Status);
+
+        // Le retrait s'annule d'un pas : le repère revient sur sa ligne.
+        vm.UndoCommand.Execute(null);
+        Rendu.Battre();
+        Assert.Equal(ligne, Assert.Single(vm.Document.HorizontalRulerGuides).Position, precision: 9);
+        Assert.Empty(vm.Document.VerticalRulerGuides);
     }
 
     [AvaloniaFact]

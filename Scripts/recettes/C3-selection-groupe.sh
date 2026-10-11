@@ -11,7 +11,8 @@
 #      à gauche ENTRE EUX (case « par rapport aux marges » décochée), Ctrl+Maj+G les
 #      groupe, et la souris déplace le groupe de (30, 20) pt. Le test écrit le document
 #      deux fois, groupé puis déplacé, dans le dossier que nomme
-#      MYPUBLISHER_RECETTE_GROUPE ;
+#      MYPUBLISHER_RECETTE_GROUPE. Puis il défait tout, un pas par geste : le
+#      déplacement, le groupement, l'alignement — et les blocs reviennent à leur place ;
 #   2. le document groupé porte un groupe de quatre blocs, et les quatre ont le même X
 #      sur la page : celui du plus à gauche, 150 pt — un alignement sur un autre bord
 #      donnerait un X commun, mais pas celui-là ;

@@ -153,6 +153,32 @@ saboter "aligner à gauche aligne sur le bord droit" \
     'AlignEach((f, r) => (r.Left - f.Left, 0), "Alignés à gauche")' \
     'AlignEach((f, r) => (r.Right - f.Right, 0), "Alignés à gauche")'
 
+# Trois trous que la relecture des recettes de C1, C2 et C3 a trouvés, et que rien
+# n'attrapait avant elle.
+
+# C1 : le seul cadrage que l'export découpe est « UniformToFill ». Si la découpe
+# survit, le filet tracé ensuite est rogné au bloc, de sa moitié extérieure : 1 pt au
+# lieu de 2. Le texte visé court sur deux lignes, le commentaire qui la garde et la
+# restauration elle-même — celle-ci seule n'est pas unique dans le fichier.
+saboter "au PDF, la découpe d'une image rogne son filet" \
+    MyPublisher.Core/Services/PdfExporter.cs \
+    $'// ensuite serait rogné au bloc, à la moitié de son épaisseur.\n                gfx.Restore(state);' \
+    $'// ensuite serait rogné au bloc, à la moitié de son épaisseur.'
+
+# C2b : la règle de gauche, qui pose les repères horizontaux, est une branche à part
+# du geste. Débranchée, la règle du haut marche toujours.
+saboter "la règle de gauche ne pose plus de repère" \
+    MyPublisher/Views/PageCanvas.axaml.cs \
+    'LeftRuler.PointerPressed += OnRulerPressed;' \
+    '// LeftRuler.PointerPressed += OnRulerPressed;'
+
+# C3b : un alignement qui n'ouvre pas sa transaction aligne très bien — il ne
+# s'annule plus, et c'est le groupement suivant qui emporte son état.
+saboter "aligner ne s'annule plus" \
+    MyPublisher/ViewModels/MainWindowViewModel.cs \
+    $'        BeginEdit();\n        foreach (var frame in Selection)\n        {\n            var (dx, dy) = shift(frame.Extent, reference);' \
+    $'        foreach (var frame in Selection)\n        {\n            var (dx, dy) = shift(frame.Extent, reference);'
+
 echo
 if [ "$trous" = 0 ]; then
     echo "Le juge sait échouer : $sabotages sabotages, $sabotages attrapés."
