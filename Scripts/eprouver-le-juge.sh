@@ -391,6 +391,67 @@ saboter "un collage qui porte du texte est poussé à gauche comme un saut" \
     '' \
     'Q1-styles-frappe|RecalageTests|FrappeTests'
 
+# C5b — les jeux de couleurs et de polices. La référence se résout en un seul endroit
+# du noyau, que les deux rendus appellent : un sabotage du noyau tombe des deux côtés à
+# la fois, et c'est la recette — qui calcule les couleurs attendues depuis les valeurs
+# des jeux — ou les tests du noyau qui le voient, jamais la comparaison écran ↔ PDF.
+saboter "l'export ne résout plus le départ d'un dégradé du jeu" \
+    MyPublisher.Core/Services/PdfExporter.cs \
+    'var depart = ParseColor(charte.Couleur(fill.From));' \
+    'var depart = ParseColor(fill.From);' \
+    'C5b-jeux'
+
+saboter "l'écran peint un fond du jeu sans le résoudre" \
+    MyPublisher/Views/FondBloc.cs \
+    'if (fond is not GradientFill degrade) return Conv.ToBrush(fond.UniformeSelon(charte));' \
+    'if (fond is not GradientFill degrade) return Conv.ToBrush(fond.Uniforme);' \
+    'C5b-jeux|JeuxTests'
+
+saboter "un fragment de style du jeu garde sa référence" \
+    MyPublisher.Core/Models/Jeux.cs \
+    'if (copie.Foreground is { } couleur) copie.Foreground = Couleur(couleur) ?? couleur;' \
+    '' \
+    'C5b-jeux|JeuxTests'
+
+saboter "une teinte du jeu mélange sa référence et non la couleur du jeu" \
+    MyPublisher.Core/Models/FillBrush.cs \
+    'var baseResolue = charte is null ? Color : charte.Couleur(Color);' \
+    'var baseResolue = Color;' \
+    'C5b-jeux|JeuxTests'
+
+saboter "la police du jeu ne se résout plus" \
+    MyPublisher.Core/Models/Jeux.cs \
+    'FontFamily = Police(style.FontFamily),' \
+    'FontFamily = style.FontFamily,' \
+    'C5b-jeux|JeuxTests'
+
+saboter "la migration laisse une valeur de la version 4 devenir une référence" \
+    MyPublisher.Core/Services/FormatMigrations.cs \
+    'objet[nom] = ReferenceDuJeu.Liberer(chaine);' \
+    'objet[nom] = chaine;' \
+    'JeuxTests'
+
+# Le piège du sélecteur, troisième du nom après C1 et C5c : il renvoie ce qu'il lit.
+saboter "le sélecteur renvoie au bloc la couleur du jeu qu'il vient d'afficher" \
+    MyPublisher/Views/SelecteurDeCouleur.cs \
+    'if (_posee == couleur) return;' \
+    '' \
+    'JeuxTests|C5b-jeux'
+
+# Le banc rend la page de force : seul un test qui lit la fenêtre composée voit qu'elle
+# ne s'est pas repeinte.
+saboter "changer de jeu ne repeint plus un fond du jeu à l'écran" \
+    MyPublisher/Views/FondBloc.cs \
+    'JeuAffiche.CharteProperty.Changed.AddClassHandler<FondBloc>((c, _) => c.InvalidateVisual());' \
+    '' \
+    'JeuxTests'
+
+saboter "changer de jeu ne repeint plus un texte du jeu à l'écran" \
+    MyPublisher/Views/ControleDeBloc.cs \
+    'JeuAffiche.CharteProperty.Changed.AddClassHandler<ControleDeBloc>((c, _) => c.InvalidateVisual());' \
+    '' \
+    'JeuxTests'
+
 echo
 if [ "$trous" = 0 ]; then
     echo "Le juge sait échouer : $sabotages sabotages, $sabotages attrapés."
