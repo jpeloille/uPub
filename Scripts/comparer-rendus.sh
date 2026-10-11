@@ -93,12 +93,27 @@ ecart="$(awk -v d="$differents" -v t="$total" 'BEGIN { printf "%.2f", 100 * d / 
 
 echo "page $page : $ecart % de pixels différents (seuil $tolerance %, $total pixels comparés)"
 
-# Un écart nul est aussi suspect qu'un écart énorme : il signalerait qu'on compare
-# une image à elle-même, ou deux images vides.
-if awk -v e="$ecart" 'BEGIN { exit !(e == 0) }'; then
-    echo "ÉCHEC : écart nul. Les deux rendus sont-ils vraiment produits ?" >&2
+# Un écart nul était refusé d'office : il signalait qu'on comparait une image à
+# elle-même, ou deux images vides. Il est devenu un résultat possible au poste Q14 :
+# le panneau ne réécrit plus la largeur de la page ni la géométrie du bloc qu'on
+# sélectionne, et le document tourné de la recette A1 sort au pixel près des deux
+# côtés — 0 pixel différent sur 48 000 pixels d'encre. Ce sont donc les deux
+# soupçons eux-mêmes qu'on vérifie, et non plus leur symptôme : deux fichiers
+# identiques octet pour octet, ou un rendu sans encre.
+if cmp -s "$travail/ecran.png" "$travail/pdf-cadre.png"; then
+    echo "ÉCHEC : les deux rendus sont le même fichier, octet pour octet." >&2
     exit 1
 fi
+magick -size "$geometrie" xc:white "$travail/blanc.png"
+for rendu in ecran pdf-cadre; do
+    encre="$(magick compare -metric AE -fuzz 12% \
+        "$travail/$rendu.png" "$travail/blanc.png" null: 2>&1 | awk '{print $1}' || true)"
+    if ! [[ "$encre" =~ ^[0-9]+(\.[0-9]+)?$ ]] || awk -v n="$encre" 'BEGIN { exit !(n == 0) }'; then
+        echo "ÉCHEC : le rendu « $rendu » de la page $page ne porte aucune encre ($encre)." >&2
+        echo "Les deux rendus sont-ils vraiment produits ?" >&2
+        exit 1
+    fi
+done
 
 if awk -v e="$ecart" -v t="$tolerance" 'BEGIN { exit !(e > t) }'; then
     echo "ÉCHEC : l'écran et le PDF ont divergé." >&2

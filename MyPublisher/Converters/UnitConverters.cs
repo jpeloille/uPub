@@ -24,20 +24,47 @@ namespace MyPublisher.Converters;
 /// champ renvoie au modèle la valeur qu'il vient de recevoir, dès qu'un bloc est
 /// sélectionné, et l'aller-retour points → millimètres → points n'est pas l'identité
 /// en virgule flottante. L'ordonnée d'un bloc d'ATA 21, 107.15039999999999, revenait
-/// 107.1504 ; un bloc à 100 revenait 100.00000000000007. Rien ne se voyait, mais le
-/// document n'était plus le même au caractère près, à la seule sélection.
-///
-/// Aucune arithmétique ne rend cet aller-retour exact : le décimal ne garde que quinze
-/// chiffres d'un double, et multiplier puis diviser par 25,4/72 perd un ulp. Le
-/// convertisseur se souvient donc des points dont il a tiré chaque nombre de
-/// millimètres affiché, et rend ces points-là quand ce même nombre lui revient. Un
-/// nombre qu'il n'a jamais affiché — une frappe, une flèche du champ — est converti
-/// comme avant.
+/// 107.1504 ; un bloc à 100 revenait 100.00000000000007, une page de 595,28 pt
+/// 595.2800000000013. Rien ne se voyait, mais le document n'était plus le même au
+/// caractère près, sans qu'on ait rien tapé. D'où la mémoire de <see cref="Affiches"/>.
 /// </summary>
 public sealed class PointsToMillimetres : IValueConverter
 {
     public static readonly PointsToMillimetres Instance = new();
 
+    private readonly Affiches _affiches = new();
+
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        value is double points ? _affiches.Retenir((decimal)Units.PointsToMm(points), points) : null;
+
+    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => value switch
+    {
+        decimal millimetres when _affiches.Retrouver(millimetres, out var points) => points,
+        decimal millimetres => Units.MmToPoints((double)millimetres),
+        double millimetres => Units.MmToPoints(millimetres),
+        _ => AvaloniaProperty.UnsetValue
+    };
+}
+
+/// <summary>
+/// Les nombres qu'un champ du panneau affiche, et la valeur exacte du modèle dont chacun
+/// a été tiré.
+///
+/// Un champ numérique renvoie au modèle la valeur qu'il vient de recevoir, dès que le
+/// bloc ou la page qu'il montre est affiché — rien ne l'a tapée. Si la conversion vers
+/// le champ perd quoi que ce soit, ce renvoi réécrit le document en silence : c'est le
+/// défaut du poste Q14. Aucune arithmétique ne le rend exact — le décimal ne garde que
+/// quinze chiffres d'un double, et l'arrondi d'affichage en garde moins encore —, si
+/// bien que le convertisseur se souvient : un nombre qui lui revient tel qu'il l'a
+/// donné rend la valeur dont il venait. Un nombre qu'il n'a jamais donné — une frappe,
+/// une flèche du champ — est converti comme avant.
+///
+/// La mémoire est partagée par tous les champs d'un même convertisseur. Deux valeurs
+/// du modèle qui s'affichent sous le même nombre se confondent donc : c'est la
+/// dernière affichée qui revient.
+/// </summary>
+internal sealed class Affiches
+{
     /// <summary>
     /// Au-delà, la mémoire repart de zéro. Elle ne sert qu'à reconnaître un nombre que
     /// le panneau affiche encore — une vingtaine de champs —, pas à tout garder d'une
@@ -45,26 +72,16 @@ public sealed class PointsToMillimetres : IValueConverter
     /// </summary>
     private const int Capacite = 256;
 
-    /// <summary>Le nombre affiché, et les points exacts dont il a été tiré.</summary>
-    private readonly Dictionary<decimal, double> _affiches = [];
+    private readonly Dictionary<decimal, double> _valeurs = [];
 
-    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    public decimal Retenir(decimal affiche, double valeur)
     {
-        if (value is not double points) return null;
-
-        var millimetres = (decimal)Units.PointsToMm(points);
-        if (_affiches.Count >= Capacite) _affiches.Clear();
-        _affiches[millimetres] = points;
-        return millimetres;
+        if (_valeurs.Count >= Capacite) _valeurs.Clear();
+        _valeurs[affiche] = valeur;
+        return affiche;
     }
 
-    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => value switch
-    {
-        decimal millimetres when _affiches.TryGetValue(millimetres, out var points) => points,
-        decimal millimetres => Units.MmToPoints((double)millimetres),
-        double millimetres => Units.MmToPoints(millimetres),
-        _ => AvaloniaProperty.UnsetValue
-    };
+    public bool Retrouver(decimal affiche, out double valeur) => _valeurs.TryGetValue(affiche, out valeur);
 }
 
 /// <summary>Passerelle entre les couleurs stockées en #AARRGGBB et le sélecteur de couleur.</summary>
@@ -82,16 +99,25 @@ public sealed class HexToColor : IValueConverter
         value is Color color ? $"#{color.A:X2}{color.R:X2}{color.G:X2}{color.B:X2}" : AvaloniaProperty.UnsetValue;
 }
 
-/// <summary>NumericUpDown expose des décimaux ; le modèle des doubles.</summary>
+/// <summary>
+/// NumericUpDown expose des décimaux ; le modèle des doubles.
+///
+/// L'arrondi à quatre décimales reste, pour le champ ; il ne remonte plus dans le
+/// modèle. Mesuré au poste Q14 : sélectionner un bloc tourné de 12.3456789° le
+/// laissait à 12.3457°, et un angle posé à la poignée de rotation n'est jamais rond.
+/// </summary>
 public sealed class DoubleToDecimal : IValueConverter
 {
     public static readonly DoubleToDecimal Instance = new();
 
+    private readonly Affiches _affiches = new();
+
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
-        value is double number && !double.IsNaN(number) ? (decimal)Math.Round(number, 4) : null;
+        value is double number && !double.IsNaN(number) ? _affiches.Retenir((decimal)Math.Round(number, 4), number) : null;
 
     public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => value switch
     {
+        decimal number when _affiches.Retrouver(number, out var exact) => exact,
         decimal number => (double)number,
         double number => number,
         _ => AvaloniaProperty.UnsetValue

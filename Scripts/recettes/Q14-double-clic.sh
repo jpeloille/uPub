@@ -13,7 +13,7 @@
 #
 #   · le panneau, à la sélection : le champ en millimètres renvoyait au modèle la
 #     valeur qu'il venait de recevoir, et l'aller-retour points → millimètres →
-#     points n'est pas l'identité ;
+#     points n'est pas l'identité ; le champ de rotation, lui, la renvoyait arrondie ;
 #   · le déplacement : un mouvement nul du pointeur passait par l'aimantation, qui
 #     attirait vers un repère voisin un bloc qu'on n'avait fait que cliquer.
 #
@@ -25,7 +25,10 @@
 #      d'annulation n'est empilé, le document n'est pas marqué modifié, et refermer
 #      la saisie n'y change rien. Chaque clic porte un mouvement nul entre la
 #      pression et le relâchement, comme une plate-forme peut en livrer ;
-#   2. un glissé d'un point, lui, déplace le bloc d'un point et empile son pas, que
+#   2. le même double-clic sur un bloc tourné d'un angle quelconque, comme la poignée
+#      en pose, garde cet angle : le champ de rotation arrondissait à quatre décimales,
+#      et l'arrondi remontait dans le modèle ;
+#   3. un glissé d'un point, lui, déplace le bloc d'un point et empile son pas, que
 #      l'annulation défait jusqu'au document d'ouverture.
 #
 set -euo pipefail
@@ -56,7 +59,7 @@ if [ -z "${MYPUBLISHER_DEJA_COMPILE:-}" ] && ! dotnet build MyPublisher.sln -c D
     exit 1
 fi
 
-attendus=2
+attendus=3
 if ! dotnet test MyPublisher.Tests.Interface/MyPublisher.Tests.Interface.csproj ${MYPUBLISHER_DEJA_COMPILE:+--no-build} \
         --nologo -v q --filter "poste=Q14" > "$travail/tests.txt" 2>&1; then
     sed 's/^/    /' "$travail/tests.txt" >&2

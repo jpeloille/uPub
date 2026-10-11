@@ -114,6 +114,35 @@ public class DoubleClicTests
 
     [AvaloniaFact]
     [Trait("poste", "Q14")]
+    public void Un_double_clic_garde_langle_dun_bloc_tourne_a_la_main()
+    {
+        // ATA 21 ne porte que des quarts de tour, que l'arrondi à quatre décimales du
+        // champ de rotation rend intacts. Un angle posé à la poignée n'est jamais rond :
+        // le champ le rendait arrondi au modèle, à la seule sélection. Et une abscisse
+        // de 100 pt, la plus ronde qui soit, revenait 100.00000000000007 du champ en
+        // millimètres.
+        var bloc = new TextFrame
+        {
+            Name = "Tourné", X = 100, Y = 200, Width = 200, Height = 80,
+            Rotation = 12.3456789, Text = "Un bloc tourné à la main."
+        };
+        var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(bloc));
+        var avant = DocumentSerializer.ToJson(vm.Document);
+
+        var centre = SurLaPage(fenetre, bloc.X + bloc.Width / 2, bloc.Y + bloc.Height / 2);
+        Cliquer(fenetre, centre);
+        Cliquer(fenetre, centre);
+        Rendu.Battre(8);
+
+        Assert.True(bloc.IsEditing, "le double-clic n'a pas ouvert la saisie");
+        Assert.Equal(12.3456789, bloc.Rotation);
+        Assert.Equal(avant, DocumentSerializer.ToJson(vm.Document));
+        Assert.False(vm.CanUndo);
+        Assert.False(vm.IsDirty);
+    }
+
+    [AvaloniaFact]
+    [Trait("poste", "Q14")]
     public void Un_glisse_dun_point_empile_toujours_son_pas()
     {
         // La garde ne doit rien manger d'un vrai geste : à ce zoom, le plus petit qu'on

@@ -409,7 +409,13 @@ saboter "le bloc tracé n'est plus sélectionné" \
 # Q14 : les deux causes du double-clic qui réécrivait le bloc, chacune à sa ligne.
 saboter "le panneau réécrit la position du bloc qu'on sélectionne" \
     MyPublisher/Converters/UnitConverters.cs \
-    'decimal millimetres when _affiches.TryGetValue(millimetres, out var points) => points,' \
+    'decimal millimetres when _affiches.Retrouver(millimetres, out var points) => points,' \
+    '' \
+    'Q14-double-clic|DoubleClicTests'
+
+saboter "le panneau arrondit l'angle du bloc qu'on sélectionne" \
+    MyPublisher/Converters/UnitConverters.cs \
+    'decimal number when _affiches.Retrouver(number, out var exact) => exact,' \
     '' \
     'Q14-double-clic|DoubleClicTests'
 
