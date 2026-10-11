@@ -64,7 +64,10 @@ public class TemplatePreview : Control
         using (context.PushClip(page))
         using (context.PushTransform(Matrix.CreateScale(scale, scale) * Matrix.CreateTranslation(page.X, page.Y)))
         {
-            foreach (var frame in document.Pages[0].Frames) Draw(context, frame, scale);
+            // Les couleurs prises dans le jeu se résolvent par la charte du modèle : sa
+            // vignette montre ses couleurs à lui (poste C5b).
+            var charte = document.Charte;
+            foreach (var frame in document.Pages[0].Frames) Draw(context, frame, scale, charte);
         }
     }
 
@@ -88,18 +91,18 @@ public class TemplatePreview : Control
     /// rendu serait la régression que tout l'équilibre du projet cherche à éviter. Un
     /// dégradé se donne donc par sa première couleur, une image par un gris neutre.
     /// </summary>
-    private static string? Aplat(FillBrush? fill) => fill switch
+    private static string? Aplat(FillBrush? fill, Charte charte) => fill switch
     {
-        GradientFill degrade => degrade.From,
+        GradientFill degrade => charte.Couleur(degrade.From),
         ImageFill => "#FFD5DAE1",
-        _ => fill?.Uniforme,
+        _ => fill?.UniformeSelon(charte),
     };
 
     /// <summary>
     /// Dessine un bloc dans le repère de la page. Récursif comme le reste : un groupe
     /// translate le repère et redescend.
     /// </summary>
-    private static void Draw(DrawingContext context, Frame frame, double scale)
+    private static void Draw(DrawingContext context, Frame frame, double scale, Charte charte)
     {
         using var _ = frame.Rotation == 0
             ? (IDisposable)new NoTransform()
@@ -109,8 +112,8 @@ public class TemplatePreview : Control
                 Matrix.CreateTranslation(frame.CenterX, frame.CenterY));
 
         var rect = new Rect(frame.X, frame.Y, frame.Width, frame.Height);
-        var fill = Conv.ToBrush(Aplat(frame.Fill));
-        var stroke = Conv.ToBrush(frame.Stroke);
+        var fill = Conv.ToBrush(Aplat(frame.Fill, charte));
+        var stroke = Conv.ToBrush(charte.Couleur(frame.Stroke));
         var pen = stroke is null || frame.StrokeThickness <= 0
             ? null
             : new Pen(stroke, Math.Max(frame.StrokeThickness, 0.5 / scale));
@@ -135,7 +138,7 @@ public class TemplatePreview : Control
                 if (fill is not null || pen is not null) context.DrawRectangle(fill, pen, rect);
                 using (context.PushTransform(Matrix.CreateTranslation(frame.X, frame.Y)))
                 {
-                    foreach (var child in group.Children) Draw(context, child, scale);
+                    foreach (var child in group.Children) Draw(context, child, scale, charte);
                 }
 
                 return;
@@ -147,14 +150,14 @@ public class TemplatePreview : Control
                 if (fill is not null || pen is not null) context.DrawRectangle(fill, pen, rect);
                 using (context.PushTransform(Matrix.CreateTranslation(frame.X, frame.Y)))
                 {
-                    foreach (var cellule in table.CellFrames) Draw(context, cellule, scale);
+                    foreach (var cellule in table.CellFrames) Draw(context, cellule, scale, charte);
                 }
 
                 return;
 
             case TextFrame text:
                 if (fill is not null || pen is not null) context.DrawRectangle(fill, pen, rect);
-                DrawTextBars(context, text, scale);
+                DrawTextBars(context, text, scale, charte);
                 return;
         }
     }
@@ -164,11 +167,11 @@ public class TemplatePreview : Control
     /// d'interligne réelle, dans sa couleur. Le dernier est plus court, comme une fin
     /// de paragraphe — c'est ce détail qui fait lire un pavé comme du texte.
     /// </summary>
-    private static void DrawTextBars(DrawingContext context, TextFrame text, double scale)
+    private static void DrawTextBars(DrawingContext context, TextFrame text, double scale, Charte charte)
     {
         if (string.IsNullOrWhiteSpace(text.Text) && text.Field == FieldKind.None) return;
 
-        var brush = Conv.ToBrush(text.Foreground) ?? Brushes.Black;
+        var brush = Conv.ToBrush(charte.Couleur(text.Foreground)) ?? Brushes.Black;
         var line = Math.Max(text.AbsoluteLineHeight, 1);
         var width = text.Width - text.PaddingLeft - text.PaddingRight;
         var height = text.Height - text.PaddingTop - text.PaddingBottom;

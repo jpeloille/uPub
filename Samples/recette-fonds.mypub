@@ -1,5 +1,5 @@
 {
-  "FormatVersion": 4,
+  "FormatVersion": 5,
   "Title": "Recette — fonds",
   "PageWidth": 595.28,
   "PageHeight": 841.89,
@@ -12,6 +12,19 @@
     "From": "#FFFFFFFF",
     "To": "#FF336699",
     "Angle": 90
+  },
+  "ColorScheme": {
+    "Name": "Ardoise",
+    "Main": "#FF1A1A1A",
+    "Accent1": "#FF2E5C8A",
+    "Accent2": "#FF9DC3E6",
+    "Accent3": "#FFE8A33D",
+    "Accent4": "#FF6B7280"
+  },
+  "FontScheme": {
+    "Name": "Sobre",
+    "Heading": "DejaVu Sans",
+    "Body": "DejaVu Sans"
   },
   "ColumnCount": 1,
   "ColumnSpacing": 0,

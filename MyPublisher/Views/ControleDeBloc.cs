@@ -42,6 +42,10 @@ public abstract class ControleDeBloc : Control
     {
         AffectsRender<ControleDeBloc>(BlocProperty, ContenuProperty);
         BlocProperty.Changed.AddClassHandler<ControleDeBloc>((c, e) => c.Suivre(e));
+        // Un changement de jeu ne touche pas le bloc : c'est la charte héritée qui change,
+        // et un texte qui y fait référence change de couleur, ou de police et donc de
+        // coupure (poste C5b).
+        JeuAffiche.CharteProperty.Changed.AddClassHandler<ControleDeBloc>((c, _) => c.InvalidateVisual());
     }
 
     /// <summary>Le bloc, pour son style commun, ses fragments et ses marges.</summary>
@@ -141,15 +145,18 @@ public abstract class ControleDeBloc : Control
         var largeur = Math.Max(1, Bounds.Width - bloc.PaddingLeft - bloc.PaddingRight);
         var hauteur = Math.Max(1, Bounds.Height - bloc.PaddingTop - bloc.PaddingBottom);
 
-        var commun = new StyleEffectif(
-            bloc.FontFamily, bloc.FontSize, bloc.Bold, bloc.Italic, bloc.Foreground, 0);
+        // Le style et les fragments arrivent résolus par la charte du document, la même
+        // fonction que l'export appelle : une police du jeu se mesure dans la police du
+        // jeu, ce qui décide des coupures.
+        var charte = JeuAffiche.De(this);
+        var commun = charte.StyleCommun(bloc);
 
         // Les fragments repèrent des positions dans le texte saisi ; un champ résolu
         // n'a pas les mêmes caractères, et n'est jamais qu'un seul style. Les écarts de
         // paragraphe tombent pour la même raison — un champ n'a pas les mêmes
         // paragraphes. Les réglages du bloc, eux, valent toujours : ce sont des
         // propriétés du bloc, comme ses marges intérieures.
-        var fragments = Contenu == bloc.Text ? bloc.Spans : (IReadOnlyList<StyleSpan>)[];
+        var fragments = Contenu == bloc.Text ? charte.Fragments(bloc.Spans) : (IReadOnlyList<StyleSpan>)[];
         var ecarts = Contenu == bloc.Text ? bloc.Paragraphs : (IReadOnlyList<ParagraphSpan>)[];
 
         var lignes = Compositeur.Composer(

@@ -32,6 +32,8 @@ public partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(PageCountLabel))]
     [NotifyPropertyChangedFor(nameof(FieldContext))]
+    [NotifyPropertyChangedFor(nameof(ChosenColorScheme))]
+    [NotifyPropertyChangedFor(nameof(ChosenFontScheme))]
     private Document _document = Document.CreateDefault();
 
     [ObservableProperty]
@@ -160,6 +162,9 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             SyncPageSetup();
         }
+
+        if (e.PropertyName == nameof(Models.Document.ColorScheme)) OnPropertyChanged(nameof(ChosenColorScheme));
+        if (e.PropertyName == nameof(Models.Document.FontScheme)) OnPropertyChanged(nameof(ChosenFontScheme));
     }
 
     /// <summary>
@@ -255,7 +260,58 @@ public partial class MainWindowViewModel : ViewModelBase
         CommitEdit();
     }
 
+    /// <summary>
+    /// Les polices proposées : le titre et le corps du jeu de polices d'abord — ce sont
+    /// des références, qui suivront le jeu (poste C5b) — puis les polices de la machine.
+    /// La liste ne change pas quand on change de jeu : seul le libellé des deux premières
+    /// entrées le fait. Remplacer la liste remettrait à vide la sélection de la liste
+    /// déroulante, qui la renverrait au bloc.
+    /// </summary>
     public IReadOnlyList<string> FontFamilies { get; }
+
+    /// <summary>Les jeux de couleurs proposés au panneau.</summary>
+    public IReadOnlyList<JeuDeCouleurs> ColorSchemes => JeuxPredefinis.Couleurs;
+
+    /// <summary>Les jeux de polices proposés au panneau.</summary>
+    public IReadOnlyList<JeuDePolices> FontSchemes => JeuxPredefinis.Polices;
+
+    /// <summary>
+    /// Le jeu de couleurs du document, tel que le choisit la liste du panneau. Changer de
+    /// jeu est un geste qui s'annule, comme changer de format.
+    ///
+    /// Une valeur nulle est ignorée, et ce n'est pas une précaution de principe : un
+    /// document dont le jeu n'est pas dans la liste — modifié à la main, venu d'une
+    /// version future — laisse la liste sans sélection, et elle renvoie alors null. Le
+    /// document ne doit pas perdre son jeu pour autant.
+    /// </summary>
+    public JeuDeCouleurs? ChosenColorScheme
+    {
+        get => Document.ColorScheme;
+        set
+        {
+            if (value is null || value == Document.ColorScheme) return;
+
+            BeginEdit();
+            Document.ColorScheme = value;
+            CommitEdit();
+            Status = $"Jeu de couleurs : {value.Name}";
+        }
+    }
+
+    /// <summary>Le jeu de polices du document ; même règle que le jeu de couleurs.</summary>
+    public JeuDePolices? ChosenFontScheme
+    {
+        get => Document.FontScheme;
+        set
+        {
+            if (value is null || value == Document.FontScheme) return;
+
+            BeginEdit();
+            Document.FontScheme = value;
+            CommitEdit();
+            Status = $"Jeu de polices : {value.Name}";
+        }
+    }
 
     public IReadOnlyList<PageSize> PageSizes => PageSize.All;
 
@@ -726,23 +782,41 @@ public partial class MainWindowViewModel : ViewModelBase
     /// </summary>
     private Frame BuildFrame(EditorTool tool) => tool switch
     {
+        // Les blocs neufs prennent leurs couleurs et leurs polices dans les jeux du
+        // document, comme dans Publisher : un texte dans la couleur principale et la
+        // police du corps, un titre dans celle du titre, une forme dans les accents. Ce
+        // sont des références — changer de jeu les suivra. Le jeu par défaut porte
+        // exactement les valeurs que ces gabarits écrivaient en dur jusqu'ici (voir
+        // « JeuxPredefinis ») : un document neuf ne change donc pas d'allure.
         EditorTool.Text => new TextFrame
         {
-            Name = "Texte", Width = 260, Height = 90, Text = "Saisissez votre texte."
+            Name = "Texte", Width = 260, Height = 90, Text = "Saisissez votre texte.",
+            FontFamily = ReferenceDuJeu.Police(EmplacementDePolice.Body),
+            Foreground = ReferenceDuJeu.Couleur(EmplacementDeCouleur.Main),
         },
         EditorTool.Heading => new TextFrame
         {
             Name = "Titre", Width = Document.MarginBoxWidth, Height = 60,
-            Text = "Titre", FontSize = 28, Bold = true
+            Text = "Titre", FontSize = 28, Bold = true,
+            FontFamily = ReferenceDuJeu.Police(EmplacementDePolice.Heading),
+            Foreground = ReferenceDuJeu.Couleur(EmplacementDeCouleur.Main),
         },
-        EditorTool.Rectangle => new ShapeFrame { Name = "Rectangle", Width = 200, Height = 120 },
-        EditorTool.Ellipse => new ShapeFrame
+        EditorTool.Rectangle => FormeDuJeu(new ShapeFrame { Name = "Rectangle", Width = 200, Height = 120 }),
+        EditorTool.Ellipse => FormeDuJeu(new ShapeFrame
         {
             Name = "Ellipse", Shape = ShapeKind.Ellipse, Width = 160, Height = 160
-        },
+        }),
         EditorTool.Table => BuildTable(),
         _ => throw new ArgumentOutOfRangeException(nameof(tool), tool, "Outil sans gabarit de bloc.")
     };
+
+    /// <summary>Une forme neuve : fond dans l'accent 2, contour dans l'accent 1.</summary>
+    private static ShapeFrame FormeDuJeu(ShapeFrame forme)
+    {
+        forme.Fill = new SolidFill(ReferenceDuJeu.Couleur(EmplacementDeCouleur.Accent2));
+        forme.Stroke = ReferenceDuJeu.Couleur(EmplacementDeCouleur.Accent1);
+        return forme;
+    }
 
     /// <summary>
     /// Une bande de trois cases sur toute la largeur de composition : c'est la forme
@@ -752,7 +826,14 @@ public partial class MainWindowViewModel : ViewModelBase
     /// </summary>
     private TableFrame BuildTable()
     {
-        var table = new TableFrame { Name = "Tableau" };
+        // Police, couleur du texte et filets pris dans les jeux, comme les autres blocs
+        // neufs ; le gris des filets est l'accent 4 du jeu par défaut.
+        var table = new TableFrame
+        {
+            Name = "Tableau",
+            FontFamily = ReferenceDuJeu.Police(EmplacementDePolice.Body),
+            Foreground = ReferenceDuJeu.Couleur(EmplacementDeCouleur.Main),
+        };
         var largeur = Document.MarginBoxWidth / 3;
 
         for (var colonne = 0; colonne < 3; colonne++) table.Columns.Add(new TableColumn(largeur));
@@ -762,7 +843,8 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             table.Cells.Add(new TableCell
             {
-                Row = 0, Column = colonne, Stroke = "#FF6B7280", StrokeThickness = 1
+                Row = 0, Column = colonne, Stroke = ReferenceDuJeu.Couleur(EmplacementDeCouleur.Accent4),
+                StrokeThickness = 1
             });
         }
 
@@ -1425,16 +1507,25 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         try
         {
-            return FontManager.Current.SystemFonts
-                .Select(family => family.Name)
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .OrderBy(name => name, StringComparer.CurrentCultureIgnoreCase)
-                .ToList();
+            return
+            [
+                ReferenceDuJeu.Police(EmplacementDePolice.Heading),
+                ReferenceDuJeu.Police(EmplacementDePolice.Body),
+                .. FontManager.Current.SystemFonts
+                    .Select(family => family.Name)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(name => name, StringComparer.CurrentCultureIgnoreCase)
+            ];
         }
         catch (Exception)
         {
             // Le concepteur visuel n'a pas toujours de gestionnaire de polices actif.
-            return ["DejaVu Sans", "Liberation Serif", "Liberation Sans"];
+            return
+            [
+                ReferenceDuJeu.Police(EmplacementDePolice.Heading),
+                ReferenceDuJeu.Police(EmplacementDePolice.Body),
+                "DejaVu Sans", "Liberation Serif", "Liberation Sans"
+            ];
         }
     }
 }

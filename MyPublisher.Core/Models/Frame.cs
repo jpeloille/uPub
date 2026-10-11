@@ -280,7 +280,7 @@ public abstract partial class Frame : ObservableObject
     [JsonIgnore]
     public double FillOpacity
     {
-        get => HexColor.TryParse(FillColor, out var a, out _, out _, out _) ? Math.Round(a * 100.0 / 255) : 100;
+        get => HexColor.Alpha(FillColor) is { } a ? Math.Round(a * 100.0 / 255) : 100;
         set
         {
             var alpha = (byte)Math.Round(Math.Clamp(value, 0, 100) * 255 / 100);
