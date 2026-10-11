@@ -237,6 +237,65 @@ Chaque recette reçoit au moins un sabotage dans `Scripts/eprouver-le-juge.sh`. 
 recette qu'on n'a jamais vue échouer ne prouve rien. P3 passe à 100 % quand le bilan
 ne nomme plus aucun poste clos sans recette.
 
+#### C1, C2 et C3 rejouées
+
+*Fait le 11 octobre 2026* — trois recettes, et le bilan ne nomme plus C1, C2 ni C3.
+
+- `C1-fond-et-filet.sh` fabrique sa page : une image qui remplit son bloc, une image en
+  hauteur qui laisse voir le fond jaune de son bloc, un bloc de texte à fond et à
+  filet. Sur l'écran (le banc) et sur le PDF, au milieu de chacun des douze côtés, le
+  pixel juste à l'intérieur du bord porte la couleur du filet — c'est ce qui prouve
+  qu'il passe **sur** le contenu —, le filet fait 2 pt, et le PDF le centre sur le bord
+  au quart de point. Les fonds et les images se relèvent à leur place, puis
+  `comparer-rendus.sh` passe.
+- `C2-reperes.sh` appelle six tests au pointeur synthétisé (`ReperesTests`, trait
+  `poste=C2`) : les quatre blocs lâchés près d'un bord de colonne de la recette de C2a,
+  Alt qui désarme, un repère tiré de la règle, aimanté sur une colonne, repris, retiré
+  hors page, et un bloc posé exactement sur un repère à 333,3 pt — chaque geste
+  annulable. Puis le document d'exemple, exporté sans grille, avec la grille la plus
+  dense que le panneau laisse régler (24 colonnes, 24 lignes, une ligne de base par
+  point) et avec des repères libres en plus : zéro pixel d'écart, page par page. La
+  contre-épreuve rend les mêmes documents à l'écran, repères allumés, et exige qu'ils
+  y diffèrent — sans quoi l'égalité des PDF pourrait tenir à une grille perdue.
+- `C3-selection-groupe.sh` joue le geste entier (`GroupementTests`, trait `poste=C3`) :
+  un clic et trois Maj-clics, « aligner à gauche » entre eux, Ctrl+Maj+G, puis le
+  groupe glissé de (30, 20) pt. Le test écrit le document groupé puis déplacé ; la
+  recette les exporte et mesure chaque mot par `pdftotext -bbox` : un même fer à
+  154 pt, puis exactement (30,000 ; 20,000) pt de décalage pour chacun.
+
+Un sabotage par recette dans `eprouver-le-juge.sh` : le filet d'une image rangé sous
+elle à l'écran, les repères libres retirés de la table d'aimantation, « aligner à
+gauche » qui aligne sur le bord droit. **Les deux derniers ne tombaient sous aucun
+test** : ni la commande d'alignement, ni celle du groupement, ni le geste d'un repère
+libre n'étaient éprouvés nulle part.
+
+*Ce que la recette de C1 a mesuré de Q4.* Sur les douze côtés, sans exception, l'écran
+rentre le filet de 2 pt d'exactement 1,00 pt — une demi-épaisseur — là où le PDF le
+centre. La recette l'exige ainsi : ce que C1 promet (la couleur sur le bord, côté
+intérieur, et l'épaisseur) est demandé des deux côtés sans indulgence, puisque les deux
+filets se recouvrent sur la moitié intérieure ; la position est demandée au quart de
+point au PDF, qui suit la documentation ; à l'écran, l'écart au PDF est imprimé à
+chaque passage et borné à ce que Q4 explique, de 0 à une demi-épaisseur vers
+l'intérieur. La tolérance d'images (1,2 %) est calculée sur ce que Q4 coûte —
+2 120 pt de pourtour décalés d'un point, 0,84 % de la page — et non relevée puis
+arrondie. Q4 réparé, l'écart imprimé tombera à 0 : c'est sa recette, pas celle-ci, qui
+resserrera alors l'exigence.
+
+*Choisi sans certitude.* La « grille la plus dense » est celle que le panneau autorise
+aujourd'hui, et non les 77 repères de la recette d'origine, qui n'en disait pas le
+réglage. L'alignement de C3 est joué « par rapport aux marges » décoché, les blocs
+entre eux : c'est le cas où le bord visé dépend de la sélection, donc le seul où un
+mauvais bord se voit ; l'alignement sur les marges, réglage par défaut, n'est pas joué.
+
+*Trouvé et laissé tel quel.* Le pointillé gris d'un bloc image — « repère visible tant
+qu'aucune image n'est chargée », dit `PageCanvas.axaml` — est en réalité toujours
+dessiné : une image cadrée sans déformation le laisse voir sur le bord du bloc, et il
+n'obéit pas à l'interrupteur des repères. Il entre donc dans toute comparaison écran ↔
+PDF (0,06 % de la page pour un bloc seul). Les commentaires de
+`MyPublisher.Tests.Interface.csproj` et de `MyPublisher.Banc/Banc.cs` disent encore
+qu'aucune recette de C1, C2a, C2b, C3c ou C6 n'est « aujourd'hui rejouable » : ils
+seront à réécrire d'une traite quand C6 aura la sienne, plutôt qu'à moitié ici.
+
 #### Ce que le banc a trouvé le jour où il a servi
 
 **L'interligne n'est pas appliqué à l'export.** `AbsoluteLineHeight`

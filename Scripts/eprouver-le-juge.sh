@@ -127,6 +127,32 @@ saboter "l interligne redevient un multiple du corps" \
     "naturelle * (multiple > 0 ? multiple : 1);" \
     "multiple;"
 
+# Les recettes de C1, C2 et C3, écrites au poste P3 : un sabotage chacune, sur ce que
+# son poste avait promis et que rien d'autre ne gardait.
+
+# C1 promettait un filet qui passe SUR l'image, à l'écran comme au PDF. Rangé sous elle,
+# il se tait partout ailleurs : l'image le recouvre exactement là où personne ne
+# regarde, sur la moitié intérieure du bord. Le sabotage vise la PREMIÈRE occurrence du
+# contour dans PageCanvas.axaml, qui est celle du gabarit d'image.
+saboter "à l'écran, le filet d'une image passe sous elle" \
+    MyPublisher/Views/PageCanvas.axaml \
+    '<Rectangle Classes="frameStroke"/>' \
+    '<Rectangle Classes="frameStroke" ZIndex="-1"/>'
+
+# C2b : un repère libre qui sort de la table d'aimantation ne casse aucun calcul — il
+# cesse seulement de servir. Seul le geste le voit.
+saboter "les repères libres n'aimantent plus les blocs" \
+    MyPublisher.Core/Models/Document.cs \
+    '.. VerticalRulerGuides.Select(guide => guide.Position)' \
+    ''
+
+# C3b : « aligner à gauche » qui aligne sur le bord droit donne encore aux blocs un
+# bord commun — mais pas celui du plus à gauche.
+saboter "aligner à gauche aligne sur le bord droit" \
+    MyPublisher/ViewModels/MainWindowViewModel.cs \
+    'AlignEach((f, r) => (r.Left - f.Left, 0), "Alignés à gauche")' \
+    'AlignEach((f, r) => (r.Right - f.Right, 0), "Alignés à gauche")'
+
 echo
 if [ "$trous" = 0 ]; then
     echo "Le juge sait échouer : $sabotages sabotages, $sabotages attrapés."
