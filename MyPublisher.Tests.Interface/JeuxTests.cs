@@ -69,23 +69,70 @@ public class JeuxTests
         // deux blocs sont indiscernables à l'écran. Seule la référence les distingue.
         var reference = Forme(40, 40, new SolidFill("scheme:accent1"));
         var libre = Forme(160, 40, new SolidFill(Ardoise.Accent1));
-        var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(reference, libre));
+        var texte = new TextFrame
+        {
+            X = 40, Y = 140, Width = 300, Height = 80, FontSize = 48, Bold = true,
+            Text = "████", Foreground = "scheme:accent1",
+        };
+        var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(reference, libre, texte));
 
         var avant = Rendu.Encre(fenetre);
         Assert.Equal(Ardoise.Accent1, Teinte(avant, 80, 70));
         Assert.Equal(Ardoise.Accent1, Teinte(avant, 200, 70));
-        var composeeAvant = Rendu.Composee(fenetre);
+        var (gx, gy) = Premier(avant, 40, 140, 300, 80, Ardoise.Accent1);
+
+        // Ce que la fenêtre montre, et non ce qu'un rendu forcé dessinerait : c'est ainsi
+        // qu'on sait que l'écran a suivi de lui-même. Lu au point même, parce que le
+        // panneau change aussi en changeant de jeu — une image entière différerait de
+        // toute façon.
+        Assert.Equal(Ardoise.Accent1, Affichee(fenetre, 80, 70));
+        Assert.Equal(Ardoise.Accent1, Affichee(fenetre, gx, gy));
 
         vm.ChosenColorScheme = Ocean;
         Rendu.Battre();
 
-        // L'écran a suivi de lui-même — mesuré sur l'image composée, que
-        // « RenderTargetBitmap » ne peut pas forcer à se redessiner.
-        Assert.NotEqual(composeeAvant.Pixels, Rendu.Composee(fenetre).Pixels);
+        Assert.Equal(Ocean.Accent1, Affichee(fenetre, 80, 70));
+        Assert.Equal(Ocean.Accent1, Affichee(fenetre, gx, gy));
+        Assert.Equal(Ardoise.Accent1, Affichee(fenetre, 200, 70));
 
         var apres = Rendu.Encre(fenetre);
         Assert.Equal(Ocean.Accent1, Teinte(apres, 80, 70));
         Assert.Equal(Ardoise.Accent1, Teinte(apres, 200, 70));
+    }
+
+    /// <summary>Le premier point d'une zone de la page qui porte cette couleur, en points.</summary>
+    private static (double X, double Y) Premier(Rendu.Image image, double x, double y, double l, double h, string couleur)
+    {
+        // Pris au milieu d'un carré de 3 × 3 pixels de la même couleur : un pixel de bord
+        // d'un glyphe, lissé, ne se relirait pas pareil d'un rendu à l'autre.
+        for (var py = y + 1; py < y + h - 1; py += 0.5)
+        for (var px = x + 1; px < x + l - 1; px += 0.5)
+        {
+            var plein = true;
+            for (var d = -1.0; d <= 1 && plein; d += 0.5)
+            for (var e = -1.0; e <= 1 && plein; e += 0.5)
+            {
+                plein = Teinte(image, px + d, py + e) == couleur;
+            }
+
+            if (plein) return (px, py);
+        }
+
+        throw new InvalidOperationException($"aucun point de couleur {couleur} dans la zone");
+    }
+
+    /// <summary>La couleur que la fenêtre affiche en un point de la page, en #AARRGGBB.</summary>
+    private static string Affichee(Window fenetre, double x, double y)
+    {
+        var page = fenetre.GetVisualDescendants().OfType<Panel>().First(p => p.Name == "PageRoot");
+        var point = page.TranslatePoint(new Point(x, y), fenetre)
+                    ?? throw new InvalidOperationException("la page n'est pas dans la fenêtre");
+        var image = Rendu.Composee(fenetre);
+        var i = ((int)point.Y * image.Largeur + (int)point.X) * 4;
+
+        // L'image composée est en RGBA, à la différence du rendu hors champ (BGRA).
+        return HexColor.Format(
+            image.Pixels[i + 3], image.Pixels[i], image.Pixels[i + 1], image.Pixels[i + 2]);
     }
 
     [AvaloniaFact]
