@@ -391,6 +391,71 @@ saboter "un collage qui porte du texte est poussé à gauche comme un saut" \
     '' \
     'Q1-styles-frappe|RecalageTests|FrappeTests'
 
+# Salve 2, lot « rendu » : Q4, Q5, Q6 et Q16, les écarts entre l'écran et le PDF.
+# Chacun éprouvé à la main avant d'être écrit ici : appliqué, la cible tombée, restauré.
+
+# Q4 : l'écran rentrait le filet d'une demi-épaisseur. La marge qui le recentre ôtée,
+# le contour commun des blocs rentre de nouveau d'une demi-épaisseur — la recette de Q4
+# le voit sur douze côtés sur vingt-quatre (image, texte, groupe), celle de C1,
+# resserrée, sur ses douze.
+saboter "à l'écran, le filet d'un bloc rentre de nouveau dans le bloc" \
+    MyPublisher/Views/PageCanvas.axaml \
+    $'            <Setter Property="Margin" Value="{Binding StrokeThickness, Converter={x:Static conv:Conv.FiletCentre}}"/>\n' \
+    '' \
+    'Q4-filet|C1-fond'
+
+# L'ellipse a son propre élément : seule la recette de Q4 la porte.
+saboter "à l'écran, le filet d'une ellipse rentre dans la forme" \
+    MyPublisher/Views/PageCanvas.axaml \
+    $'<Ellipse IsVisible="{Binding IsEllipse}"\n                         Margin="{Binding StrokeThickness, Converter={x:Static conv:Conv.FiletCentre}}"' \
+    '<Ellipse IsVisible="{Binding IsEllipse}"' \
+    'Q4-filet'
+
+# Q5 : l'export ne découpe plus les blocs d'un groupe. Le texte de 400 pt court de
+# nouveau 280 pt au-delà de son groupe dans le PDF, et pas à l'écran.
+saboter "l'export ne découpe plus au groupe" \
+    MyPublisher.Core/Services/PdfExporter.cs \
+    $'            gfx.IntersectClip(new XRect(zone.Left, zone.Top, zone.Width, zone.Height));\n' \
+    '' \
+    'Q5-groupe'
+
+# Q5 : la découpe ramenée au cadre exact du porteur rogne de moitié, à l'écran comme
+# au PDF, le filet d'un bloc posé sur le bord d'un groupe ou d'un tableau.
+saboter "la découpe d'un groupe rogne le filet de ses blocs" \
+    MyPublisher.Core/Models/Decoupe.cs \
+    'return new Extent(-marge, -marge, largeur + marge, hauteur + marge);' \
+    'return new Extent(0, 0, largeur, hauteur);' \
+    'Q5-groupe|DecoupeTests'
+
+# Q6 : la découpe d'un remplissage par image oublie l'arrondi, au PDF puis à l'écran.
+# Avant Q6, ces deux-là traversaient toute la vérification : la page de C5 ne portait
+# pas de bloc arrondi rempli d'une image.
+saboter "au PDF, un remplissage par image oublie l'arrondi du bloc" \
+    MyPublisher.Core/Services/PdfExporter.cs \
+    $'        else if (pourtour.Arrondi > 0)\n        {\n            chemin.AddRoundedRectangle(' \
+    $'        else if (pourtour.Arrondi < 0)\n        {\n            chemin.AddRoundedRectangle(' \
+    'C5-fonds'
+
+saboter "à l'écran, un remplissage par image oublie l'arrondi du bloc" \
+    MyPublisher/Views/FondBloc.cs \
+    ': (Geometry)new RectangleGeometry(rect, Arrondi, Arrondi);' \
+    ': (Geometry)new RectangleGeometry(rect);' \
+    'C5-fonds'
+
+# Q16 : le pointillé d'un bloc image ne regarde plus si l'image est chargée, puis ne
+# regarde plus l'interrupteur des repères. Chacune des deux conditions a son test.
+saboter "le pointillé d'un bloc image se dessine sur l'image chargée" \
+    MyPublisher/Views/PageCanvas.axaml \
+    $'                            <Binding Path="#Photo.Source" Converter="{x:Static ObjectConverters.IsNull}"/>\n' \
+    '' \
+    'Q16-pointille|PointilleTests'
+
+saboter "le pointillé d'un bloc image n'obéit plus aux repères" \
+    MyPublisher/Views/PageCanvas.axaml \
+    $'                            <Binding Path="#Board.((vm:MainWindowViewModel)DataContext).ShowGuides"/>\n                            <Binding Path="#Photo.Source"' \
+    '                            <Binding Path="#Photo.Source"' \
+    'Q16-pointille|PointilleTests'
+
 echo
 if [ "$trous" = 0 ]; then
     echo "Le juge sait échouer : $sabotages sabotages, $sabotages attrapés."
