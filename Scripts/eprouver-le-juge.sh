@@ -127,6 +127,40 @@ saboter "l interligne redevient un multiple du corps" \
     "naturelle * (multiple > 0 ? multiple : 1);" \
     "multiple;"
 
+# Les quatre suivants éprouvent les recettes de B1, C4, C6 et R4, écrites le
+# 11 octobre 2026 pour des postes clos sans recette rejouable. Chacun casse ce que SA
+# recette mesure. Joués un à un contre les tests, le contrôle et chaque recette avant
+# d'être écrits ici : ceux de C4 et de C6 passent tout le reste et ne tombent que sur
+# leur recette ; celui de R4 passe les 311 tests et tombe sur les recettes de R2, R3
+# et R4 ; celui de B1 tombe sur les tests « poste=B1 », que sa recette appelle.
+
+# Le défaut que le poste B1 existe pour empêcher : le modèle s'ouvre comme un document,
+# et « Enregistrer » l'écrase.
+saboter "un document parti d un modèle en garde le chemin" \
+    MyPublisher/ViewModels/MainWindowViewModel.cs \
+    'Adopt(document, null, ' \
+    'Adopt(document, path, '
+
+# Le folio de l'écran resterait juste : seul le PDF, relu page par page, le voit.
+saboter "le folio du PDF reste à 1 sur toutes les pages" \
+    MyPublisher.Core/Services/PdfExporter.cs \
+    'new FieldContext(index + 1, document.Pages.Count' \
+    'new FieldContext(1, document.Pages.Count'
+
+# Une marge unique appliquée des deux côtés : le fer gauche reste juste, et seul un
+# texte calé à droite trahit la confusion.
+saboter "l export retire la marge gauche à la place de la droite" \
+    MyPublisher.Core/Services/PdfExporter.cs \
+    'Math.Max(1, text.Width - text.PaddingLeft - text.PaddingRight),' \
+    'Math.Max(1, text.Width - text.PaddingLeft - text.PaddingLeft),'
+
+# Le défaut d'origine de R4, que le banc avait trouvé le 6 septembre 2026 : l'écran
+# avançait de 12,00 pt quand le PDF avançait de 13,93. Aucun test ne le voit.
+saboter "l écran reprend le corps pour hauteur naturelle" \
+    MyPublisher/Converters/InterligneConverter.cs \
+    'return (-metriques.Ascent + metriques.Descent + metriques.LineGap) * corps / em;' \
+    'return corps;'
+
 echo
 if [ "$trous" = 0 ]; then
     echo "Le juge sait échouer : $sabotages sabotages, $sabotages attrapés."

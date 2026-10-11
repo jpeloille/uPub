@@ -237,6 +237,66 @@ Chaque recette reçoit au moins un sabotage dans `Scripts/eprouver-le-juge.sh`. 
 recette qu'on n'a jamais vue échouer ne prouve rien. P3 passe à 100 % quand le bilan
 ne nomme plus aucun poste clos sans recette.
 
+*Fait le 11 octobre 2026, pour quatre des sept* — `B1-modeles.sh`, `C4-champs.sh`,
+`C6-marges.sh` et `R4-interligne.sh`, chacune avec son sabotage à la fin de
+`Scripts/eprouver-le-juge.sh`. Les gestes que le shell ne sait pas jouer sont dans deux
+fichiers de tests d'interface, appelés par filtre et comptés comme ceux de A4 :
+`ModelesTests` (`poste=B1`) frappe `Ctrl+N`, choisit le dépliant, part de lui sans son
+chemin, puis retouche chacun des quatre modèles et frappe `Ctrl+S` — sur des **copies**
+rangées à part, parce qu'un sabotage qui rendrait au document le chemin de son modèle
+écraserait sinon le fichier du répertoire de sortie, que la compilation suivante ne
+remplacerait pas, la source étant plus ancienne que lui. `ChampsTests` (`poste=C4`)
+change de page dans la vraie fenêtre et relit ce que chaque bloc dessine.
+
+Ce que les recettes mesurent, et contre quoi. Le folio de C4 se lit au PDF page par page
+**à sa place**, posé seul et dans un groupe — trouver « 1 » à « 8 » quelque part dans le
+texte passerait sur un folio qui suivrait l'ordre de lecture —, la date sous une locale
+anglaise, et les coordonnées d'un fichier à deux jeux, dont seul l'actif doit paraître
+sur la carte de visite, logo relevé au pixel. C6 pose quatre blocs, dont deux calés à
+droite : c'est le fer droit qui distingue quatre marges d'une marge unique appliquée des
+deux côtés. R4 ne lit pas la hauteur naturelle dans le code qu'il éprouve, mais dans la
+table `hhea` du fichier de police que fontconfig désigne — 13,96875 pt pour DejaVu Sans
+12 —, puisque les deux rendus appellent le même `Compositeur.Avance` et que les comparer
+entre eux prouverait leur accord, jamais leur justesse. Mesuré : 13,9688 et 20,9531 pt au
+PDF, au dix-millième ; pour C6, un déplacement de 12,000 pt à gauche et de 0,000 pt à
+droite, des deux côtés.
+
+Les deux recettes à l'encre mesurent à **quatre** pixels par point, au centre de l'encre
+pondéré par la noirceur et non à son bord : le plan demande 0,05 pt, soit un dixième de
+pixel à l'échelle ordinaire. À deux pixels par point, le calage des glyphes sur la grille
+coûte jusqu'à 0,06 pt sur l'avance de neuf lignes, et R4 échouerait sur du code juste.
+
+Les sabotages ont été joués un à un contre les tests, le contrôle et **chaque** recette
+avant d'être écrits. Ceux de C4 (le folio du PDF figé à 1) et de C6 (l'export retire la
+marge gauche à la place de la droite) passent tout le reste et ne tombent que sur leur
+recette. Celui de R4 — le défaut d'origine, l'écran qui avance du corps — passe les 311
+tests et tombe sur les recettes de R2, R3 et R4. Celui de B1 tombe sur les tests
+`poste=B1`.
+
+**La recette de B1 a trouvé un défaut, corrigé dans un commit à part.** La carte de
+visite s'exportait avec un avertissement dès qu'on y mettait un nom : le bloc « Nom »,
+16 pt de haut en gras 12 pt à l'interligne 1,25, réclame 17,46 pt depuis R4. C'est la
+retombée qu'A2 avait corrigée sur les documents d'exemple, et qu'elle ne pouvait pas voir
+ici : le test des documents livrés mesure le texte *saisi*, vide sous un champ. « Les
+quatre modèles s'exportent sans un avertissement » était donc faux depuis le 6 septembre.
+Le bloc ne porte qu'une ligne : son interligne passe à 1, ce qui ne déplace aucun bloc.
+
+*Choisi sans certitude* — corriger le modèle plutôt que de le signaler seulement : sans
+cela la recette restait rouge, et la relâcher était exclu ; le correctif est isolé pour
+pouvoir être repris. Le « jeu enregistré » de C4 est un fichier écrit par la recette au
+format du dialogue des coordonnées, et non passé par ce dialogue. La concordance des
+positions écran ↔ PDF est tenue à 0,5 pt, « au pixel » à deux pixels par point ;
+l'avance et les marges, à 0,05 pt.
+
+*Trouvé et laissé tel quel* — le banc n'est compilé ni par `dotnet test` ni par
+`controle.sh`. Sur une copie neuve, A1 et A2 échouent faute de binaire au premier passage
+de `verifier.sh` ; sous l'épreuve du juge, elles mesurent un banc **périmé**, compilé
+avant le sabotage, jusqu'à ce que A4 recompile la solution. Les quatre nouvelles recettes
+compilent elles-mêmes. Le texte de l'écran est posé 0,2 à 0,3 pt plus bas que celui du
+PDF, quel que soit l'interligne — sous le pixel. Le bloc « Société » de la carte de
+visite tient tout juste dans ses 16 pt. Une compilation a avorté une fois sur « Internal
+CLR error (0x80131506) », sans se reproduire.
+
 #### Ce que le banc a trouvé le jour où il a servi
 
 **L'interligne n'est pas appliqué à l'export.** `AbsoluteLineHeight`
