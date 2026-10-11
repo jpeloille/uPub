@@ -62,6 +62,9 @@ else
     echo "  aucune recette écrite pour l'instant."
 fi
 
+etape "Bilan"
+Scripts/bilan.sh | tail -2
+
 echo
 if [ "$echec" = 0 ]; then
     echo "Vérification passée."

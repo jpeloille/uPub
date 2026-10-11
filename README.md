@@ -33,7 +33,19 @@ Scripts/controle.sh                 # le seul contrôle de la chaîne d'écritur
 Scripts/controle.sh --enregistrer   # remplace le relevé de référence, après examen
 Scripts/eprouver-le-juge.sh         # sabote le code et vérifie qu'on s'en aperçoit
 Scripts/comparer-rendus.sh doc.mypub 1   # l'écran contre le PDF, à deux pixels par point
+Scripts/bilan.sh                    # poste par poste : clos ou non, recette ou non
 ```
+
+Les recettes demandent trois outils hors .NET : `pdftoppm` (poppler-utils), `magick`
+(ImageMagick 7) et `pub2raw` (libmspub-tools) :
+
+```bash
+sudo apt install poppler-utils imagemagick libmspub-tools
+```
+
+Le dépôt se travaille sur un disque local. Un partage réseau monté en CIFS ne garde
+pas le bit d'exécution : les scripts et le binaire compilé y tombent tous en
+`Permission denied`, et `git status` y montre des fichiers modifiés qui ne le sont pas.
 
 `Scripts/verifier.sh` est l'enveloppe : il enchaîne les tests, le contrôle ci-dessous,
 puis les recettes de chaque poste. Le lancer avant et après un poste, plutôt que le

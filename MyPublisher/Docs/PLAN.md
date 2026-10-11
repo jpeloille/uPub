@@ -24,14 +24,14 @@ Où en est chaque poste. Une seule règle pour la colonne d'avancement : un post
 on écrit ce qui est fait plutôt qu'un pourcentage inventé — un poste à moitié écrit n'est
 pas un poste à moitié livré. La colonne se met à jour dans le commit qui clôt le poste.
 
-*Dernière mise à jour : 6 septembre 2026 (A3).*
+*Dernière mise à jour : 11 octobre 2026 (P3, le bilan).*
 
 | Poste | Intitulé | Avancement | Où ça en est |
 |---|---|:---:|---|
 | **P0** | Nom du remplissage | **100 %** | `Fill` retenu et daté ; renommage fait en C1 |
 | **P1** | Dépôt sous git | **100 %** | Branche `main`, commit initial `cc098e0` |
 | **P2** | Contrôle de non-régression | **100 %** | `Scripts/controle.sh`, référence dans `Scripts/reference.txt` |
-| **P3** | Banc de vérification | en cours | Noyau séparé, banc de rendu, comparaison écran ↔ PDF, export déterministe, 20 tests, `Scripts/verifier.sh`. Reste : les recettes des postes clos, et le bilan |
+| **P3** | Banc de vérification | en cours | Noyau séparé, banc de rendu, comparaison écran ↔ PDF, export déterministe, 20 tests, `Scripts/verifier.sh`, bilan dans `Scripts/bilan.sh`. Reste : les recettes de B1, C1, C2, C3, C4, C6 et R4, clos sans recette rejouable |
 | **A1** | Poignée de rotation | **100 %** | Neuvième poignée au-dessus du bloc, aimantée sur 15° sous Maj ; recette dans `Scripts/recettes/` |
 | **A2** | Signaler le débordement du texte | **100 %** | Marqueur rouge à l'écran, avertissement à l'export, et l'export rogne au bloc comme l'écran |
 | **A3** | Chemins d'images relatifs | **100 %** | Relatif sous le dossier du document, absolu ailleurs ; résolu à l'ouverture. `FormatVersion` reste à 3 |
@@ -65,14 +65,8 @@ ignorait la phase R, apparue le 6 septembre 2026 ; elle la compte désormais.
 Soit **23 postes sur 29**. Le tableau ne porte pas encore les onze
 postes que l'audit des fiches a fait apparaître le 6 septembre 2026 — A8 à A15, B6,
 B7, C8 — et qui sont au périmètre : ils y entreront quand ils seront spécifiés.
-
-Soit **23 postes sur 29**. Le tableau ne porte pas encore les onze
-postes que l'audit des fiches a fait apparaître le 6 septembre 2026 — A8 à A15, B6,
-B7, C8 — et qui sont au périmètre : ils y entreront quand ils seront spécifiés.
-des fiches a fait apparaître le 6 septembre 2026 — A8 à A15, B6, B7, C8 — et qui sont au
-périmètre : ils y entreront quand ils seront spécifiés. C'est un compte de postes et non
-d'effort : C3 pesait à lui
-seul plus que toute la phase A, et les préalables ne produisaient aucune fonctionnalité.
+C'est un compte de postes et non d'effort : C3 pesait à lui seul plus que toute la
+phase A, et les préalables ne produisaient aucune fonctionnalité.
 Le tableau dit ce qui est clos, pas ce qui reste à peiner.
 
 ---
@@ -175,6 +169,22 @@ mais vit sous la mise à l'échelle du zoom, si bien que le rendre directement d
 son contenu 4/3 trop grand dans une image à la bonne taille — un bandeau de 118 pt
 sortait à 157 pt sans que rien ne le signale ; et un écart **nul** est refusé au même
 titre qu'un écart énorme, puisqu'il voudrait dire qu'on compare une image à elle-même.
+
+*Bilan écrit le 11 octobre 2026* — `Scripts/bilan.sh` lit le tableau de suivi et
+cherche, pour chaque poste, la recette qui le rejoue ; `Scripts/verifier.sh` en imprime
+la conclusion à la fin de chaque passage. Le premier passage compte **sept postes clos
+sans recette rejouable** : B1, C1, C2, C3, C4, C6 et R4. Ce sont, à B1 et R4 près, ceux
+que le premier paragraphe de cette section nommait déjà. Certains sont tenus en partie
+par les tests — `GroupeTests` pour C3c, `AimantationTests` pour C2 — mais un test qui
+éprouve un calcul n'est pas une recette qui rejoue le geste du poste. P3 reste donc
+ouvert sur cette seule dette.
+
+Le même jour, le banc est passé à .NET 10 et le dépôt a quitté le partage réseau pour
+un disque local (`~/src/MyPublisher`, le partage restant le dépôt distant). Sur la
+machine où .NET 9 n'était plus installé, **aucun** test ne se lançait ; sur le partage
+CIFS, aucun script ni le binaire compilé ne s'exécutait, faute de bit d'exécution. Les
+304 tests et le contrôle repassent tels quels sous .NET 10, sans une ligne de code
+changée.
 
 #### Ce que le banc a trouvé le jour où il a servi
 
