@@ -2478,6 +2478,46 @@ affecté d'une vulnérabilité de gravité haute (GHSA-xrw6-gwf8-vvr9).
 *Recette* : `dotnet list package --vulnerable --include-transitive` ne rapporte rien,
 et `Scripts/verifier.sh` passe. Effort : faible, si une version corrigée existe.
 
+*Fait le 11 octobre 2026* — une ligne dans `MyPublisher/MyPublisher.csproj` : une
+référence directe à `Tmds.DBus.Protocol` **0.21.3**. Avalonia n'a pas bougé.
+
+**La version corrigée existe sur la branche même qu'emploie Avalonia.** L'avancée
+GHSA-xrw6-gwf8-vvr9, publiée le 8 avril 2026, déclare corrigées la 0.92.0 et, pour
+`Tmds.DBus.Protocol` seulement, un rétroportage en 0.21.3 sur la branche `release/0.21`.
+Sa notice NuGet porte les mêmes cadres et les mêmes dépendances que la 0.21.2 ; seuls
+le numéro et la branche diffèrent. Avalonia 11.3.9 demande « au moins 0.21.2 » : la
+0.21.3 tient dans sa contrainte sans rien forcer, et c'était le plus petit pas possible.
+La montée d'Avalonia dans la série 11.3.x n'a donc pas été tentée, et aucune recette
+au pixel n'avait de raison de bouger — aucune n'a bougé.
+
+**Un seul projet tire le paquet, pas trois.** `dotnet list` le signalait dans
+`MyPublisher`, `MyPublisher.Banc` et `MyPublisher.Tests.Interface`, mais
+`dotnet nuget why` montre que les deux derniers ne le reçoivent que par leur référence à
+`MyPublisher` (Avalonia.Desktop → X11 → FreeDesktop). La référence directe va donc dans
+ce seul projet, et la règle « la dépendance la plus proche l'emporte » la transmet aux
+deux autres. La base ne signalait rien d'autre sur les cinq projets.
+
+**La recette lit la base, puis prouve qu'elle l'a lue.** `Scripts/recettes/Q12-dependances.sh`
+lit le relevé JSON plutôt que la phrase « has no vulnerable packages », qui se dit aussi
+bien d'une base saine que d'une base vide ; elle échoue sur tout problème signalé, sur
+tout projet manquant au relevé, et nommément sur l'absence de réseau. Elle fait ensuite
+tirer la 0.21.2 à un projet jetable et exige qu'elle y soit signalée : sans cette
+contre-épreuve, un outil qui ne sait plus rien signaler passerait pour un dépôt sain.
+Enfin elle compare ce que la compilation a copié à ce que la restauration a résolu, paquet
+par paquet : le premier essai l'a montré utile, sur un binaire compilé avant la
+correction qui embarquait encore la 0.21.2. Le sabotage ajouté au juge remet la 0.21.2
+dans le projet.
+
+*Choisi sans certitude.* La recette dépend du réseau, ou d'un cache NuGet récent :
+c'est la nature d'une base qui change sans nous, et la recette tombera le jour où une
+avancée nouvelle touchera un paquet d'aujourd'hui. C'est ce qu'on veut apprendre, mais
+c'est aussi la première recette dont le rouge peut ne rien devoir au dépôt.
+
+*Laissé tel quel.* La référence directe est une ligne qu'aucun code n'appelle, et qu'on
+serait tenté de retirer au premier ménage. Elle pourra partir quand une version
+d'Avalonia demandera d'elle-même une version corrigée ; la recette dira si elle part
+trop tôt.
+
 ### Q13 — Couper la ligne au même mot à l'écran et au PDF
 
 *Trouvé le 11 octobre 2026*, en vérifiant ce que disaient les en-têtes de

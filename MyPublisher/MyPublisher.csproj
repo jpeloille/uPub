@@ -36,4 +36,19 @@
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.1"/>
         <PackageReference Include="Avalonia.Controls.ColorPicker" Version="11.3.9"/>
     </ItemGroup>
+
+    <ItemGroup>
+        <!-- Référence directe à un paquet que l'application n'appelle jamais : elle ne
+             sert qu'à relever la version que tire Avalonia (Desktop → X11 → FreeDesktop).
+             Avalonia 11.3.9 demande « au moins 0.21.2 », et la 0.21.2 est affectée de
+             GHSA-xrw6-gwf8-vvr9 : un pair D-Bus malveillant peut usurper des signaux,
+             épuiser les descripteurs de fichiers ou faire tomber l'application. La 0.21.3
+             est le correctif rétroporté sur la même branche 0.21, aux dépendances
+             identiques : c'est le plus petit pas qui ferme la faille sans toucher à
+             Avalonia, donc sans déplacer un pixel. Le banc et les tests d'interface la
+             reçoivent par leur référence à ce projet. Quand Avalonia demandera de lui-même
+             une version corrigée, cette ligne pourra partir ; la recette
+             Scripts/recettes/Q12-dependances.sh dira si elle part trop tôt. -->
+        <PackageReference Include="Tmds.DBus.Protocol" Version="0.21.3"/>
+    </ItemGroup>
 </Project>
