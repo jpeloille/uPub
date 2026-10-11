@@ -173,6 +173,14 @@ la barre du haut regroupe les commandes du document : fichier, annulation, zoom.
 - **Fond de page** : le même choix, posé sur la publication entière — panneau
   *DOCUMENT*. Un dégradé de page se règle en trois gestes et change tout l'air d'un
   document.
+- **Jeu de couleurs et jeu de polices**, panneau *DOCUMENT* : cinq couleurs nommées et
+  une paire titre/corps, portées par le document. Chaque sélecteur de couleur montre les
+  cinq pastilles du jeu, et la liste des polices commence par le titre et le corps du
+  jeu. Comme dans Publisher, ce qu'on y prend est une **référence** : changer de jeu
+  recolore — ou change de police — tous les blocs qui s'y réfèrent, à l'écran comme au
+  PDF, et eux seuls. Une couleur choisie au sélecteur reste libre. Les blocs neufs
+  prennent leurs couleurs et leurs polices dans le jeu ; six jeux de couleurs et cinq
+  jeux de polices sont livrés, et les quatre modèles portent le jeu « Marine ».
 - Rotation libre de n'importe quel bloc, y compris pour la sélection et le
   redimensionnement. Elle se prend **à la souris**, par une neuvième poignée posée
   au-dessus du bloc — un disque vert au bout d'une tige — ou se saisit au degré près
@@ -286,7 +294,9 @@ unité vaut exactement un point : les liaisons XAML n'ont donc aucune conversion
 faire, et l'export PDF se fait à l'identité.
 
 **Le modèle (`Models/`) ne référence aucun type Avalonia.** Les couleurs y sont des
-chaînes `#AARRGGBB`, les alignements des énumérations maison. La traduction vers les
+chaînes `#AARRGGBB` — ou une référence au jeu de couleurs, `scheme:accent1`, que
+`Charte` résout, une fois, pour l'écran comme pour l'export —, les alignements des
+énumérations maison. La traduction vers les
 types Avalonia se fait dans `Converters/`. C'est ce qui permet au rendu écran et à
 l'export PDF de partager exactement les mêmes données, sans couche de conversion
 intermédiaire susceptible de diverger.
@@ -327,12 +337,19 @@ coordonnées de ce collègue, ce qui est précisément l'intérêt d'un modèle.
 
 ## Format de fichier
 
-`.mypub` est du JSON indenté, versionné par `FormatVersion` (aujourd'hui 4). Un
+`.mypub` est du JSON indenté, versionné par `FormatVersion` (aujourd'hui 5). Un
 fichier d'une version antérieure est migré à l'ouverture — la version 1 nommait
 `Background` le fond des blocs de texte, il s'appelle `Fill` partout depuis ; la
 version 2 n'avait qu'une marge intérieure, il y en a quatre ; la version 3 écrivait
-le fond en couleur, c'est désormais un objet — et un fichier d'une version plus
+le fond en couleur, c'est désormais un objet ; la version 4 ne connaissait pas les
+jeux, et ses couleurs et ses polices restent libres — et un fichier d'une version plus
 récente est refusé plutôt que lu de travers.
+
+Le document porte `ColorScheme` (un nom, `Main` et quatre accents) et `FontScheme`
+(un nom, `Heading` et `Body`). Là où une couleur est attendue, `scheme:main` ou
+`scheme:accent1` à `scheme:accent4` y font référence, avec une opacité propre
+facultative (`scheme:accent1/80`) ; là où une police est attendue, `scheme:heading` ou
+`scheme:body`. Toute autre valeur est libre.
 
 Un remplissage porte son propre discriminant `$kind` : `solid` et sa couleur,
 `gradient` et ses deux couleurs avec son angle, `image` et son chemin, `tint` et sa
