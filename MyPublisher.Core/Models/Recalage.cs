@@ -26,9 +26,11 @@ public readonly record struct Edition(int Debut, int Supprimes, int Inseres)
     /// « ddef », et rien dans les deux textes ne distingue ce « d » tapé devant de celui
     /// qu'on aurait tapé derrière le premier. Le préfixe étant pris en premier et le plus
     /// long possible, l'insertion est toujours placée le plus à droite de ce qui est
-    /// ambigu. Les caractères sont les mêmes ; seul peut différer le style que reçoit le
-    /// caractère tapé, et seulement quand il répète son voisin à la frontière d'un
-    /// fragment.
+    /// ambigu. Les caractères sont les mêmes ; seuls peuvent différer le style et le
+    /// réglage de paragraphe que reçoit le texte tapé — jamais ceux du texte qui était
+    /// là —, et seulement quand il répète son voisin à une frontière. Le seul cas où ce
+    /// choix tomberait mal sur un geste courant, le retour à la ligne, est repris par
+    /// <see cref="Recalage.Placer"/>.
     /// </summary>
     public static Edition Deduire(string avant, string apres)
     {
@@ -94,12 +96,18 @@ public readonly record struct EditionDeParagraphes(
 /// collections du modèle : le calcul s'éprouve sans bloc, sans fenêtre et sans
 /// fichier.
 ///
-/// La règle, celle de Publisher et de Word : un caractère inséré prend le style du
-/// caractère qui le PRÉCÈDE. Tapé à la fin d'un fragment, il l'allonge ; tapé à son
-/// début, il le décale et reste au style du bloc — ou de ce qui précède. En tête de
-/// texte, rien ne précède : le caractère prend le style du bloc. Un remplacement suit
-/// la même règle que la frappe — supprimer, puis insérer — si bien que remplacer tout
-/// le texte d'un bloc ne laisse aucun fragment derrière lui.
+/// La règle est celle de Publisher et de Word (voir <see cref="Ancre"/>) :
+/// <list type="bullet">
+/// <item>un texte tapé prend le style du caractère qui le PRÉCÈDE : tapé à la fin d'un
+/// fragment, il l'allonge ; tapé à son début, au milieu d'une ligne, il le décale et
+/// prend le style de ce qui précède ;</item>
+/// <item>sauf en tête de texte ou de paragraphe : il prend alors le style du caractère
+/// qui le SUIT, s'il en est un dans le même paragraphe — un mot tapé devant un titre en
+/// gras est en gras. Sinon, celui qui précède, ou le style du bloc ;</item>
+/// <item>un remplacement — une sélection retapée — prend le style du PREMIER caractère
+/// remplacé : un mot gras sélectionné et retapé reste gras.</item>
+/// </list>
+/// Le texte qui était là garde toujours son style : seul le texte inséré en reçoit un.
 /// </summary>
 public static class Recalage
 {
@@ -111,14 +119,82 @@ public static class Recalage
     public static (IReadOnlyList<Plage?> Fragments, IReadOnlyList<Plage?> Ecarts) Recaler(
         string avant, string apres, IReadOnlyList<Plage> fragments, IReadOnlyList<Plage> ecarts)
     {
-        var edition = Edition.Deduire(avant, apres);
+        var edition = Placer(apres, Edition.Deduire(avant, apres));
+        var ancre = Ancre(avant, edition);
         var paragraphes = Paragraphes(avant, apres, edition);
         var nombre = Sauts(apres, 0, apres.Length) + 1;
         var nombreAvant = Sauts(avant, 0, avant.Length) + 1;
 
         return (
-            fragments.Select(f => Caractere(f, edition, avant.Length, apres.Length)).ToList(),
+            fragments.Select(f => Caractere(f, edition, ancre, avant.Length, apres.Length)).ToList(),
             ecarts.Select(e => Paragraphe(e, paragraphes, nombreAvant, nombre)).ToList());
+    }
+
+    /// <summary>
+    /// L'édition, où le recalage la lit. Elle reste celle de la déduction, sauf pour une
+    /// insertion faite UNIQUEMENT de sauts de ligne : celle-ci est poussée le plus à
+    /// GAUCHE possible, là où <see cref="Edition.Deduire"/> l'a posée le plus à droite.
+    ///
+    /// Les deux places donnent le même texte ; elles ne donnent pas le même paragraphe.
+    /// Le cas qui décide est le plus courant de tous : un retour à la ligne tapé au bout
+    /// d'un paragraphe. « Un\nDeux » devient « Un\n\nDeux », et la déduction lit un saut
+    /// tapé en tête de « Deux » — le paragraphe vide prendrait alors le réglage de
+    /// « Deux ». Poussé à gauche, le saut est tapé au bout de « Un », et le paragraphe
+    /// neuf continue celui qu'on vient d'écrire : c'est ainsi qu'une liste à puces se
+    /// prolonge d'un élément. Le geste inverse — un retour tapé en tête d'un paragraphe —
+    /// donne alors au paragraphe VIDE qu'il crée le réglage de celui d'au-dessus, là où
+    /// Publisher lui donnerait celui d'en dessous.
+    ///
+    /// Pourquoi seulement les sauts de ligne. Pousser à gauche un collage qui porte du
+    /// texte (« Item\n » collé en tête de la ligne « Item ») le ferait glisser par-dessus
+    /// le saut qui le précède, et la ligne « Item » d'origine prendrait le réglage du
+    /// paragraphe d'au-dessus. Laissé à droite, un tel collage reçoit le réglage du
+    /// paragraphe où la déduction le pose — parfois celui d'en dessous —, mais aucun
+    /// paragraphe qui portait déjà du texte ne change de réglage.
+    ///
+    /// Pourquoi deviner, plutôt que demander au curseur. La zone de saisie sait où est son
+    /// curseur, mais ne le transmet pas : la liaison ne porte que le texte. Le lire au
+    /// moment où elle écrit, ce serait compter sur l'ordre dans lequel Avalonia pose le
+    /// texte puis déplace le curseur — un détail de sa mise en œuvre, que rien ne
+    /// garantit — et lier le noyau à la vue.
+    /// </summary>
+    public static Edition Placer(string apres, Edition edition)
+    {
+        if (edition.Supprimes != 0 || edition.Inseres == 0) return edition;
+        if (apres.AsSpan(edition.Debut, edition.Inseres).ContainsAnyExcept('\n', '\r')) return edition;
+
+        var point = edition.Debut;
+        while (point > 0 && apres[point - 1] == apres[point + edition.Inseres - 1]) point--;
+        return edition with { Debut = point };
+    }
+
+    /// <summary>
+    /// Le caractère du texte d'AVANT dont le texte inséré prend le style, ou -1 pour le
+    /// style du bloc. C'est la règle de Publisher et de Word :
+    /// <list type="bullet">
+    /// <item>un remplacement prend le style du premier caractère remplacé ;</item>
+    /// <item>une insertion en tête de texte ou de paragraphe — au tout début, ou juste
+    /// après un saut — prend le style du caractère qui suit, s'il en est un dans le même
+    /// paragraphe ;</item>
+    /// <item>toute autre insertion, et celle qui ouvre un paragraphe vide, prend le
+    /// style du caractère qui précède ; en tête d'un texte vide, rien ne précède, et
+    /// c'est le style du bloc.</item>
+    /// </list>
+    /// Le remplacement est celui que la déduction trouve, et non la sélection elle-même :
+    /// « def » sélectionné et retapé « dog » se lit « ef » remplacé par « og ». Le premier
+    /// caractère « remplacé » peut donc être un peu plus loin que le premier sélectionné ;
+    /// ils ne diffèrent que si la sélection commence par ce qu'on retape, à la frontière
+    /// d'un fragment.
+    /// </summary>
+    public static int Ancre(string avant, Edition edition)
+    {
+        var point = edition.Debut;
+        if (edition.Supprimes > 0) return point;
+
+        var enTete = point == 0 || EstSaut(avant, point - 1);
+        if (enTete && point < avant.Length && avant[point] is not ('\n' or '\r')) return point;
+
+        return point - 1;
     }
 
     /// <summary>
@@ -126,19 +202,27 @@ public static class Recalage
     ///
     /// La suppression d'abord : ce qui tombait dans la portion ôtée se replie sur son
     /// début, ce qui la suivait recule. Puis l'insertion, au point de l'édition : un
-    /// fragment qui recouvre le caractère d'avant s'allonge de ce qu'on insère, un
-    /// fragment qui commence au point ou après se décale, et les autres ne bougent pas.
+    /// fragment qui recouvrait le caractère <paramref name="ancre"/> (voir
+    /// <see cref="Ancre"/>) s'allonge de ce qu'on insère, un autre qui commence au point
+    /// ou après se décale, et les autres ne bougent pas. Un fragment entièrement
+    /// remplacé survit donc s'il portait le premier caractère remplacé : il recouvre
+    /// alors le texte qui le remplace.
     ///
     /// Un fragment qui débordait le texte avant l'édition est d'abord ramené dans ses
     /// bornes, comme la composition l'aurait fait en le dessinant (voir
     /// <see cref="StyleEffectif.Decouper"/>) : ce qui ne se voyait pas ne doit pas se
     /// mettre à se voir parce qu'on a tapé un caractère ailleurs.
     /// </summary>
-    public static Plage? Caractere(Plage fragment, Edition edition, int longueurAvant, int longueurApres)
+    public static Plage? Caractere(
+        Plage fragment, Edition edition, int ancre, int longueurAvant, int longueurApres)
     {
         var debut = Math.Clamp(fragment.Start, 0, longueurAvant);
         // En long : « Start = 2 147 483 647, Length = 1 » ferait déborder l'addition.
         var fin = (int)Math.Clamp((long)fragment.Start + fragment.Length, debut, longueurAvant);
+
+        // Lu AVANT le repli : un fragment entièrement remplacé n'a plus de caractère
+        // après lui, mais il portait le premier remplacé.
+        var porteLancre = debut <= ancre && ancre < fin;
 
         var point = edition.Debut;
         int Replier(int x) =>
@@ -147,9 +231,11 @@ public static class Recalage
         debut = Replier(debut);
         fin = Replier(fin);
 
-        if (debut < point && point <= fin)
+        if (porteLancre)
         {
-            // Le caractère qui précède l'insertion est dans le fragment : il l'allonge.
+            // Le caractère dont le texte inséré prend le style est dans le fragment : il
+            // l'allonge. Il le touche toujours : l'ancre est le caractère qui précède le
+            // point, celui qui le suit, ou le premier remplacé.
             fin += edition.Inseres;
         }
         else if (debut >= point)
@@ -165,31 +251,18 @@ public static class Recalage
 
     /// <summary>
     /// Ce que l'édition fait aux paragraphes : où elle tombe, et combien de sauts de
-    /// ligne elle ôte et ajoute.
+    /// ligne elle ôte et ajoute. L'édition est prise telle que <see cref="Placer"/> l'a
+    /// placée.
     ///
-    /// Une insertion est d'abord poussée le plus à GAUCHE possible, là où
-    /// <see cref="Edition.Deduire"/> l'a posée le plus à droite. Les deux places donnent
-    /// le même texte ; elles ne donnent pas le même paragraphe. Le cas qui décide est le
-    /// plus courant de tous : un retour à la ligne tapé au bout d'un paragraphe.
-    /// « Un\nDeux » devient « Un\n\nDeux », et la déduction lit un saut tapé en tête de
-    /// « Deux » — le paragraphe vide prendrait alors le réglage de « Deux ». Poussé à
-    /// gauche, le saut est tapé au bout de « Un », et le paragraphe neuf continue
-    /// celui qu'on vient d'écrire : c'est ainsi qu'une liste à puces se prolonge d'un
-    /// élément. Le geste inverse — un retour tapé en tête d'un paragraphe — donne alors
-    /// au paragraphe vide le réglage de celui d'au-dessus ; aucun paragraphe qui porte
-    /// du texte ne change de réglage, ni dans un cas ni dans l'autre.
-    ///
-    /// Une suppression n'a pas besoin de ce détour : la règle de fusion de
-    /// <see cref="Paragraphe"/> donne le même résultat aux deux lectures d'un saut
-    /// effacé parmi plusieurs.
+    /// Une insertion coupe le paragraphe où elle tombe, et chaque morceau en garde le
+    /// réglage : une insertion ne change donc le réglage d'aucun paragraphe qui portait
+    /// déjà du texte. Une suppression n'a pas besoin du détour de <see cref="Placer"/> :
+    /// la règle de fusion de <see cref="Paragraphe"/> donne le même résultat aux deux
+    /// lectures d'un saut effacé parmi plusieurs.
     /// </summary>
     public static EditionDeParagraphes Paragraphes(string avant, string apres, Edition edition)
     {
         var point = edition.Debut;
-        if (edition.Supprimes == 0 && edition.Inseres > 0)
-        {
-            while (point > 0 && apres[point - 1] == apres[point + edition.Inseres - 1]) point--;
-        }
 
         return new EditionDeParagraphes(
             Paragraphe: Sauts(avant, 0, point),

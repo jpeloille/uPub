@@ -210,11 +210,14 @@ public class FrappeTests
         var apres = StyleParCaractere(bloc);
         Assert.Equal(styles, apres.Skip(Tape.Length));
 
-        // Le mot tapé en tête n'a rien devant lui : il prend le style du bloc.
-        Assert.All(apres.Take(Tape.Length), style => Assert.Equal(Commun(bloc), style));
+        // Le mot tapé en tête de texte prend le style du caractère qui le suit, comme
+        // dans Publisher : celui du titre en gras, à son corps.
+        Assert.NotEqual(Commun(bloc), styles[0]);
+        Assert.All(apres.Take(Tape.Length), style => Assert.Equal(styles[0], style));
 
-        // Par la composition : ce que l'écran et l'export dessinent en gras.
-        Assert.Equal(gras, MotsGrasComposes(bloc));
+        // Par la composition : ce que l'écran et l'export dessinent en gras — les mêmes
+        // mots, et le mot tapé devant.
+        Assert.Equal([Tape.Trim(), .. gras], MotsGrasComposes(bloc));
 
         // La recette exporte ce document-là et relève les gras dans le flux du PDF.
         if (Environment.GetEnvironmentVariable("MYPUBLISHER_RECETTE_FRAPPE") is { } chemin &&
@@ -288,6 +291,15 @@ public class FrappeTests
         Assert.Equal(retraits, RetraitsComposes(bloc));
     }
 
+    /// <summary>Le champ « Contenu » du panneau : lié au même bloc, mais hors de la planche.</summary>
+    private static TextBox ChampDuPanneau(Window fenetre, TextFrame bloc)
+    {
+        var planche = Planche(fenetre);
+        return fenetre.GetVisualDescendants().OfType<TextBox>()
+            .Single(t => ReferenceEquals(t.DataContext, bloc) && t.AcceptsReturn &&
+                         t.IsEffectivelyVisible && !t.GetVisualAncestors().Contains(planche));
+    }
+
     [AvaloniaFact]
     [Trait("poste", "Q1")]
     public void Le_champ_du_panneau_recale_aussi()
@@ -300,12 +312,7 @@ public class FrappeTests
         vm.SelectOnly(bloc);
         Rendu.Battre();
 
-        // Le champ « Contenu » du panneau : lié au même bloc, mais hors de la planche.
-        var planche = Planche(fenetre);
-        var zone = fenetre.GetVisualDescendants().OfType<TextBox>()
-            .Single(t => ReferenceEquals(t.DataContext, bloc) && t.AcceptsReturn &&
-                         t.IsEffectivelyVisible && !t.GetVisualAncestors().Contains(planche));
-
+        var zone = ChampDuPanneau(fenetre, bloc);
         zone.Focus();
         zone.CaretIndex = 0;
         Rendu.Battre();
@@ -313,7 +320,35 @@ public class FrappeTests
         Rendu.Battre();
 
         Assert.StartsWith(Tape, bloc.Text);
-        Assert.Equal(gras, MotsGrasComposes(bloc));
+        Assert.Equal([Tape.Trim(), .. gras], MotsGrasComposes(bloc));
+    }
+
+    [AvaloniaFact]
+    [Trait("poste", "Q1")]
+    public void Le_champ_du_panneau_suit_la_frappe_sur_la_page()
+    {
+        // Les deux zones se lient à « Saisie », et c'est « Text » que la saisie écrit :
+        // sans l'avis que « Saisie » a changé avec lui, le panneau garderait le texte
+        // d'avant la frappe sur la page. La frappe suivante dans le panneau réécrirait
+        // alors le bloc avec ce texte périmé, et ce qu'on a tapé sur la page serait perdu.
+        var document = Ata21();
+        var bloc = PremierBlocRiche(document);
+        var (fenetre, vm) = Rendu.Ouvrir(document);
+
+        TaperEnTete(fenetre, vm, bloc);
+        var tape = bloc.Text;
+        Assert.StartsWith(Tape, tape);
+
+        var zone = ChampDuPanneau(fenetre, bloc);
+        Assert.Equal(tape, zone.Text);
+
+        zone.Focus();
+        zone.CaretIndex = zone.Text!.Length;
+        Rendu.Battre();
+        fenetre.KeyTextInput("Z");
+        Rendu.Battre();
+
+        Assert.Equal(tape + "Z", bloc.Text);
     }
 
     [AvaloniaFact]
@@ -348,5 +383,11 @@ public class FrappeTests
         var grasDessine = StyleEffectif.Decouper(dessine.Text, dessine.Spans, Commun(dessine))
             .Where(morceau => morceau.Style.Bold).Select(morceau => morceau.Texte);
         Assert.Equal(["def"], grasDessine);
+
+        // Le champ suit un texte écrit hors de lui, par « Text » — l'import, ou demain
+        // un collage de tableau : sans quoi la frappe suivante le réécrirait.
+        cellule.Text = "écrit ailleurs";
+        Rendu.Battre();
+        Assert.Equal("écrit ailleurs", zone.Text);
     }
 }

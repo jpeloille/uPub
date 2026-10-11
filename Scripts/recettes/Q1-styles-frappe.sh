@@ -11,11 +11,13 @@
 #
 #   1. la frappe — « dotnet test » joue les tests d'interface du poste : un mot tapé
 #      en tête du premier bloc riche, un saut de ligne, l'annulation, le champ du
-#      panneau et celui d'une case de tableau. Le premier écrit le document tapé là où
-#      la variable d'environnement le demande : c'est lui qu'on mesure ensuite ;
+#      panneau, qui suit aussi la frappe sur la page, et celui d'une case de tableau.
+#      Le premier écrit le document tapé là où la variable d'environnement le
+#      demande : c'est lui qu'on mesure ensuite ;
 #   2. le document tapé, exporté, rend en gras dans le flux du PDF EXACTEMENT les mêmes
 #      mots qu'avant la frappe, au même corps — le mot tapé en plus, en tête, au style
-#      du bloc ;
+#      du titre qui le suit (en tête de texte, la frappe prend le style du caractère
+#      qui suit, comme dans Publisher) ;
 #   3. rien d'autre de la page n'a bougé : chaque ligne hors du bloc tapé est restée
 #      ce qu'elle était ;
 #   4. contre-épreuve — le même document tapé, mais aux fragments laissés à leurs
@@ -69,8 +71,8 @@ if ! MYPUBLISHER_RECETTE_FRAPPE="$tape" \
 fi
 
 joues="$(sed -n 's/.*Passed: *\([0-9][0-9]*\).*/\1/p' "$travail/tests.txt" | head -1)"
-if [ -z "$joues" ] || [ "$joues" -lt 5 ] || [ ! -f "$tape" ]; then
-    echo "ÉCHEC : ${joues:-0} test(s) de frappe joué(s), cinq attendus, ou aucun document tapé." >&2
+if [ -z "$joues" ] || [ "$joues" -lt 6 ] || [ ! -f "$tape" ]; then
+    echo "ÉCHEC : ${joues:-0} test(s) de frappe joué(s), six attendus, ou aucun document tapé." >&2
     sed 's/^/    /' "$travail/tests.txt" >&2
     exit 1
 fi
@@ -133,13 +135,17 @@ gras_apres = [m for m, g, _ in mots_apres if g]
 print(f"    gras avant la frappe : {' '.join(gras_avant)}")
 print(f"    gras après la frappe : {' '.join(gras_apres)}")
 
-# Le mot tapé en tête prend le style du bloc : pas de gras, et le corps du bloc.
-corps_bloc = round(bloc["FontSize"])
-if [(m, g) for m, g, _ in mots_apres[:len(tape.split())]] != [(m, False) for m in tape.split()]:
-    print(f"    ÉCHEC : le mot tapé n'est pas en tête, au style du bloc : {mots_apres[:3]}", file=sys.stderr)
+# Le mot tapé en tête prend le style du caractère qui le suit — le premier mot d'avant,
+# un titre en gras, plus grand que le bloc : son gras et son corps.
+_, gras_titre, corps_titre = mots_avant[0] if mots_avant else ("", False, 0)
+if [(m, g) for m, g, _ in mots_apres[:len(tape.split())]] != [(m, gras_titre) for m in tape.split()]:
+    print(f"    ÉCHEC : le mot tapé n'est pas en tête, au style du titre qui suit : {mots_apres[:3]}", file=sys.stderr)
     echec = True
-elif any(c != corps_bloc for _, _, c in mots_apres[:len(tape.split())]):
-    print(f"    ÉCHEC : le mot tapé n'est pas au corps du bloc ({corps_bloc}) : {mots_apres[:3]}", file=sys.stderr)
+elif any(c != corps_titre for _, _, c in mots_apres[:len(tape.split())]):
+    print(f"    ÉCHEC : le mot tapé n'est pas au corps du titre ({corps_titre}) : {mots_apres[:3]}", file=sys.stderr)
+    echec = True
+if not gras_titre or corps_titre == round(bloc["FontSize"]):
+    print(f"    ÉCHEC : le premier mot d'avant n'est pas un titre gras d'un autre corps que le bloc : {mots_avant[:1]}", file=sys.stderr)
     echec = True
 
 if mots_apres[len(tape.split()):] != mots_avant:
@@ -180,7 +186,7 @@ if ! python3 "$travail/comparer.py" "$avant" "$travail/avant.xml" "$travail/tape
     exit 1
 fi
 
-echo "  2. le PDF rend en gras les mêmes mots qu'avant la frappe, au même corps."
+echo "  2. le PDF rend en gras les mêmes mots qu'avant la frappe, au même corps ; le mot tapé, au style du titre qui suit."
 echo "  3. hors du bloc tapé, la page est restée la même."
 
 # ------------------------------------------------------------------------------- 4

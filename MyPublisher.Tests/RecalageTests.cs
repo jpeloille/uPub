@@ -60,7 +60,7 @@ public class RecalageTests
         Assert.Equal(new Plage(3, 1), Ecart("Un\nDeux\nTrois", "U\nn\nDeux\nTrois", new Plage(2, 1)));
     }
 
-    // ------------------------------------------------------- la règle du caractère d'avant
+    // ------------------------------------------------- la règle de Publisher et de Word
 
     [Fact]
     public void Inserer_a_la_fin_du_fragment_lallonge()
@@ -70,16 +70,58 @@ public class RecalageTests
     }
 
     [Fact]
-    public void Inserer_au_debut_du_fragment_le_decale()
+    public void Inserer_au_debut_du_fragment_en_milieu_de_ligne_le_decale()
     {
         // Le caractère d'avant est l'espace, au style du bloc.
         Assert.Equal(new Plage(6, 3), Fragment("abc def", "abc XXdef", Def));
     }
 
     [Fact]
-    public void En_tete_de_texte_rien_ne_precede_et_le_fragment_se_decale()
+    public void En_tete_de_texte_la_frappe_prend_le_style_du_caractere_qui_suit()
     {
-        Assert.Equal(new Plage(2, 3), Fragment("abc def", "XXabc def", new Plage(0, 3)));
+        // Un mot tapé devant un titre en gras est en gras, comme dans Publisher.
+        Assert.Equal(new Plage(0, 5), Fragment("abc def", "XXabc def", new Plage(0, 3)));
+    }
+
+    [Fact]
+    public void En_tete_de_paragraphe_la_frappe_prend_le_style_du_caractere_qui_suit()
+    {
+        // Le saut qui précède est au style du bloc ; c'est « T », gras, qui donne le sien.
+        Assert.Equal(new Plage(2, 6), Fragment("x\nTitre", "x\nNTitre", new Plage(2, 5)));
+        // Le même saut, en « \r\n » : la tête du paragraphe est après le « \n ».
+        Assert.Equal(new Plage(3, 6), Fragment("x\r\nTitre", "x\r\nNTitre", new Plage(3, 5)));
+    }
+
+    [Fact]
+    public void En_tete_dun_paragraphe_vide_la_frappe_prend_le_style_de_ce_qui_precede()
+    {
+        // « ab\n\ncd » : le paragraphe du milieu est vide. Ce qui suit le point est le
+        // saut qui le clôt, pas un caractère du paragraphe : on prend celui d'avant.
+        const string avant = "ab\n\ncd", apres = "ab\nZ\ncd";
+
+        Assert.Equal(new Plage(1, 3), Fragment(avant, apres, new Plage(1, 2)));
+        // « cd », dans le paragraphe d'après, ne donne pas son style : il se décale.
+        Assert.Equal(new Plage(5, 2), Fragment(avant, apres, new Plage(4, 2)));
+    }
+
+    [Fact]
+    public void En_tete_dun_texte_vide_la_frappe_prend_le_style_du_bloc()
+    {
+        // Le premier paragraphe est vide : le saut qui le clôt ne donne pas son style,
+        // rien ne précède, et le « Z » tapé prend celui du bloc.
+        Assert.Equal(new Plage(1, 1), Fragment("\n", "Z\n", new Plage(0, 1)));
+        Assert.Equal(-1, Recalage.Ancre("", new Edition(0, 0, 3)));
+    }
+
+    [Fact]
+    public void Le_texte_qui_etait_la_garde_son_style()
+    {
+        // Les règles ne disent que le style du texte INSÉRÉ : en tête de paragraphe, le
+        // gras qui suit s'étend au texte tapé, le reste ne bouge pas d'un caractère.
+        var (recales, _) = Recalage.Recaler(
+            "Titre\nsuite", "Nouveau Titre\nsuite", [new Plage(0, 5), new Plage(6, 5)], []);
+
+        Assert.Equal([new Plage(0, 13), new Plage(14, 5)], recales);
     }
 
     [Fact]
@@ -103,21 +145,38 @@ public class RecalageTests
     }
 
     [Fact]
-    public void Remplacer_tout_le_fragment_le_retire()
+    public void Remplacer_tout_le_fragment_lui_garde_son_style()
     {
-        // Le mot gras sélectionné et retapé prend le style de ce qui le précède : la
-        // règle est la même que pour la frappe, et c'est elle que le poste a fixée.
-        Assert.Null(Fragment("abc def", "abc XYZ", Def));
+        // Le mot gras sélectionné et retapé reste gras : un remplacement prend le style
+        // du premier caractère remplacé, comme dans Publisher et Word.
+        Assert.Equal(new Plage(4, 3), Fragment("abc def", "abc XYZ", Def));
+        Assert.Equal(new Plage(4, 1), Fragment("abc def", "abc X", Def));
     }
 
     [Fact]
-    public void Remplacer_tout_le_texte_ne_laisse_aucun_fragment()
+    public void Un_remplacement_prend_le_style_du_premier_caractere_remplace()
     {
+        // « c d » remplacé par « XY » : le premier remplacé, « c », est au style du bloc.
+        // Le gras garde « ef », et ne s'étend pas au texte tapé.
+        Assert.Equal(new Plage(4, 2), Fragment("abc def", "abXYef", Def));
+
+        // « ef g » remplacé par « Z » : le premier remplacé, « e », est gras.
+        Assert.Equal(new Plage(4, 2), Fragment("abc def ghi", "abc dZhi", Def));
+        // « ghi », dont le « g » est remplacé, garde « hi » et ne s'étend pas au « Z ».
+        Assert.Equal(new Plage(6, 2), Fragment("abc def ghi", "abc dZhi", new Plage(8, 3)));
+    }
+
+    [Fact]
+    public void Remplacer_tout_le_texte_lui_donne_le_style_du_premier_caractere()
+    {
+        const string nouveau = "tout autre chose, plus long";
         var fragments = new[] { new Plage(0, 3), Def, new Plage(2, 4) };
 
-        var (recales, _) = Recalage.Recaler("abc def", "tout autre chose, plus long", fragments, []);
+        var (recales, _) = Recalage.Recaler("abc def", nouveau, fragments, []);
 
-        Assert.All(recales, Assert.Null);
+        // Le fragment qui portait le premier caractère couvre tout le texte neuf ; les
+        // autres disparaissent. Aucun ne sort des bornes.
+        Assert.Equal([new Plage(0, nouveau.Length), null, null], recales);
     }
 
     [Fact]
@@ -232,6 +291,53 @@ public class RecalageTests
 
         Assert.Equal(new Plage(1, 2), Ecart(avant, apres, new Plage(1, 1)));
         Assert.Equal(new Plage(3, 1), Ecart(avant, apres, new Plage(2, 1)));
+    }
+
+    [Fact]
+    public void Un_saut_tape_en_tete_dun_paragraphe_lui_laisse_son_reglage()
+    {
+        // Le geste inverse, lu de même au bout du paragraphe d'au-dessus : c'est le
+        // paragraphe VIDE créé qui prend le réglage de « Un », et « Deux » garde le sien.
+        const string avant = "Un\nDeux", apres = "Un\n\nDeux";
+
+        Assert.Equal(new Plage(0, 2), Ecart(avant, apres, new Plage(0, 1)));
+        Assert.Equal(new Plage(2, 1), Ecart(avant, apres, new Plage(1, 1)));
+    }
+
+    [Fact]
+    public void Un_collage_qui_porte_du_texte_ne_change_le_reglage_daucune_ligne()
+    {
+        // « Item\n » collé en tête de la ligne « Item » (copier une ligne, la coller
+        // au-dessus). La déduction le lit en tête de « Fin » ; comme il porte du texte, il
+        // n'est pas poussé à gauche par-dessus le saut, et la ligne « Item » d'origine
+        // garde son retrait. Le prix : la copie prend le réglage de « Fin ».
+        const string avant = "Titre\nItem\nFin", apres = "Titre\nItem\nItem\nFin";
+        var (_, ecarts) = Recalage.Recaler(
+            avant, apres, [], [new Plage(0, 1), new Plage(1, 1), new Plage(2, 1)]);
+
+        Assert.Equal([new Plage(0, 1), new Plage(1, 1), new Plage(2, 2)], ecarts);
+
+        // « \nItem » collé au bout de la ligne « Item » : les deux lignes gardent le
+        // réglage de l'élément de liste.
+        Assert.Equal(new Plage(1, 2), Ecart("Titre\nItem", "Titre\nItem\nItem", new Plage(1, 1)));
+        Assert.Equal(new Plage(0, 1), Ecart("Titre\nItem", "Titre\nItem\nItem", new Plage(0, 1)));
+    }
+
+    [Fact]
+    public void Seule_une_insertion_de_sauts_de_ligne_est_poussee_a_gauche()
+    {
+        Assert.Equal(new Edition(2, 0, 1), Recalage.Placer("Un\n\nDeux", new Edition(3, 0, 1)));
+        Assert.Equal(new Edition(2, 0, 2), Recalage.Placer("Un\r\n\r\nDeux", new Edition(4, 0, 2)));
+        Assert.Equal(new Edition(11, 0, 5), Recalage.Placer("Titre\nItem\nItem\nFin", new Edition(11, 0, 5)));
+        Assert.Equal(new Edition(3, 1, 1), Recalage.Placer("Un\n\nDeux", new Edition(3, 1, 1)));
+    }
+
+    [Fact]
+    public void Un_saut_tape_au_bout_dun_paragraphe_prend_son_style()
+    {
+        // Le saut tapé au bout de « Un », placé là et non en tête de « Deux », prend le
+        // style de « n » et non celui de « Deux », en gras.
+        Assert.Equal(new Plage(4, 4), Fragment("Un\nDeux", "Un\n\nDeux", new Plage(3, 4)));
     }
 
     [Fact]
