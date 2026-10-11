@@ -168,7 +168,7 @@
           "Foreground": "#FF1F2933",
           "Spans": [],
           "Align": "Left",
-          "LineHeight": 1.25,
+          "LineHeight": 1,
           "PaddingLeft": 0,
           "PaddingTop": 0,
           "PaddingRight": 0,
