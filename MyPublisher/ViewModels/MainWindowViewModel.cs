@@ -459,6 +459,10 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             NotifyFrameGeometry();
         }
+        else if (e.PropertyName is nameof(TextFrame.Field))
+        {
+            OnPropertyChanged(nameof(PeutImporterTexte));
+        }
     }
 
     private void NotifyFrameGeometry()
@@ -502,6 +506,7 @@ public partial class MainWindowViewModel : ViewModelBase
         OnPropertyChanged(nameof(HasMultipleSelection));
         OnPropertyChanged(nameof(SingleSelected));
         OnPropertyChanged(nameof(SelectionLabel));
+        OnPropertyChanged(nameof(PeutImporterTexte));
         NotifyFrameGeometry();
 
         DeleteSelectedCommand.NotifyCanExecuteChanged();
@@ -868,6 +873,70 @@ public partial class MainWindowViewModel : ViewModelBase
         BeginEdit();
         fond.Path = chemin;
         CommitEdit();
+    }
+
+    /// <summary>
+    /// Le bloc que « Importer un texte… » remplirait : un bloc de texte seul sélectionné,
+    /// dont le texte n'est pas calculé par un champ. Sous un champ, le texte est caché et
+    /// gardé pour le jour où l'on retire le champ ; l'y remplacer sans qu'on le voie n'est
+    /// pas un geste qu'on attend.
+    /// </summary>
+    public bool PeutImporterTexte => SingleSelected is TextFrame { HasField: false };
+
+    /// <summary>
+    /// Remplit le bloc de texte sélectionné à partir d'un fichier (poste B2). Le
+    /// sélecteur de fichier reste à la fenêtre ; tout le reste est ici, où un test
+    /// l'atteint sans dialogue — c'est le partage que Q3 a fait pour
+    /// <see cref="ChoisirImageDeFond"/>.
+    ///
+    /// **Le texte repart du style du bloc.** Fragments et écarts de paragraphe sont
+    /// vidés, puis le texte est posé par <see cref="TextFrame.Saisie"/>, qui n'a alors
+    /// plus rien à recaler. L'autre lecture — tout poser par la saisie, et laisser le
+    /// texte neuf prendre le style du premier caractère qu'il remplace — ferait dépendre
+    /// le résultat de ce qui était là : trois mille signes au gras et au corps d'un
+    /// titre, parce que le bloc commençait par lui ; et, la saisie retenant le plus long
+    /// début et la plus longue fin communs aux deux textes, quelques caractères gardant
+    /// par hasard leur style d'avant. Un fichier texte ne porte aucun style : il prend
+    /// celui du bloc, qu'on règle ensuite au panneau.
+    ///
+    /// Un seul pas d'annulation, ouvert et refermé ici : vider puis écrire font trois
+    /// changements du modèle, et le dialogue de fichier a pris puis rendu le focus qui
+    /// règle la transaction du panneau.
+    /// </summary>
+    /// <returns>Vrai si le texte a été posé.</returns>
+    public bool ImporterTexte(string chemin)
+    {
+        if (SingleSelected is not TextFrame bloc)
+        {
+            Status = "Import impossible : sélectionnez un bloc de texte.";
+            return false;
+        }
+
+        if (bloc.HasField)
+        {
+            Status = "Import impossible : le texte de ce bloc est calculé par un champ.";
+            return false;
+        }
+
+        TexteLu lu;
+        try
+        {
+            lu = TexteImporte.Lire(chemin);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Status = $"Import impossible : {ex.Message}";
+            return false;
+        }
+
+        BeginEdit();
+        bloc.Spans.Clear();
+        bloc.Paragraphs.Clear();
+        bloc.Saisie = lu.Texte;
+        CommitEdit();
+
+        Status = $"Texte importé de « {Path.GetFileName(chemin)} » ({lu.Encodage}, {lu.Texte.Length} signes)";
+        return true;
     }
 
     private void Insert(Frame frame)

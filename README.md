@@ -194,6 +194,12 @@ la barre du haut regroupe les commandes du document : fichier, annulation, zoom.
   Repères* et *Règles* les effacent de l'écran — et *Repères* efface aussi le marqueur
   de débordement, qui ne s'imprime pas davantage.
 - Édition du texte directement sur la page (double-clic).
+- **Importer un texte** — *Insertion ▸ Importer un texte…*, ou le bouton du même nom au
+  panneau d'un bloc de texte : un fichier texte remplit le bloc sélectionné, au style du
+  bloc. Il se lit en UTF-8, avec ou sans BOM, ou en Latin-1 quand il n'est pas de
+  l'UTF-8 valide (lu comme Windows-1252, qui garde aussi « ’ », « œ » et « € ») ; les
+  fins de ligne CRLF deviennent un seul saut. Un texte trop long se signale comme tout
+  autre, et une seule annulation rend le bloc d'avant.
 - Ordre de superposition ; alignement (gauche, centre, droite, haut, milieu, bas) et
   répartition d'une sélection ; ajustement aux marges. L'alignement se fait par
   rapport à la zone de composition, ou — case *Disposition ▸ Par rapport aux marges*
