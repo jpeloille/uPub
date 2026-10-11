@@ -586,7 +586,7 @@
 
                                     <!-- Le texte saisi reste là sous le champ, et se retrouve
                                          intact quand on repasse à « Aucun ». -->
-                                    <TextBox Text="{Binding Text}" AcceptsReturn="True" TextWrapping="Wrap"
+                                    <TextBox Text="{Binding Saisie}" AcceptsReturn="True" TextWrapping="Wrap"
                                              Height="110" VerticalContentAlignment="Top" Margin="0,4,0,0"
                                              IsEnabled="{Binding !HasField}"/>
                                     <TextBlock Text="Le contenu est calculé à l'affichage et à l'export ; il ne se saisit pas sur la page."
@@ -822,7 +822,7 @@
                                                         <TextBlock Text="{Binding Label}" FontSize="11"
                                                                    Foreground="#FF8A929E"/>
                                                         <TextBox Classes="cellText"
-                                                                 Text="{Binding Text}" AcceptsReturn="True"
+                                                                 Text="{Binding Saisie}" AcceptsReturn="True"
                                                                  TextWrapping="Wrap" Height="54"
                                                                  VerticalContentAlignment="Top" Margin="0,2,0,0"/>
                                                         <Grid ColumnDefinitions="*,8,Auto" Margin="0,4,0,0">

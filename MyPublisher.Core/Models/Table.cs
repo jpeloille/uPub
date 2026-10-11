@@ -60,9 +60,40 @@ public partial class TableCell : ObservableObject
     [property: JsonPropertyOrder(20)]
     private int _column;
 
+    /// <summary>
+    /// Le texte de la case, tel qu'il s'écrit dans le fichier. Comme sur un bloc de
+    /// texte, l'écrire ne recale rien : la saisie passe par <see cref="Saisie"/>.
+    /// </summary>
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Saisie))]
     [property: JsonPropertyOrder(30)]
     private string _text = "";
+
+    /// <summary>
+    /// Le texte, tel que le panneau le modifie : les fragments suivent la frappe (voir
+    /// <see cref="TextFrame.Saisie"/>, dont c'est la jumelle).
+    ///
+    /// C'est ici, sur la case, et non sur le bloc calculé qui la dessine, que le
+    /// recalage doit avoir lieu : <see cref="TableFrame.CellFrames"/> PRÊTE à ce bloc
+    /// la collection de fragments de la case, et le reconstruit à chaque lecture. Un
+    /// recalage déclenché par la construction de ce bloc déplacerait les fragments de
+    /// la case à chaque redessin.
+    /// </summary>
+    [JsonIgnore]
+    public string Saisie
+    {
+        get => Text;
+        set
+        {
+            var nouveau = value ?? "";
+            if (nouveau == Text) return;
+
+            // Une case n'a pas d'écarts de paragraphe : son alignement vaut pour elle
+            // entière.
+            Recalage.Appliquer(Text, nouveau, Spans, null);
+            Text = nouveau;
+        }
+    }
 
     /// <summary>
     /// Portions de texte qui s'écartent du style du tableau, comme sur un bloc de texte.

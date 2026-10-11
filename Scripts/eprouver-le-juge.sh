@@ -330,6 +330,70 @@ saboter "une image remise en place puis choisie pour un fond reste vide" \
     '_ = chemin;' \
     'Q2-Q3-fuite-et-cache'
 
+# Le poste Q1. Neuf sabotages et non un : le calcul peut être juste et le
+# branchement faux, et chacun des deux se casse à sa façon. La recette de PLAN.md
+# demande que neutraliser le décalage fasse tomber le test pur, le test d'interface et
+# la recette ; le premier sabotage le fait, les trois suivants trouent le branchement,
+# deux autres l'avis qui accorde les zones entre elles, et les trois derniers chacune
+# des règles de style.
+saboter "taper devant un fragment ne le décale plus" \
+    MyPublisher.Core/Models/Recalage.cs \
+    '(debut, fin) = (debut + edition.Inseres, fin + edition.Inseres);' \
+    '(debut, fin) = (debut, fin);' \
+    'Q1-styles-frappe|RecalageTests|FrappeTests'
+
+saboter "un saut de ligne tapé ne décale plus les écarts de paragraphe" \
+    MyPublisher.Core/Models/Recalage.cs \
+    'Inseres: Sauts(apres, point, point + edition.Inseres),' \
+    'Inseres: 0,' \
+    'Q1-styles-frappe|RecalageTests|FrappeTests'
+
+saboter "la saisie sur la page ne passe plus par le recalage" \
+    MyPublisher/Views/PageCanvas.axaml \
+    'Text="{Binding Saisie, Mode=TwoWay}"' \
+    'Text="{Binding Text, Mode=TwoWay}"' \
+    'Q1-styles-frappe|RecalageTests|FrappeTests'
+
+saboter "une case de tableau ne recale plus ses fragments à la saisie" \
+    MyPublisher.Core/Models/Table.cs \
+    'Recalage.Appliquer(Text, nouveau, Spans, null);' \
+    '' \
+    'Q1-styles-frappe|RecalageTests|FrappeTests'
+
+# Les zones se lient à « Saisie » et la saisie écrit « Text » : sans l'avis que l'un
+# change avec l'autre, le panneau garde un texte périmé et la frappe suivante y
+# efface ce qu'on a tapé sur la page.
+saboter "le panneau n'apprend plus qu'on a tapé sur la page" \
+    MyPublisher.Core/Models/Frame.cs \
+    '[NotifyPropertyChangedFor(nameof(Saisie))]' \
+    '' \
+    'Q1-styles-frappe|RecalageTests|FrappeTests'
+
+saboter "le champ d'une case n'apprend plus que son texte a changé" \
+    MyPublisher.Core/Models/Table.cs \
+    '[NotifyPropertyChangedFor(nameof(Saisie))]' \
+    '' \
+    'Q1-styles-frappe|RecalageTests|FrappeTests'
+
+# Les trois règles de Publisher et de Word, chacune à sa ligne.
+saboter "en tête de paragraphe, la frappe ne prend plus le style qui suit" \
+    MyPublisher.Core/Models/Recalage.cs \
+    "if (enTete && point < avant.Length && avant[point] is not ('\\n' or '\\r')) return point;" \
+    '' \
+    'Q1-styles-frappe|RecalageTests|FrappeTests'
+
+saboter "un remplacement ne prend plus le style du premier remplacé" \
+    MyPublisher.Core/Models/Recalage.cs \
+    'if (edition.Supprimes > 0) return point;' \
+    '' \
+    'Q1-styles-frappe|RecalageTests|FrappeTests'
+
+saboter "un collage qui porte du texte est poussé à gauche comme un saut" \
+    MyPublisher.Core/Models/Recalage.cs \
+    "if (apres.AsSpan(edition.Debut, edition.Inseres).ContainsAnyExcept('\\n', '\\r')) return edition;" \
+    '' \
+    'Q1-styles-frappe|RecalageTests|FrappeTests'
+
 echo
 if [ "$trous" = 0 ]; then
     echo "Le juge sait échouer : $sabotages sabotages, $sabotages attrapés."

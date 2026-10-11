@@ -153,8 +153,12 @@
                             </MultiBinding>
                         </views:TexteCompose.Contenu>
                     </views:TexteCompose>
+                    <!-- Liée à « Saisie » et non à « Text » : c'est la saisie qui recale
+                         les fragments de style et les écarts de paragraphe sur le texte
+                         tapé (poste Q1). Liée à « Text », la frappe ferait glisser les
+                         gras d'un bloc importé sans que rien ne le dise. -->
                     <TextBox IsVisible="{Binding IsEditing}"
-                             Text="{Binding Text, Mode=TwoWay}"
+                             Text="{Binding Saisie, Mode=TwoWay}"
                              FontFamily="{Binding FontFamily, Converter={x:Static conv:Conv.Font}}"
                              FontSize="{Binding FontSize}"
                              FontWeight="{Binding Bold, Converter={x:Static conv:Conv.Weight}}"

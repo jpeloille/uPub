@@ -70,7 +70,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **R5** | **Ouvrir un `.pub`** | **100 %** | Lecture déléguée à libmspub. Les deux documents ATR s'ouvrent objet pour objet, sans perdre un style |
 | **R6** | Alignement par paragraphe | 0 % | Spécifié le 11 octobre 2026 |
 | **R7** | Éditer le texte riche à la souris | 0 % | Spécifié le 11 octobre 2026 ; attend Q1 |
-| **Q1** | Les styles suivent la frappe | 0 % | **Défaut de données** : taper dans un bloc importé décale ses gras |
+| **Q1** | Les styles suivent la frappe | **100 %** | Fragments et écarts recalés à la saisie par une fonction pure du noyau (`Recalage`), à la règle de Publisher : le style qui précède, celui qui suit en tête de paragraphe, le premier remplacé pour une sélection retapée. Seules les zones de saisie s'y lient ; lecture, import, copie et annulation ne recalent rien. `FormatVersion` reste à 4 ; recette dans `Scripts/recettes/` |
 | **Q2** | Le texte composé se détache de son bloc | **100 %** | `ControleDeBloc` suit l'attachement, comme `FondBloc`, et lâche l'ancien bloc quand on lui en donne un autre. Mesuré : le changement de page ne fuyait pas ; la fuite ne frappait qu'un contrôle sorti de l'arbre avec son bloc. Recette dans `Scripts/recettes/` |
 | **Q3** | Le cache d'images oublie ses échecs | **100 %** | L'ouverture d'un document (fichier ou modèle) oublie les échecs du cache, et eux seuls ; insérer une image ou la choisir pour un fond relit le fichier. L'annulation ne relit pas le disque. Recette dans `Scripts/recettes/` |
 | **Q4** | Un filet au même endroit à l'écran et au PDF | 0 % | Relevé en A2 et à la relecture du 7 septembre |
@@ -1469,6 +1469,12 @@ ouvre une page blanche n'en découvre aucune.
 Un sélecteur de fichier qui remplit le texte du bloc. C'est le chemin naturel pour faire
 entrer du contenu rédigé ailleurs — et aujourd'hui il n'y en a aucun, hors copier-coller.
 
+Le texte se pose par `Saisie`, jamais par `Text` seul (voir Q1) : écrire `Text` ne
+recale rien, et les fragments et écarts d'avant resteraient à leurs positions, sur un
+texte qui n'est plus le leur, voire au-delà de sa fin. Par `Saisie`, le texte neuf prend
+le style du premier caractère qu'il remplace, comme une sélection retapée ; pour
+repartir du style du bloc, vider `Spans` et `Paragraphs` avant d'écrire `Text`.
+
 *Recette* : un `.txt` de 3 000 signes arrive dans un bloc, et A2 signale qu'il déborde.
 
 ### B3 — Imprimer *(fiche 22)*
@@ -2540,6 +2546,107 @@ du noyau.
 
 Effort : moyen. **À faire en premier** : R6 et R7 en dépendent, et chaque jour sans lui
 est un jour où l'on peut abîmer un document importé.
+
+*Fait le 11 octobre 2026.* Le calcul est une fonction pure du noyau,
+`Models/Recalage.cs` : `Edition.Deduire` tire des deux textes un seul remplacement —
+préfixe commun, puis suffixe commun dans ce qui reste —, `Recalage.Caractere` et
+`Recalage.Paragraphe` en déduisent la plage d'après de chaque fragment et de chaque écart,
+ou rien s'il est vidé. Seul `Recalage.Appliquer` touche au modèle : il change les plages
+sur place et retire les vides, avant que le texte change.
+
+La règle de style est celle de Publisher et de Word, que le propriétaire a fixée après
+la relecture (`Recalage.Ancre`) :
+- le texte tapé prend le style du caractère qui le précède ;
+- en tête de texte ou de paragraphe (au tout début, ou juste après un saut), il prend
+  celui du caractère qui le **suit**, s'il en est un dans le même paragraphe. Sinon,
+  celui qui précède, ou le style du bloc en tête d'un texte vide. Un mot tapé en tête
+  d'ATA 21 prend ainsi le gras et le corps du titre « Air Production » ;
+- un remplacement, c'est-à-dire une sélection retapée, prend le style du **premier**
+  caractère remplacé : un mot gras retapé reste gras. Avalonia remplace une sélection
+  en un seul changement du texte (vérifié par une sonde), si bien que le recalage voit
+  bien un remplacement, et non une suppression suivie d'une frappe.
+
+Le texte qui était là garde toujours son style : seul le texte inséré en reçoit un.
+
+**Le recalage n'a lieu qu'à la saisie, et c'est le choix qui règle tous les pièges.**
+`Text` reste ce qu'il était, le texte tel qu'il s'écrit, et l'écrire ne recale rien. Une
+propriété neuve, `Saisie` — sur `TextFrame` et sur `TableCell`, jamais écrite dans le
+fichier —, recale puis écrit `Text`, et seules les trois zones où l'on tape s'y lient :
+la saisie sur la page, le champ « Contenu » du panneau, le champ d'une case. Recaler à
+chaque écriture de `Text` aurait demandé de deviner chaque fois si l'écriture était une
+édition, et chacun des écrivains qui n'éditent pas se serait trompé à sa façon : le
+sérialiseur pose les propriétés dans l'ordre du **fichier**, et un fichier qui donne les
+fragments avant le texte les aurait tous poussés au-delà de lui ; l'import pose le texte
+puis ses collections ; `CellFrames` reconstruit à chaque lecture un bloc auquel il
+**prête** les fragments de la case, et un recalage à sa construction les aurait déplacés
+à chaque redessin ; l'annulation relit un instantané. Par construction, aucun ne recale
+— et un test épingle chacun, pour que la construction ne s'oublie pas. Aucune propriété
+n'entre dans le format : `FormatVersion` reste à 4.
+
+Ce que le poste a trouvé en route :
+
+- **La règle de fusion, écrite telle quelle, reproduisait le défaut.** « Le paragraphe
+  fusionné garde l'écart du premier » est juste pour l'effacement en tête de ligne. Mais
+  une ligne sélectionnée de bout en bout, saut compris, et effacée, fusionne elle aussi
+  deux paragraphes — et le suivant prenait alors le retrait de la ligne effacée. Quand la
+  suppression part du début d'un paragraphe, ce sont des paragraphes entiers qui
+  partent, et celui qui reste garde le sien. Les deux lectures d'un saut effacé parmi
+  plusieurs donnent alors le même résultat.
+- **La déduction est ambiguë, et l'ambiguïté tombait sur le geste le plus courant.**
+  « Un\nDeux » qui devient « Un\n\nDeux » se lit aussi bien comme un retour tapé au bout
+  de « Un » que comme un retour tapé en tête de « Deux ». La déduction place l'insertion
+  le plus à droite. Une insertion faite **uniquement** de sauts de ligne est repoussée le
+  plus à gauche (`Recalage.Placer`) : un retour tapé au bout d'un élément de liste ouvre
+  un élément de liste, et non un paragraphe au réglage du suivant. Le prix est sur le
+  geste inverse : un retour tapé en tête d'un paragraphe donne au paragraphe **vide**
+  qu'il crée le réglage de celui d'au-dessus.
+  La première version repoussait à gauche toute insertion, et la relecture a montré ce
+  que cela coûtait. Coller « Item\n » en tête de la ligne « Item » faisait passer la
+  ligne « Item » d'origine au réglage du titre d'au-dessus. Un collage qui porte du
+  texte reste donc là où la déduction le pose, et reçoit le réglage de ce paragraphe,
+  parfois celui d'en dessous : dans l'exemple, la copie prend le réglage de la ligne
+  « Fin ». Une insertion ne change le réglage d'aucun paragraphe qui portait déjà du
+  texte ; un test épingle le collage.
+  Lever l'ambiguïté par le curseur de la zone de saisie a été écarté. La liaison ne
+  transmet que le texte. Lire le curseur au moment où elle écrit, c'est compter sur
+  l'ordre dans lequel Avalonia pose le texte puis déplace le curseur, que rien ne
+  garantit, et cela lierait le noyau à la vue.
+  Ailleurs, l'ambiguïté ne départage que du texte inséré qui répète son voisin à une
+  frontière de fragment ou de paragraphe.
+- **Un double-clic sur un bloc importé empile un pas d'annulation.** Le premier clic
+  ouvre le geste de déplacement, qui réécrit l'ordonnée du bloc à son dernier chiffre
+  près sans que le pointeur ait bougé (`107.15039999999999` devient `107.1504`) : le
+  document change, l'historique le compte. Sans conséquence visible, hors du périmètre, non corrigé ; le test
+  d'annulation prend donc son état de référence une fois la saisie ouverte.
+
+Remplacer tout le texte, ce que B2 fera, donne au texte neuf le style du premier
+caractère remplacé ; aucun fragment ne sort des bornes. Mais seulement par `Saisie` :
+écrire `Text` ne recale rien, et la section B2 le rappelle. Retenu sans mesure : un
+fragment qui débordait le texte avant l'édition y est ramené, comme la composition le
+ramenait déjà en le dessinant.
+
+Trouvé par la relecture et réparé : le panneau et la saisie sur la page se lient tous
+deux à `Saisie`, et c'est `Text` que la saisie écrit. Sans l'avis
+`[NotifyPropertyChangedFor(nameof(Saisie))]`, le panneau gardait un texte périmé, et la
+frappe suivante dans le panneau effaçait ce qu'on avait tapé sur la page. Rien ne
+l'éprouvait ; un test d'interface le fait maintenant, et le champ d'une case est
+éprouvé de même.
+
+Laissé tel quel : un fragment vidé par une suppression ne revient pas si l'on retape le
+texte — y compris par l'annulation propre à la zone de saisie, quand elle a la main. Le
+recalage ne voit que des textes ; l'annulation de l'application, elle, relit un
+instantané et rend texte et fragments au caractère près. La saisie sur la page dessine
+toujours le texte d'un seul style pendant qu'on tape : c'est R7.
+
+*Recette* : `Scripts/recettes/Q1-styles-frappe.sh` joue au clavier les six tests
+d'interface du poste sur ATA 21 importé. Elle exporte le document tapé et relève dans le
+flux du PDF, par le nom de police, que les mêmes mots sont en gras au même corps, et que
+« Nouveau », tapé en tête, a le gras et le corps du titre qui le suit. Puis elle rejoue
+la mesure sur une contrefaçon aux fragments laissés en place, qui doit échouer.
+Neuf sabotages dans `eprouver-le-juge.sh` : le décalage neutralisé, le saut de ligne
+ignoré, la saisie de la page reliée à `Text`, la case qui ne recale plus, l'avis à
+`Saisie` retiré du bloc puis de la case, et chacune des trois règles (le style qui suit
+en tête de paragraphe, le premier remplacé, la poussée à gauche réservée aux sauts).
 
 ### Q2 — Le texte composé se détache de son bloc
 

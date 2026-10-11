@@ -468,9 +468,47 @@ public abstract partial class Frame : ObservableObject
 
 public partial class TextFrame : Frame
 {
+    /// <summary>
+    /// Le texte du bloc, tel qu'il s'écrit dans le fichier. L'écrire ne touche ni aux
+    /// fragments ni aux écarts de paragraphe : c'est ce que font la lecture d'un
+    /// fichier, l'import, la copie et l'annulation, qui posent un texte et ses
+    /// collections déjà accordés. Une modification par l'utilisateur passe par
+    /// <see cref="Saisie"/>.
+    /// </summary>
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Saisie))]
     [property: JsonPropertyOrder(100)]
     private string _text = "";
+
+    /// <summary>
+    /// Le texte, tel que la zone de saisie le modifie : l'écrire recale les fragments de
+    /// style et les écarts de paragraphe sur le texte nouveau (voir
+    /// <see cref="Recalage"/>), puis change le texte.
+    ///
+    /// Pourquoi une propriété à part plutôt qu'un recalage à chaque écriture de
+    /// <see cref="Text"/>. Parce que <see cref="Text"/> est aussi écrit par tout ce qui
+    /// ne modifie rien : le sérialiseur pose le texte et les collections dans l'ordre où
+    /// le fichier les donne, et un fichier écrit à la main peut donner les fragments
+    /// d'abord — poser le texte ensuite les aurait tous poussés au-delà de lui-même.
+    /// L'import, la copie, les cases calculées d'un tableau en font autant. Recaler à
+    /// chaque écriture aurait demandé de deviner, à chaque fois, si l'écriture était
+    /// une édition ; une propriété dédiée le dit par construction, et seules les zones
+    /// de saisie s'y lient.
+    /// </summary>
+    [JsonIgnore]
+    public string Saisie
+    {
+        get => Text;
+        set
+        {
+            // Une zone de saisie vidée peut rendre null.
+            var nouveau = value ?? "";
+            if (nouveau == Text) return;
+
+            Recalage.Appliquer(Text, nouveau, Spans, Paragraphs);
+            Text = nouveau;
+        }
+    }
 
     [ObservableProperty]
     [property: JsonPropertyOrder(110)]
