@@ -2847,6 +2847,54 @@ avertissement pour une police que rien ne dessine.
 DejaVu Sans, avec un fragment intermédiaire « Police Inexistante » lui-même recouvert ;
 l'export n'avertit de rien. Effort : faible.
 
+*Fait le 12 octobre 2026.* La passe des polices de `PdfExporter` lit les styles
+composés : pour chaque bloc de texte, page par page, elle résout le contenu comme
+`DrawText` le résout — champ compris, avec la date et les coordonnées de l'export —, et
+passe le contenu à `StyleEffectif.Decouper`, la découpe que la composition fait
+elle-même. Seuls les styles des morceaux obtenus sont confrontés à fontconfig. Quels
+fragments s'appliquent au contenu (aucun pour un champ résolu) est une seule fonction,
+`Fragments`, que `DrawText` appelle désormais aussi : la passe et le dessin ne peuvent
+plus parler de deux textes différents. L'ancienne fonction `Polices`, qui relisait
+l'héritage pour son compte, a disparu, et avec elle l'asymétrie qu'elle assumait (« un
+avertissement de trop plutôt qu'un de moins ») : ce qui n'est pas dessiné ne compte pas.
+
+Mesuré. Le comportement d'avant, rétabli par le premier sabotage, nomme sur le document
+de la recette deux polices que rien ne dessine : « Police Inexistante » et la police
+propre du bloc, toutes deux remplacées par Noto Sans, que `fc-match` rend sur cette
+machine pour une famille inconnue. Corrigé, l'export ne dit rien, et `pdffonts` relève
+dans le PDF la seule DejaVu Sans. La contre-épreuve retire le fragment qui recouvre
+tout : les deux polices sont nommées, et Noto Sans entre dans le PDF.
+
+Neuf tests sous `poste=Q8`, dans `PolicesTests` : le cas du plan, le texte laissé à
+découvert (qui avertit toujours), le fragment hors du texte, le champ dont les fragments
+ne sont pas dessinés alors que sa police l'est, le champ de coordonnées vide qui ne
+dessine rien, le fragment blanc — saut de ligne, espace, tabulation — et la case de
+tableau, où un fragment absent dessiné avertit et le même recouvert se tait. Ce dernier
+vient de la relecture : retirer les cases de la descente de la passe laissait
+`verifier.sh` vert. *Recette* :
+`Scripts/recettes/Q8-polices-dessinees.sh`. Elle joue le document du plan, avec un
+second bloc dont la police propre est absente, plus exigeant que le bloc en Noto Sans,
+qui est installée ici et ne dirait rien de toute façon. Elle relève les polices du PDF,
+rejoue le document découvert, et compte les tests. Trois sabotages au juge : l'héritage
+relu pour son compte (la recette tombe, et huit des neuf tests), les fragments
+d'un champ lus comme s'ils étaient dessinés (seul le test du folio tombe), et les cases
+de tableau retirées de la descente (seul le test de la case tombe).
+
+*Choisi sans certitude.* Un morceau blanc — espaces, tabulations, sauts de ligne — ne
+compte pas, comme `Tracer` le saute en dessinant : `pdffonts` ne relève pas sa police.
+Sa largeur se mesure pourtant dans cette police, substituée ou non ; c'est le seul
+effet d'une police que la passe tait. La première version comptait les espaces ; la
+relecture a demandé de s'aligner sur le dessin et sur ce que dit le README. Une ligne vide prend
+sa hauteur dans la police du bloc (`Naturelle(commun)` dans `Compositeur`) : un bloc
+dont tout le texte est recouvert mais qui porte une ligne vide fait mesurer sa police
+sans la dessiner, et ne la nomme pas. Le texte coupé par le bord du bloc est compté
+comme dessiné.
+
+*Trouvé et laissé tel quel.* L'écran garde sa propre copie de la règle « un champ résolu
+n'a pas de fragments » (`ControleDeBloc.Mesurer`) : la règle n'est partagée qu'entre la
+passe et le dessin du PDF, pas avec l'écran. La partager demanderait de la poser dans le
+noyau ; le poste ne l'a pas fait.
+
 ### Q9 — Retirer `AbsoluteLineHeight`
 
 C'est le survivant de l'ancienne sémantique de l'interligne (`FontSize × LineHeight`),
@@ -2988,6 +3036,61 @@ du cache porte la date de modification du fichier en plus de son chemin.
 réouverture, l'écran et le PDF montrent la nouvelle couleur. Sans retouche, le cache
 rend la même instance (l'épingle de Q3 tient). Effort : faible.
 
+*Fait le 12 octobre 2026.* Chaque entrée de `BitmapCache` garde l'empreinte de son
+fichier, sa date de modification et sa taille, prise **avant** la lecture : un fichier
+réécrit pendant qu'on le lit sera relu à l'ouverture suivante, plutôt que l'inverse.
+`BitmapCache.OublierLesRetouchees` retire les images dont le fichier n'a plus la même
+empreinte ; `Adopt` l'appelle juste après `OublierLesEchecs`, donc à l'ouverture d'un
+fichier comme au départ d'un modèle. Une image intacte reste la même instance.
+L'annulation ne relit rien, comme pour Q3.
+
+**La piste du plan n'a pas été suivie à la lettre**, et voici pourquoi. Mettre la date
+dans la **clé** obligerait à interroger le disque à chaque lecture du cache, donc à
+chaque notification de liaison, donc à chaque image d'un glissé, et sur un partage
+réseau pour les documents qui y vivent. Les entrées périmées s'y accumuleraient en plus
+sous leurs anciennes clés. L'empreinte vit donc dans l'entrée, et ne se compare qu'à
+l'ouverture. La taille s'y ajoute parce que la date seule laisse passer une retouche
+faite dans le même pas d'horloge que la lecture.
+
+Mesuré. Sans l'appel dans `Adopt` (le premier sabotage), les deux tests tombent sur
+« l'écran ne montre pas l'image retouchée (0 pixels) » : le défaut est reproduit. Avec
+lui, l'écran montre le cyan sur toute l'image du bloc et plus un pixel magenta, et le
+PDF exporté au même instant porte une image cyan, relue par PDFsharp dans le fichier.
+Les deux PNG de 8 pixels, magenta puis cyan, écrits par Avalonia ont la même taille de
+fichier : le test le vérifie, puisque c'est la date seule qui doit trahir ce cas.
+
+Trois tests d'interface sous `poste=Q15`, dans `ImagesTests`. Le premier fait la retouche
+ordinaire : même taille, date plus récente. Il épingle aussi l'instance rendue sans
+retouche (Q3) et l'annulation qui ne relit pas. Le second fait la retouche qui garde la
+date, avec une autre taille. Chacun ne trahit ainsi qu'une moitié de l'empreinte, et
+les deux sabotages qui en retirent une moitié le prouvent : la taille oubliée ne fait
+tomber que le second, la date oubliée que le premier. Le troisième test, ajouté après la
+relecture, éprouve l'ordre. Un lecteur injecté dans le cache (`BitmapCache.Lecteur`,
+interne, visible du seul banc d'interface) réécrit le fichier en cyan juste après
+l'avoir lu en magenta. L'ouverture suivante doit montrer le cyan. L'empreinte prise
+après la lecture le fait tomber, et lui seul : sans ce test, rien ne gardait l'ordre.
+*Recette* : `Scripts/recettes/Q15-image-retouchee.sh`. Quatre sabotages au juge :
+l'appel retiré, la taille oubliée, la date oubliée, l'empreinte prise après la
+lecture.
+
+*Choisi sans certitude.* Le test pose lui-même les dates. Quand l'horloge des fichiers
+n'a pas avancé entre deux écritures rapprochées, il avance la date d'une seconde ; pour
+le second cas, il remet la date d'avant. Le coût d'une date lue à chaque lecture du cache
+n'a pas été mesuré : c'est une prudence, pas une mesure. Une image dont le fichier a
+disparu change d'empreinte, est oubliée, et le bloc se vide à la réouverture, comme le
+PDF le dit déjà (« Image introuvable »). Les images oubliées ne sont pas libérées
+(`Dispose`) : un contrôle peut encore les afficher jusqu'à sa prochaine liaison. C'est
+ce que fait déjà `Invalidate`.
+
+*Trouvé et laissé tel quel.* Une image retouchée pendant que le document reste ouvert
+n'est relue qu'à la réouverture, ou en la réinsérant ; d'ici là, l'export montre déjà la
+nouvelle. L'écart écran ↔ PDF demeure donc dans cet intervalle ; le README le dit.
+Mesuré en écrivant le test : après une annulation, la première image que le banc capture
+à la réouverture (`CaptureRenderedFrame`) est en retard d'un tour, la page sans son
+image, ni magenta ni cyan ; la capture suivante compte 32 000 pixels cyan, soit
+200 × 160. Le test jette la première capture et l'écrit. Ce retard tient au banc ou au
+rendu, et n'a pas été cherché plus loin.
+
 ### Q16 — Le pointillé d'un bloc image obéit aux repères
 
 *Trouvé le 11 octobre 2026 par la recette de C1.* Le pointillé gris d'un bloc image,
@@ -3011,6 +3114,52 @@ le setter.
 
 *Recette* : un contrôle affiché, dont on remplace les `Spans` du bloc, redessine au
 style de la nouvelle collection ; l'ancienne n'a plus d'abonné. Effort : faible.
+
+*Fait le 12 octobre 2026.* **Le setter est fermé** : `TextFrame.Spans`,
+`TextFrame.Paragraphs` et `TableCell.Spans` n'ont plus qu'un accesseur `init`.
+L'initialiseur et le sérialiseur les posent encore ; plus personne après. La troisième
+n'était pas nommée par le plan, mais c'est la même mine : `CellFrames` prête la
+collection de la case au bloc qu'il construit pour elle, et le contrôle qui dessine la
+case s'y abonne.
+
+**Pourquoi fermer plutôt qu'écouter.** Rien ne remplaçait ces collections hors de la
+construction : la solution entière compile avec `init` sans autre retouche. Les seuls
+écrivains de la propriété étaient l'initialiseur de `CellFrames` et le sérialiseur, qui
+la pose sur l'objet qu'il est en train de construire, et l'annulation avec lui,
+puisqu'elle relit un instantané. `Clone()` et l'import remplissent la collection d'un
+bloc neuf, ils ne la remplacent pas. Écouter le remplacement aurait demandé trois choses :
+- que le bloc annonce un changement de `Spans`, qu'il n'annonce pas aujourd'hui ;
+- que `ControleDeBloc` garde l'ancienne collection pour s'en désabonner, l'événement ne
+  la donnant pas ;
+- que chaque observateur à venir (l'aperçu de B6, la vignette de C7) le refasse.
+
+Fermer règle la question pour tous les observateurs à la fois, et au compilateur, pas à
+la discipline. `TableFrame` a fait l'autre choix pour ses colonnes, lignes et cases
+(`Adopter`), parce qu'il s'abonne lui-même à ses collections dès le constructeur, et que
+le sérialiseur les remplace après. Ici, le bloc ne s'abonne à rien. Le prix : un code qui
+voudrait tout remplacer videra puis remplira, une notification par élément, que le
+contrôle entend déjà.
+
+La recette du plan, un contrôle affiché dont on remplace les fragments, ne peut donc plus
+se jouer : le geste ne compile plus. *Recette* : `Scripts/recettes/Q17-collections-fermees.sh`.
+Elle compile une sonde contre le noyau construit, qui remplace les trois collections sur
+des objets déjà construits ; elle exige trois erreurs CS8852, une par ligne. Une seconde
+sonde compile ce qui doit rester permis : l'initialiseur, le prêt d'une case, le
+remplissage sur place. Six tests sous `poste=Q17`, dans `CollectionsFermeesTests` :
+- la marque `IsExternalInit` sur chaque collection observable de `TextFrame` et de
+  `TableCell`, découvertes par réflexion, avec un témoin que la découverte trouve bien
+  les trois ;
+- la lecture d'un document, qui pose encore les collections ;
+- la case, qui prête toujours la même instance.
+
+Un sabotage au juge, l'accesseur des fragments rouvert : la sonde n'obtient plus que
+deux refus, et le test de réflexion tombe.
+
+*Trouvé et laissé tel quel.* La même mine existe ailleurs, hors du périmètre :
+`Page.Frames`, `GroupFrame.Children`, `Document.Pages` et les deux listes de repères ont
+un accesseur public en écriture, sans annonce de changement, alors que des
+`ItemsControl` s'y lient (`CurrentPage.Frames`, `Children`, `Document.Pages`). Rien dans
+le dépôt ne les remplace après la construction, d'après une recherche dans les sources.
 
 ### Q18 — Paquets marqués « Legacy »
 

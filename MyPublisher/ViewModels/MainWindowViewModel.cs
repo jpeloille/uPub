@@ -680,6 +680,10 @@ public partial class MainWindowViewModel : ViewModelBase
         // rouvrir, et n'a pas à relire le disque. Poste Q3.
         BitmapCache.OublierLesEchecs();
 
+        // De même pour une image retouchée sur le disque depuis qu'on l'a lue : l'écran
+        // la relit, comme l'export la relit déjà. Poste Q15.
+        BitmapCache.OublierLesRetouchees();
+
         Document = document;
         if (Document.Pages.Count == 0) Document.Pages.Add(new Page { Name = "Page 1" });
         CurrentPage = Document.Pages[0];
