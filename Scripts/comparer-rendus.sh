@@ -108,7 +108,13 @@ magick -size "$geometrie" xc:white "$travail/blanc.png"
 for rendu in ecran pdf-cadre; do
     encre="$(magick compare -metric AE -fuzz 12% \
         "$travail/$rendu.png" "$travail/blanc.png" null: 2>&1 | awk '{print $1}' || true)"
-    if ! [[ "$encre" =~ ^[0-9]+(\.[0-9]+)?$ ]] || awk -v n="$encre" 'BEGIN { exit !(n == 0) }'; then
+    # Au-delà d'un million, ImageMagick écrit le compte en notation scientifique
+    # (« 1.70797e+06 ») : la forme est acceptée, awk sait la lire.
+    if ! [[ "$encre" =~ ^[0-9]+(\.[0-9]+)?(e[+-]?[0-9]+)?$ ]]; then
+        echo "ÉCHEC : l'encre du rendu « $rendu » n'a pas été comptée ($encre)." >&2
+        exit 1
+    fi
+    if awk -v n="$encre" 'BEGIN { exit !(n + 0 == 0) }'; then
         echo "ÉCHEC : le rendu « $rendu » de la page $page ne porte aucune encre ($encre)." >&2
         echo "Les deux rendus sont-ils vraiment produits ?" >&2
         exit 1
