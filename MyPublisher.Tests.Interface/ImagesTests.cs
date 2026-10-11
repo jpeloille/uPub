@@ -22,9 +22,10 @@ namespace MyPublisher.Tests.Interface;
 /// Ce que ces tests ajoutent aux tests du noyau, qui éprouvent déjà le calcul des
 /// chemins : que l'image arrive jusqu'aux pixels. Entre le chemin résolu et l'affichage
 /// il reste le cache d'images de <c>Conv.cs</c>, statique, indexé par chemin, qui garde
-/// ses réussites pour la vie du processus et, depuis le poste Q3, oublie ses échecs à
-/// chaque ouverture de document, et celui d'un fichier qu'on désigne de nouveau — les
-/// tests marqués Q3. La résolution ayant lieu à l'ouverture, ce cache ne voit
+/// ses réussites tant que leur fichier ne change pas et, depuis le poste Q3, oublie ses
+/// échecs à chaque ouverture de document, et celui d'un fichier qu'on désigne de
+/// nouveau — les tests marqués Q3. Depuis le poste Q15, l'ouverture oublie aussi les
+/// images dont le fichier a été retouché — les tests marqués Q15. La résolution ayant lieu à l'ouverture, ce cache ne voit
 /// que des chemins absolus — mais c'est là une affirmation sur du code, et le second
 /// test en fait une mesure : deux documents rangés dans deux dossiers, portant chacun
 /// une image nommée « photo.png », doivent afficher chacun la sienne.
@@ -242,6 +243,143 @@ public class ImagesTests : IDisposable
     }
 
     /// <summary>
+    /// Le défaut du poste Q15, joué comme on le vit : une image est ouverte, on la
+    /// retouche dans un autre outil — même format, même taille de fichier, une autre
+    /// couleur —, et l'on rouvre le document dans la même fenêtre, le même processus et
+    /// donc le même cache. Avant le poste, l'écran gardait l'ancienne couleur alors que
+    /// le PDF montrait la nouvelle. Les deux sont relevés.
+    ///
+    /// Le même test épingle ce que le poste ne devait pas défaire : une réouverture sans
+    /// retouche rend la même instance (l'épingle de Q3), et l'annulation d'un geste ne
+    /// relit pas le disque.
+    /// </summary>
+    [AvaloniaFact]
+    [Trait("poste", "Q15")]
+    public void Une_image_retouchee_sur_le_disque_se_relit_a_la_reouverture()
+    {
+        var chemin = Composer("retouche", "photo.png", Magenta);
+        var photo = Path.Combine(_travail, "retouche", "photo.png");
+        var (fenetre, vm) = Fenetre(Document.CreateDefault());
+        vm.LoadFrom(chemin);
+        Rendu.Battre(8);
+        Assert.True(Compter(fenetre, Magenta) > 1000, "l'image ne s'affiche pas avant la retouche");
+
+        // Sans retouche, la réouverture ne relit rien.
+        var lue = Conv.Bitmap(photo);
+        Assert.NotNull(lue);
+        vm.LoadFrom(chemin);
+        Rendu.Battre(8);
+        Assert.Same(lue, Conv.Bitmap(photo));
+
+        Retoucher(photo, Cyan, memeDate: false);
+
+        // L'annulation reconstruit tous les blocs, mais n'est pas une réouverture.
+        vm.BeginEdit();
+        vm.Document.Pages[0].Frames[1].X += 10;
+        vm.CommitEdit();
+        vm.UndoCommand.Execute(null);
+        Rendu.Battre(8);
+        Assert.Same(lue, Conv.Bitmap(photo));
+
+        vm.LoadFrom(chemin);
+        Rendu.Battre(8);
+
+        // Mesuré en écrivant ce test : après une annulation, la première image capturée
+        // à la réouverture est en retard d'un tour — la page sans son image, ni
+        // magenta ni cyan — et la suivante est juste. On jette donc la première : c'est
+        // l'image composée qu'on mesure, pas la cadence du banc.
+        using (fenetre.CaptureRenderedFrame()) { }
+
+        var nouvelle = Compter(fenetre, Cyan);
+        var ancienne = Compter(fenetre, Magenta);
+        Assert.True(nouvelle > 1000, $"l'écran ne montre pas l'image retouchée ({nouvelle} pixels)");
+        Assert.Equal(0, ancienne);
+
+        // Le PDF du même instant, du même document : la même couleur que l'écran.
+        Assert.Equal([Cyan], CouleursDesImagesDuPdf(vm.Document));
+    }
+
+    /// <summary>
+    /// La date seule ne suffit pas : une retouche faite dans la même seconde que la
+    /// lecture, sur un système de fichiers qui compte à la seconde, garde la date. La
+    /// taille du fichier le dit alors. Le cas est fabriqué en remettant la date d'avant
+    /// au fichier retouché.
+    /// </summary>
+    [AvaloniaFact]
+    [Trait("poste", "Q15")]
+    public void Une_image_retouchee_sans_changer_de_date_se_relit_a_la_reouverture()
+    {
+        var chemin = Composer("meme-date", "photo.png", Magenta);
+        var photo = Path.Combine(_travail, "meme-date", "photo.png");
+        var (fenetre, vm) = Fenetre(Document.CreateDefault());
+        vm.LoadFrom(chemin);
+        Rendu.Battre(8);
+        Assert.True(Compter(fenetre, Magenta) > 1000, "l'image ne s'affiche pas avant la retouche");
+
+        Retoucher(photo, Cyan, memeDate: true);
+        vm.LoadFrom(chemin);
+        Rendu.Battre(8);
+
+        var nouvelle = Compter(fenetre, Cyan);
+        Assert.True(nouvelle > 1000, $"l'écran ne montre pas l'image retouchée ({nouvelle} pixels)");
+        Assert.Equal(0, Compter(fenetre, Magenta));
+    }
+
+    /// <summary>
+    /// Réécrit une image d'une autre couleur. <paramref name="memeDate"/> faux : même
+    /// taille de fichier, et une date qui avance — la retouche ordinaire, que seule la
+    /// date trahit. Vrai : une autre taille, et la date d'avant remise — la retouche
+    /// dans la même seconde, que seule la taille trahit. Chaque cas éprouve ainsi une
+    /// moitié de l'empreinte, et une seule.
+    /// </summary>
+    private static void Retoucher(string photo, uint couleur, bool memeDate)
+    {
+        var date = File.GetLastWriteTimeUtc(photo);
+        var taille = new FileInfo(photo).Length;
+
+        EcrirePng(photo, couleur, memeDate ? 16 : 8);
+
+        if (memeDate)
+        {
+            File.SetLastWriteTimeUtc(photo, date);
+            Assert.NotEqual(taille, new FileInfo(photo).Length);
+        }
+        else
+        {
+            // L'horloge des fichiers avance par pas : deux écritures rapprochées
+            // peuvent porter la même date. Une retouche réelle vient des secondes plus
+            // tard ; on lui donne cette seconde-là plutôt que d'attendre.
+            if (File.GetLastWriteTimeUtc(photo) <= date) File.SetLastWriteTimeUtc(photo, date.AddSeconds(1));
+            Assert.Equal(taille, new FileInfo(photo).Length);
+        }
+    }
+
+    /// <summary>
+    /// Les couleurs des images que l'export embarque, relues dans le PDF par PDFsharp :
+    /// chaque image est un aplat, et l'on rend la couleur de chacune.
+    /// </summary>
+    private uint[] CouleursDesImagesDuPdf(Document document)
+    {
+        var pdf = Path.Combine(_travail, $"export-{Guid.NewGuid():N}.pdf");
+        PdfExporter.Export(document, pdf);
+
+        using var relu = PdfSharp.Pdf.IO.PdfReader.Open(pdf, PdfSharp.Pdf.IO.PdfDocumentOpenMode.Import);
+        var couleurs = new System.Collections.Generic.List<uint>();
+        foreach (var objet in relu.Internals.GetAllObjects())
+        {
+            if (objet is not PdfSharp.Pdf.PdfDictionary image) continue;
+            if (image.Elements.GetName("/Subtype") != "/Image") continue;
+            if (image.Elements.GetName("/ColorSpace") != "/DeviceRGB") continue;
+
+            var octets = image.Stream.UnfilteredValue;
+            var aplat = octets.Chunk(3).Select(p => 0xFF000000u | (uint)(p[0] << 16) | (uint)(p[1] << 8) | p[2]).Distinct().ToArray();
+            couleurs.Add(Assert.Single(aplat));
+        }
+
+        return [.. couleurs];
+    }
+
+    /// <summary>
     /// Un document enregistré dont aucune image n'existe encore : un bloc image (photo),
     /// une forme au fond illustré (trame), et une seconde forme dont le fond désigne une
     /// image qui n'existera jamais (autre) : c'est à elle qu'on choisit une autre image.
@@ -368,9 +506,8 @@ public class ImagesTests : IDisposable
     }
 
     /// <summary>Un PNG d'un seul aplat, écrit sur le disque comme le ferait n'importe quel outil.</summary>
-    private static void EcrirePng(string chemin, uint couleur)
+    private static void EcrirePng(string chemin, uint couleur, int cote = 8)
     {
-        const int cote = 8;
         using var bitmap = new WriteableBitmap(
             new PixelSize(cote, cote), new Vector(96, 96), PixelFormat.Bgra8888, AlphaFormat.Unpremul);
 
