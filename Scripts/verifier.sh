@@ -67,10 +67,18 @@ rm -f /tmp/compilation-$$.txt
 export MYPUBLISHER_DEJA_COMPILE=1
 
 etape "Tests"
-if ! dotnet test MyPublisher.sln --no-build --nologo -v q 2>&1 | grep -E "^(Passed!|Failed!|Erreur|error)"; then
+# Les tests en échec sont nommés, et pas seulement comptés : le juge cherche dans cette
+# sortie qui a attrapé son sabotage, et un sabotage pris par les seuls tests du noyau
+# passait pour pris par personne.
+if ! dotnet test MyPublisher.sln --no-build --nologo -v q > /tmp/tests-$$.txt 2>&1; then
+    grep -E "^(Passed!|Failed!|Erreur|error)" /tmp/tests-$$.txt || true
+    grep -oE "[A-Za-z0-9_.]+ \[FAIL\]" /tmp/tests-$$.txt | sed 's/ \[FAIL\]//; s/^.*\.\([A-Za-z_]*Tests\.[A-Za-z0-9_]*\)$/\1/; s/^/  en échec : /' >&2 || true
     echo "ÉCHEC : les tests ne passent pas." >&2
     echec=1
+else
+    grep -E "^(Passed!|Failed!)" /tmp/tests-$$.txt
 fi
+rm -f /tmp/tests-$$.txt
 
 etape "Contrôle de non-régression"
 if ! Scripts/controle.sh; then

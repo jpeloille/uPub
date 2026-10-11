@@ -12,7 +12,8 @@
 # attend un échec. Un sabotage NON détecté est un trou dans le filet : le script le
 # nomme et sort en erreur.
 #
-#   Scripts/eprouver-le-juge.sh
+#   Scripts/eprouver-le-juge.sh            # tous les sabotages
+#   Scripts/eprouver-le-juge.sh 'motif'    # ceux dont l'intitulé répond au motif (grep -E)
 #
 # L'arbre de travail doit être propre : le script écrit dans les sources et les
 # restaure par « git checkout ». Il refuse de tourner autrement, pour ne pas
@@ -49,6 +50,7 @@ trap nettoyer EXIT
 
 trous=0
 sabotages=0
+filtre="${1:-}"
 
 # $1 intitulé · $2 fichier · $3 texte d'origine · $4 texte saboté
 # $5, facultatif : le garde-fou attendu (motif grep -E). Un sabotage attrapé par un
@@ -56,6 +58,7 @@ sabotages=0
 # propre sabotage ne prouve rien, même si un test voisin le voit à sa place.
 saboter() {
     local intitule="$1" fichier="$2" avant="$3" apres="$4" attendu="${5:-}"
+    if [ -n "$filtre" ] && ! grep -qE "$filtre" <<< "$intitule"; then return; fi
     sabotages=$((sabotages + 1))
 
     if ! grep -qF "$avant" "$fichier"; then
