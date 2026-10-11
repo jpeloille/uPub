@@ -57,6 +57,22 @@ public class DecoupeTests
         Assert.Equal(3, Decoupe.Marge([interieur]));
     }
 
+    [Theory]
+    [Trait("poste", "Q5")]
+    [InlineData(0, 2)]
+    [InlineData(90, 2)]
+    [InlineData(-180, 2)]
+    [InlineData(45, 2.8284271247)]
+    [InlineData(30, 2.8284271247)]
+    public void La_pointe_d_onglet_d_un_bloc_tourne_n_est_pas_emoussee(double rotation, double marge)
+    {
+        // Filet de 4 pt joint en onglet : droit, il sort de 2 pt ; tourné, la pointe de
+        // l'angle sort jusqu'à 2·√2.
+        var bloc = new ShapeFrame { Width = 100, Height = 100, Rotation = rotation, Stroke = "#FF0000FF", StrokeThickness = 4 };
+
+        Assert.Equal(marge, Decoupe.Marge([bloc]), precision: 6);
+    }
+
     [Fact]
     [Trait("poste", "Q5")]
     public void Un_tableau_compte_les_filets_de_ses_cases()

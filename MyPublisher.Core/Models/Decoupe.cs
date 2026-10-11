@@ -37,17 +37,31 @@ public static class Decoupe
     /// <summary>
     /// Le plus large demi-filet des blocs donnés et de tout ce qu'ils portent : jusqu'où,
     /// au plus, l'un d'eux dessine hors de son cadre.
+    ///
+    /// Un bloc tourné compte pour √2 fois. Le filet est joint en onglet : à l'angle droit
+    /// d'un bloc, sa pointe sort de t/2·√2 le long de la bissectrice. Droit, le bloc la
+    /// garde dans son cadre élargi de t/2 — la pointe tombe sur le coin de ce cadre. Tourné,
+    /// cette pointe est ce qui dépasse le plus, jusqu'à t/2·√2 à 45° : avec t/2 seulement,
+    /// la découpe l'émoussait (trouvé par la relecture du 12 octobre 2026). Ce qu'un bloc
+    /// tourné porte tourne avec lui, et compte de même.
     /// </summary>
     public static double Marge(IEnumerable<Frame> blocs)
     {
         var marge = 0.0;
         foreach (var bloc in blocs)
         {
-            marge = Math.Max(marge, DemiFilet(bloc));
-            marge = Math.Max(marge, Marge(Portes(bloc)));
+            var propre = Math.Max(DemiFilet(bloc), Marge(Portes(bloc)));
+            marge = Math.Max(marge, Tourne(bloc) ? propre * Math.Sqrt(2) : propre);
         }
 
         return marge;
+    }
+
+    /// <summary>Vrai quand le bloc n'est pas tourné d'un multiple de l'angle droit.</summary>
+    private static bool Tourne(Frame bloc)
+    {
+        var reste = Math.Abs(bloc.Rotation % 90);
+        return reste > 1e-9 && 90 - reste > 1e-9;
     }
 
     /// <summary>

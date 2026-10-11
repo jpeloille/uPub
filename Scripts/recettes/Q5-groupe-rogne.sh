@@ -14,14 +14,22 @@
 # une découpe au cadre exact rognerait de sa moitié extérieure le filet de tout bloc
 # posé sur le bord d'un groupe ou d'un tableau — à l'écran comme, désormais, au PDF.
 #
-# La page porte trois blocs :
+# La page porte six blocs :
 #
 #   · « Large »  — le cas du PLAN : un groupe de 120 pt portant un texte de 400 pt, à
 #                  fond jaune, sans filet ;
 #   · « Filé »   — un groupe dont un bloc, filé de 4 pt, touche le bord du groupe en
 #                  haut, à gauche et à droite ;
 #   · « Bande »  — un tableau dont les cases sont filées de 4 pt : le tableau découpe
-#                  ses cases comme un groupe ses blocs.
+#                  ses cases comme un groupe ses blocs ;
+#   · « Tourné » — un groupe tourné de 30°, qui porte un bloc trop long et un bloc filé :
+#                  la découpe tourne avec le groupe, à l'écran comme au PDF ;
+#   · « Externe » — un groupe qui en porte un autre, « Interne » : chacun découpe ce qui
+#                  le dépasse, à sa propre marge ;
+#   · « Losange » — un bloc tourné de 45° dans un groupe ajusté à son empreinte, filé de
+#                  6 pt : la pointe d'onglet de son angle sort de 3·√2 pt, et non de 3.
+#                  Ces trois-là ont été demandés par la relecture du 12 octobre 2026, qui
+#                  avait trouvé la pointe émoussée.
 #
 # Ce qu'elle mesure, sur l'écran (le banc) ET sur le PDF (pdftoppm), à deux pixels par
 # point :
@@ -30,7 +38,12 @@
 #      droit à celui du texte est blanche, alors que le fond jaune est bien là en deçà ;
 #   2. les filets de 4 pt sur le bord du groupe « Filé » et du tableau font 4 pt, des
 #      deux côtés : une découpe au cadre exact en laisserait 2 ;
-#   3. le filet grossier : « Scripts/comparer-rendus.sh ».
+#   3. les groupes imbriqués : rien au-delà d'« Interne » (marge comprise), ni au-delà
+#      d'« Externe », alors que chacun montre bien le bloc qui dépasse en deçà ;
+#   4. la pointe du losange : sous son sommet, à 3,25 pt au-dessus de l'angle, le filet
+#      est là — une marge de 3 pt l'aurait coupé à 3 ;
+#   5. le filet grossier : « Scripts/comparer-rendus.sh », qui voit aussi le groupe
+#      tourné.
 #
 set -euo pipefail
 export LC_ALL=C
@@ -52,7 +65,7 @@ fi
 
 # Les tests du noyau qui épinglent la zone : sans filet, le cadre du groupe ; avec, le
 # plus large demi-filet de ses blocs, groupes imbriqués et cases de tableau compris.
-attendus=7
+attendus=12
 if ! dotnet test MyPublisher.Tests/MyPublisher.Tests.csproj ${MYPUBLISHER_DEJA_COMPILE:+--no-build} \
         --nologo -v q --filter "poste=Q5" > "$travail/tests.txt" 2>&1; then
     sed 's/^/    /' "$travail/tests.txt" >&2
@@ -102,6 +115,34 @@ cat > "$document" <<'JSON'
               "Fill": { "$kind": "solid", "Color": "#FFEFF2F6" }, "Stroke": "#FF0000FF", "StrokeThickness": 4 },
             { "Row": 0, "Column": 1, "Text": "",
               "Fill": { "$kind": "solid", "Color": "#FFEFF2F6" }, "Stroke": "#FF0000FF", "StrokeThickness": 4 }
+          ] },
+        { "$kind": "group", "Name": "Tourné", "X": 400, "Y": 280, "Width": 120, "Height": 100, "Rotation": 30,
+          "Stroke": null,
+          "Children": [
+            { "$kind": "shape", "Name": "Long", "X": 0, "Y": 20, "Width": 400, "Height": 60,
+              "Fill": { "$kind": "solid", "Color": "#FFFFCC00" }, "Stroke": null, "Shape": "Rectangle" },
+            { "$kind": "shape", "Name": "Filé", "X": 0, "Y": 0, "Width": 120, "Height": 20,
+              "Fill": { "$kind": "solid", "Color": "#FF00A000" }, "Stroke": "#FF0000FF", "StrokeThickness": 4, "Shape": "Rectangle" }
+          ] },
+        { "$kind": "group", "Name": "Externe", "X": 100, "Y": 600, "Width": 200, "Height": 150,
+          "Stroke": null,
+          "Children": [
+            { "$kind": "group", "Name": "Interne", "X": 20, "Y": 20, "Width": 100, "Height": 60,
+              "Stroke": null,
+              "Children": [
+                { "$kind": "shape", "Name": "Très long", "X": 0, "Y": 30, "Width": 300, "Height": 30,
+                  "Fill": { "$kind": "solid", "Color": "#FFFFCC00" }, "Stroke": null, "Shape": "Rectangle" },
+                { "$kind": "shape", "Name": "Bord", "X": 0, "Y": 0, "Width": 100, "Height": 30,
+                  "Fill": { "$kind": "solid", "Color": "#FF00A000" }, "Stroke": "#FF0000FF", "StrokeThickness": 4, "Shape": "Rectangle" }
+              ] },
+            { "$kind": "shape", "Name": "Bas", "X": 0, "Y": 100, "Width": 260, "Height": 50,
+              "Fill": { "$kind": "solid", "Color": "#FFFF00FF" }, "Stroke": null, "Shape": "Rectangle" }
+          ] },
+        { "$kind": "group", "Name": "Enfant tourné", "X": 380, "Y": 600, "Width": 141.42, "Height": 141.42,
+          "Stroke": null,
+          "Children": [
+            { "$kind": "shape", "Name": "Losange", "X": 20.71, "Y": 20.71, "Width": 100, "Height": 100, "Rotation": 45,
+              "Fill": { "$kind": "solid", "Color": "#FF00A000" }, "Stroke": "#FF0000FF", "StrokeThickness": 6, "Shape": "Rectangle" }
           ] }
       ]
     }
@@ -197,15 +238,51 @@ for nom, image in rendus.items():
 if echec:
     sys.exit(1)
 print("  2. un filet de 4 pt sur le bord d'un groupe ou d'un tableau garde ses 4 pt, des deux côtés")
+
+# 3 — les groupes imbriqués. « Interne » (x de 120 à 220 pt) a pour marge le demi-filet
+# de « Bord », 2 pt : son bloc « Très long » (y de 650 à 680) s'arrête à 222. « Externe »
+# (x de 100 à 300) a la même marge, ses descendants compris : « Bas » (y de 700 à 750)
+# s'arrête à 302.
+MAGENTA = (255, 0, 255)
+for nom, image in rendus.items():
+    for quoi, dedans, couleur, zone in (
+        ("« Très long », dans « Interne »", (200, 665), JAUNE, (223, 652, 370, 678)),
+        ("« Bas », dans « Externe »",       (280, 725), MAGENTA, (303, 702, 370, 748)),
+    ):
+        if not proche(image.getpixel((dedans[0] * PX, dedans[1] * PX)), couleur, 12):
+            refuser(f"{nom} — {quoi} n'est pas dessiné en deçà du bord : la mesure ne prouverait rien.")
+        x0, y0, x1, y1 = zone
+        encre = sum(1 for x in range(x0 * PX, x1 * PX) for y in range(y0 * PX, y1 * PX)
+                    if not proche(image.getpixel((x, y)), BLANC, 48))
+        if encre:
+            refuser(f"{nom} — {quoi} : {encre} pixels au-delà de la découpe ; aucun attendu.")
+if echec:
+    sys.exit(1)
+print("  3. groupes imbriqués : chacun découpe ce qui le dépasse, à sa marge, des deux côtés")
+
+# 4 — la pointe d'onglet. Le losange a son sommet sur le bord haut du groupe, à
+# x = 380 + 70,71 et y = 600 ; filé de 6 pt et joint en onglet, sa pointe monte à
+# 600 − 3·√2 = 595,76. Le pixel pris à y = 596,75 (centre de la rangée 1 193), sous le
+# sommet, est dans la pointe, à 1 pt de son bout : bleu. Une marge de 3 pt couperait à
+# 597, et ce pixel serait blanc.
+for nom, image in rendus.items():
+    teinte = image.getpixel((round(450.71 * PX), 1193))
+    if not proche(teinte, BLEU):
+        refuser(f"{nom} — la pointe d'onglet du losange est coupée : {teinte} à 3,25 pt "
+                f"au-dessus de son angle, le filet attendu.")
+if echec:
+    sys.exit(1)
+print("  4. la pointe d'onglet d'un bloc tourné dans son groupe n'est pas émoussée, des deux côtés")
 PY
 
 # ------------------------------------------------------------------------- 3. filet
 
-# Relevé avant ce poste : 4,35 % — le fond et le texte qui couraient 280 pt plus loin
-# dans le PDF (67 200 pixels de fond jaune comptés par la mesure 1, 3,3 % de la page),
-# et les filets de 4 pt rentrés à l'écran par Q4. Après : 0,05 %, le lissage du texte
-# et des coins. Le seuil est à 0,3 % : six fois ce relevé, et onze fois sous la seule
-# bande de fond que l'export ne découpait pas.
+# Relevé avant ce poste, sur la page à trois blocs : 4,35 % — le fond et le texte qui
+# couraient 280 pt plus loin dans le PDF (67 200 pixels de fond jaune comptés par la
+# mesure 1, 3,3 % de la page), et les filets rentrés de Q4. Sur la page à six blocs :
+# 8,03 % avant, 0,13 % après — le lissage du texte, des coins, et des bords obliques du
+# groupe tourné et du losange. Le seuil est à 0,3 % : plus du double de ce relevé, et
+# onze fois sous la seule bande de fond que l'export ne découpait pas.
 Scripts/comparer-rendus.sh "$document" 1 0.3
 
 echo "Q5 : l'export découpe au groupe comme l'écran, et la découpe laisse aux filets du bord leur épaisseur."
