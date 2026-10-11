@@ -161,6 +161,35 @@ internal static class BitmapCache
     }
 
     /// <summary>
+    /// Oublie les images qu'on n'a pas pu lire, et elles seules — poste Q3.
+    ///
+    /// Un échec est mis en cache comme une réussite, et ce n'est pas un oubli : sans
+    /// cela, un bloc dont l'image manque relirait le disque, et lèverait une exception, à
+    /// chaque notification de liaison, donc à chaque image d'un glissé. Mais l'échec
+    /// était retenu pour toute la durée du processus : remettre le fichier en place puis
+    /// rouvrir le document laissait le bloc vide, sans rien dire.
+    ///
+    /// Appelé à l'ouverture d'un document, qui est le moment où l'on s'attend à ce que
+    /// le disque soit relu. Les réussites restent : une image lue est juste tant que
+    /// son fichier ne change pas, et la relire à chaque ouverture ne réparerait aucun
+    /// défaut de ce poste. Une image MODIFIÉE sur le disque pendant que le processus
+    /// vit reste donc périmée à l'écran — c'est écrit au poste Q3 du plan.
+    /// </summary>
+    public static void OublierLesEchecs()
+    {
+        lock (Cache)
+        {
+            var echecs = new List<string>();
+            foreach (var (cle, bitmap) in Cache)
+            {
+                if (bitmap is null) echecs.Add(cle);
+            }
+
+            foreach (var cle in echecs) Cache.Remove(cle);
+        }
+    }
+
+    /// <summary>
     /// Le chemin normalisé. Un chemin illisible — vide, caractères interdits — est laissé
     /// tel quel : il ne s'ouvrira pas, et c'est « Get » qui le dira, pas ce cache.
     /// </summary>

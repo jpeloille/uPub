@@ -7,6 +7,7 @@ using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
+using MyPublisher.Converters;
 using MyPublisher.Models;
 using MyPublisher.Services;
 using MyPublisher.ViewModels;
@@ -19,8 +20,9 @@ namespace MyPublisher.Tests.Interface;
 ///
 /// Ce que ces tests ajoutent aux tests du noyau, qui éprouvent déjà le calcul des
 /// chemins : que l'image arrive jusqu'aux pixels. Entre le chemin résolu et l'affichage
-/// il reste le cache d'images de <c>Conv.cs</c>, statique, indexé par chemin, et que
-/// personne n'invalide jamais. La résolution ayant lieu à l'ouverture, ce cache ne voit
+/// il reste le cache d'images de <c>Conv.cs</c>, statique, indexé par chemin, qui garde
+/// ses réussites pour la vie du processus et, depuis le poste Q3, oublie ses échecs à
+/// chaque ouverture de document — le quatrième test. La résolution ayant lieu à l'ouverture, ce cache ne voit
 /// que des chemins absolus — mais c'est là une affirmation sur du code, et le second
 /// test en fait une mesure : deux documents rangés dans deux dossiers, portant chacun
 /// une image nommée « photo.png », doivent afficher chacun la sienne.
@@ -115,6 +117,71 @@ public class ImagesTests : IDisposable
         // celui d'avant, qu'il faut relire.
         Assert.Equal(chemin, ((ImageFrame)vm.Document.Pages[0].Frames[0]).Path);
         Assert.True(Compter(fenetre, Magenta) > 1000, "l'image a disparu à l'annulation");
+    }
+
+    [AvaloniaFact]
+    [Trait("poste", "Q3")]
+    public void Une_image_remise_en_place_reparait_a_la_reouverture()
+    {
+        // Le défaut du poste Q3, joué comme on le vit : on ouvre un document, ses images
+        // manquent ; on les remet en place ; on rouvre — par le même geste que le menu,
+        // dans la même fenêtre, le même processus et donc le même cache. Avant le
+        // poste, l'échec de la première lecture était retenu pour toujours et les blocs
+        // restaient vides sans rien dire.
+        //
+        // Deux images, deux chemins vers le cache : le bloc image passe par la liaison,
+        // le fond illustré d'une forme par « Conv.Bitmap », que le fond dessine en code.
+        // Le cyan est l'image du bloc parce qu'il n'est pas symétrique — la leçon de A3.
+        var dossier = Path.Combine(_travail, "rapport");
+        Directory.CreateDirectory(dossier);
+        var photo = Path.Combine(dossier, "photo.png");
+        var trame = Path.Combine(dossier, "trame.png");
+
+        var document = Document.CreateDefault();
+        document.Pages[0].Frames.Clear();
+        document.Pages[0].Frames.Add(new ImageFrame
+        {
+            Name = "Photo", X = 60, Y = 60, Width = 200, Height = 160, Path = photo, Fit = ImageFit.Fill,
+        });
+        document.Pages[0].Frames.Add(new ShapeFrame
+        {
+            Name = "Trame", X = 60, Y = 300, Width = 200, Height = 160, Stroke = null,
+            Fill = new ImageFill(trame),
+        });
+        var chemin = Path.Combine(dossier, "rapport.mypub");
+        DocumentSerializer.Save(document, chemin);
+
+        // La fenêtre s'ouvre sur un document vierge, puis ouvre le fichier comme le
+        // menu le fait : c'est l'ouverture qui est éprouvée, pas l'affectation d'un
+        // document au modèle de vue, que l'annulation emprunte aussi.
+        var (fenetre, vm) = Fenetre(Document.CreateDefault());
+        vm.LoadFrom(chemin);
+        Rendu.Battre(8);
+
+        // Le témoin que les images manquaient bien, et que les blocs étaient affichés.
+        Assert.Equal(2, vm.CurrentPage!.Frames.Count);
+        Assert.Equal(0, Compter(fenetre, Cyan));
+        Assert.Equal(0, Compter(fenetre, Magenta));
+
+        EcrirePng(photo, Cyan);
+        EcrirePng(trame, Magenta);
+        vm.LoadFrom(chemin);
+        Rendu.Battre(8);
+
+        var bloc = Compter(fenetre, Cyan);
+        var fond = Compter(fenetre, Magenta);
+        Assert.True(bloc > 1000, $"l'image du bloc ne reparaît pas à la réouverture ({bloc} pixels)");
+        Assert.True(fond > 1000, $"le fond illustré ne reparaît pas à la réouverture ({fond} pixels)");
+
+        // Et seulement les échecs : une image lue n'est pas relue à l'ouverture suivante.
+        // Vider tout le cache aurait réparé le défaut aussi bien, au prix de relire et de
+        // redécoder chaque image de chaque document rouvert ; c'est le choix du poste, et
+        // il est épinglé ici pour qu'on ne le défasse pas sans le savoir.
+        var lue = Conv.Bitmap(photo);
+        Assert.NotNull(lue);
+        vm.LoadFrom(chemin);
+        Rendu.Battre(8);
+        Assert.Same(lue, Conv.Bitmap(photo));
     }
 
     // ------------------------------------------------------------------- l'outillage

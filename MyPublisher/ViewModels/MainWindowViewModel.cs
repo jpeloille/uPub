@@ -7,6 +7,7 @@ using System.Linq;
 using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using MyPublisher.Converters;
 using MyPublisher.Models;
 using MyPublisher.Services;
 
@@ -673,6 +674,12 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private void Adopt(Document document, string? path, string status)
     {
+        // Une image absente à une ouverture précédente doit être recherchée de nouveau :
+        // on l'a peut-être remise en place entre-temps. Ici et non dans le setter de
+        // « Document », que l'annulation emprunte aussi — annuler un geste n'est pas
+        // rouvrir, et n'a pas à relire le disque. Poste Q3.
+        BitmapCache.OublierLesEchecs();
+
         Document = document;
         if (Document.Pages.Count == 0) Document.Pages.Add(new Page { Name = "Page 1" });
         CurrentPage = Document.Pages[0];

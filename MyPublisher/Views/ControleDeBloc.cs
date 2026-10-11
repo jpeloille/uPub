@@ -5,6 +5,7 @@ using System.Globalization;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
+using Avalonia.VisualTree;
 using MyPublisher.Converters;
 using MyPublisher.Models;
 
@@ -66,19 +67,59 @@ public abstract class ControleDeBloc : Control
     /// </summary>
     private void Suivre(AvaloniaPropertyChangedEventArgs e)
     {
-        if (e.OldValue is TextFrame ancien)
-        {
-            ancien.PropertyChanged -= SurChangement;
-            ancien.Spans.CollectionChanged -= SurCollection;
-            ancien.Paragraphs.CollectionChanged -= SurCollection;
-        }
+        if (e.OldValue is TextFrame ancien) Desabonner(ancien);
 
-        if (e.NewValue is TextFrame nouveau)
-        {
-            nouveau.PropertyChanged += SurChangement;
-            nouveau.Spans.CollectionChanged += SurCollection;
-            nouveau.Paragraphs.CollectionChanged += SurCollection;
-        }
+        // Hors de l'arbre visuel, on ne s'abonne pas : c'est l'attachement qui le fera.
+        if (e.NewValue is TextFrame nouveau && this.GetVisualRoot() is not null) Abonner(nouveau);
+    }
+
+    /// <summary>
+    /// L'abonnement ne vaut que tant que le contrôle est affiché — poste Q2, le remède
+    /// que C5 avait appliqué à <see cref="FondBloc"/>.
+    ///
+    /// Un bloc vit bien plus longtemps que le contrôle qui le dessine, et c'est le bloc
+    /// qui tient l'abonnement : un contrôle sorti de l'arbre sans s'être désabonné reste
+    /// retenu par le bloc, avec tout ce qu'il retient lui-même, et se fait redessiner à
+    /// chaque frappe pour une page que personne ne regarde.
+    ///
+    /// Mesuré au poste Q2, et il faut l'écrire parce que le plan disait autre chose :
+    /// changer de page ne laissait PAS d'abonné. La liste des blocs de la page — un
+    /// « ItemsControl » — retire le contexte de données des gabarits qu'elle démonte ;
+    /// la liaison du bloc retombe alors à null, et le changement de valeur ci-dessus
+    /// désabonne. La fuite ne frappait qu'un contrôle qui quitte l'arbre en gardant son
+    /// bloc — une fenêtre qu'on ferme sur un document qui reste ouvert, un aperçu, une
+    /// vignette : les postes B6 et C7 en poseront. Le remède ne dépend plus de ce que
+    /// fait le conteneur.
+    /// </summary>
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        if (Bloc is not { } bloc) return;
+
+        // Retirer avant d'ajouter : deux attachements sans détachement entre eux ne
+        // doivent pas compter double.
+        Desabonner(bloc);
+        Abonner(bloc);
+    }
+
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnDetachedFromVisualTree(e);
+        if (Bloc is { } bloc) Desabonner(bloc);
+    }
+
+    private void Abonner(TextFrame bloc)
+    {
+        bloc.PropertyChanged += SurChangement;
+        bloc.Spans.CollectionChanged += SurCollection;
+        bloc.Paragraphs.CollectionChanged += SurCollection;
+    }
+
+    private void Desabonner(TextFrame bloc)
+    {
+        bloc.PropertyChanged -= SurChangement;
+        bloc.Spans.CollectionChanged -= SurCollection;
+        bloc.Paragraphs.CollectionChanged -= SurCollection;
     }
 
     private void SurChangement(object? _, System.ComponentModel.PropertyChangedEventArgs __) =>

@@ -165,6 +165,38 @@ public static class Rendu
     }
 
     /// <summary>
+    /// Qui écoute cet objet par cet événement. Le champ d'un événement déclaré comme un
+    /// champ est privé, et souvent dans un type de base — « ObservableObject »,
+    /// « ObservableCollection » : on remonte donc la hiérarchie, « GetField » ne voyant
+    /// pas les champs privés d'un type de base.
+    ///
+    /// Un abonné en trop ne se voit d'aucune autre façon depuis l'extérieur d'un
+    /// événement. Écrit d'abord dans <c>FondsTests</c> au poste C5, il est sorti ici au
+    /// poste Q2, qui compte les abonnés d'un autre contrôle : deux copies du même
+    /// tâtonnement par réflexion, et la seconde finit par compter autre chose.
+    /// La copie du noyau, elle, reste : les deux projets de tests ne partagent aucun
+    /// assemblage.
+    /// </summary>
+    public static Delegate[] Abonnes(object source, string evenement = "PropertyChanged")
+    {
+        for (var type = source.GetType(); type is not null; type = type.BaseType)
+        {
+            var champ = type.GetField(evenement, System.Reflection.BindingFlags.Instance
+                                                 | System.Reflection.BindingFlags.NonPublic
+                                                 | System.Reflection.BindingFlags.DeclaredOnly);
+            if (champ is null) continue;
+
+            return champ.GetValue(source) is Delegate delegue ? delegue.GetInvocationList() : [];
+        }
+
+        // Un événement introuvable n'est pas un événement sans abonné : sans cette
+        // exception, une faute de frappe dans son nom donnerait zéro, et zéro est
+        // justement ce que les tests de fuite attendent.
+        throw new InvalidOperationException(
+            $"aucun champ d'événement « {evenement} » sur {source.GetType().Name}");
+    }
+
+    /// <summary>
     /// Un pixel franchement sombre. Le seuil écarte le lissage des bords, qui
     /// déplacerait le fer d'un pixel ou deux selon la lettre.
     /// </summary>

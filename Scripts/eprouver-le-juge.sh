@@ -127,6 +127,26 @@ saboter "l interligne redevient un multiple du corps" \
     "naturelle * (multiple > 0 ? multiple : 1);" \
     "multiple;"
 
+# Q2 : le remède lui-même. Le geste réel — changer de page — ne l'éprouve pas, le
+# conteneur retirant le bloc de lui-même ; c'est le contrôle qui quitte l'arbre en
+# gardant son bloc qui doit tomber.
+saboter "le texte composé ne se détache plus du bloc en quittant l'arbre" \
+    MyPublisher/Views/ControleDeBloc.cs \
+    'if (Bloc is { } bloc) Desabonner(bloc);' \
+    '_ = Bloc;'
+
+saboter "rouvrir un document ne fait plus oublier les images manquantes" \
+    MyPublisher/ViewModels/MainWindowViewModel.cs \
+    'BitmapCache.OublierLesEchecs();' \
+    ''
+
+# Q3, l'autre moitié : seulement les échecs. Vider tout le cache réparerait le défaut,
+# et c'est pourquoi rien d'autre que l'épingle du test ne le verrait.
+saboter "rouvrir un document vide tout le cache d'images, réussites comprises" \
+    MyPublisher/Converters/Conv.cs \
+    'foreach (var cle in echecs) Cache.Remove(cle);' \
+    'Cache.Clear();'
+
 echo
 if [ "$trous" = 0 ]; then
     echo "Le juge sait échouer : $sabotages sabotages, $sabotages attrapés."

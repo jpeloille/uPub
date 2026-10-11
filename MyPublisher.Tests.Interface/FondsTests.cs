@@ -233,29 +233,10 @@ public class FondsTests
     }
 
     /// <summary>
-    /// Combien d'objets écoutent cet objet. Le champ de l'événement est privé dans
-    /// « ObservableObject » : on remonte la hiérarchie, « GetField » ne voyant pas les
-    /// champs privés d'un type de base.
-    ///
-    /// Copie de celle du noyau, à dessein : les deux projets de tests ne partagent aucun
-    /// assemblage, et un abonné en trop ne se voit d'aucune autre façon depuis l'extérieur
-    /// d'un événement.
+    /// Combien d'objets écoutent cet objet. Le compte est passé dans
+    /// <see cref="Rendu.Abonnes"/> au poste Q2, qui compte les abonnés du texte composé.
     /// </summary>
-    private static int Abonnes(object observable)
-    {
-        for (var type = observable.GetType(); type is not null; type = type.BaseType)
-        {
-            var champ = type.GetField("PropertyChanged", System.Reflection.BindingFlags.Instance
-                                                         | System.Reflection.BindingFlags.NonPublic
-                                                         | System.Reflection.BindingFlags.DeclaredOnly);
-            if (champ?.GetValue(observable) is Delegate delegue)
-            {
-                return delegue.GetInvocationList().Length;
-            }
-        }
-
-        return 0;
-    }
+    private static int Abonnes(object observable) => Rendu.Abonnes(observable).Length;
 
     /// <summary>
     /// L'image RÉELLEMENT composée de la fenêtre, et non un rendu forcé.
