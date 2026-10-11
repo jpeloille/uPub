@@ -980,7 +980,11 @@ public partial class TableFrame : Frame
                     Fill = cellule.Fill?.Clone(),
                     Stroke = cellule.Stroke,
                     StrokeThickness = cellule.StrokeThickness,
-                    // Les fragments, eux, sont prêtés : ils ne portent aucun abonnement.
+                    // Les fragments, eux, sont prêtés : ce bloc-ci ne s'y abonne pas.
+                    // Le contrôle qui le dessine, si — « ControleDeBloc » écoute la
+                    // collection, qui est celle de la case et vit aussi longtemps que
+                    // le document. Il s'en détache en quittant l'arbre visuel (poste
+                    // Q2), et c'est un test d'interface qui le compte.
                     Spans = cellule.Spans,
                 };
 

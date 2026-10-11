@@ -71,8 +71,8 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **R6** | Alignement par paragraphe | 0 % | Spécifié le 11 octobre 2026 |
 | **R7** | Éditer le texte riche à la souris | 0 % | Spécifié le 11 octobre 2026 ; attend Q1 |
 | **Q1** | Les styles suivent la frappe | 0 % | **Défaut de données** : taper dans un bloc importé décale ses gras |
-| **Q2** | Le texte composé se détache de son bloc | 0 % | Fuite relevée en C5, non corrigée |
-| **Q3** | Le cache d'images oublie ses échecs | 0 % | Relevé en A3 |
+| **Q2** | Le texte composé se détache de son bloc | **100 %** | `ControleDeBloc` suit l'attachement, comme `FondBloc`, et lâche l'ancien bloc quand on lui en donne un autre. Mesuré : le changement de page ne fuyait pas ; la fuite ne frappait qu'un contrôle sorti de l'arbre avec son bloc. Recette dans `Scripts/recettes/` |
+| **Q3** | Le cache d'images oublie ses échecs | **100 %** | L'ouverture d'un document (fichier ou modèle) oublie les échecs du cache, et eux seuls ; insérer une image ou la choisir pour un fond relit le fichier. L'annulation ne relit pas le disque. Recette dans `Scripts/recettes/` |
 | **Q4** | Un filet au même endroit à l'écran et au PDF | 0 % | Relevé en A2 et à la relecture du 7 septembre |
 | **Q5** | Un groupe rogne pareil à l'écran et au PDF | 0 % | Relevé en C9 |
 | **Q6** | Mesurer la découpe d'un remplissage par image | 0 % | Relevé à la relecture du 7 septembre |
@@ -1911,11 +1911,17 @@ continuerait d'entendre un remplissage qu'il ne porte plus.
 
 **Cet abonnement a ouvert deux fuites, l'une et l'autre refermées.** La seconde est du
 côté de l'écran : `FondBloc` s'abonnait au remplissage qu'on lui donnait et ne s'en
-détachait jamais. Changer de page reconstruit tous les gabarits, et chaque passage
-laissait un contrôle de plus accroché au fond d'un bloc qui, lui, survit — vingt passages,
-vingt abonnés, mesuré. L'abonnement suit désormais l'attachement à l'arbre visuel.
-`TexteCompose` porte le même trou depuis R1, sur le bloc au lieu du remplissage ; il est
-signalé plus bas et non corrigé, ce contrôle-là n'étant pas de ce poste.
+détachait que si on lui en donnait un autre. Un contrôle qui sort de l'arbre en gardant
+son fond reste donc accroché à un remplissage qui, lui, survit. Ce qui a été mesuré, c'est
+ce cas : un contrôle posé vingt fois à la main dans un panneau puis retiré laisse vingt
+abonnés — le test qui garde le remède, relu au poste Q2 en retirant le désabonnement :
+« Expected: 0, Actual: 20 ». On croyait alors que changer de page produisait la même
+chose ; le poste Q2 l'a mesuré, et ce n'est pas le cas : la liste des blocs retire le
+contexte de données des gabarits qu'elle démonte, le fond retombe à null et le contrôle se
+désabonne — vingt changements de page, aucun abonné de trop. L'abonnement suit désormais
+l'attachement à l'arbre visuel, ce qui ne dépend plus de la conduite du conteneur.
+`TexteCompose` portait le même trou depuis R1, sur le bloc au lieu du remplissage ; il a
+été refermé au poste Q2.
 
 La première : `TableFrame.CellFrames`
 recalcule ses blocs de texte à chaque lecture et leur *prêtait* le fond de leur case,
@@ -2545,6 +2551,80 @@ contrôle de plus accroché à chaque bloc de texte. C'est la fuite que C5 a ref
 *Recette* : après vingt changements de page, chaque bloc de texte n'a plus qu'un seul
 abonné, compté par réflexion comme pour `FondBloc`. Effort : faible.
 
+*Fait le 11 octobre 2026.* `ControleDeBloc` suit désormais l'attachement, exactement
+comme `FondBloc` : il ne s'abonne pas hors de l'arbre visuel, l'attachement l'abonne —
+en retirant d'abord, pour qu'un double attachement ne compte pas double — et le
+détachement le désabonne, bloc et deux collections. Le texte composé et le marqueur de
+débordement en héritent tous deux, puisqu'ils partagent cette base depuis A2.
+
+**Le poste a trouvé que son énoncé était faux, et il faut le dire avant tout le reste.**
+Changer de page ne laissait aucun abonné. Mesuré sur le code d'avant le remède : vingt
+changements de page, et le bloc affiché garde ses deux contrôles — texte et marqueur —,
+celui de la page quittée n'en a plus aucun. La liste des blocs de la page est un
+`ItemsControl` ; il retire le contexte de données des gabarits qu'il démonte, la
+liaison `Bloc="{Binding}"` retombe à null, et l'ancien `Suivre` se désabonnait en
+perdant son bloc. Il en va de même pour `FondBloc`, dont le fond arrive par une liaison
+de style — vérifié ici en lui retirant son remède : vingt changements de page, aucun
+abonné de trop. Le « vingt passages, vingt abonnés » de C5 est celui du test qui le
+garde, où le contrôle est posé à la main dans un panneau ; le passage de C5 a été
+récrit pour le dire. La fuite est
+réelle, mais elle ne frappe qu'un contrôle qui quitte l'arbre **en gardant son bloc** :
+une fenêtre fermée sur un document resté ouvert, un aperçu, une vignette. Aucun n'existe
+encore ; B6 et C7 en poseront. Le remède ne dépend donc plus de la conduite du
+conteneur, et c'est ce qu'il achète.
+
+D'où quatre tests, sous `poste=Q2`, dans `DetachementTests`. Le premier joue le geste du
+plan — vingt changements de page sur un document qui porte un bloc à fragments et à
+écarts, un tableau dont une case porte un fragment, et une seconde page — et compte par
+réflexion les abonnés qui sont des contrôles de bloc : autant que de contrôles qui
+montrent le bloc, sur le bloc et sur chacune de ses collections, et zéro pour le bloc
+de la page quittée. **Il passait avant le remède**, et il est gardé pour ce qu'il est :
+le geste que l'utilisateur fait. On l'a vu tomber en retirant les deux désabonnements à
+la fois. Le second est celui qui éprouve le remède : un contrôle qui reçoit son bloc
+avant d'être attaché, puis entre et sort vingt fois de l'arbre en le gardant — un
+abonné et un seul pendant qu'il est affiché, aucun après. Le troisième garde l'autre
+moitié : revenue sur sa page, le texte se redessine encore quand on règle le corps ou
+qu'on ajoute un fragment. Un remède qui se détache sans se rattacher refermerait la
+fuite et rouvrirait le défaut de R1 ; ce sabotage-là fait tomber les trois tests, parce
+qu'un gabarit reçoit son bloc avant d'être attaché. Le quatrième, ajouté après la
+relecture, garde le chemin de désabonnement qui existait déjà : un contrôle qui reste
+affiché et reçoit un autre bloc — un présentateur qui recycle son gabarit le fait —
+lâche l'ancien, bloc et deux collections, et n'écoute que le nouveau. Sans lui, retirer
+ce désabonnement ne cassait aucun test.
+
+Le tableau a sa raison d'être dans le premier test : ses cases sont des blocs calculés
+à chaque lecture qui **empruntent** la collection de fragments de leur case — et le
+contrôle s'y abonne. Le commentaire de `CellFrames` disait des fragments prêtés qu'« ils
+ne portent aucun abonnement » ; c'était vrai du bloc, pas du contrôle qui le dessine, et
+le commentaire le dit maintenant. Un contrôle resté accroché à cette collection serait
+retenu par la case, qui vit aussi longtemps que le document.
+
+Le compteur d'abonnés par réflexion est sorti de `FondsTests` vers `Rendu.Abonnes`, qui
+sait lire n'importe quel événement — `CollectionChanged` en plus de
+`PropertyChanged` — et qui lève sur un nom d'événement introuvable plutôt que de
+rendre zéro, ce que les tests de fuite attendent justement.
+
+*Recette jouée* : `Scripts/recettes/Q2-Q3-fuite-et-cache.sh`, commune aux deux postes.
+Elle joue les tests ci-dessus par leur trait, en vérifie le compte, et lit d'abord une
+règle dans les sources : tout contrôle de `Views/` qui s'abonne par `+=` dans un
+gestionnaire de changement de propriété surcharge `OnAttachedToVisualTree` et
+`OnDetachedFromVisualTree`. C'est la deuxième fois que la même fuite se présente ; la
+troisième se fera arrêter là. La règle est une heuristique et la recette le dit : elle
+prouve qu'on y a pensé, les tests prouvent qu'on l'a bien fait. Deux sabotages au juge :
+le détachement rendu muet, que seul le deuxième test voit ; le désabonnement de l'ancien
+bloc retiré, que seul le quatrième voit.
+
+*Choisi sans certitude* : ce qui est compté. Le plan disait « un seul abonné » ; un
+bloc de texte affiché en a deux qui sont des contrôles de bloc — le texte et le
+marqueur — et d'autres qui n'en sont pas, les liaisons d'Avalonia. Le test compte les
+premiers et les compare au nombre de contrôles qui montrent le bloc, plutôt qu'à un
+nombre écrit en dur.
+
+*Laissé tel quel* : `Spans` et `Paragraphs` ont un accesseur public en écriture. Un
+code qui remplacerait la collection d'un bloc affiché laisserait le contrôle abonné à
+l'ancienne et sourd à la nouvelle. Rien dans le dépôt ne le fait hors de `Clone()` et de
+l'import, qui portent sur des blocs neufs ; le poste ne l'a donc pas couvert.
+
 ### Q3 — Le cache d'images oublie ses échecs
 
 Une image absente à l'ouverture est retenue comme absente pour toute la durée du
@@ -2554,6 +2634,61 @@ document est le bon endroit pour vider le cache.
 
 *Recette* : ouvrir un document dont l'image manque, remettre le fichier, rouvrir ; la
 couleur de l'image se relève dans la page rendue. Effort : faible.
+
+*Fait le 11 octobre 2026.* `BitmapCache.OublierLesEchecs` retire du cache les chemins
+dont la lecture a échoué, et eux seuls ; le modèle de vue l'appelle au début
+d'`Adopt`, par où passent l'ouverture d'un fichier et le départ d'un modèle. Pas dans
+l'accesseur de `Document`, que l'annulation emprunte aussi : annuler un geste n'est pas
+rouvrir, et n'a pas à relire le disque. Les trois cas sont tenus par des tests.
+
+**Pourquoi oublier les échecs plutôt que vider le cache, ou que relire les images du
+document.** Un échec est mis en cache à dessein : sans cela, un bloc dont l'image manque
+relirait le disque et lèverait une exception à chaque notification de liaison, donc à
+chaque image d'un glissé. Il suffit qu'il cesse de l'être pour la vie du processus. Les
+réussites, elles, sont justes tant que leur fichier ne bouge pas, et les relire à chaque
+ouverture ne réparerait aucun défaut de ce poste. Oublier tous les échecs plutôt que
+ceux du seul document a un avantage de plus : le logo des coordonnées professionnelles,
+qui passe par le même cache sans être un chemin du document, en profite sans qu'il ait
+fallu parcourir quoi que ce soit — blocs, groupes, cases, fond de page.
+
+**Rouvrir n'est pas la seule façon de redemander une image.** La réinsérer (`AddImage`)
+ou la choisir pour un remplissage passe par le même trou : le fichier vient d'être
+désigné, `AddImage` vient même de le lire pour en prendre les proportions, mais la
+liaison passe par le cache, qui rend l'échec retenu à l'ouverture. La relecture l'a
+mesuré : bloc réinséré vide, 0 pixel. Ces deux gestes ont un chemin à donner, et
+`Invalidate` le reçoit : `AddImage` l'appelle après la sonde, et le choix d'une image de
+remplissage, passé de la fenêtre au modèle de vue (`ChoisirImageDeFond`) pour qu'un test
+l'atteigne sans dialogue de fichier, l'appelle avant d'écrire le chemin. Choisir de
+nouveau, pour le même remplissage, l'image qu'il désignait déjà ne change aucune
+propriété et ne redessine donc rien : c'est la réouverture qui couvre ce cas-là.
+
+*Recette jouée* : la même que Q2, sous `poste=Q3`. Un test d'interface ouvre par
+`LoadFrom` — le geste du menu, et non une affectation au modèle de vue — un document
+dont les deux images manquent : un bloc image, qui passe par la liaison, et une forme
+au fond illustré, que `FondBloc` dessine par `Conv.Bitmap`. Deux chemins vers le cache,
+deux couleurs, cyan pour le bloc parce qu'il n'est pas symétrique. Aucune ne se voit ;
+les fichiers sont remis ; le document est rouvert dans la même fenêtre, le même
+processus et donc le même cache ; les deux couleurs se relèvent dans l'image composée.
+Puis une troisième ouverture rend **la même instance** de l'image déjà lue : c'est
+l'épingle du « seulement ». Entre la remise en place des fichiers et la réouverture, un
+geste annulé reconstruit tous les blocs : les deux images restent absentes, et c'est
+l'épingle de « l'annulation n'est pas une réouverture ». Le même test est joué deux
+fois, par `LoadFrom` et par `StartFromTemplate`. Un troisième test réinsère l'image
+remise en place, et en donne une autre à un remplissage par `ChoisirImageDeFond` : les
+deux couleurs paraissent.
+
+Six sabotages au juge, et ils ne se recouvrent pas : l'appel retiré d'`Adopt` fait
+tomber la réouverture ; `Cache.Clear()` à la place de l'oubli sélectif répare le défaut
+tout aussi bien — et c'est pourquoi seule l'épingle le voit ; l'oubli réservé à
+l'ouverture d'un fichier fait tomber la variante du modèle ; l'oubli placé dans
+l'accesseur de `Document` fait tomber l'épingle de l'annulation ; l'`Invalidate` retiré
+d'`AddImage`, puis celui de `ChoisirImageDeFond`, font tomber le troisième test.
+
+*Laissé tel quel* : une image **modifiée** sur le disque pendant que le processus vit
+reste périmée à l'écran, rouverture comprise, alors que l'export, qui lit le disque à
+chaque fois, montre la nouvelle. C'est un écart écran ↔ PDF, mais ce n'est pas celui
+du poste, et le corriger demanderait de dater les entrées du cache plutôt que de les
+oublier.
 
 ### Q4 — Un filet au même endroit à l'écran et au PDF
 

@@ -218,10 +218,9 @@ public partial class MainWindow : Window
     /// <summary>
     /// Choisit l'image d'un remplissage. Le bouton vit dans le gabarit du remplissage :
     /// c'est donc son contexte de données qui désigne l'objet à renseigner, et le même
-    /// geste sert au fond d'un bloc comme à celui de la page.
-    ///
-    /// Le pas d'annulation est ouvert et refermé à la main : la transaction du panneau
-    /// suit le focus des champs, et un dialogue de fichier le prend puis le rend.
+    /// geste sert au fond d'un bloc comme à celui de la page. Le reste — pas
+    /// d'annulation, cache d'images — est au modèle de vue, où un test peut l'atteindre
+    /// sans dialogue de fichier.
     /// </summary>
     private async void OnChooseFillImage(object? sender, RoutedEventArgs e)
     {
@@ -235,11 +234,7 @@ public partial class MainWindow : Window
             FileTypeFilter = [ImageType]
         });
 
-        if (files.FirstOrDefault()?.TryGetLocalPath() is not { } path) return;
-
-        vm.BeginEdit();
-        fond.Path = path;
-        vm.CommitEdit();
+        if (files.FirstOrDefault()?.TryGetLocalPath() is { } path) vm.ChoisirImageDeFond(fond, path);
     }
 
     private void OnQuit(object? sender, RoutedEventArgs e) => Close();

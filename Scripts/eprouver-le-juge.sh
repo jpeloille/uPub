@@ -274,6 +274,62 @@ saboter "l écran ignore la marge du haut" \
     'var ligneDeBase = descente' \
     'C6-marges'
 
+# Q2 : le remède lui-même. Le geste réel — changer de page — ne l'éprouve pas, le
+# conteneur retirant le bloc de lui-même ; c'est le contrôle qui quitte l'arbre en
+# gardant son bloc qui doit tomber.
+saboter "le texte composé ne se détache plus du bloc en quittant l'arbre" \
+    MyPublisher/Views/ControleDeBloc.cs \
+    'if (Bloc is { } bloc) Desabonner(bloc);' \
+    '_ = Bloc;' \
+    'Q2-Q3-fuite-et-cache'
+
+saboter "rouvrir un document ne fait plus oublier les images manquantes" \
+    MyPublisher/ViewModels/MainWindowViewModel.cs \
+    'BitmapCache.OublierLesEchecs();' \
+    '' \
+    'Q2-Q3-fuite-et-cache'
+
+# Q3, l'autre moitié : seulement les échecs. Vider tout le cache réparerait le défaut,
+# et c'est pourquoi rien d'autre que l'épingle du test ne le verrait.
+saboter "rouvrir un document vide tout le cache d'images, réussites comprises" \
+    MyPublisher/Converters/Conv.cs \
+    'foreach (var cle in echecs) Cache.Remove(cle);' \
+    'Cache.Clear();' \
+    'Q2-Q3-fuite-et-cache'
+
+# Q2, l'autre chemin du désabonnement : un contrôle affiché qui change de bloc sans
+# quitter l'arbre. Aucun des trois premiers tests ne le voit.
+saboter "le texte composé reste accroché à l'ancien bloc quand on lui en donne un autre" \
+    MyPublisher/Views/ControleDeBloc.cs \
+    'if (e.OldValue is TextFrame ancien) Desabonner(ancien);' \
+    '_ = e.OldValue;' \
+    'Q2-Q3-fuite-et-cache'
+
+# Q3 : les trois gestes qui passent par l'ouverture, et deux qui n'y passent pas.
+saboter "partir d'un modèle ne fait plus oublier les images manquantes" \
+    MyPublisher/ViewModels/MainWindowViewModel.cs \
+    'BitmapCache.OublierLesEchecs();' \
+    'if (path is not null) BitmapCache.OublierLesEchecs();' \
+    'Q2-Q3-fuite-et-cache'
+
+saboter "annuler un geste fait relire les images manquantes, comme une réouverture" \
+    MyPublisher/ViewModels/MainWindowViewModel.cs \
+    'newValue.PropertyChanged += OnDocumentPropertyChanged;' \
+    'newValue.PropertyChanged += OnDocumentPropertyChanged; BitmapCache.OublierLesEchecs();' \
+    'Q2-Q3-fuite-et-cache'
+
+saboter "une image remise en place puis réinsérée reste vide" \
+    MyPublisher/ViewModels/MainWindowViewModel.cs \
+    'BitmapCache.Invalidate(path);' \
+    '_ = path;' \
+    'Q2-Q3-fuite-et-cache'
+
+saboter "une image remise en place puis choisie pour un fond reste vide" \
+    MyPublisher/ViewModels/MainWindowViewModel.cs \
+    'BitmapCache.Invalidate(chemin);' \
+    '_ = chemin;' \
+    'Q2-Q3-fuite-et-cache'
+
 echo
 if [ "$trous" = 0 ]; then
     echo "Le juge sait échouer : $sabotages sabotages, $sabotages attrapés."

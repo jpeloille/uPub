@@ -7,6 +7,7 @@ using System.Linq;
 using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using MyPublisher.Converters;
 using MyPublisher.Models;
 using MyPublisher.Services;
 
@@ -673,6 +674,12 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private void Adopt(Document document, string? path, string status)
     {
+        // Une image absente à une ouverture précédente doit être recherchée de nouveau :
+        // on l'a peut-être remise en place entre-temps. Ici et non dans le setter de
+        // « Document », que l'annulation emprunte aussi — annuler un geste n'est pas
+        // rouvrir, et n'a pas à relire le disque. Poste Q3.
+        BitmapCache.OublierLesEchecs();
+
         Document = document;
         if (Document.Pages.Count == 0) Document.Pages.Add(new Page { Name = "Page 1" });
         CurrentPage = Document.Pages[0];
@@ -825,6 +832,12 @@ public partial class MainWindowViewModel : ViewModelBase
             {
                 height = width * probe.PixelSize.Height / probe.PixelSize.Width;
             }
+
+            // La sonde vient de lire le fichier : ce que le cache en retient est donc
+            // périmé s'il dit autre chose. Sans cela, une image absente à l'ouverture,
+            // remise en place puis réinsérée, donnerait un bloc vide — la liaison passe
+            // par le cache, qui rendrait l'échec d'avant. Poste Q3.
+            BitmapCache.Invalidate(path);
         }
         catch (Exception)
         {
@@ -837,6 +850,24 @@ public partial class MainWindowViewModel : ViewModelBase
             Name = Path.GetFileNameWithoutExtension(path),
             Path = path, X = x, Y = y, Width = width, Height = height
         });
+    }
+
+    /// <summary>
+    /// Donne une image à un remplissage — celui d'un bloc, d'une case ou de la page. Le
+    /// fichier vient d'être choisi : on le relit, plutôt que de croire le cache, qui a
+    /// pu retenir un échec à une ouverture précédente. C'est le même trou que
+    /// <see cref="AddImage"/>, poste Q3.
+    ///
+    /// Le pas d'annulation est ouvert et refermé ici : la transaction du panneau suit le
+    /// focus des champs, et le dialogue de fichier le prend puis le rend.
+    /// </summary>
+    public void ChoisirImageDeFond(ImageFill fond, string chemin)
+    {
+        BitmapCache.Invalidate(chemin);
+
+        BeginEdit();
+        fond.Path = chemin;
+        CommitEdit();
     }
 
     private void Insert(Frame frame)

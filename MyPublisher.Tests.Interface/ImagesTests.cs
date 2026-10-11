@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using Avalonia;
 using Avalonia.Controls;
@@ -7,6 +8,7 @@ using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
+using MyPublisher.Converters;
 using MyPublisher.Models;
 using MyPublisher.Services;
 using MyPublisher.ViewModels;
@@ -19,8 +21,10 @@ namespace MyPublisher.Tests.Interface;
 ///
 /// Ce que ces tests ajoutent aux tests du noyau, qui éprouvent déjà le calcul des
 /// chemins : que l'image arrive jusqu'aux pixels. Entre le chemin résolu et l'affichage
-/// il reste le cache d'images de <c>Conv.cs</c>, statique, indexé par chemin, et que
-/// personne n'invalide jamais. La résolution ayant lieu à l'ouverture, ce cache ne voit
+/// il reste le cache d'images de <c>Conv.cs</c>, statique, indexé par chemin, qui garde
+/// ses réussites pour la vie du processus et, depuis le poste Q3, oublie ses échecs à
+/// chaque ouverture de document, et celui d'un fichier qu'on désigne de nouveau — les
+/// tests marqués Q3. La résolution ayant lieu à l'ouverture, ce cache ne voit
 /// que des chemins absolus — mais c'est là une affirmation sur du code, et le second
 /// test en fait une mesure : deux documents rangés dans deux dossiers, portant chacun
 /// une image nommée « photo.png », doivent afficher chacun la sienne.
@@ -115,6 +119,161 @@ public class ImagesTests : IDisposable
         // celui d'avant, qu'il faut relire.
         Assert.Equal(chemin, ((ImageFrame)vm.Document.Pages[0].Frames[0]).Path);
         Assert.True(Compter(fenetre, Magenta) > 1000, "l'image a disparu à l'annulation");
+    }
+
+    [AvaloniaFact]
+    [Trait("poste", "Q3")]
+    public void Une_image_remise_en_place_reparait_a_la_reouverture() =>
+        ReparaitQuandOnRouvre("rapport", (vm, chemin) => vm.LoadFrom(chemin));
+
+    /// <summary>
+    /// Partir d'un modèle passe par le même chemin que l'ouverture d'un fichier, et c'est
+    /// ce qui est affirmé — ce test le tient. Sans lui, l'oubli pourrait quitter le
+    /// tronc commun pour la seule ouverture sans que rien ne tombe.
+    /// </summary>
+    [AvaloniaFact]
+    [Trait("poste", "Q3")]
+    public void Une_image_remise_en_place_reparait_au_depart_d_un_modele() =>
+        ReparaitQuandOnRouvre("modele", (vm, chemin) => vm.StartFromTemplate(chemin));
+
+    [AvaloniaFact]
+    [Trait("poste", "Q3")]
+    public void Une_image_remise_en_place_reparait_quand_on_la_choisit_de_nouveau()
+    {
+        // L'autre façon de redemander une image, sans rouvrir : la réinsérer, ou la
+        // choisir pour un remplissage. Les deux gestes lisent un fichier qu'on vient de
+        // désigner ; le cache, lui, a retenu l'échec de l'ouverture, et la liaison
+        // passe par lui. Sans « Invalidate », le bloc neuf reste vide.
+        var (chemin, photo, trame, _) = SansSesImages("reprise");
+        var (fenetre, vm) = Fenetre(Document.CreateDefault());
+        vm.LoadFrom(chemin);
+        Rendu.Battre(8);
+
+        Assert.Equal(3, vm.CurrentPage!.Frames.Count);
+        Assert.Equal(0, Compter(fenetre, Cyan));
+        Assert.Equal(0, Compter(fenetre, Magenta));
+
+        EcrirePng(photo, Cyan);
+        EcrirePng(trame, Magenta);
+
+        // Choisir l'image d'un remplissage : la forme dont le fond désignait une image
+        // qui n'a jamais existé reçoit celle qu'on vient de remettre en place.
+        var forme = vm.CurrentPage.Frames.Single(bloc => bloc.Name == "Autre");
+        vm.ChoisirImageDeFond((ImageFill)forme.Fill!, trame);
+        Rendu.Battre(8);
+
+        var choisie = Compter(fenetre, Magenta);
+        Assert.True(choisie > 1000, $"l'image choisie pour le fond ne paraît pas ({choisie} pixels)");
+
+        // Réinsérer : la page est vidée d'abord, pour que seule l'image neuve puisse
+        // porter le cyan compté.
+        vm.CurrentPage.Frames.Clear();
+        Rendu.Battre(8);
+        vm.AddImage(photo);
+        Rendu.Battre(8);
+
+        var reinseree = Compter(fenetre, Cyan);
+        Assert.True(reinseree > 1000, $"l'image réinsérée ne paraît pas ({reinseree} pixels)");
+    }
+
+    /// <summary>
+    /// Le défaut du poste Q3, joué comme on le vit : on ouvre un document, ses images
+    /// manquent ; on les remet en place ; on rouvre — par le même geste que le menu,
+    /// dans la même fenêtre, le même processus et donc le même cache. Avant le poste,
+    /// l'échec de la première lecture était retenu pour toujours et les blocs restaient
+    /// vides sans rien dire.
+    ///
+    /// Deux images, deux chemins vers le cache : le bloc image passe par la liaison, le
+    /// fond illustré d'une forme par « Conv.Bitmap », que le fond dessine en code. Le
+    /// cyan est l'image du bloc parce qu'il n'est pas symétrique — la leçon de A3.
+    /// </summary>
+    private void ReparaitQuandOnRouvre(string dossier, Action<MainWindowViewModel, string> ouvrir)
+    {
+        var (chemin, photo, trame, _) = SansSesImages(dossier);
+
+        // La fenêtre s'ouvre sur un document vierge, puis ouvre le fichier comme le
+        // menu le fait : c'est l'ouverture qui est éprouvée, pas l'affectation d'un
+        // document au modèle de vue, que l'annulation emprunte aussi.
+        var (fenetre, vm) = Fenetre(Document.CreateDefault());
+        ouvrir(vm, chemin);
+        Rendu.Battre(8);
+
+        // Le témoin que les images manquaient bien, et que les blocs étaient affichés.
+        Assert.Equal(3, vm.CurrentPage!.Frames.Count);
+        Assert.Equal(0, Compter(fenetre, Cyan));
+        Assert.Equal(0, Compter(fenetre, Magenta));
+
+        EcrirePng(photo, Cyan);
+        EcrirePng(trame, Magenta);
+
+        // L'annulation n'est pas une réouverture, et c'est un choix du poste : elle
+        // reconstruit pourtant tous les blocs, mais ne relit pas le disque. Épinglé ici,
+        // comme l'instance plus bas, pour qu'on ne le défasse pas sans le savoir.
+        var bloc = vm.CurrentPage.Frames[0];
+        vm.BeginEdit();
+        bloc.X += 10;
+        vm.CommitEdit();
+        Assert.True(vm.CanUndo);
+        vm.UndoCommand.Execute(null);
+        Rendu.Battre(8);
+
+        Assert.NotSame(bloc, vm.CurrentPage!.Frames[0]);
+        Assert.Equal(0, Compter(fenetre, Cyan));
+        Assert.Equal(0, Compter(fenetre, Magenta));
+        Assert.Null(Conv.Bitmap(photo));
+
+        ouvrir(vm, chemin);
+        Rendu.Battre(8);
+
+        var image = Compter(fenetre, Cyan);
+        var fond = Compter(fenetre, Magenta);
+        Assert.True(image > 1000, $"l'image du bloc ne reparaît pas à la réouverture ({image} pixels)");
+        Assert.True(fond > 1000, $"le fond illustré ne reparaît pas à la réouverture ({fond} pixels)");
+
+        // Et seulement les échecs : une image lue n'est pas relue à l'ouverture suivante.
+        // Vider tout le cache aurait réparé le défaut aussi bien, au prix de relire et de
+        // redécoder chaque image de chaque document rouvert ; c'est le choix du poste, et
+        // il est épinglé ici pour qu'on ne le défasse pas sans le savoir.
+        var lue = Conv.Bitmap(photo);
+        Assert.NotNull(lue);
+        ouvrir(vm, chemin);
+        Rendu.Battre(8);
+        Assert.Same(lue, Conv.Bitmap(photo));
+    }
+
+    /// <summary>
+    /// Un document enregistré dont aucune image n'existe encore : un bloc image (photo),
+    /// une forme au fond illustré (trame), et une seconde forme dont le fond désigne une
+    /// image qui n'existera jamais (autre) : c'est à elle qu'on choisit une autre image.
+    /// </summary>
+    private (string Document, string Photo, string Trame, string Autre) SansSesImages(string nom)
+    {
+        var dossier = Path.Combine(_travail, nom);
+        Directory.CreateDirectory(dossier);
+        var photo = Path.Combine(dossier, "photo.png");
+        var trame = Path.Combine(dossier, "trame.png");
+        var autre = Path.Combine(dossier, "autre.png");
+
+        var document = Document.CreateDefault();
+        document.Pages[0].Frames.Clear();
+        document.Pages[0].Frames.Add(new ImageFrame
+        {
+            Name = "Photo", X = 60, Y = 60, Width = 200, Height = 160, Path = photo, Fit = ImageFit.Fill,
+        });
+        document.Pages[0].Frames.Add(new ShapeFrame
+        {
+            Name = "Trame", X = 60, Y = 300, Width = 200, Height = 160, Stroke = null,
+            Fill = new ImageFill(trame),
+        });
+        document.Pages[0].Frames.Add(new ShapeFrame
+        {
+            Name = "Autre", X = 300, Y = 60, Width = 100, Height = 80, Stroke = null,
+            Fill = new ImageFill(autre),
+        });
+
+        var chemin = Path.Combine(dossier, nom + ".mypub");
+        DocumentSerializer.Save(document, chemin);
+        return (chemin, photo, trame, autre);
     }
 
     // ------------------------------------------------------------------- l'outillage
