@@ -44,8 +44,8 @@ if [ -z "$document" ] || [ ! -f "$document" ]; then
     exit 2
 fi
 
-application="MyPublisher/bin/Debug/net9.0/MyPublisher"
-banc="MyPublisher.Banc/bin/Debug/net9.0/MyPublisher.Banc"
+application="MyPublisher/bin/Debug/net10.0/MyPublisher"
+banc="MyPublisher.Banc/bin/Debug/net10.0/MyPublisher.Banc"
 
 for binaire in "$application" "$banc"; do
     if [ ! -x "$binaire" ]; then

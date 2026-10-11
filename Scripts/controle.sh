@@ -34,7 +34,7 @@ reference="Scripts/reference.txt"
 fixtures="Scripts/fixtures"
 # Configuration explicite : sans elle, un binaire Release oublié pourrait être
 # ce qu'on contrôle, alors qu'on vient de compiler en Debug.
-binaire="MyPublisher/bin/Debug/net9.0/MyPublisher"
+binaire="MyPublisher/bin/Debug/net10.0/MyPublisher"
 
 enregistrer=0
 case "${1-}" in

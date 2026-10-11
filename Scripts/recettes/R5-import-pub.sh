@@ -26,7 +26,7 @@ export LC_ALL=C
 racine="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$racine"
 
-binaire="MyPublisher/bin/Debug/net9.0/MyPublisher"
+binaire="MyPublisher/bin/Debug/net10.0/MyPublisher"
 
 # MyPublisher délègue la lecture du format fermé à libmspub, comme il délègue les
 # polices à fontconfig. Sans l'outil, la recette ne peut rien affirmer : elle le dit

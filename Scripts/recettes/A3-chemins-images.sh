@@ -34,7 +34,7 @@ export LC_ALL=C
 racine="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$racine"
 
-binaire="MyPublisher/bin/Debug/net9.0/MyPublisher"
+binaire="MyPublisher/bin/Debug/net10.0/MyPublisher"
 if [ ! -x "$binaire" ]; then
     echo "ÉCHEC : binaire introuvable ($binaire). Compiler d'abord." >&2
     exit 1

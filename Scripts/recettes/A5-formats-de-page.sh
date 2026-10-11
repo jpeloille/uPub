@@ -46,8 +46,8 @@ racine="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$racine"
 
 document="Samples/recette-formats.mypub"
-binaire="MyPublisher/bin/Debug/net9.0/MyPublisher"
-banc="MyPublisher.Banc/bin/Debug/net9.0/MyPublisher.Banc"
+binaire="MyPublisher/bin/Debug/net10.0/MyPublisher"
+banc="MyPublisher.Banc/bin/Debug/net10.0/MyPublisher.Banc"
 
 travail="$(mktemp -d)"
 trap 'rm -rf "$travail"' EXIT

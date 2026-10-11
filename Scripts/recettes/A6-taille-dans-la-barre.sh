@@ -49,7 +49,7 @@ if ! dotnet build MyPublisher.sln -c Debug --nologo -v q > "$travail/compilation
     exit 1
 fi
 
-tests="MyPublisher.Tests.Interface/bin/Debug/net9.0/MyPublisher.Tests.Interface.dll"
+tests="MyPublisher.Tests.Interface/bin/Debug/net10.0/MyPublisher.Tests.Interface.dll"
 if [ ! -f "$tests" ]; then
     echo "ÉCHEC : tests d'interface introuvables après compilation ($tests)." >&2
     echo "Le cadriciel cible du .csproj a-t-il changé ?" >&2

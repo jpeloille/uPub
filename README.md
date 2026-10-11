@@ -3,7 +3,7 @@
 Un logiciel de PAO (mise en page) natif Linux, dans l'esprit de Microsoft Publisher :
 on pose des blocs sur une page, on les déplace au pouce, et on exporte un PDF conforme.
 
-Écrit en C# / .NET 9 avec Avalonia. Aucune dépendance à Wine, Mono ou GTK.
+Écrit en C# / .NET 10 avec Avalonia. Aucune dépendance à Wine, Mono ou GTK.
 
 ## Construire et lancer
 
