@@ -515,7 +515,6 @@ public partial class TextFrame : Frame
     private string _fontFamily = "DejaVu Sans";
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(AbsoluteLineHeight))]
     [property: JsonPropertyOrder(120)]
     private double _fontSize = 11;
 
@@ -544,9 +543,12 @@ public partial class TextFrame : Frame
     [property: JsonPropertyOrder(170)]
     private TextAlign _align = TextAlign.Left;
 
-    /// <summary>Interligne exprimé en multiple du corps.</summary>
+    /// <summary>
+    /// Interligne exprimé en multiple de la hauteur naturelle de la police, et non du
+    /// corps : c'est la sémantique de R4 (cf. <see cref="Compositeur.Avance"/>). La
+    /// propriété qui en tirait encore <c>FontSize × LineHeight</c> est partie au poste Q9.
+    /// </summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(AbsoluteLineHeight))]
     [property: JsonPropertyOrder(180)]
     private double _lineHeight = 1.25;
 
@@ -690,8 +692,6 @@ public partial class TextFrame : Frame
     [ObservableProperty]
     [property: JsonIgnore]
     private bool _isEditing;
-
-    [JsonIgnore] public double AbsoluteLineHeight => FontSize * LineHeight;
 
     [JsonIgnore] public override string Kind => "Texte";
 
