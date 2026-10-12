@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
@@ -65,6 +66,47 @@ public static class Rendu
         document.Pages[0].Frames.Clear();
         foreach (var bloc in blocs) document.Pages[0].Frames.Add(bloc);
         return document;
+    }
+
+    public static string Racine()
+    {
+        var dossier = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dossier is not null && !File.Exists(Path.Combine(dossier.FullName, "MyPublisher.sln")))
+        {
+            dossier = dossier.Parent;
+        }
+
+        Assert.NotNull(dossier);
+        return dossier.FullName;
+    }
+
+    /// <summary>
+    /// ATA 21, importé comme l'application l'importe. Écrit d'abord dans
+    /// <c>FrappeTests</c> au poste Q1, sorti ici au poste Q14, qui ouvre le même
+    /// document pour y double-cliquer. Le lecteur est cherché là où la recette R5 le cherche : la
+    /// variable d'environnement, puis le PATH, puis l'extraction locale de
+    /// <c>Scripts/outils-pub.sh</c>. Introuvable, le test échoue en disant comment
+    /// l'obtenir — il ne se déclare pas vert sur un document qu'il n'a pas ouvert.
+    /// </summary>
+    public static Document Ata21()
+    {
+        var racine = Racine();
+
+        if (!PubReader.Disponible())
+        {
+            var local = Path.Combine(racine, ".outils", "mspub", "bin", "pub2raw");
+            Assert.True(File.Exists(local),
+                "pub2raw introuvable : « sudo apt install libmspub-tools », ou Scripts/outils-pub.sh.");
+
+            Environment.SetEnvironmentVariable("MYPUBLISHER_PUB2RAW", local);
+            var bibliotheques = Path.Combine(racine, ".outils", "mspub", "lib");
+            var actuel = Environment.GetEnvironmentVariable("LD_LIBRARY_PATH");
+            Environment.SetEnvironmentVariable("LD_LIBRARY_PATH",
+                string.IsNullOrEmpty(actuel) ? bibliotheques : $"{bibliotheques}:{actuel}");
+        }
+
+        return DocumentSerializer.Import(
+            Path.Combine(racine, "MyPublisher", "Books", "ATA 21 - Air conditioning.pub")).Document;
     }
 
     /// <summary>

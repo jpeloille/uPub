@@ -35,45 +35,6 @@ public class FrappeTests
 
     // ------------------------------------------------------------------ le document
 
-    private static string Racine()
-    {
-        var dossier = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dossier is not null && !File.Exists(Path.Combine(dossier.FullName, "MyPublisher.sln")))
-        {
-            dossier = dossier.Parent;
-        }
-
-        Assert.NotNull(dossier);
-        return dossier.FullName;
-    }
-
-    /// <summary>
-    /// ATA 21, importé. Le lecteur est cherché là où la recette R5 le cherche : la
-    /// variable d'environnement, puis le PATH, puis l'extraction locale de
-    /// <c>Scripts/outils-pub.sh</c>. Introuvable, le test échoue en disant comment
-    /// l'obtenir — il ne se déclare pas vert sur un document qu'il n'a pas ouvert.
-    /// </summary>
-    private static Document Ata21()
-    {
-        var racine = Racine();
-
-        if (!PubReader.Disponible())
-        {
-            var local = Path.Combine(racine, ".outils", "mspub", "bin", "pub2raw");
-            Assert.True(File.Exists(local),
-                "pub2raw introuvable : « sudo apt install libmspub-tools », ou Scripts/outils-pub.sh.");
-
-            Environment.SetEnvironmentVariable("MYPUBLISHER_PUB2RAW", local);
-            var bibliotheques = Path.Combine(racine, ".outils", "mspub", "lib");
-            var actuel = Environment.GetEnvironmentVariable("LD_LIBRARY_PATH");
-            Environment.SetEnvironmentVariable("LD_LIBRARY_PATH",
-                string.IsNullOrEmpty(actuel) ? bibliotheques : $"{bibliotheques}:{actuel}");
-        }
-
-        return DocumentSerializer.Import(
-            Path.Combine(racine, "MyPublisher", "Books", "ATA 21 - Air conditioning.pub")).Document;
-    }
-
     /// <summary>Le premier bloc de texte de la page qui porte des fragments de style.</summary>
     private static TextFrame PremierBlocRiche(Document document) =>
         document.Pages[0].Frames.OfType<TextFrame>().First(bloc => bloc.Spans.Count > 0);
@@ -191,7 +152,7 @@ public class FrappeTests
     [Trait("poste", "Q1")]
     public void Taper_en_tete_dATA_21_garde_les_memes_mots_en_gras()
     {
-        var document = Ata21();
+        var document = Rendu.Ata21();
         var bloc = PremierBlocRiche(document);
         var (fenetre, vm) = Rendu.Ouvrir(document);
 
@@ -231,19 +192,17 @@ public class FrappeTests
     [Trait("poste", "Q1")]
     public void Lannulation_rend_le_texte_et_les_fragments_davant()
     {
-        var document = Ata21();
+        var document = Rendu.Ata21();
         var bloc = PremierBlocRiche(document);
         var (fenetre, vm) = Rendu.Ouvrir(document);
 
-        // L'état de référence est pris une fois la saisie ouverte, et non à
-        // l'ouverture du document : le double-clic qui l'ouvre passe par le geste de
-        // déplacement, qui réécrit l'ordonnée du bloc à son dernier chiffre près sans
-        // que le pointeur ait bougé, et compte pour un pas à lui seul. C'est un
-        // défaut à part, consigné hors de ce poste ; le pas qu'on annule ici est
-        // celui de la frappe.
-        EntrerEnSaisie(fenetre, vm, bloc);
+        // L'état de référence est celui de l'ouverture, avant toute sélection. Il a
+        // d'abord dû être pris une fois la saisie ouverte : sélectionner le bloc
+        // réécrivait le dernier chiffre de son ordonnée, par l'aller-retour en
+        // millimètres du panneau. Le poste Q14 l'a corrigé ; sélectionner, double-
+        // cliquer puis taper ne laisse plus derrière soi que la frappe.
         var avant = DocumentSerializer.ToJson(vm.Document);
-        TaperEnTeteDejaEnSaisie(fenetre, bloc);
+        TaperEnTete(fenetre, vm, bloc);
         var tape = DocumentSerializer.ToJson(vm.Document);
         Assert.NotEqual(avant, tape);
 
@@ -264,7 +223,7 @@ public class FrappeTests
     [Trait("poste", "Q1")]
     public void Un_saut_de_ligne_tape_garde_chaque_retrait_a_son_paragraphe()
     {
-        var document = Ata21();
+        var document = Rendu.Ata21();
         var bloc = PremierBlocRiche(document);
         var (fenetre, vm) = Rendu.Ouvrir(document);
 
@@ -304,7 +263,7 @@ public class FrappeTests
     [Trait("poste", "Q1")]
     public void Le_champ_du_panneau_recale_aussi()
     {
-        var document = Ata21();
+        var document = Rendu.Ata21();
         var bloc = PremierBlocRiche(document);
         var (fenetre, vm) = Rendu.Ouvrir(document);
         var gras = MotsGrasComposes(bloc);
@@ -331,7 +290,7 @@ public class FrappeTests
         // sans l'avis que « Saisie » a changé avec lui, le panneau garderait le texte
         // d'avant la frappe sur la page. La frappe suivante dans le panneau réécrirait
         // alors le bloc avec ce texte périmé, et ce qu'on a tapé sur la page serait perdu.
-        var document = Ata21();
+        var document = Rendu.Ata21();
         var bloc = PremierBlocRiche(document);
         var (fenetre, vm) = Rendu.Ouvrir(document);
 

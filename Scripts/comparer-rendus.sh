@@ -76,7 +76,11 @@ pdftoppm -r 144 -f "$page" -l "$page" -png -singlefile \
 geometrie="$(magick "$travail/ecran.png" -format "%wx%h" info:)"
 magick "$travail/pdf.png" -background white -extent "$geometrie" "$travail/pdf-cadre.png"
 
-total="$(magick "$travail/ecran.png" -format "%[fx:int(w*h)]" info:)"
+# Le total se calcule ici et non par « %[fx:w*h] » : passé le million, ImageMagick
+# l'écrit en notation scientifique (« 2.00733e+06 pixels comparés »), même sous int().
+# Le saut de ligne final compte : sans lui, « read » sort en 1 et « set -e » arrête tout.
+read -r largeur hauteur < <(magick "$travail/ecran.png" -format "%w %h\n" info:)
+total=$((largeur * hauteur))
 # « -fuzz 12% » : ce qu'on cherche est un décalage de forme, pas une nuance de
 # lissage. Sans ce seuil, chaque bord de lettre compterait pour une différence.
 # ImageMagick 7 écrit « 501819 (0.249994) » : le compte, puis la même chose
@@ -84,7 +88,9 @@ total="$(magick "$travail/ecran.png" -format "%[fx:int(w*h)]" info:)"
 differents="$(magick compare -metric AE -fuzz 12% \
     "$travail/ecran.png" "$travail/pdf-cadre.png" null: 2>&1 | awk '{print $1}' || true)"
 
-if ! [[ "$differents" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
+# Passé le million, le compte vient lui aussi en notation scientifique (« 1.70797e+06 »),
+# comme l'encre plus bas : la forme est acceptée, awk sait la lire.
+if ! [[ "$differents" =~ ^[0-9]+(\.[0-9]+)?(e[+-]?[0-9]+)?$ ]]; then
     echo "ÉCHEC : la comparaison n'a pas rendu un nombre de pixels ($differents)." >&2
     exit 1
 fi
@@ -93,12 +99,33 @@ ecart="$(awk -v d="$differents" -v t="$total" 'BEGIN { printf "%.2f", 100 * d / 
 
 echo "page $page : $ecart % de pixels différents (seuil $tolerance %, $total pixels comparés)"
 
-# Un écart nul est aussi suspect qu'un écart énorme : il signalerait qu'on compare
-# une image à elle-même, ou deux images vides.
-if awk -v e="$ecart" 'BEGIN { exit !(e == 0) }'; then
-    echo "ÉCHEC : écart nul. Les deux rendus sont-ils vraiment produits ?" >&2
+# Un écart nul était refusé d'office : il signalait qu'on comparait une image à
+# elle-même, ou deux images vides. Il est devenu un résultat possible au poste Q14 :
+# le panneau ne réécrit plus la largeur de la page ni la géométrie du bloc qu'on
+# sélectionne, et le document tourné de la recette A1 sort au pixel près des deux
+# côtés — 0 pixel différent sur 48 000 pixels d'encre. Ce sont donc les deux
+# soupçons eux-mêmes qu'on vérifie, et non plus leur symptôme : deux fichiers
+# identiques octet pour octet, ou un rendu sans encre.
+if cmp -s "$travail/ecran.png" "$travail/pdf-cadre.png"; then
+    echo "ÉCHEC : les deux rendus sont le même fichier, octet pour octet." >&2
     exit 1
 fi
+magick -size "$geometrie" xc:white "$travail/blanc.png"
+for rendu in ecran pdf-cadre; do
+    encre="$(magick compare -metric AE -fuzz 12% \
+        "$travail/$rendu.png" "$travail/blanc.png" null: 2>&1 | awk '{print $1}' || true)"
+    # Au-delà d'un million, ImageMagick écrit le compte en notation scientifique
+    # (« 1.70797e+06 ») : la forme est acceptée, awk sait la lire.
+    if ! [[ "$encre" =~ ^[0-9]+(\.[0-9]+)?(e[+-]?[0-9]+)?$ ]]; then
+        echo "ÉCHEC : l'encre du rendu « $rendu » n'a pas été comptée ($encre)." >&2
+        exit 1
+    fi
+    if awk -v n="$encre" 'BEGIN { exit !(n + 0 == 0) }'; then
+        echo "ÉCHEC : le rendu « $rendu » de la page $page ne porte aucune encre ($encre)." >&2
+        echo "Les deux rendus sont-ils vraiment produits ?" >&2
+        exit 1
+    fi
+done
 
 if awk -v e="$ecart" -v t="$tolerance" 'BEGIN { exit !(e > t) }'; then
     echo "ÉCHEC : l'écran et le PDF ont divergé." >&2

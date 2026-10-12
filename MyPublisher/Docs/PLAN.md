@@ -1186,9 +1186,10 @@ déborde le cadre — et c'est bien le cadre qu'on annonce quand il est seul.
 donc aux blocs sélectionnés. Sans cela, la barre ne se mettrait à jour qu'au
 relâchement — or c'est pendant qu'on la regarde.
 
-*Recette jouée*, `Scripts/recettes/A6-taille-dans-la-barre.sh`. Ce poste n'a rien qu'un
-fichier livré puisse porter : la recette appelle les tests d'interface par leur poste et
-vérifie qu'ils ont été joués, un filtre qui ne désigne plus rien sortant en 0.
+*Recette jouée*, `Scripts/recettes/A6-taille-dans-la-barre.sh` (devenue
+`A6-Q7-taille-dans-la-barre.sh` au poste Q7). Ce poste n'a rien qu'un fichier livré
+puisse porter : la recette appelle les tests d'interface par leur poste et vérifie
+qu'ils ont été joués, un filtre qui ne désigne plus rien sortant en 0.
 
 Ce que ces tests éprouvent, et pourquoi ils ne sont pas une mise en scène : le bloc est
 sélectionné **avant** la première image, si bien que la case affiche déjà une taille et
@@ -3245,6 +3246,49 @@ c'est le défaut relevé sur R2, et que la consigne nommait pourtant.
 *Recette* : réécrite sur la fabrique de l'application (outil armé, tracé synthétisé),
 et le sabotage qu'elle laissait passer tombe. Effort : faible.
 
+*Fait le 12 octobre 2026.* Les quatre tests du poste A6 tracent désormais leurs blocs
+comme l'utilisateur : la touche de l'outil, puis un cadre tiré au pointeur sur la page.
+Le premier trace à l'outil texte, dont le bloc s'ouvre aussitôt en saisie ; les trois
+autres à l'outil rectangle. À plusieurs blocs, la sélection se fait au Ctrl+clic, le
+second bloc restant pris de son tracé. Les libellés de la barre sont comparés en entier,
+et non plus par sous-chaîne. La recette s'appelle maintenant
+`Scripts/recettes/A6-Q7-taille-dans-la-barre.sh`, ce qui la fait compter pour les deux
+postes au bilan ; elle refuse en outre un test du poste A6 qui poserait un bloc par
+`new`, par `Carre(` ou le sélectionnerait par `SelectOnly` ou `SetSelection`, et elle
+exige cinq tracés. Mesuré : les tests d'avant Q7, remis en place, font tomber ce
+contrôle sur huit lignes.
+
+**Le sabotage, l'historique ne le nommait pas.** Ni la relecture du 7 septembre ni le
+journal ne disent lequel l'ancienne recette laissait passer ; ils disent seulement que
+ses blocs évitaient le chemin de l'application. Je l'ai donc cherché sur ce chemin-là, et
+j'en ai trouvé deux. Chacun a été appliqué, la recette lancée, puis l'arbre restauré par
+`git checkout` :
+
+| Sabotage | Ancienne recette (tests d'avant Q7) | Recette réécrite |
+|---|---|---|
+| `DrawWithActiveTool` ne donne plus sa largeur au bloc tracé | passe, 4 tests sur 4 | **tombe**, 3 tests sur 4 |
+| `Insert` ne sélectionne plus le bloc tracé | passe, 4 tests sur 4 | **tombe**, 4 tests sur 4 |
+
+Les deux sont au juge. **Aucun des deux n'était un trou du filet entier**, et il faut le
+dire pour ne pas grossir le poste : mesuré sur toute la suite avec les tests d'avant Q7,
+le premier tombait déjà par `GestesTests.Un_tableau_trace_sur_la_page_mesure_ses_cases_au_cadre`,
+le second par `GestesTests.Inserer_un_tableau_pose_une_bande_a_trois_cases_et_sannule`.
+C'était un trou de la recette de A6, que le juge compte pour tel depuis qu'il exige que
+chaque poste attrape son propre sabotage.
+
+**Le poste Q14 a changé ce que gardait la recette.** La relecture des sabotages de A6
+avait noté qu'à un seul bloc la barre se rafraîchissait « par accident », par la dérive
+de l'aller-retour en millimètres du panneau. Q14 a supprimé cette dérive. Mesuré après
+Q14, retirer `NotifyFrameGeometry()` de `NotifySelection` fait tomber trois des quatre
+tests d'avant Q7, et non plus le seul test à plusieurs blocs ; les quatre tests réécrits
+tombent tous.
+
+*Choisi sans certitude* : l'outil texte pour le premier test, parce que c'est l'outil le
+plus employé ; mais son bloc entre en saisie, et la barre est alors lue pendant la
+saisie. Un défaut qui ne frapperait la barre qu'une fois la saisie refermée échapperait
+à ce test-là ; les trois autres, qui tracent des rectangles, ne passent pas par la
+saisie.
+
 ### Q8 — N'avertir que des polices dessinées
 
 La passe des polices relit l'héritage des fragments pour son compte, au lieu de lire
@@ -3565,6 +3609,130 @@ attend, et la fermeture demande d'enregistrer un document qu'on n'a pas touché.
 saisie ; le JSON du bloc est identique au caractère près, `CanUndo` reste faux et le
 document n'est pas marqué modifié. Un glissé de 1 pt, lui, empile toujours son pas.
 Effort : faible.
+
+*Fait le 12 octobre 2026.* **L'énoncé ne désignait qu'une des deux causes, et pas celle
+du chiffre qu'il cite.** Mesuré sur le code d'avant le poste, en traçant qui écrit
+l'ordonnée du bloc pendant un double-clic synthétisé sans mouvement : le
+107.15039999999999 devenu 107.1504 est écrit par la liaison du champ « Y (mm) » du
+panneau, au moment où le premier clic sélectionne le bloc (`NotifySelection`), et non
+par `PageCanvas.ApplyMove`. Ce double-clic-là n'empilait **aucun** pas d'annulation et ne
+marquait pas le document modifié : la réécriture tombe avant que le geste n'ouvre sa
+transaction. C'est l'aller-retour que P3 disait « sans conséquence » ; il en avait une, le
+JSON. Le pas d'annulation, lui, vient bien de `ApplyMove`, mais seulement quand le
+pointeur signale un mouvement **nul** entre la pression et le relâchement :
+l'aimantation attire alors vers un repère voisin un bloc qu'on n'a fait que cliquer.
+Mesuré en pressant, bougeant de zéro et relâchant au centre de chacun des huit blocs
+qu'un clic atteint sur la page 1 d'ATA 21, chacun sélectionné d'abord : trois sont
+réécrits et empilent un pas.
+
+Deux corrections, donc. **Le panneau** : les deux convertisseurs des champs numériques,
+`PointsToMillimetres` et `DoubleToDecimal`, se souviennent du nombre qu'ils ont donné à
+chaque champ et de la valeur exacte dont il venait, et la rendent quand ce nombre leur
+revient (`Affiches`, dans `UnitConverters.cs`). Le second était touché aussi : il arrondit
+à quatre décimales pour l'affichage, et l'arrondi remontait — sélectionner un bloc tourné
+de 12.3456789° le laissait à 12.3457°, mesuré. **Le geste** : un pointeur resté à son
+point de prise remet chaque bloc à sa position de départ et n'aimante rien. La garde est
+une égalité stricte et non un seuil : un glissé d'un point déplace toujours d'un point.
+
+Trois tests sous `poste=Q14`, dans `DoubleClicTests`, et la recette
+`Scripts/recettes/Q14-double-clic.sh`. Le premier double-clique au centre de chacun des
+sept blocs de texte qu'un clic atteint sur ATA 21 importé, sans sélection préalable,
+chaque clic portant un mouvement nul : la saisie s'ouvre, le document est identique au
+caractère près, `CanUndo` et `IsDirty` restent faux, et refermer la saisie n'y change
+rien. Le deuxième fait de même sur un bloc tourné de 12.3456789° posé à 100 pt. Le
+troisième glisse d'un point, Alt tenu pour écarter l'aimantation : le bloc descend d'un
+point, un pas est empilé, l'annulation rend le document d'ouverture. Trois sabotages
+au juge, un par correction, chacun éprouvé à la main sur la recette : sans la mémoire en
+millimètres, les trois tests tombent ; sans celle de la rotation, le deuxième ; sans la
+garde, le premier. Un seuil de deux points à la place de la garde fait tomber le
+troisième.
+
+Le test d'annulation de Q1 reprend son état de référence à l'ouverture du document, avant
+toute sélection ; il tombe désormais lui aussi quand on retire la mémoire en millimètres.
+L'import d'ATA 21 des tests est passé de `FrappeTests` à `Rendu`, que les deux fichiers
+partagent.
+
+**Une retombée hors du poste, à déclarer.** `Scripts/comparer-rendus.sh` refusait un écart
+nul entre l'écran et le PDF, comme symptôme d'une image comparée à elle-même ou de deux
+images vides. Le panneau ne réécrivant plus la largeur de la page — 595,28 pt revenait
+595.2800000000013 — ni la géométrie du bloc, le document tourné de la recette A1 sort au
+pixel près : 0 pixel différent sur 48 000 pixels d'encre, contre 0,05 % avant le poste.
+La recette A1 tombait donc pour la seule raison que l'accord était parfait. Le script
+vérifie maintenant les deux soupçons eux-mêmes — deux fichiers identiques octet pour
+octet, ou un rendu sans encre — et non plus leur symptôme ; une page sans bloc le fait
+tomber, mesuré.
+
+*Choisi sans certitude.* La mémoire est partagée par tous les champs d'un même
+convertisseur et garde jusqu'à 256 nombres. J'en ai mal décrit le risque : il n'est pas
+que deux valeurs du modèle affichées sous le même décimal se confondent, mais qu'une
+saisie soit prise pour un nombre affiché plus tôt, et reçoive la valeur exacte dont ce
+nombre était tiré. La relecture l'a provoqué ; la reprise ci-dessous le corrige. Je n'ai
+pas vérifié qu'une vraie plate-forme livre un mouvement nul entre les deux clics d'un
+double-clic : le banc l'émet parce que c'est ce qui passait par l'aimantation. Q1
+attribuait le défaut à `ApplyMove` ; je n'ai pas retrouvé par quel geste il l'y avait vu
+passer.
+
+*Trouvé et laissé tel quel.* Il n'y a pas de seuil de glissement sur la page : un
+tremblement d'un pixel pendant un clic est un déplacement, qui passe par l'aimantation et
+empile un pas. La garde ne couvre que le mouvement nul. Un seuil réglerait cela, mais
+mangerait le glissé d'un point que la recette exige ; c'est une décision, pas une
+réparation. Et l'on ne sait toujours pas pourquoi le champ renvoie au modèle une valeur
+qu'il vient de recevoir : la correction rend ce renvoi inoffensif sans l'expliquer.
+
+*Repris le 12 octobre 2026, après relecture.* Une relecture adversariale du lot a trouvé
+un trou dans le filet et un défaut dans la mémoire ; les deux sont corrigés, avec un test
+et un sabotage chacun.
+
+**Le trou du filet.** La garde d'`ApplyMove` remet chaque bloc à son départ
+(`frame.X = startX;`, `frame.Y = startY;`). Neutraliser ces deux lignes passait toute la
+vérification, alors qu'un geste qui part de (+40, +30), Alt tenu, puis revient exactement
+au point de prise laissait le bloc en (140, 130) au lieu de (100, 100). Le code était
+juste ; aucun test ne le demandait. Le quatrième test de `DoubleClicTests`,
+`Revenir_au_point_de_prise_dans_le_meme_geste_ramene_le_bloc`, fait ce geste, et le juge
+porte le sabotage de `frame.X = startX;` : éprouvé à la main, la recette Q14 tombe sur ce
+seul test.
+
+**La mémoire des affichages.** Une valeur tapée recevait la valeur exacte qu'un autre bloc
+avait affichée : A tourné de 30.00001°, B à 0 ; on clique A, puis B, on tape « 30 » dans le
+champ de rotation, et B recevait 30.00001. `Affiches` n'a plus qu'une case : `Retenir` la
+remplace, `Retrouver` ne reconnaît que le nombre égal à celui qu'elle porte et la vide dans
+tous les cas. La capacité de 256 disparaît. Une case suffit parce que le renvoi d'un champ
+suit son affichage aussitôt, dans le même appel (`BindingExpression.OnTargetPropertyChanged`
+→ `WriteTargetValueToSource`, trace de la relecture). Le cinquième test,
+`Une_valeur_tapee_ne_prend_pas_celle_quun_autre_bloc_a_affichee`, joue ce scénario au
+clavier ; il tombe sur l'ancienne mémoire, et c'est elle que le sabotage remet. Les trois
+sabotages d'avant, rejoués à la main sur les cinq tests, sont toujours attrapés : sans la
+mémoire en millimètres, quatre tests tombent ; sans celle de la rotation, deux ; sans la
+garde, un. Le commentaire d'`Affiches` dit maintenant le risque tel qu'il est.
+
+Ce qui reste, mesuré mais non provoqué : un affichage qui ne change pas la valeur du champ
+n'est suivi d'aucun renvoi, et la case reste pleine. Une sonde l'a vue porter « 0 → 0 »
+après la sélection d'un bloc. Une frappe faite alors dans un autre champ du même
+convertisseur, exactement égale à ce nombre, en reprendrait la valeur exacte ; cela
+n'altère le document que si ce nombre était un arrondi. Je n'ai pas trouvé de geste qui
+le fasse : taper 30 dans l'épaisseur d'un bloc tourné de 30.00002°, après en avoir
+sélectionné un tourné de 30.00001°, donne une épaisseur de 30.
+
+**Hors du poste, `Scripts/comparer-rendus.sh`.** Le commit 2e02036 acceptait la notation
+scientifique pour l'encre seulement. Le compte des pixels différents l'accepte aussi, et
+le total se calcule en entier, de la largeur et de la hauteur : `%[fx:int(w*h)]` s'écrit
+2.00684e+06 pour une image de 1191 × 1685, mesuré avec l'ImageMagick des outils ; la page
+de l'affiche donne maintenant « 4011288 pixels comparés ». Ma première version lisait la
+largeur et la hauteur par un `read` sans saut de ligne final : `read` sortait en 1, `set -e`
+arrêtait le script sans un mot, et neuf recettes tombaient. `verifier.sh` l'a attrapé ; le
+commit suivant le corrige.
+
+*Trouvé et laissé tel quel*, par la relecture, et ouvert en postes Q à part : il n'y a pas
+de seuil de glissement, si bien qu'un tremblement d'un pixel près d'une marge fait sauter
+le bloc de 3 pt par l'aimantation ; et un clic sans mouvement sur une poignée redimensionne
+le bloc (100 → 96 pt). Et, trouvé pendant cette reprise : les deux tests de `DoubleClicTests`
+qui double-cliquent dépendent de l'horloge. Sous charge, les deux clics s'écartent au-delà du
+délai d'un double-clic, la saisie ne s'ouvre pas, et le test tombe sur « le double-clic n'a
+pas ouvert la saisie ». Mesuré en lançant six fois en parallèle les tests `poste=Q14`, quatre
+fois de suite : 5 séries sur 24 tombent, et 10 sur 24 avec l'ancienne mémoire — le défaut
+précède la reprise. Une fois aussi dans un `verifier.sh` complet, alors que d'autres lots
+compilaient ; relancé seul, il passe. Le remède toucherait le banc commun (le délai du
+double-clic de la plate-forme sans tête), hors de ce poste.
 
 ### Q15 — Une image modifiée sur le disque se relit
 

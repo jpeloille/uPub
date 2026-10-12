@@ -818,6 +818,83 @@ saboter "un fichier fermé en lecture fait tomber l'import au lieu d'être refus
     'when (ex is IOException or TexteRefuseException)' \
     'B2-import-texte|ImportTexteTests'
 
+# Q7 : la recette de A6 trace ses blocs à l'outil. Les deux sabotages du chemin par
+# lequel un bloc naît, que l'ancienne recette — blocs posés à la main, sélectionnés
+# par le modèle de vue — laissait passer.
+saboter "le tracé ne donne plus sa largeur au bloc" \
+    MyPublisher/ViewModels/MainWindowViewModel.cs \
+    'frame.Width = width;' \
+    '' \
+    'A6-Q7-taille|PanneauEtBarreTests'
+
+saboter "le bloc tracé n'est plus sélectionné" \
+    MyPublisher/ViewModels/MainWindowViewModel.cs \
+    'SelectOnly(frame);' \
+    '' \
+    'A6-Q7-taille|PanneauEtBarreTests'
+
+# Q14 : les deux causes du double-clic qui réécrivait le bloc, chacune à sa ligne.
+saboter "le panneau réécrit la position du bloc qu'on sélectionne" \
+    MyPublisher/Converters/UnitConverters.cs \
+    'decimal millimetres when _affiches.Retrouver(millimetres, out var points) => points,' \
+    '' \
+    'Q14-double-clic|DoubleClicTests'
+
+saboter "le panneau arrondit l'angle du bloc qu'on sélectionne" \
+    MyPublisher/Converters/UnitConverters.cs \
+    'decimal number when _affiches.Retrouver(number, out var exact) => exact,' \
+    '' \
+    'Q14-double-clic|DoubleClicTests'
+
+saboter "un mouvement nul du pointeur aimante le bloc cliqué" \
+    MyPublisher/Views/PageCanvas.axaml.cs \
+    'if (dx == 0 && dy == 0)' \
+    'if (dx == 0 && dy == 0 && _moveStart.Count < 0)' \
+    'Q14-double-clic|DoubleClicTests'
+
+# Q14, repris après relecture : la garde ne fait pas que s'abstenir, elle remet le bloc
+# à son départ. Sans cette remise, un geste qui part puis revient au point de prise
+# laisse le bloc là où le pointeur l'avait mené ; aucun des trois premiers tests ne le
+# voyait.
+saboter "un geste revenu au point de prise laisse le bloc où il était allé" \
+    MyPublisher/Views/PageCanvas.axaml.cs \
+    'frame.X = startX;' \
+    '' \
+    'Q14-double-clic|DoubleClicTests'
+
+# Q14, repris après relecture : le convertisseur ne se souvient que du nombre qu'il vient
+# de donner. Le sabotage remet la mémoire d'avant, un dictionnaire gardé toute la session :
+# une frappe y retrouvait la valeur exacte qu'un autre bloc avait affichée.
+saboter "une frappe prend la valeur exacte qu'un autre bloc a affichée" \
+    MyPublisher/Converters/UnitConverters.cs \
+'    private decimal? _affiche;
+    private double _valeur;
+
+    public decimal Retenir(decimal affiche, double valeur)
+    {
+        _affiche = affiche;
+        _valeur = valeur;
+        return affiche;
+    }
+
+    public bool Retrouver(decimal affiche, out double valeur)
+    {
+        var reconnu = _affiche == affiche;
+        valeur = _valeur;
+        _affiche = null;
+        return reconnu;
+    }' \
+'    private readonly Dictionary<decimal, double> _valeurs = [];
+
+    public decimal Retenir(decimal affiche, double valeur)
+    {
+        _valeurs[affiche] = valeur;
+        return affiche;
+    }
+
+    public bool Retrouver(decimal affiche, out double valeur) => _valeurs.TryGetValue(affiche, out valeur);' \
+    'Q14-double-clic|DoubleClicTests'
+
 echo
 if [ "$cibles" = 1 ]; then
     if [ "$trous" = 0 ]; then

@@ -19,32 +19,107 @@ namespace MyPublisher.Converters;
 /// 4,2333 mm — devenait 11,99 pt à la seule ouverture du document, sans geste ni
 /// pas d'annulation. L'affichage est arrondi là où il doit l'être, par le
 /// « FormatString » du champ, qui ne touche pas à la valeur.
+///
+/// Ne pas arrondir ne suffisait pas encore, et c'est le poste Q14 qui l'a mesuré : le
+/// champ renvoie au modèle la valeur qu'il vient de recevoir, dès qu'un bloc est
+/// sélectionné, et l'aller-retour points → millimètres → points n'est pas l'identité
+/// en virgule flottante. L'ordonnée d'un bloc d'ATA 21, 107.15039999999999, revenait
+/// 107.1504 ; un bloc à 100 revenait 100.00000000000007, une page de 595,28 pt
+/// 595.2800000000013. Rien ne se voyait, mais le document n'était plus le même au
+/// caractère près, sans qu'on ait rien tapé. D'où la mémoire de <see cref="Affiches"/>.
 /// </summary>
 public sealed class PointsToMillimetres : IValueConverter
 {
     public static readonly PointsToMillimetres Instance = new();
 
+    private readonly Affiches _affiches = new();
+
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
-        value is double points ? (decimal)Units.PointsToMm(points) : null;
+        value is double points ? _affiches.Retenir((decimal)Units.PointsToMm(points), points) : null;
 
     public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => value switch
     {
+        decimal millimetres when _affiches.Retrouver(millimetres, out var points) => points,
         decimal millimetres => Units.MmToPoints((double)millimetres),
         double millimetres => Units.MmToPoints(millimetres),
         _ => AvaloniaProperty.UnsetValue
     };
 }
 
-/// <summary>NumericUpDown expose des décimaux ; le modèle des doubles.</summary>
+/// <summary>
+/// Le dernier nombre qu'un convertisseur a donné à un champ, et la valeur exacte du
+/// modèle dont il a été tiré.
+///
+/// Un champ numérique renvoie au modèle la valeur qu'il vient de recevoir, dès que le
+/// bloc ou la page qu'il montre est affiché — rien ne l'a tapée. Si la conversion vers
+/// le champ perd quoi que ce soit, ce renvoi réécrit le document en silence : c'est le
+/// défaut du poste Q14. Aucune arithmétique ne le rend exact — le décimal ne garde que
+/// quinze chiffres d'un double, et l'arrondi d'affichage en garde moins encore —, si
+/// bien que le convertisseur se souvient : un nombre qui lui revient tel qu'il vient de
+/// le donner rend la valeur dont il venait. Un nombre qu'il n'a pas donné — une frappe,
+/// une flèche du champ — est converti comme avant.
+///
+/// Une seule case, consommée au premier retour. Le renvoi suit son affichage aussitôt
+/// et dans le même appel : la liaison pose la valeur sur le champ, le champ signale son
+/// changement, et la liaison le réécrit vers le modèle
+/// (<c>BindingExpression.OnTargetPropertyChanged</c> → <c>WriteTargetValueToSource</c>).
+/// Rien ne passe entre les deux ; il n'y a donc rien d'autre à reconnaître que le
+/// dernier nombre donné.
+///
+/// Le risque d'une mémoire plus longue n'est pas que deux valeurs du modèle se
+/// confondent : c'est qu'une saisie soit prise pour un nombre affiché plus tôt. La
+/// mémoire d'avant en était une, partagée par tous les champs du convertisseur et gardée toute
+/// la session : un bloc tourné de 30.00001° sélectionné, puis un autre, sur lequel on
+/// tape « 30 », et le second recevait 30.00001 — le nombre tapé était celui que le
+/// premier avait affiché (poste Q14, repris après relecture).
+///
+/// Ce qui reste : un affichage qui ne change pas la valeur du champ n'a pas de renvoi
+/// pour consommer la case, et elle attend le prochain affichage — mesuré, elle reste
+/// pleine après la sélection d'un bloc. Une frappe faite entre-temps dans un autre champ
+/// du même convertisseur, exactement égale à ce nombre, en reprendrait la valeur
+/// exacte. Le document n'en serait altéré que si ce nombre était un arrondi ; le cas
+/// n'a pas été provoqué.
+/// </summary>
+internal sealed class Affiches
+{
+    private decimal? _affiche;
+    private double _valeur;
+
+    public decimal Retenir(decimal affiche, double valeur)
+    {
+        _affiche = affiche;
+        _valeur = valeur;
+        return affiche;
+    }
+
+    public bool Retrouver(decimal affiche, out double valeur)
+    {
+        var reconnu = _affiche == affiche;
+        valeur = _valeur;
+        _affiche = null;
+        return reconnu;
+    }
+}
+
+/// <summary>
+/// NumericUpDown expose des décimaux ; le modèle des doubles.
+///
+/// L'arrondi à quatre décimales reste, pour le champ ; il ne remonte plus dans le
+/// modèle. Mesuré au poste Q14 : sélectionner un bloc tourné de 12.3456789° le
+/// laissait à 12.3457°, et un angle posé à la poignée de rotation n'est jamais rond.
+/// </summary>
 public sealed class DoubleToDecimal : IValueConverter
 {
     public static readonly DoubleToDecimal Instance = new();
 
+    private readonly Affiches _affiches = new();
+
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
-        value is double number && !double.IsNaN(number) ? (decimal)Math.Round(number, 4) : null;
+        value is double number && !double.IsNaN(number) ? _affiches.Retenir((decimal)Math.Round(number, 4), number) : null;
 
     public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => value switch
     {
+        decimal number when _affiches.Retrouver(number, out var exact) => exact,
         decimal number => (double)number,
         double number => number,
         _ => AvaloniaProperty.UnsetValue
