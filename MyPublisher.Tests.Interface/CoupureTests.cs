@@ -372,6 +372,36 @@ public class CoupureTests
         // des deux mesures de la ligne « Voir l'alinéa f) ». L'un d'eux tient sa police
         // du jeu du document (« scheme:heading ») : la règle doit la recevoir résolue.
         var document = Recette();
+
+        // Vérification préalable : les largeurs de la page 3 sont calculées pour les
+        // fichiers Noto Serif de cette machine. Une autre version de la police peut ne
+        // plus les placer entre les deux mesures, et le test tomberait sans dire pourquoi.
+        //
+        // « Voir l'alinéa f) » se mesure comme le compositeur la cumule : mot par mot,
+        // l'espace qui suit compris, le dernier mot sans elle. Le bloc doit tomber entre
+        // la ligne que mesure le PDF seul et celle que mesure la règle de coupure — la
+        // plus large des deux mesures, MOT PAR MOT —, et c'est « f) » que l'écran doit
+        // mesurer plus large. En romain : 134,88 pt au PDF seul, 135,48 à l'écran seul —
+        // sous les 135,78 du bloc, lui aussi —, 136,68 à la règle de coupure. C'est le
+        // maximum pris mot par mot qui renvoie « f) », des deux côtés.
+        var regleEcran = new MetriquesAvalonia();
+        var reglePdf = MetriquesPdf.HorsPage(ecran: null);
+        string[] mots = ["Voir ", "l'alinéa ", "f)"];
+        foreach (var bloc in document.Pages[2].Frames.OfType<TextFrame>().Where(b => b.Name.StartsWith(PlusLarge)))
+        {
+            var style = document.Charte.StyleCommun(bloc);
+            var utile = bloc.Width - bloc.PaddingLeft - bloc.PaddingRight;
+            var pdfSeul = mots.Sum(m => reglePdf.Largeur(m, style));
+            var coupure = mots.Sum(m => regleEcran.LargeurDeCoupure(m, style));
+            var ecranF = regleEcran.Largeur("f)", style);
+            var pdfF = reglePdf.Largeur("f)", style);
+            Assert.True(pdfSeul < utile && utile < coupure && pdfF < ecranF,
+                $"{bloc.Name} : la police de cette machine ne départage plus les deux mesures " +
+                $"(PDF seul {pdfSeul:0.00} pt, largeur utile {utile:0.00} pt, règle de coupure {coupure:0.00} pt ; " +
+                $"« f) » {pdfF:0.00} pt au PDF, {ecranF:0.00} pt à l'écran) : " +
+                "recalculer les largeurs de la page 3 de recette-coupure.mypub.");
+        }
+
         var (fenetre, vm) = Rendu.Ouvrir(document);
         var travail = Path.Combine(Path.GetTempPath(), $"mypublisher-q13-{Guid.NewGuid():N}");
         Directory.CreateDirectory(travail);

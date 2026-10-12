@@ -34,10 +34,13 @@
 #      à zéro ligne coupée autrement. Il porte les cas que le corpus ne porte pas,
 #      trouvés à la relecture de Q13 : 48 blocs aux largeurs en demi-points, de 150,4 à
 #      173,9 pt, où l'arrondi de la mise en page faisait composer l'écran sur une autre
-#      largeur que le PDF (19 lignes coupées autrement) ; et, page 3, quatre blocs en
+#      largeur que le PDF (19 lignes coupées autrement) ; page 3, quatre blocs en
 #      Noto Serif dont la largeur tombe entre la mesure du PDF et celle de l'écran —
-#      PLUS LARGE ici —, l'un d'eux par la police du jeu du document. Un « --export »
-#      qui oublierait la mesure de l'écran y coupe autrement ;
+#      PLUS LARGE ici —, l'un d'eux par la police du jeu du document : un « --export »
+#      qui oublierait la mesure de l'écran y coupe autrement ; page 4, 22 blocs à deux
+#      colonnes hauts de 58,05 à 58,65 pt, où un écran composant sur la hauteur
+#      arrondie du contrôle garde une ligne en colonne 1 que le PDF passe en colonne 2
+#      (seconde relecture : 278 lignes coupées autrement) ;
 #   5. contre-épreuve du point 3 — l'écran coupant à sa seule mesure, ce que faisait
 #      le dépôt avant ce poste, comparer-mots.sh tombe sur la première colonne de
 #      l'exemple, là où le défaut a été trouvé.
@@ -141,10 +144,10 @@ if ! Scripts/comparer-mots.sh "$recette" tout > "$travail/recette.txt" 2>&1; the
     sed 's/^/    /' "$travail/recette.txt" >&2
     exit 1
 fi
-# Le document doit encore porter ses cas : 52 blocs, dont les quatre de la page 3. Un
-# document appauvri passerait vert sur moins qu'il ne prétend.
-if ! grep -q "dans 52 blocs" "$travail/recette.txt"; then
-    echo "ÉCHEC : $(basename "$recette") ne relève plus ses 52 blocs." >&2
+# Le document doit encore porter ses cas : 74 blocs, dont les quatre de la page 3 et
+# les 22 de la page 4. Un document appauvri passerait vert sur moins qu'il ne prétend.
+if ! grep -q "dans 74 blocs" "$travail/recette.txt"; then
+    echo "ÉCHEC : $(basename "$recette") ne relève plus ses 74 blocs." >&2
     sed 's/^/    /' "$travail/recette.txt" >&2
     exit 1
 fi

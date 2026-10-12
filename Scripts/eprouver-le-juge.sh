@@ -935,6 +935,14 @@ saboter "l'écran compose sur la largeur arrondie du contrôle" \
     'var largeur = Math.Max(1, Bounds.Width - bloc.PaddingLeft - bloc.PaddingRight);' \
     'Q13-coupure'
 
+# La hauteur de même : un bloc à deux colonnes de 58,3 pt composait sur 59, et gardait
+# en colonne 1 une ligne que le PDF passe en colonne 2 (seconde relecture de Q13).
+saboter "l'écran compose sur la hauteur arrondie du contrôle" \
+    MyPublisher/Views/ControleDeBloc.cs \
+    'var hauteur = Math.Max(1, bloc.Height - bloc.PaddingTop - bloc.PaddingBottom);' \
+    'var hauteur = Math.Max(1, Bounds.Height - bloc.PaddingTop - bloc.PaddingBottom);' \
+    'Q13-coupure'
+
 # L'écran ne dessine plus la dernière ligne d'un bloc de plusieurs lignes. Avant la
 # relecture, comparer-mots.sh jetait en silence les mots du PDF sans ligne à l'écran.
 saboter "l'écran ne dessine plus la dernière ligne d'un bloc" \

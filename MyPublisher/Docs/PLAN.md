@@ -3712,7 +3712,8 @@ mémoire, `comparer-rendus.sh` donne 4,52 % et 3,67 % sur les pages 1 et 2 de l'
   sans la mesure de l'écran, « f) » reste sur la première ligne. Les deux câblages
   sabotés à la main font tomber la recette.
 - **La largeur disponible.** `Mesurer` composait sur `Bounds` — la taille du contrôle,
-  arrondie au pixel par la mise en page —, l'export sur celle du modèle. Il compose
+  que la mise en page arrondit au pixel SUPÉRIEUR : 151 pour 150,4, de 0,1 à 0,6 pt de
+  plus sur les 52 blocs de la recette —, l'export sur celle du modèle. Il compose
   désormais sur `bloc.Width` et `bloc.Height` moins les marges, comme l'export. Sur les
   48 blocs du relecteur, larges de 150,4 à 173,9 pt au pas de 0,5, `comparer-mots.sh`
   passe de 19 lignes coupées autrement (5 blocs, tous en « ,4 ») à 0. Ces 48 blocs
@@ -3757,15 +3758,44 @@ dessinée, le refus de `--export` sans la porte, la collection adressée sans la
   Avec une autre version de la police, les blocs pourraient ne plus être à la limite. Le
   test d'interface le dirait (l'écran doit renvoyer « f) », le PDF seul le garder) ;
   `comparer-mots.sh`, lui, resterait vert.
-- Composer sur la taille du modèle quand le contrôle a la taille arrondie : une ligne
-  peut dépasser le contrôle de moins d'un pixel et être rognée par son `ClipToBounds`.
-  Ce n'est pas mesuré.
 
 *Trouvé et laissé tel quel.*
 - Le sabotage de `--export` sans la mesure de l'écran est attrapé dans la recette dès
   l'étape 2, par le test sans la porte : sans l'appel à `MesureDeLEcran`, le refus ne
   se produit plus. Éprouvée seule à la main, l'étape 4 l'attrape aussi : 24 lignes
   coupées autrement, toutes sur la page 3.
+
+*Complété le 12 octobre 2026, après la seconde relecture* (« fusionnable après
+corrections », trois points ; les deux questions du lot ont été tranchées : `--export`
+qui refuse sans la porte privée est approuvé, la variable `MYPUBLISHER_SANS_PORTE_PRIVEE`
+dans l'application est acceptée).
+
+- **La hauteur n'était gardée par rien.** Composer sur `Bounds.Height` au lieu de la
+  hauteur du modèle passait tout `verifier.sh` : tous les blocs de la recette avaient une
+  hauteur entière. Le défaut est réel : un bloc à deux colonnes de 58,3 pt composait sur
+  59 à l'écran, et la 7e ligne restait en colonne 1 quand le PDF la passait en
+  colonne 2. `recette-coupure.mypub` porte désormais une page 4 : 22 blocs à deux
+  colonnes, de 58,05 à 58,65 pt de haut, tirés du document du relecteur, dont on a
+  retiré les deux blocs de hauteur entière. Sain, `comparer-mots.sh` y relève 0 ligne
+  coupée autrement (809 lignes, 4 388 mots, 74 blocs sur les quatre pages). L'étape 4
+  de la recette exige désormais 74 blocs. Un septième sabotage vise la hauteur, éprouvé
+  à la main : la recette tombe.
+- **La page 3 dépend de Noto Serif.** Le test de l'export de l'application vérifie
+  d'abord, bloc par bloc, que la police de cette machine départage encore les deux
+  mesures, et sinon le dit (« recalculer les largeurs de la page 3 »). La vérification
+  suggérée — « Voir l'alinéa f) » mesurée d'un tenant, `pdf < largeur utile < écran` —
+  ne tient pas : la ligne entière mesure 135,48 pt à l'écran, sous les 135,78 du bloc.
+  C'est le maximum pris MOT PAR MOT qui renvoie « f) ». La vérification cumule donc les
+  mots comme le compositeur : 134,88 pt au PDF seul < 135,78 < 136,68 à la règle de
+  coupure, et « f) » plus large à l'écran (16,10 pt) qu'au PDF (14,30). Avec un bloc
+  porté à 137 pt, elle tombe avec son message.
+- **L'arrondi était mal décrit.** Le commentaire de `Mesurer` dit maintenant « 151 pour
+  150,4 ». La crainte d'un rognage, écrite plus haut sous *Choisi sans certitude*, est
+  remplacée par la mesure du relecteur : 0 bloc rogné sur 52, et l'encre la plus proche
+  du bord à 0,42 pt (B22, page 1).
+- Le plantage « Aborted (core dumped) » du premier passage de `verifier.sh` n'est pas
+  reproduit dans le code des polices. Le relecteur l'attribue à l'erreur connue de
+  dotnet sur cette machine ; il sera traité sur `main`.
 
 ### Q14 — Un double-clic ne déplace pas le bloc
 

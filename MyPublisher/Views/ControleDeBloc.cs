@@ -145,10 +145,12 @@ public abstract class ControleDeBloc : Control
         if (Bloc is not { } bloc || string.IsNullOrEmpty(Contenu)) return null;
 
         // La place est celle du MODÈLE, comme à l'export, et non celle du contrôle : la
-        // mise en page arrondit la taille d'un contrôle au pixel, et un bloc de 150,4 pt
-        // y composait sur 150 — dix-neuf lignes coupées autrement que le PDF sur les 48
-        // blocs aux largeurs en demi-points de la relecture de Q13. Le contrôle a la
-        // taille du bloc à l'arrondi près ; le texte ne doit pas dépendre de cet arrondi.
+        // mise en page arrondit la taille d'un contrôle au pixel supérieur, et un bloc de
+        // 150,4 pt y composait sur 151 — dix-neuf lignes coupées autrement que le PDF sur
+        // les 48 blocs aux largeurs en demi-points de la relecture de Q13. La hauteur de
+        // même : un bloc à deux colonnes de 58,3 pt composait sur 59, et gardait en
+        // colonne 1 une ligne que le PDF passe en colonne 2. Le texte ne doit pas
+        // dépendre de cet arrondi.
         var largeur = Math.Max(1, bloc.Width - bloc.PaddingLeft - bloc.PaddingRight);
         var hauteur = Math.Max(1, bloc.Height - bloc.PaddingTop - bloc.PaddingBottom);
 
