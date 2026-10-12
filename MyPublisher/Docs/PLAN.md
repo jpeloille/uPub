@@ -3542,21 +3542,33 @@ prix : un mot qui tiendrait de justesse passe à la ligne des deux côtés.
 Effort : moyen. **Si la voie d'attente ne suffit pas, le poste devient la question du
 seuil D**, et l'on s'arrête pour la poser au propriétaire du projet.
 
-*Éprouvé le 12 octobre 2026, et arrêté : la voie d'attente ne suffit pas seule.* La
-question revient au propriétaire ; rien du code de ce poste n'est commité. Le code
-éprouvé est gardé hors du dépôt, en un correctif qui s'applique sur `b17e569`.
+*Éprouvé le 12 octobre 2026, et arrêté une première fois : la voie d'attente ne suffit
+pas seule.* La question est allée au propriétaire, qui a choisi de garder la voie
+d'attente et de rendre la mesure de l'écran indépendante de l'histoire du processus. Ce
+qui suit, jusqu'au paragraphe *Fait le*, est le récit de cet arrêt.
 
 *Mesuré avant.* Chaque règle décidant seule, sur les blocs de texte des trois
-documents, groupes et cases compris : l'exemple coupe autrement **1 bloc sur 15, 2 lignes
-sur 57** — la première colonne, où l'écran garde « jamais » à 231,11 pt d'une ligne de
-232 pt et où le PDF le renvoie ; ATA 21, 0 ligne sur 79 ; les fiches ATR, 0 sur 152.
-D'un morceau à l'autre, les deux mesures diffèrent au plus de 2,38 pt sur l'exemple
-(0,15 % en moyenne, le PDF jamais plus étroit), 2,96 pt sur ATA 21 (0,47 %), 2,29 pt sur
-les fiches (0,20 %). Sur l'exemple et les fiches, l'écart est le crénage : l'écran
-privé de crénage (essai, non gardé) y mesure chaque morceau comme le PDF, à 0,0001 pt
-près. Sur ATA 21, un écart de 2,96 pt reste sans crénage ; sa cause n'a pas été
-cherchée. La hauteur naturelle, qui décide du passage de colonne, est la même des deux
-côtés sur les trois documents.
+documents, groupes et cases compris. Les chiffres de l'exemple dépendent de la face
+qu'Avalonia donne à l'italique de DejaVu Sans, qui n'existe pas sur cette machine (voir
+plus bas) ; ils valent dans deux états :
+
+- italique résolu en romain — l'état de l'application ouverte sur l'exemple : **1 bloc
+  et 2 lignes sur 57** coupent autrement, la première colonne, où l'écran garde
+  « jamais » à 231,11 pt d'une ligne de 232 pt et où le PDF le renvoie. D'un morceau à
+  l'autre, les deux mesures diffèrent au plus de 2,38 pt (0,15 % en moyenne, le PDF
+  jamais plus étroit) ;
+- italique résolu en gras — le gras chargé d'abord, ou les blocs composés dans l'ordre
+  du document : **3 blocs et 10 lignes sur 59** — la première colonne, la légende (5
+  lignes à l'écran contre 4 au PDF) et le rappel (3 contre 2). Les mesures diffèrent
+  alors au plus de 10,14 pt (2,16 % en moyenne), l'écran plus large 70 fois, le PDF
+  49 fois.
+
+ATA 21 et les fiches ATR ne bougent pas d'un état à l'autre : 0 ligne sur 79 et 0 sur
+152, à 2,96 pt (0,47 %) et 2,29 pt (0,20 %) d'écart au plus. Sur l'exemple et les
+fiches, dans l'état romain, l'écart est le crénage : l'écran privé de crénage (essai,
+non gardé) y mesure chaque morceau comme le PDF, à 0,0001 pt près. Sur ATA 21, un écart
+de 2,96 pt reste sans crénage. La hauteur naturelle, qui décide du passage de colonne,
+est la même des deux côtés sur les trois documents.
 
 *La voie d'attente, écrite.* `IMetriques` gagne `LargeurDeCoupure` : chacun rend la plus
 large de sa mesure et de celle de l'autre, et le compositeur ne décide plus que sur
@@ -3582,20 +3594,212 @@ et 3,91 % avec, en plus, l'écran privé de crénage, donc des morceaux de même
 `pdftocairo`, diffèrent déjà de 2,36 % et 1,77 % ; l'écran et `pdftocairo`, de 4,28 % et
 3,35 %. L'excédent est le dessin des glyphes. Le seuil de 3 % n'est pas à la portée
 d'une page de texte, coupée juste ou non, et les en-têtes de `verifier.sh` et de
-`comparer-rendus.sh`, qui attribuent l'écart à la coupure, se trompent de cause ; ils
-sont laissés tels quels.
+`comparer-rendus.sh` attribuaient l'écart à la coupure.
 
-*Trouvé et laissé tel quel.* L'italique de DejaVu Sans sort droit au PDF : PDFsharp
-reçoit le fichier romain et ne simule rien. L'écran, lui, le penche.
+*La question, et ce que le propriétaire a tranché.* Trois voies étaient posées :
+garder la voie d'attente et rendre la mesure de l'écran indépendante de l'histoire, par
+une collection de polices propre au projet ; franchir le seuil D pour la seule coupure ;
+ou laisser la dette. Le propriétaire a choisi la première, et demandé un outil de
+comparaison mot à mot pour les pages de texte, `comparer-rendus.sh` restant celui des
+formes et des images.
 
-*Question au propriétaire.* Trois voies. Garder la voie d'attente et rendre la mesure
-de l'écran indépendante de l'histoire — résoudre chaque face une fois, par une
-collection de polices à soi, et la garder : c'est toucher tout le texte de l'écran.
-Ou franchir le seuil D pour la coupure seulement : décider sur la mesure de PDFsharp,
-que le noyau a partout, l'écran dessinant à la sienne et pouvant déborder sa ligne du
-crénage, 2,38 pt au plus sur l'exemple. Ou laisser la dette. Et, quelle que soit la
-voie, remplacer `comparer-rendus.sh` par la confrontation mot à mot pour les pages de
-texte.
+*Fait le 12 octobre 2026.* La voie (a), entière.
+
+- **Les polices de l'écran.** Le texte des documents ne passe plus par la résolution
+  d'Avalonia mais par `PolicesDuDocument`, une collection propre au projet : pour une
+  famille, une graisse et une pente, elle demande à fontconfig le fichier que l'export
+  emploie — le même appel, le même cache —, le charge une fois avec les simulations que
+  fontconfig décide (`%{embolden}`, `%{matrix}`), et le garde. Rien n'y dépend de ce que
+  le processus a chargé avant. `FontconfigFontResolver` rend les mêmes drapeaux à
+  PDFsharp : l'italique absent de DejaVu Sans se penche désormais au PDF comme à
+  l'écran, et la trouvaille laissée lors de l'arrêt (« sort droit au PDF ») est close.
+  Le chrome garde les polices du système. L'application, `--export`, le banc et l'hôte
+  des tests montent la collection par le même appel (`AvecLesPolicesDeMyPublisher`).
+- **La coupure.** `IMetriques.LargeurDeCoupure`, comme dans la voie d'attente : chaque
+  règle rend la plus large de sa mesure et de celle de l'autre, la décision ne lit
+  qu'elle, le dessin garde la sienne ; la tabulation compte son taquet sur chacun des
+  deux cumuls. La règle du PDF sort de `PdfExporter` (`MetriquesPdf`) et se consulte
+  hors page ; un test vérifie qu'elle y mesure au bit près comme sur la page.
+- **L'outil.** `Scripts/comparer-mots.sh` : le banc relève, par `TexteCompose.Poser`
+  — la fonction même que le rendu appelle —, chaque ligne de l'écran mot par mot, et les
+  mots que `pdftotext -bbox` lit dans le PDF du vrai binaire s'y rangent ; il compte les
+  lignes coupées autrement, et vérifie la place du premier mot à 1 pt près (la mise en
+  page d'Avalonia arrondit la place d'un bloc au pixel). Les en-têtes de `verifier.sh` et
+  de `comparer-rendus.sh` disent désormais ce que chacun mesure.
+- **La recette**, `Q13-coupure.sh` : 7 tests purs, 4 d'interface, puis `comparer-mots.sh`
+  sur les deux pages de l'exemple et sur les deux documents ATR, trois fois — le banc
+  charge les faces dans trois ordres —, à zéro ligne coupée autrement ; puis la
+  contre-épreuve, l'écran coupant à sa seule mesure, qui doit tomber sur la première
+  colonne de l'exemple. Deux sabotages en fin de juge : la décision qui relit la mesure
+  du dessin, et l'écran qui contourne la collection.
+
+*Mesuré.* Avant, refait en contournant la collection, par le même calcul que les
+chiffres de l'arrêt (chaque règle décidant seule, blocs de l'exemple) : italique résolu
+en **romain**, **2 lignes sur 57** coupent autrement, à 2,38 pt d'écart au plus ;
+italique résolu en **gras**, **10 lignes sur 59** (3 blocs), à **10,14 pt** au plus et
+2,16 % en moyenne. Après, que le gras soit chargé d'abord ou non : chaque règle décidant
+seule, 2 lignes sur 57, à 2,38 pt et 0,15 % — l'écart n'est plus que le crénage, et
+l'italique ne bouge plus d'un processus à l'autre ; sous la plus large des deux mesures,
+**0 ligne sur 57**, et 0 sur 79 (ATA 21), 0 sur 152 (fiches). De bout en bout, par
+`comparer-mots.sh`, dans les trois ordres : **0 ligne coupée autrement** sur 53 lignes
+dessinées de l'exemple, 72 d'ATA 21 et 152 des fiches ; premier mot à 0,52 pt au plus.
+L'italique de la légende est penché des deux côtés, à l'œil sur les deux rendus. Pour
+mémoire, `comparer-rendus.sh` donne 4,52 % et 3,67 % sur les pages 1 et 2 de l'exemple
+(4,87 % et 3,72 % avant) : toujours au-dessus de 3 %, pour la raison écrite plus haut.
+
+*Choisi sans certitude.*
+- « Un ordre fixe » est pris au sens du résultat : chaque variante est résolue seule, à
+  sa première demande, sur le fichier de fontconfig, si bien que l'ordre n'y entre plus.
+  Charger les quatre faces d'une famille dans un ordre fixe avait été essayé lors de
+  l'arrêt, et ne tenait pas après d'autres familles.
+- Avalonia 11.3.9 n'offre pas de porte publique pour charger des octets avec des
+  simulations choisies : `PolicesDuDocument` appelle par réflexion
+  `IFontManagerImpl.TryCreateGlyphTypeface(Stream, FontSimulations, …)`. Une montée de
+  version qui la retirerait lève une exception à la première mesure, et les tests de Q13
+  tombent ; rien ne retombe en silence sur l'ancienne résolution.
+- La règle de l'écran consulte, à chaque rendu d'un bloc, une règle du PDF hors page
+  neuve (un contexte de mesure PDFsharp) ; le coût n'a pas été mesuré.
+- La tolérance de 1 pt de `comparer-mots.sh` sur la place du premier mot.
+
+*Trouvé et laissé tel quel.*
+- La règle d'Avalonia d'avant Q13 est plus précise que ce que disait l'arrêt. Sondé sur
+  DejaVu Serif : l'italique absent sort en gras penché seulement quand le gras est la
+  seule face de la famille déjà chargée ; dès que le romain l'est — avant ou après le
+  gras —, ou que rien ne l'est, il sort en romain penché. Le premier ordre « gras » du
+  banc (gras, gras italique, romain, italique) rendait donc le romain, et les trois
+  ordres n'en faisaient que deux ; il a été repris.
+- `comparer-mots.sh` signale à part les lignes dont un symbole diffère : 5 sur ATA 21,
+  87 sur les fiches. Ce ne sont pas des coupures : les lettres de ces lignes sont les
+  mêmes des deux côtés, seul un symbole manque au PDF (« ≤ » et « → » sur ATA 21, le
+  caractère de contrôle U+0084 sur les fiches). La cause n'a pas été cherchée.
+- Les blocs tournés ne se comparent pas mot à mot (1 sur l'exemple, 2 sur ATA 21) :
+  `pdftotext` ne lit pas leurs lignes comme des lignes. L'outil les nomme.
+
+*Repris le 12 octobre 2026, après relecture.* La relecture adversariale a jugé le lot
+« fusionnable après corrections » : quatre défauts, et la fusion de `main` à faire.
+
+- **La fusion.** `main` est entré dans la branche (Q9, B2, C5b et Q20, Q7, Q14, Q23).
+  L'export garde la charte de C5b et reçoit en plus la règle de l'écran. Le champ de
+  saisie ne passe plus par `Conv.Font` mais par le convertisseur `PoliceDuJeu` de C5b,
+  qui faisait `new FontFamily(...)` : il passe désormais par `PolicesDuDocument.Famille`,
+  sans quoi le changement de Q13 était perdu à la fusion. Les noms `scheme:` sont
+  résolus par `Charte.StyleCommun` et `Charte.Fragments` avant `Compositeur.Composer`,
+  à l'écran (`ControleDeBloc.Mesurer`) comme à l'export (`DrawText`) : la règle à mesurer
+  reçoit un nom de police, jamais une référence au jeu. Un bloc de la recette tient sa
+  police du jeu (« scheme:heading », Noto Serif) et coupe comme le PDF. La **vignette
+  des modèles** (`TemplatePreview`, Q9) compose par `MetriquesAvalonia`, sur la largeur
+  du modèle et avec le style résolu par la charte : elle coupe donc déjà sur la même
+  règle que la page, et n'a pas été touchée. C'est lu dans le code : la recette de Q9
+  reste verte, mais aucune mesure n'a confronté ses filets au PDF.
+- **Trouvé à la fusion : un sabotage de C6 sans cible.** « L'écran ignore la marge du
+  haut » visait `var ligneDeBase = bloc.PaddingTop + descente`, que la refonte de
+  `TexteCompose` par le premier commit de Q13 avait réécrit. `--cibles` l'a vu. Il vise
+  désormais `var haut = bloc.PaddingTop + descente + ligne.Haut;`, et il a été éprouvé
+  à la main : la recette C6 tombe.
+- **L'export pouvait ignorer la mesure de l'écran sans que rien ne tombe.** Remplacer la
+  règle de l'écran par `null`, dans `--export` ou dans l'export de l'application,
+  laissait `verifier.sh` vert : sur le corpus, la mesure du PDF est presque toujours la
+  plus large. Sondé sur dix familles, quatre variantes, les mots de l'exemple et
+  quelques paires : l'écran mesure plus large de plus d'un millième de point dans 370
+  cas sur 11 200, au plus pour « f) » en Noto Serif (+0,9 pt à 10 pt, un crénage
+  positif). La page 3 de `Samples/recette-coupure.mypub` porte donc quatre blocs en
+  Noto Serif à 20 pt — romain, italique, gras, et romain par la police du jeu —, larges
+  de la moitié du chemin entre les deux mesures de « Voir l'alinéa f) » : 134,88 pt au
+  PDF seul, 136,68 pt à la plus large des deux, pour un bloc de 135,78 pt en romain.
+  C'est éprouvé par les deux exports. Pour `--export`, `comparer-mots.sh` lit le PDF du
+  vrai binaire. Pour l'export de l'application, un test d'interface appelle
+  `ExportPdf` du modèle de vue et relit le PDF par `pdftotext`, avec une contre-épreuve :
+  sans la mesure de l'écran, « f) » reste sur la première ligne. Les deux câblages
+  sabotés à la main font tomber la recette.
+- **La largeur disponible.** `Mesurer` composait sur `Bounds` — la taille du contrôle,
+  que la mise en page arrondit au pixel SUPÉRIEUR : 151 pour 150,4, de 0,1 à 0,6 pt de
+  plus sur les 52 blocs de la recette —, l'export sur celle du modèle. Il compose
+  désormais sur `bloc.Width` et `bloc.Height` moins les marges, comme l'export. Sur les
+  48 blocs du relecteur, larges de 150,4 à 173,9 pt au pas de 0,5, `comparer-mots.sh`
+  passe de 19 lignes coupées autrement (5 blocs, tous en « ,4 ») à 0. Ces 48 blocs
+  sont les pages 1 et 2 de `recette-coupure.mypub`. La phrase du README qui disait
+  « l'écran et le PDF coupent aux mêmes mots » ne dit plus que ce qui est mesuré.
+- **`comparer-mots.sh` jetait en silence un mot du PDF sans ligne à l'écran**, alors que
+  son en-tête disait le contraire. Ce mot compte désormais comme écart, sauf s'il tombe
+  dans un bloc non comparé. On en relève 0 sur l'exemple, ATA 21, les fiches et la
+  recette. Avec le sabotage du relecteur — l'écran ne dessine plus la dernière ligne
+  d'un bloc de plusieurs lignes —, on en relève 28 sur la page 1 de l'exemple, et ATA 21
+  tombe aussi. Le même calcul attrape une page ou un bloc entier que l'écran ne relève pas ;
+  ce cas-là n'a pas été joué.
+- **La porte privée d'Avalonia.** `PolicesDuDocument` la cherche une fois par
+  processus, au premier montage des polices, et reçoit le gestionnaire de la
+  plate-forme par `Initialize` au lieu de lire `FontManager.PlatformImpl` par
+  réflexion. Sans elle, la collection n'est pas montée et `Famille` rend la famille du
+  système, c'est-à-dire la résolution d'Avalonia d'avant Q13. Un seul avertissement
+  part alors sur la sortie d'erreur. `--export` échoue, avec le code 1 et sans écrire de
+  PDF, et l'export de l'application le signale dans la barre d'état. Un appel qui lève
+  malgré la porte retombe, pour cette face seule, sur la résolution d'Avalonia. La
+  variable `MYPUBLISHER_SANS_PORTE_PRIVEE=1` fait chercher une méthode qui n'existe pas,
+  si bien que c'est le vrai chemin de l'échec qui est parcouru. Deux tests l'éprouvent
+  dans de vrais processus : `--export` sur l'exemple sort en 1 sans PDF, et le banc
+  ouvre la vraie fenêtre, relève ses 53 lignes et avertit une fois. Ceci remplace la
+  phrase de *Choisi sans certitude* selon laquelle une version sans la porte « lève une
+  exception à la première mesure ».
+
+La recette joue désormais 7 tests purs et 7 tests d'interface, dont 3 nouveaux. Elle
+lance `comparer-mots.sh` sur l'exemple, ATA 21 et les fiches dans les trois ordres, puis
+sur `recette-coupure.mypub` (400 lignes, 3 024 mots, 52 blocs, 0 ligne coupée
+autrement), et finit par la contre-épreuve. Six sabotages s'ajoutent en fin de juge :
+les deux exports sans la mesure de l'écran, la largeur arrondie, la dernière ligne non
+dessinée, le refus de `--export` sans la porte, la collection adressée sans la porte.
+
+*Choisi sans certitude.*
+- Sans la porte, `--export` refuse plutôt que de retomber sur `ecran: null` : un PDF de
+  référence coupé autrement que l'écran, signalé par un simple avertissement, est ce que
+  Q13 combat. Le prix : plus d'export scripté tant que la porte n'est pas remplacée.
+- La variable `MYPUBLISHER_SANS_PORTE_PRIVEE` vit dans le code de l'application et ne
+  sert qu'à l'épreuve.
+- Les largeurs de la page 3 sont figées pour les fichiers Noto Serif de cette machine.
+  Avec une autre version de la police, les blocs pourraient ne plus être à la limite. Le
+  test d'interface le dirait (l'écran doit renvoyer « f) », le PDF seul le garder) ;
+  `comparer-mots.sh`, lui, resterait vert.
+
+*Trouvé et laissé tel quel.*
+- Le sabotage de `--export` sans la mesure de l'écran est attrapé dans la recette dès
+  l'étape 2, par le test sans la porte : sans l'appel à `MesureDeLEcran`, le refus ne
+  se produit plus. Éprouvée seule à la main, l'étape 4 l'attrape aussi : 24 lignes
+  coupées autrement, toutes sur la page 3.
+
+*Complété le 12 octobre 2026, après la seconde relecture* (« fusionnable après
+corrections », trois points ; les deux questions du lot ont été tranchées : `--export`
+qui refuse sans la porte privée est approuvé, la variable `MYPUBLISHER_SANS_PORTE_PRIVEE`
+dans l'application est acceptée).
+
+- **La hauteur n'était gardée par rien.** Composer sur `Bounds.Height` au lieu de la
+  hauteur du modèle passait tout `verifier.sh` : tous les blocs de la recette avaient une
+  hauteur entière. Le défaut est réel : un bloc à deux colonnes de 58,3 pt composait sur
+  59 à l'écran, et la 7e ligne restait en colonne 1 quand le PDF la passait en
+  colonne 2. `recette-coupure.mypub` porte désormais une page 4 : 22 blocs à deux
+  colonnes, de 58,05 à 58,65 pt de haut, tirés du document du relecteur, dont on a
+  retiré les deux blocs de hauteur entière. Leur texte s'arrête après « puis du PDF. »
+  (35 mots) : entier, il débordait de 42 à 51 pt, et un document livré ne déborde pas
+  (recette A2-A7, `DebordementTests`). Raccourci, il compose 238 lignes sur les 22
+  blocs, et le sabotage de la hauteur y fait encore tomber la recette. Sain, `comparer-mots.sh` y relève 0 ligne
+  coupée autrement (638 lignes, 3 794 mots, 74 blocs sur les quatre pages). L'étape 4
+  de la recette exige désormais 74 blocs. Un septième sabotage vise la hauteur, éprouvé
+  à la main : la recette tombe à l'étape 4, sur 106 lignes coupées autrement et 90 mots
+  du PDF sans ligne à l'écran.
+- **La page 3 dépend de Noto Serif.** Le test de l'export de l'application vérifie
+  d'abord, bloc par bloc, que la police de cette machine départage encore les deux
+  mesures, et sinon le dit (« recalculer les largeurs de la page 3 »). La vérification
+  suggérée — « Voir l'alinéa f) » mesurée d'un tenant, `pdf < largeur utile < écran` —
+  ne tient pas : la ligne entière mesure 135,48 pt à l'écran, sous les 135,78 du bloc.
+  C'est le maximum pris MOT PAR MOT qui renvoie « f) ». La vérification cumule donc les
+  mots comme le compositeur : 134,88 pt au PDF seul < 135,78 < 136,68 à la règle de
+  coupure, et « f) » plus large à l'écran (16,10 pt) qu'au PDF (14,30). Avec un bloc
+  porté à 137 pt, elle tombe avec son message.
+- **L'arrondi était mal décrit.** Le commentaire de `Mesurer` dit maintenant « 151 pour
+  150,4 ». La crainte d'un rognage, écrite plus haut sous *Choisi sans certitude*, est
+  remplacée par la mesure du relecteur : 0 bloc rogné sur 52, et l'encre la plus proche
+  du bord à 0,42 pt (B22, page 1).
+- Le plantage « Aborted (core dumped) » du premier passage de `verifier.sh` n'est pas
+  reproduit dans le code des polices. Le relecteur l'attribue à l'erreur connue de
+  dotnet sur cette machine ; il sera traité sur `main`.
 
 ### Q14 — Un double-clic ne déplace pas le bloc
 

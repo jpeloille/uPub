@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using MyPublisher;
+using MyPublisher.Views;
 using MyPublisher.Tests.Interface;
 
 [assembly: AvaloniaTestApplication(typeof(Hote))]
@@ -21,5 +22,7 @@ public static class Hote
     public static AppBuilder BuildAvaloniaApp() =>
         AppBuilder.Configure<App>()
             .UseSkia()
-            .UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false });
+            .UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false })
+            // Les polices comme l'application les monte (poste Q13).
+            .AvecLesPolicesDeMyPublisher();
 }

@@ -292,8 +292,8 @@ saboter "on prend le dernier jeu de coordonnées au lieu de l actif" \
 # haut » de la recette de C6 le voit.
 saboter "l écran ignore la marge du haut" \
     MyPublisher/Views/TexteCompose.cs \
-    'var ligneDeBase = bloc.PaddingTop + descente' \
-    'var ligneDeBase = descente' \
+    'var haut = bloc.PaddingTop + descente + ligne.Haut;' \
+    'var haut = descente + ligne.Haut;' \
     'C6-marges'
 
 # Q2 : le remède lui-même. Le geste réel — changer de page — ne l'éprouve pas, le
@@ -894,6 +894,76 @@ saboter "une frappe prend la valeur exacte qu'un autre bloc a affichée" \
 
     public bool Retrouver(decimal affiche, out double valeur) => _valeurs.TryGetValue(affiche, out valeur);' \
     'Q14-double-clic|DoubleClicTests'
+
+# Q13 : la décision de renvoi lit la mesure du dessin, comme avant le poste. L'écran et
+# le PDF recoupent chacun à sa mesure, et « jamais » change de ligne dans la première
+# colonne de l'exemple.
+saboter "la coupure se décide sur la mesure de chaque rendu et non sur la plus large" \
+    MyPublisher.Core/Models/Compositeur.cs \
+    'coupureCourante + metriques.LargeurDeCoupure(mot.Texte.TrimEnd(), mot.Style) > disponible' \
+    'largeurCourante + metriques.Largeur(mot.Texte.TrimEnd(), mot.Style) > disponible' \
+    'Q13-coupure|CoupureTests|CompositeurTests|MetriquesPdfTests'
+
+# Q13 : l'écran reprend la résolution d'Avalonia, et l'italique absent de DejaVu Sans
+# sort de la face qu'il a chargée la première — le gras, dans l'ordre du document.
+saboter "l'écran résout ses polices par Avalonia et non par la collection du projet" \
+    MyPublisher/Views/ControleDeBloc.cs \
+    'PolicesDuDocument.Famille(style.FontFamily),' \
+    'new FontFamily(style.FontFamily),' \
+    'Q13-coupure|CoupureTests'
+
+# Q13, repris après relecture. L'export sans fenêtre oublie la mesure de l'écran : sur
+# le corpus, celle du PDF est presque toujours la plus large, et ce sabotage passait
+# vert. La page 3 de recette-coupure.mypub a des blocs où l'écran mesure plus large.
+saboter "« --export » coupe à la seule mesure du PDF" \
+    MyPublisher/Program.cs \
+    'PdfExporter.Export(document, target, MesureDeLEcran(), contacts, date)' \
+    'PdfExporter.Export(document, target, null, contacts, date)' \
+    'Q13-coupure'
+
+saboter "l'export de l'application coupe à la seule mesure du PDF" \
+    MyPublisher/ViewModels/MainWindowViewModel.cs \
+    'PdfExporter.Export(Document, path, new Views.MetriquesAvalonia(), Contacts.Active, _horloge())' \
+    'PdfExporter.Export(Document, path, null, Contacts.Active, _horloge())' \
+    'Q13-coupure|CoupureTests'
+
+# L'écran compose sur la taille du contrôle, arrondie au pixel par la mise en page, et
+# non sur celle du bloc : 19 lignes coupées autrement sur les blocs au demi-point.
+saboter "l'écran compose sur la largeur arrondie du contrôle" \
+    MyPublisher/Views/ControleDeBloc.cs \
+    'var largeur = Math.Max(1, bloc.Width - bloc.PaddingLeft - bloc.PaddingRight);' \
+    'var largeur = Math.Max(1, Bounds.Width - bloc.PaddingLeft - bloc.PaddingRight);' \
+    'Q13-coupure'
+
+# La hauteur de même : un bloc à deux colonnes de 58,3 pt composait sur 59, et gardait
+# en colonne 1 une ligne que le PDF passe en colonne 2 (seconde relecture de Q13).
+saboter "l'écran compose sur la hauteur arrondie du contrôle" \
+    MyPublisher/Views/ControleDeBloc.cs \
+    'var hauteur = Math.Max(1, bloc.Height - bloc.PaddingTop - bloc.PaddingBottom);' \
+    'var hauteur = Math.Max(1, Bounds.Height - bloc.PaddingTop - bloc.PaddingBottom);' \
+    'Q13-coupure'
+
+# L'écran ne dessine plus la dernière ligne d'un bloc de plusieurs lignes. Avant la
+# relecture, comparer-mots.sh jetait en silence les mots du PDF sans ligne à l'écran.
+saboter "l'écran ne dessine plus la dernière ligne d'un bloc" \
+    MyPublisher/Views/TexteCompose.cs \
+    'for (var rang = 0; rang < mesure.Lignes.Count; rang++)' \
+    'for (var rang = 0; rang < mesure.Lignes.Count - (mesure.Lignes.Count > 1 ? 1 : 0); rang++)' \
+    'Q13-coupure'
+
+# Sans la porte privée d'Avalonia, « --export » écrivait un PDF sans texte, code nul.
+saboter "« --export » écrit un PDF sans la mesure de l'écran quand la porte manque" \
+    MyPublisher/Program.cs \
+    'if (PolicesDuDocument.Indisponible is { } motif)' \
+    'if (PolicesDuDocument.Indisponible is { } motif && motif.Length < 0)' \
+    'Q13-coupure|CoupureTests'
+
+# Sans la porte, l'application adressait encore la collection qu'elle n'a pas montée.
+saboter "sans la porte, l'écran adresse une collection qui n'existe pas" \
+    MyPublisher/Views/PolicesDuDocument.cs \
+    'return Indisponible is null ? new FontFamily($"{Cle}#{nom}") : new FontFamily(nom);' \
+    'return new FontFamily($"{Cle}#{nom}");' \
+    'Q13-coupure|CoupureTests'
 
 echo
 if [ "$cibles" = 1 ]; then

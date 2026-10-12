@@ -8,6 +8,7 @@ using Avalonia.Media;
 using Avalonia.VisualTree;
 using MyPublisher.Converters;
 using MyPublisher.Models;
+using MyPublisher.Services;
 
 namespace MyPublisher.Views;
 
@@ -134,7 +135,7 @@ public abstract class ControleDeBloc : Control
         InvalidateVisual();
 
     /// <summary>
-    /// Compose le bloc pour la place dont ce contrôle dispose. Les deux contrôles
+    /// Compose le bloc pour la place que le bloc se donne. Les deux contrôles
     /// passent par ici : le texte tracé et le marqueur qui dit qu'il déborde doivent
     /// parler de la même composition, sinon l'un signalerait ce que l'autre ne montre
     /// pas.
@@ -143,8 +144,15 @@ public abstract class ControleDeBloc : Control
     {
         if (Bloc is not { } bloc || string.IsNullOrEmpty(Contenu)) return null;
 
-        var largeur = Math.Max(1, Bounds.Width - bloc.PaddingLeft - bloc.PaddingRight);
-        var hauteur = Math.Max(1, Bounds.Height - bloc.PaddingTop - bloc.PaddingBottom);
+        // La place est celle du MODÈLE, comme à l'export, et non celle du contrôle : la
+        // mise en page arrondit la taille d'un contrôle au pixel supérieur, et un bloc de
+        // 150,4 pt y composait sur 151 — dix-neuf lignes coupées autrement que le PDF sur
+        // les 48 blocs aux largeurs en demi-points de la relecture de Q13. La hauteur de
+        // même : un bloc à deux colonnes de 58,3 pt composait sur 59, et gardait en
+        // colonne 1 une ligne que le PDF passe en colonne 2. Le texte ne doit pas
+        // dépendre de cet arrondi.
+        var largeur = Math.Max(1, bloc.Width - bloc.PaddingLeft - bloc.PaddingRight);
+        var hauteur = Math.Max(1, bloc.Height - bloc.PaddingTop - bloc.PaddingBottom);
 
         // Le style et les fragments arrivent résolus par la charte du document, la même
         // fonction que l'export appelle : une police du jeu se mesure dans la police du
@@ -168,13 +176,26 @@ public abstract class ControleDeBloc : Control
     }
 }
 
-/// <summary>La règle à mesurer d'Avalonia, prêtée au compositeur du noyau.</summary>
+/// <summary>
+/// La règle à mesurer d'Avalonia, prêtée au compositeur du noyau.
+///
+/// Elle dessine à sa mesure, mais ne coupe pas à sa mesure : la coupure se décide sur
+/// la plus large d'elle et de celle du PDF, que l'export calcule de son côté avec les
+/// mêmes deux termes (poste Q13). Sans cela, un mot qui tient au centième de point à
+/// l'écran passe à la ligne dans le PDF, et tout le reste du bloc se décale.
+/// </summary>
 public sealed class MetriquesAvalonia : Compositeur.IMetriques
 {
     private readonly Dictionary<StyleEffectif, Typeface> _polices = [];
 
+    /// <summary>Ce que le PDF mesurerait, sans rien dessiner.</summary>
+    private MetriquesPdf? _pdf;
+
     public double Largeur(string texte, StyleEffectif style) =>
         Composer(texte, style).WidthIncludingTrailingWhitespace;
+
+    public double LargeurDeCoupure(string texte, StyleEffectif style) =>
+        Math.Max(Largeur(texte, style), (_pdf ??= MetriquesPdf.HorsPage(ecran: null)).Largeur(texte, style));
 
     public double Naturelle(StyleEffectif style) =>
         InterligneConverter.HauteurNaturelle(
@@ -196,8 +217,11 @@ public sealed class MetriquesAvalonia : Compositeur.IMetriques
     {
         if (_polices.TryGetValue(style, out var connue)) return connue;
 
+        // La famille est prise dans la collection des documents, et non dans celle du
+        // système : c'est elle qui rend la même face quel que soit ce que le processus
+        // a chargé avant, et le même fichier que l'export (poste Q13).
         var typeface = new Typeface(
-            new FontFamily(style.FontFamily),
+            PolicesDuDocument.Famille(style.FontFamily),
             style.Italic ? FontStyle.Italic : FontStyle.Normal,
             style.Bold ? FontWeight.Bold : FontWeight.Normal);
 

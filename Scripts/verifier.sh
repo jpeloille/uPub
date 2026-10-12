@@ -19,11 +19,16 @@
 #   2. le contrôle de non-régression — compile, relit, réécrit, exporte,
 #   3. les recettes des postes, une par poste.
 #
-# La comparaison écran ↔ PDF n'est PAS lancée ici sur tous les documents : sur une page
-# de texte elle échoue aujourd'hui pour une raison connue et écrite — l'écran et le PDF
-# mesurent les mots chacun avec sa bibliothèque, et peuvent couper une ligne à un mot
-# différent (cf. PLAN.md, poste Q13). Elle est appelée par les recettes qui la
-# concernent, avec leur document et leur tolérance.
+# Les deux comparaisons écran ↔ PDF ne sont pas lancées ici en bloc, mais par les
+# recettes qui les concernent, avec leur document et leur tolérance :
+#
+#   - « comparer-mots.sh » pour le texte : il confronte, mot à mot, les lignes que le
+#     banc dessine à celles du PDF, et dit lesquelles coupent autrement. La recette de
+#     Q13 l'appelle sur l'exemple et les deux documents ATR ;
+#   - « comparer-rendus.sh » pour les formes et les images, au pixel. Sur une page de
+#     texte, il ne mesure pas la coupure mais le dessin des glyphes : deux rastériseurs
+#     du MÊME PDF y diffèrent déjà de 2,36 % sur la page 1 de l'exemple, au-dessus de
+#     ce que son seuil laisse à l'écran (cf. PLAN.md, poste Q13).
 #
 set -euo pipefail
 export LC_ALL=C

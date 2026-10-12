@@ -42,7 +42,9 @@ public sealed class PoliceDuJeu : IMultiValueConverter
         var charte = values.Count > 1 ? values[1] as Charte : null;
         if (string.IsNullOrWhiteSpace(nom)) return FontFamily.Default;
 
-        return new FontFamily((charte ?? Charte.Defaut).Police(nom));
+        // La collection des documents, comme le texte composé : la saisie ne doit pas
+        // montrer l'italique en gras quand l'affichage le montre penché (poste Q13).
+        return Views.PolicesDuDocument.Famille((charte ?? Charte.Defaut).Police(nom));
     }
 }
 

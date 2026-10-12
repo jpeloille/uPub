@@ -23,6 +23,14 @@ public static class PdfExporter
     /// appartiennent à l'utilisateur, pas au document, et l'export ne doit pas dépendre
     /// d'un réglage qu'il irait chercher lui-même.
     /// </summary>
+    /// <param name="ecran">
+    /// La règle à mesurer de l'écran. La coupure de chaque ligne se décide sur la plus
+    /// large de sa mesure et de celle du PDF, ce qui fait couper l'export aux mêmes mots
+    /// que l'écran (poste Q13). Le noyau ne connaît pas Avalonia : c'est l'application
+    /// qui la passe. <c>null</c> veut dire « pas d'écran » et coupe à la seule mesure du
+    /// PDF ; seuls les tests du noyau le font. Le paramètre n'a pas de valeur par
+    /// défaut, pour qu'aucun appelant ne coupe autrement que l'écran sans l'avoir écrit.
+    /// </param>
     /// <param name="date">
     /// Date que portent les champs, ou <c>null</c> pour lire l'horloge. Elle se passe
     /// pour qu'un export soit reproductible : sans elle, tout document portant un champ
@@ -30,7 +38,8 @@ public static class PdfExporter
     /// référence figée n'est possible.
     /// </param>
     public static ExportReport Export(
-        Document document, string path, BusinessInfo? contact = null, DateTime? date = null)
+        Document document, string path, Compositeur.IMetriques? ecran,
+        BusinessInfo? contact = null, DateTime? date = null)
     {
         FontconfigFontResolver.EnsureInstalled();
 
@@ -69,7 +78,9 @@ public static class PdfExporter
             // celui d'un bloc, et il doit se retrouver sous le premier d'entre eux.
             DrawBackground(gfx, document, warnings, charte);
 
-            DessinerTous(gfx, page.Frames, warnings, context, charte, $"Page {index + 1}");
+            // Une règle par page, parce qu'elle mesure sur la surface de la page.
+            var metriques = new MetriquesPdf(gfx, ecran);
+            DessinerTous(gfx, metriques, page.Frames, warnings, context, charte, $"Page {index + 1}");
         }
 
         var pageCount = pdf.PageCount;
@@ -190,12 +201,12 @@ public static class PdfExporter
     /// c'est elle qui dit si un nom suffit à désigner.
     /// </summary>
     private static void DessinerTous(
-        XGraphics gfx, IReadOnlyList<Frame> blocs, List<string> warnings,
+        XGraphics gfx, MetriquesPdf metriques, IReadOnlyList<Frame> blocs, List<string> warnings,
         FieldContext context, Charte charte, string chemin)
     {
         for (var rang = 0; rang < blocs.Count; rang++)
         {
-            DrawFrame(gfx, blocs[rang], warnings, context, charte, Reperer(chemin, blocs, rang));
+            DrawFrame(gfx, metriques, blocs[rang], warnings, context, charte, Reperer(chemin, blocs, rang));
         }
     }
 
@@ -238,8 +249,8 @@ public static class PdfExporter
     /// chacun de ses blocs sans qu'aucun calcul n'ait à les combiner.
     /// </summary>
     private static void DrawFrame(
-        XGraphics gfx, Frame frame, List<string> warnings, FieldContext context, Charte charte,
-        string repere)
+        XGraphics gfx, MetriquesPdf metriques, Frame frame, List<string> warnings, FieldContext context,
+        Charte charte, string repere)
     {
         var state = gfx.Save();
         if (frame.Rotation != 0)
@@ -262,10 +273,10 @@ public static class PdfExporter
         {
             switch (frame)
             {
-                case TextFrame text: DrawText(gfx, text, context, charte, warnings, repere); break;
+                case TextFrame text: DrawText(gfx, metriques, text, context, charte, warnings, repere); break;
                 case ImageFrame image: DrawImage(gfx, image, warnings, context, repere); break;
-                case GroupFrame group: DrawChildren(gfx, group, warnings, context, charte, repere); break;
-                case TableFrame table: DrawTable(gfx, table, warnings, context, charte, repere); break;
+                case GroupFrame group: DrawChildren(gfx, metriques, group, warnings, context, charte, repere); break;
+                case TableFrame table: DrawTable(gfx, metriques, table, warnings, context, charte, repere); break;
             }
         }
         catch (Exception ex)
@@ -279,9 +290,9 @@ public static class PdfExporter
     }
 
     private static void DrawChildren(
-        XGraphics gfx, GroupFrame group, List<string> warnings, FieldContext context, Charte charte,
-        string repere) =>
-        DessinerPortes(gfx, group, group.Children, warnings, context, charte, repere);
+        XGraphics gfx, MetriquesPdf metriques, GroupFrame group, List<string> warnings, FieldContext context,
+        Charte charte, string repere) =>
+        DessinerPortes(gfx, metriques, group, group.Children, warnings, context, charte, repere);
 
     /// <summary>
     /// Les blocs d'un groupe ou les cases d'un tableau, dans le repère de leur porteur et
@@ -295,7 +306,7 @@ public static class PdfExporter
     /// à l'écran et courait jusqu'au bout dans le PDF.
     /// </summary>
     private static void DessinerPortes(
-        XGraphics gfx, Frame porteur, IReadOnlyList<Frame> blocs, List<string> warnings,
+        XGraphics gfx, MetriquesPdf metriques, Frame porteur, IReadOnlyList<Frame> blocs, List<string> warnings,
         FieldContext context, Charte charte, string repere)
     {
         var state = gfx.Save();
@@ -304,7 +315,7 @@ public static class PdfExporter
             gfx.TranslateTransform(porteur.X, porteur.Y);
             var zone = Decoupe.DesBlocs(porteur.Width, porteur.Height, blocs);
             gfx.IntersectClip(new XRect(zone.Left, zone.Top, zone.Width, zone.Height));
-            DessinerTous(gfx, blocs, warnings, context, charte, repere);
+            DessinerTous(gfx, metriques, blocs, warnings, context, charte, repere);
         }
         finally
         {
@@ -321,9 +332,9 @@ public static class PdfExporter
     /// comparer pour s'en assurer.
     /// </summary>
     private static void DrawTable(
-        XGraphics gfx, TableFrame table, List<string> warnings, FieldContext context, Charte charte,
-        string repere) =>
-        DessinerPortes(gfx, table, table.CellFrames, warnings, context, charte, repere);
+        XGraphics gfx, MetriquesPdf metriques, TableFrame table, List<string> warnings, FieldContext context,
+        Charte charte, string repere) =>
+        DessinerPortes(gfx, metriques, table, table.CellFrames, warnings, context, charte, repere);
 
     /// <summary>
     /// La zone qu'un remplissage doit couvrir, et sa forme. Un bloc, une case ou la page
@@ -527,8 +538,8 @@ public static class PdfExporter
     /// bloc.
     /// </summary>
     private static void DrawText(
-        XGraphics gfx, TextFrame text, FieldContext context, Charte charte, List<string> warnings,
-        string repere)
+        XGraphics gfx, MetriquesPdf metriques, TextFrame text, FieldContext context, Charte charte,
+        List<string> warnings, string repere)
     {
         // Le contenu passe par le résolveur de champs, celui-là même que l'écran
         // appelle : un folio vu à l'écran est le folio imprimé.
@@ -541,8 +552,9 @@ public static class PdfExporter
             Math.Max(1, text.Width - text.PaddingLeft - text.PaddingRight),
             Math.Max(1, text.Height - text.PaddingTop - text.PaddingBottom));
 
-        // La composition est celle du noyau ; seule la règle à mesurer est d'ici.
-        // C'est ce qui permet à l'écran d'obtenir exactement les mêmes lignes.
+        // La composition est celle du noyau ; la règle à mesurer est d'ici, et la
+        // coupure se décide sur la plus large d'elle et de celle de l'écran. C'est ce
+        // qui permet à l'écran d'obtenir exactement les mêmes lignes (poste Q13).
         //
         // Un bloc portant un champ résolu n'a pas les mêmes caractères que son texte
         // saisi : les fragments de style, qui repèrent des positions dans le texte,
@@ -556,7 +568,6 @@ public static class PdfExporter
         var fragments = Fragments(text, content, charte);
         var ecarts = content == text.Text ? text.Paragraphs : (IReadOnlyList<ParagraphSpan>)[];
 
-        var metriques = new MetriquesPdf(gfx);
         var commun = Commun(text, charte);
         var lignes = Compositeur.Composer(
             content, fragments, commun, ecarts, text.Paragraph,
@@ -668,13 +679,8 @@ public static class PdfExporter
     /// <summary>Le style du bloc, celui dont les fragments s'écartent, résolu par la charte.</summary>
     private static StyleEffectif Commun(TextFrame text, Charte charte) => charte.StyleCommun(text);
 
-    private static XFont Police(StyleEffectif style)
-    {
-        var variante = XFontStyleEx.Regular;
-        if (style.Bold) variante |= XFontStyleEx.Bold;
-        if (style.Italic) variante |= XFontStyleEx.Italic;
-        return new XFont(style.FontFamily, style.FontSize, variante);
-    }
+    /// <summary>La police d'un style : celle que mesure <see cref="MetriquesPdf"/>, par le même code.</summary>
+    private static XFont Police(StyleEffectif style) => MetriquesPdf.Police(style);
 
     /// <summary>
     /// Montée de la ligne : celle du plus grand style qu'elle porte. C'est ce qui cale
@@ -690,15 +696,6 @@ public static class PdfExporter
         }
 
         return montee;
-    }
-
-    /// <summary>La règle à mesurer du PDF, prêtée au compositeur du noyau.</summary>
-    private sealed class MetriquesPdf(XGraphics gfx) : Compositeur.IMetriques
-    {
-        public double Largeur(string texte, StyleEffectif style) =>
-            gfx.MeasureString(texte, Police(style)).Width;
-
-        public double Naturelle(StyleEffectif style) => Police(style).GetHeight();
     }
 
     private static void DrawImage(

@@ -41,7 +41,7 @@ public class ExportTests
                 Fill = new ImageFill { Path = image },
             });
 
-            var rapport = PdfExporter.Export(document, sortie);
+            var rapport = PdfExporter.Export(document, sortie, ecran: null);
 
             Assert.Equal(1, rapport.PageCount);
             Assert.True(File.Exists(sortie), "aucun PDF écrit");
@@ -67,7 +67,7 @@ public class ExportTests
             var document = Document.CreateDefault();
             document.Background = new ImageFill { Path = image };
 
-            var rapport = PdfExporter.Export(document, sortie);
+            var rapport = PdfExporter.Export(document, sortie, ecran: null);
 
             Assert.True(File.Exists(sortie), "aucun PDF écrit");
             Assert.Contains(rapport.Warnings, a => a.Contains("Fond de page"));

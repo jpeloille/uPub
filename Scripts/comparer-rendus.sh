@@ -19,14 +19,17 @@
 # On compare donc les repères éteints, ce qui retire la seule différence voulue, et
 # l'on garde de la marge pour le lissage.
 #
-# ATTENTION — sur une page portant du texte, cette comparaison ÉCHOUE aujourd'hui, et
-# c'est une vraie trouvaille, pas un défaut du banc. Elle a d'abord trouvé que
-# l'interligne n'était pas appliqué à l'export : R4 l'a corrigé, et la page 1 du
-# document d'exemple est passée de 8 % à 4,87 %. Il reste que l'écran et le PDF
-# mesurent les mots chacun avec sa bibliothèque, et coupent une ligne de la première
-# colonne à un mot différent (cf. MyPublisher/Docs/PLAN.md, poste Q13). Formes seules :
-# 0,38 %. C'est pourquoi ce script n'est pas appelé en bloc par verifier.sh, mais
-# recette par recette, avec son document et sa tolérance.
+# C'est l'outil des FORMES ET DES IMAGES. Sur une page portant du texte, il échoue, et
+# ce n'est pas la coupure des lignes qu'il y mesure mais le dessin des glyphes : Skia
+# à l'écran, poppler au PDF ne lissent pas un bord de lettre de la même façon. Mesuré au
+# poste Q13 sur le document d'exemple, pages 1 et 2 : deux rastériseurs du MÊME PDF,
+# pdftoppm et pdftocairo, diffèrent déjà de 2,36 % et 1,77 % ; la page sans aucun texte,
+# de 0,37 % et 0,03 %. La coupure divergente de la première colonne n'y pesait que
+# 0,09 point. Il a d'abord trouvé, à juste titre, que l'interligne n'était pas appliqué
+# à l'export ; R4 l'a corrigé. Pour le texte, c'est « comparer-mots.sh » qui fait
+# autorité : il confronte les mots, pas les pixels. C'est pourquoi ce script n'est pas
+# appelé en bloc par verifier.sh, mais recette par recette, avec son document et sa
+# tolérance.
 #
 set -euo pipefail
 

@@ -406,7 +406,7 @@ public class ImagesTests : IDisposable
     private uint[] CouleursDesImagesDuPdf(Document document)
     {
         var pdf = Path.Combine(_travail, $"export-{Guid.NewGuid():N}.pdf");
-        PdfExporter.Export(document, pdf);
+        PdfExporter.Export(document, pdf, new MyPublisher.Views.MetriquesAvalonia());
 
         using var relu = PdfSharp.Pdf.IO.PdfReader.Open(pdf, PdfSharp.Pdf.IO.PdfDocumentOpenMode.Import);
         var couleurs = new System.Collections.Generic.List<uint>();

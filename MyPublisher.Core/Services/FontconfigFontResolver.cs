@@ -18,6 +18,21 @@ public sealed record ResolutionPolice(string Demandee, string Employee, string F
 {
     /// <summary>La famille obtenue est celle demandée.</summary>
     public bool Exacte => Motif is null;
+
+    /// <summary>
+    /// Le gras était demandé, et le fichier obtenu n'est pas gras : il faut l'épaissir.
+    /// </summary>
+    public bool SimulerGras { get; init; }
+
+    /// <summary>
+    /// L'italique était demandé, et le fichier obtenu est droit : il faut le pencher.
+    ///
+    /// C'est le cas de DejaVu Sans sur la machine du projet, qui n'a pas d'italique.
+    /// Jusqu'au poste Q13, l'export le dessinait droit, et l'écran le prenait dans la
+    /// face qu'Avalonia avait chargée la première — parfois le gras. Les deux lisent
+    /// désormais ce drapeau-ci, et penchent le même fichier.
+    /// </summary>
+    public bool SimulerItalique { get; init; }
 }
 
 /// <summary>
@@ -75,13 +90,19 @@ public sealed class FontconfigFontResolver : IFontResolver
     {
         var resolution = Resoudre(familyName, isBold, isItalic);
 
-        // Le chemin sert de nom de fonte : c'est lui que GetFont recevra ensuite.
-        return string.IsNullOrEmpty(resolution.Fichier) ? null : new FontResolverInfo(resolution.Fichier);
+        // Le chemin sert de nom de fonte : c'est lui que GetFont recevra ensuite. Les
+        // simulations sont celles que l'écran applique au même fichier (poste Q13).
+        return string.IsNullOrEmpty(resolution.Fichier)
+            ? null
+            : new FontResolverInfo(resolution.Fichier, resolution.SimulerGras, resolution.SimulerItalique);
     }
 
-    public byte[]? GetFont(string faceName)
-    {
-        return DataCache.GetOrAdd(faceName, path =>
+    /// <summary>
+    /// Les octets d'un fichier de police, par le même cache que l'export. L'écran les
+    /// lit ici pour charger exactement le fichier que le PDF emploie.
+    /// </summary>
+    public static byte[] Octets(string fichier) =>
+        DataCache.GetOrAdd(fichier, path =>
         {
             try
             {
@@ -92,7 +113,8 @@ public sealed class FontconfigFontResolver : IFontResolver
                 return File.Exists(Fallback) ? File.ReadAllBytes(Fallback) : [];
             }
         });
-    }
+
+    public byte[]? GetFont(string faceName) => Octets(faceName);
 
     /// <summary>
     /// La famille demandée figure-t-elle parmi celles que fontconfig annonce ?
@@ -131,13 +153,13 @@ public sealed class FontconfigFontResolver : IFontResolver
             using var process = Process.Start(new ProcessStartInfo
             {
                 FileName = "fc-match",
-                ArgumentList = { "-f", "%{file}\n%{family}", pattern },
+                ArgumentList = { "-f", "%{file}\n%{embolden}\n%{matrix}\n%{family}", pattern },
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false
             });
 
-            if (process is null) return Repli(famille, "fc-match indisponible");
+            if (process is null) return Repli(famille, "fc-match indisponible", gras, italique);
 
             // La sortie d'erreur est redirigée pour ne pas salir celle de
             // l'application ; encore faut-il la vider. Un fc-match qui remplirait son
@@ -152,28 +174,41 @@ public sealed class FontconfigFontResolver : IFontResolver
         catch (Exception)
         {
             // fc-match absent : on ne fait pas échouer l'export pour autant.
-            return Repli(famille, "fc-match indisponible");
+            return Repli(famille, "fc-match indisponible", gras, italique);
         }
 
-        var saut = sortie.IndexOf('\n');
-        if (saut < 0) return Repli(famille, "fc-match n'a rien rendu");
+        var champs = sortie.Split('\n', 4);
+        if (champs.Length < 4) return Repli(famille, "fc-match n'a rien rendu", gras, italique);
 
-        var fichier = sortie[..saut].Trim();
-        var famillesRendues = sortie[(saut + 1)..].Trim();
+        var fichier = champs[0].Trim();
+        var famillesRendues = champs[3].Trim();
 
-        if (fichier.Length == 0 || !File.Exists(fichier)) return Repli(famille, "aucun fichier de police");
+        // fc-match rend toujours un fichier, et pas forcément de la face demandée.
+        // Quand il n'en a pas, il le dit à sa façon : « embolden » pour un gras qu'il
+        // faudrait épaissir, une matrice de biais (« 1 0.2 0 1 ») pour un italique qu'il
+        // faudrait pencher. On suit sa décision plutôt que d'en refaire une : c'est lui
+        // qui a choisi le fichier. La graisse et la pente qu'il rend à côté, elles,
+        // sont celles de la DEMANDE une fois simulée — DejaVu Sans y passe pour oblique
+        // alors que son fichier est droit — et ne disent rien du fichier.
+        var simulerGras = gras && champs[1].Trim().Equals("True", StringComparison.OrdinalIgnoreCase);
+        var simulerItalique = italique && champs[2].Trim().Length > 0;
+
+        if (fichier.Length == 0 || !File.Exists(fichier)) return Repli(famille, "aucun fichier de police", gras, italique);
 
         // Une collection (.ttc) porte plusieurs fontes dans un même fichier ; PDFsharp
         // ne sait pas y choisir. La police est bien installée, et pourtant substituée :
         // le motif le dit, sans quoi l'avertissement serait incompréhensible.
         if (fichier.EndsWith(".ttc", StringComparison.OrdinalIgnoreCase))
         {
-            return Repli(famille, "collection .ttc, que l'export ne sait pas lire");
+            return Repli(famille, "collection .ttc, que l'export ne sait pas lire", gras, italique);
         }
 
         if (Correspond(famillesRendues, famille))
         {
-            return new ResolutionPolice(famille, famille, fichier, null);
+            return new ResolutionPolice(famille, famille, fichier, null)
+            {
+                SimulerGras = simulerGras, SimulerItalique = simulerItalique,
+            };
         }
 
         // Une famille vide n'est pas une police absente : un fichier a bien été trouvé,
@@ -181,7 +216,10 @@ public sealed class FontconfigFontResolver : IFontResolver
         // l'avertissement annoncer qu'il n'y a plus aucune police sur la machine.
         var noms = Noms(famillesRendues);
         var employee = noms.Length > 0 ? noms[0] : Path.GetFileName(fichier);
-        return new ResolutionPolice(famille, employee, fichier, "absente de cette machine");
+        return new ResolutionPolice(famille, employee, fichier, "absente de cette machine")
+        {
+            SimulerGras = simulerGras, SimulerItalique = simulerItalique,
+        };
     }
 
     /// <summary>
@@ -189,12 +227,14 @@ public sealed class FontconfigFontResolver : IFontResolver
     /// demandait, il n'y a aucune substitution à signaler : le repli rend alors la
     /// police demandée.
     /// </summary>
-    private static ResolutionPolice Repli(string demandee, string motif)
+    private static ResolutionPolice Repli(string demandee, string motif, bool gras, bool italique)
     {
         if (!File.Exists(Fallback)) return new ResolutionPolice(demandee, "", "", motif);
 
-        return string.Equals(demandee, FamilleDeRepli, StringComparison.OrdinalIgnoreCase)
-            ? new ResolutionPolice(demandee, demandee, Fallback, null)
-            : new ResolutionPolice(demandee, FamilleDeRepli, Fallback, motif);
+        // Le fichier de repli est le romain : tout ce qui était demandé d'autre se simule.
+        return (string.Equals(demandee, FamilleDeRepli, StringComparison.OrdinalIgnoreCase)
+                ? new ResolutionPolice(demandee, demandee, Fallback, null)
+                : new ResolutionPolice(demandee, FamilleDeRepli, Fallback, motif))
+            with { SimulerGras = gras, SimulerItalique = italique };
     }
 }

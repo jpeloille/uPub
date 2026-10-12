@@ -188,6 +188,8 @@ public class JeuxTests
             return texte.Length * 5;
         }
 
+        public double LargeurDeCoupure(string texte, StyleEffectif style) => Largeur(texte, style);
+
         public double Naturelle(StyleEffectif style) => 12;
     }
 
@@ -461,7 +463,7 @@ public class JeuxTests
         var chemin = Path.Combine(Path.GetTempPath(), $"c5b-{System.Guid.NewGuid():N}.pdf");
         try
         {
-            var rapport = PdfExporter.Export(document, chemin);
+            var rapport = PdfExporter.Export(document, chemin, ecran: null);
 
             var polices = rapport.Warnings.Where(w => w.StartsWith("Police")).ToList();
             Assert.Contains(polices, w => w.Contains("Police Inexistante C5b"));

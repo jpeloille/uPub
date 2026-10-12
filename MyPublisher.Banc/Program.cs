@@ -13,6 +13,8 @@ namespace MyPublisher.Banc;
 ///                          [--page N] [--pixels-par-point 2] [--sans-reperes]
 ///                          [--jeu-de-couleurs Nom] [--jeu-de-polices Nom]
 ///                          [--enregistrer &lt;copie.mypub&gt;]
+///   MyPublisher.Banc mots &lt;doc&gt; --sortie &lt;lignes.json&gt;
+///                          [--charger-d-abord romain|gras|italique] [--coupure-seule]
 ///
 /// Les deux jeux se choisissent par le modèle de vue, exactement comme la liste du
 /// panneau les choisit — c'est le geste « changer de jeu » du poste C5b, rejoué sans
@@ -34,6 +36,7 @@ internal static class Program
             return args[0] switch
             {
                 "rendre" => Rendre(args),
+                "mots" => Mots.Lancer(args),
                 _ => Inconnu(args[0]),
             };
         }
@@ -122,5 +125,9 @@ internal static class Program
             "                              [--page N] [--pixels-par-point 2] [--sans-reperes]");
         Console.Error.WriteLine(
             "                              [--jeu-de-couleurs Nom] [--jeu-de-polices Nom] [--enregistrer <copie.mypub>]");
+        Console.Error.WriteLine(
+            "        MyPublisher.Banc mots <doc> --sortie <lignes.json>");
+        Console.Error.WriteLine(
+            "                              [--charger-d-abord romain|gras|italique] [--coupure-seule]");
     }
 }
