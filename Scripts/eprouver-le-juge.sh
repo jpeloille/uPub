@@ -16,6 +16,9 @@
 #   Scripts/eprouver-le-juge.sh 'motif'    # ceux dont l'intitulé répond au motif (grep -E)
 #   Scripts/eprouver-le-juge.sh --cibles   # sans rien saboter : chaque texte visé est-il
 #                                          # présent, et une seule fois ? (quelques secondes)
+#   Scripts/eprouver-le-juge.sh --tranche 2/4 [motif]
+#                                          # un sabotage sur quatre, à partir du deuxième :
+#                                          # quatre copies de travail font le tout en parallèle
 #
 # L'arbre de travail doit être propre : le script écrit dans les sources et les
 # restaure par « git checkout ». Il refuse de tourner autrement, pour ne pas
@@ -33,6 +36,22 @@ if [ "${1:-}" = "--cibles" ]; then
     cibles=1
     shift
 fi
+# --tranche k/n : seuls les sabotages de rang k, k+n, k+2n… (rangs comptés à partir de 1,
+# après le filtre). Plus d'une centaine de sabotages à quatre minutes chacun ne tiennent
+# pas dans une soirée ; quatre copies de travail les jouent en parallèle.
+tranche=1
+tranches=1
+if [ "${1:-}" = "--tranche" ]; then
+    if ! [[ "${2:-}" =~ ^([0-9]+)/([0-9]+)$ ]] || [ "${BASH_REMATCH[1]}" -lt 1 ] ||
+       [ "${BASH_REMATCH[1]}" -gt "${BASH_REMATCH[2]}" ]; then
+        echo "ÉCHEC : --tranche attend k/n, avec 1 ≤ k ≤ n (reçu « ${2:-} »)." >&2
+        exit 2
+    fi
+    tranche="${BASH_REMATCH[1]}"
+    tranches="${BASH_REMATCH[2]}"
+    shift 2
+fi
+rang=0
 
 if [ "$cibles" = 0 ] && [ -n "$(git status --porcelain)" ]; then
     echo "ÉCHEC : l'arbre de travail n'est pas propre." >&2
@@ -71,6 +90,8 @@ filtre="${1:-}"
 saboter() {
     local intitule="$1" fichier="$2" avant="$3" apres="$4" attendu="${5:-}"
     if [ -n "$filtre" ] && ! grep -qE "$filtre" <<< "$intitule"; then return; fi
+    rang=$((rang + 1))
+    if [ $(( (rang - 1) % tranches )) != $((tranche - 1)) ]; then return; fi
     sabotages=$((sabotages + 1))
 
     # Le texte visé doit y être une fois et une seule : présent plusieurs fois, le

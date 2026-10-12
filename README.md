@@ -33,6 +33,7 @@ Scripts/controle.sh                 # le seul contrôle de la chaîne d'écritur
 Scripts/controle.sh --enregistrer   # remplace le relevé de référence, après examen
 Scripts/eprouver-le-juge.sh         # sabote le code et vérifie qu'on s'en aperçoit
 Scripts/eprouver-le-juge.sh --cibles   # chaque texte visé est là, une seule fois
+Scripts/eprouver-le-juge.sh --tranche 1/4   # un sabotage sur quatre (copies en parallèle)
 Scripts/comparer-rendus.sh doc.mypub 1   # formes et images : l'écran contre le PDF, à deux pixels par point
 Scripts/comparer-mots.sh doc.mypub 1     # texte : l'écran contre le PDF, mot à mot, ligne à ligne
 Scripts/bilan.sh                    # poste par poste : clos ou non, recette ou non
