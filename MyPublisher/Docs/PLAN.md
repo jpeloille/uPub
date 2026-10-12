@@ -3126,12 +3126,23 @@ sélectionné un tourné de 30.00001°, donne une épaisseur de 30.
 **Hors du poste, `Scripts/comparer-rendus.sh`.** Le commit 2e02036 acceptait la notation
 scientifique pour l'encre seulement. Le compte des pixels différents l'accepte aussi, et
 le total se calcule en entier, de la largeur et de la hauteur : `%[fx:int(w*h)]` s'écrit
-2.00684e+06 pour une image de 1191 × 1685, mesuré avec l'ImageMagick des outils.
+2.00684e+06 pour une image de 1191 × 1685, mesuré avec l'ImageMagick des outils ; la page
+de l'affiche donne maintenant « 4011288 pixels comparés ». Ma première version lisait la
+largeur et la hauteur par un `read` sans saut de ligne final : `read` sortait en 1, `set -e`
+arrêtait le script sans un mot, et neuf recettes tombaient. `verifier.sh` l'a attrapé ; le
+commit suivant le corrige.
 
 *Trouvé et laissé tel quel*, par la relecture, et ouvert en postes Q à part : il n'y a pas
 de seuil de glissement, si bien qu'un tremblement d'un pixel près d'une marge fait sauter
 le bloc de 3 pt par l'aimantation ; et un clic sans mouvement sur une poignée redimensionne
-le bloc (100 → 96 pt).
+le bloc (100 → 96 pt). Et, trouvé pendant cette reprise : les deux tests de `DoubleClicTests`
+qui double-cliquent dépendent de l'horloge. Sous charge, les deux clics s'écartent au-delà du
+délai d'un double-clic, la saisie ne s'ouvre pas, et le test tombe sur « le double-clic n'a
+pas ouvert la saisie ». Mesuré en lançant six fois en parallèle les tests `poste=Q14`, quatre
+fois de suite : 5 séries sur 24 tombent, et 10 sur 24 avec l'ancienne mémoire — le défaut
+précède la reprise. Une fois aussi dans un `verifier.sh` complet, alors que d'autres lots
+compilaient ; relancé seul, il passe. Le remède toucherait le banc commun (le délai du
+double-clic de la plate-forme sans tête), hors de ce poste.
 
 ### Q15 — Une image modifiée sur le disque se relit
 
