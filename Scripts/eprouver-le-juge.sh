@@ -400,6 +400,33 @@ saboter "la vignette espace ses filets du corps et non de la hauteur naturelle" 
     'yield return (x, descente + ligne.Haut * text.FontSize / metriques.Naturelle(commun), run, ligne.Avance);' \
     'Q9-vignette|VignetteTests'
 
+# Q9, après relecture : le fer et la longueur des filets, la découpe au bloc, le filet
+# d'un champ et la mémoire des filets. Chacun passait à travers un test qui ne lisait
+# que l'ordonnée des filets du bulletin.
+saboter "la vignette perd le fer : chaque filet part du retrait et court sur toute la colonne" \
+    MyPublisher/Views/TemplatePreview.cs \
+    'var justifiee = ligne.Fer == TextAlign.Justify && !ligne.FinDeParagraphe;' \
+    'var justifiee = true;' \
+    'Q9-vignette|VignetteTests'
+
+saboter "la vignette ne découpe plus ses filets au bloc" \
+    MyPublisher/Views/TemplatePreview.cs \
+    'using var _ = context.PushClip(new Rect(text.X, text.Y, text.Width, text.Height));' \
+    '' \
+    'Q9-vignette|VignetteTests'
+
+saboter "un champ ne laisse plus de filet dans la vignette" \
+    MyPublisher/Views/TemplatePreview.cs \
+    'yield return (0, 0, width, Compositeur.Avance(metriques.Naturelle(commun), text.LineHeight));' \
+    '' \
+    'Q9-vignette|VignetteTests'
+
+saboter "la vignette garde les filets du premier document qu'on lui pose" \
+    MyPublisher/Views/TemplatePreview.cs \
+    'if (!ReferenceEquals(document, _filetsDe) || box != _filetsA)' \
+    'if (_filetsDe is null)' \
+    'Q9-vignette|VignetteTests'
+
 echo
 if [ "$trous" = 0 ]; then
     echo "Le juge sait échouer : $sabotages sabotages, $sabotages attrapés."

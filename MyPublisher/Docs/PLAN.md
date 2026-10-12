@@ -2887,6 +2887,54 @@ catalogue, un filet d'italique peut donc être plus long ou plus court d'une ouv
 l'autre, et une ligne passer à la suivante. Le test ne le voit pas : il compose ses
 attentes dans le même processus que la vignette, avec la même résolution.
 
+*Repris le 12 octobre 2026, après relecture.* La relecture a fait passer trois
+sabotages à travers les tests : la vignette qui perd son fer et la longueur de ses
+filets, celle qui ne découpe plus au bloc, et le champ qui ne laisse plus de filet. Le
+test ne lisait que le nombre et l'ordonnée des filets du bulletin : ce que le
+paragraphe précédent dit de la longueur, du fer et de la découpe était écrit dans le
+code, mais pas éprouvé. `VignetteTests` passe de deux tests à six :
+
+- le début et la fin de chaque filet du bulletin, à un point près de ceux de sa ligne à
+  la page. Le bulletin ne centre aucun texte saisi : le test centre le titre de une et
+  le chapeau, et cale le sous-titre à droite. Il éprouve ainsi les 48 lignes, dont 36
+  justifiées, 3 centrées et une à droite, et exige plus de vingt justifiées, deux
+  centrées et une à droite : un fer qu'aucune ligne n'éprouverait passerait vert ;
+- un filet et un seul par champ de la carte de visite, de toute la largeur de sa zone de
+  texte, au milieu de sa première ligne ;
+- la première colonne du bulletin ramenée à cent points : sa composition en pose
+  207,3 points de haut, et aucune rangée de sa couleur ne paraît entre le bas du cadre et son bas
+  d'origine ;
+- une même vignette qui reçoit deux documents de suite recompose ses filets.
+
+*Mesuré.* Un sabotage de chacune des trois sortes que la relecture a fait passer — ses
+textes exacts n'ont pas été gardés —, et des variantes, font tomber un test et la
+recette, éprouvés à la main un par un : le fer perdu (`justifiee` toujours vraie, ou toujours fausse,
+centre ou droite ramenés au retrait, longueur toujours pleine) fait tomber les
+abscisses ; la découpe retirée, ou élargie au double de la hauteur, le débordement ; le
+filet de champ retiré, réduit à la moitié de la largeur, ou effacé par la garde du texte
+vide, la carte de visite. Les trois sont au juge, avec un quatrième : la mémoire des
+filets qui ne se renouvelle plus quand le document change.
+
+*La vignette garde ses filets.* Elle composait chaque bloc à chaque rendu. Les filets de
+chaque bloc, en coordonnées de la page, sont désormais gardés pour un document et une
+taille de contrôle, et rangés par ordre de rencontre : les cases d'un tableau sont des
+blocs refaits à chaque lecture, une clé par référence ne les retrouverait pas. À 134
+pixels de côté, moyenne de 500 rendus, deux passes, poste chargé : le bulletin passe
+de 2,5 et 2,7 ms par rendu à 0,06 ms, l'affiche de 1,2 et 1,3 ms à 0,03 ms, le dépliant
+de 0,34 à 0,03 ms ; la carte de visite, qui n'a que des champs, reste vers 0,02 ms.
+
+*Choisi sans certitude.* La mémoire ne voit pas une modification du document en place.
+Le catalogue n'en fait aucune — ses documents sont lus pour la vignette, et le modèle
+choisi est rouvert depuis son fichier —, et c'est écrit dans le commentaire de
+`TemplatePreview`. Un appelant qui afficherait un document qu'on édite devrait en poser
+un autre.
+
+*Ce que la recette ne prouve pas*, et qu'elle dit désormais en tête : la justesse de la
+composition elle-même — les attentes sont composées par le même `Compositeur`, avec les
+mêmes métriques —, la vignette à la taille du catalogue, les blocs tournés, les groupes,
+les tableaux, le calage vertical d'un champ, les retraits, l'affiche et le dépliant, et
+le gain de la mémoire, mesuré à la main seulement.
+
 ### Q10 — Saisir une poignée hors de la page
 
 La couche de saisie s'arrête au bord de la page. Une poignée de rotation qui en sort,
