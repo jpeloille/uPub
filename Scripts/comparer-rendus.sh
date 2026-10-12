@@ -76,7 +76,10 @@ pdftoppm -r 144 -f "$page" -l "$page" -png -singlefile \
 geometrie="$(magick "$travail/ecran.png" -format "%wx%h" info:)"
 magick "$travail/pdf.png" -background white -extent "$geometrie" "$travail/pdf-cadre.png"
 
-total="$(magick "$travail/ecran.png" -format "%[fx:int(w*h)]" info:)"
+# Le total se calcule ici et non par « %[fx:w*h] » : passé le million, ImageMagick
+# l'écrit en notation scientifique (« 2.00733e+06 pixels comparés »), même sous int().
+read -r largeur hauteur < <(magick "$travail/ecran.png" -format "%w %h" info:)
+total=$((largeur * hauteur))
 # « -fuzz 12% » : ce qu'on cherche est un décalage de forme, pas une nuance de
 # lissage. Sans ce seuil, chaque bord de lettre compterait pour une différence.
 # ImageMagick 7 écrit « 501819 (0.249994) » : le compte, puis la même chose
@@ -84,7 +87,9 @@ total="$(magick "$travail/ecran.png" -format "%[fx:int(w*h)]" info:)"
 differents="$(magick compare -metric AE -fuzz 12% \
     "$travail/ecran.png" "$travail/pdf-cadre.png" null: 2>&1 | awk '{print $1}' || true)"
 
-if ! [[ "$differents" =~ ^[0-9]+(\.[0-9]+)?$ ]]; then
+# Passé le million, le compte vient lui aussi en notation scientifique (« 1.70797e+06 »),
+# comme l'encre plus bas : la forme est acceptée, awk sait la lire.
+if ! [[ "$differents" =~ ^[0-9]+(\.[0-9]+)?(e[+-]?[0-9]+)?$ ]]; then
     echo "ÉCHEC : la comparaison n'a pas rendu un nombre de pixels ($differents)." >&2
     exit 1
 fi
