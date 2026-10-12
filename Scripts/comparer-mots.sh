@@ -21,11 +21,16 @@
 #     leur boîte, en points ;
 #   - chaque mot du PDF est rangé dans la ligne de l'écran dont la bande contient son
 #     centre et dont le cadre contient son début. Une ligne est COUPÉE AUTREMENT quand
-#     les mots du PDF qui y tombent ne font pas son texte ; un mot du PDF qui ne tombe
-#     dans aucune ligne, au droit d'un bloc relevé, en est une aussi — la ligne que le
-#     PDF a de plus.
+#     les mots du PDF qui y tombent ne font pas son texte ;
+#   - un mot du PDF qui ne tombe dans AUCUNE ligne de l'écran est un ÉCART lui aussi,
+#     où qu'il soit sur la page : c'est la ligne que le PDF a de plus — la dernière
+#     d'un bloc que l'écran ne dessine pas, un bloc ou une page entière qu'il ne
+#     relève pas. Seuls en sont exemptés les mots qui tombent dans un bloc non comparé.
+#     Jusqu'à la relecture de Q13, ces mots étaient jetés en silence, et un écran qui
+#     ne dessinait plus la dernière ligne de ses blocs passait vert.
 #
-# Le verdict porte sur les lignes coupées autrement : il en faut zéro. La tolérance,
+# Le verdict porte sur les lignes coupées autrement et sur les mots sans ligne : il en
+# faut zéro. La tolérance,
 # en points, porte sur la place du premier mot de chaque ligne, qui doit être la même
 # des deux côtés à la tolérance près. Elle vaut 1 pt par défaut, et ce n'est pas un
 # souhait : la mise en page d'Avalonia arrondit la place d'un bloc au pixel — à
@@ -145,7 +150,7 @@ def lettres(texte):
 def sans_blancs(texte):
     return "".join(texte.split())
 
-coupees, deplacees, ecartes, symboles = [], [], [], []
+coupees, deplacees, ecartes, symboles, orphelins = [], [], [], [], []
 lignes_vues = blocs_vus = mots_vus = 0
 ecart_max = 0.0
 
@@ -181,6 +186,10 @@ for numero in pages:
                             for w in c[2]["Mots"] if w["Texte"]), default=float("inf"))
             bloc, rang, ligne = min(candidates, key=distance)
             par_ligne.setdefault(id(ligne), []).append(m)
+        else:
+            # Aucune ligne de l'écran à cet endroit : le PDF imprime ce que l'écran ne
+            # dessine pas. On ne le jette pas.
+            orphelins.append(f"page {numero} : « {m[4]} » à ({m[0]:.2f} ; {m[1]:.2f}) pt")
 
     for bloc in releves:
         if not bloc["Compare"]:
@@ -225,6 +234,8 @@ for e in coupees:
     print(f"  coupée autrement — {e}")
 for e in deplacees:
     print(f"  déplacée — {e}")
+for e in orphelins:
+    print(f"  mot du PDF sans ligne à l'écran — {e}")
 for e in ecartes:
     print(f"  non comparé — {e}")
 for e in symboles:
@@ -233,13 +244,14 @@ for e in symboles:
 etiquette = "toutes les pages" if pages_demandees == "tout" else f"page {pages[0]}"
 print(f"{etiquette} : {lignes_vues} lignes, {mots_vus} mots dans {blocs_vus} blocs ; "
       f"{len(coupees)} ligne(s) coupée(s) autrement ; {len(deplacees)} déplacée(s) de plus de {tolerance:g} pt "
-      f"(écart max du premier mot {ecart_max:.2f} pt) ; {len(ecartes)} bloc(s) non comparé(s) ; "
+      f"(écart max du premier mot {ecart_max:.2f} pt) ; {len(orphelins)} mot(s) du PDF sans ligne à l'écran ; "
+      f"{len(ecartes)} bloc(s) non comparé(s) ; "
       f"{len(symboles)} ligne(s) dont un symbole diffère. Banc : {banc}")
 
 if blocs_vus == 0 or mots_vus == 0:
     print("ÉCHEC : aucun mot confronté. Le banc a-t-il relevé la page ?", file=sys.stderr)
     sys.exit(1)
-if coupees or deplacees:
+if coupees or deplacees or orphelins:
     print("ÉCHEC : l'écran et le PDF ne posent pas les mêmes mots aux mêmes lignes.", file=sys.stderr)
     sys.exit(1)
 PY
