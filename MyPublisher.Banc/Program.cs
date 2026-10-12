@@ -10,6 +10,8 @@ namespace MyPublisher.Banc;
 ///
 ///   MyPublisher.Banc rendre &lt;doc.mypub&gt; --sortie &lt;image.png&gt;
 ///                          [--page N] [--pixels-par-point 2] [--sans-reperes]
+///   MyPublisher.Banc mots &lt;doc&gt; --sortie &lt;lignes.json&gt;
+///                          [--charger-d-abord romain|gras|italique] [--coupure-seule]
 /// </summary>
 internal static class Program
 {
@@ -26,6 +28,7 @@ internal static class Program
             return args[0] switch
             {
                 "rendre" => Rendre(args),
+                "mots" => Mots.Lancer(args),
                 _ => Inconnu(args[0]),
             };
         }
@@ -98,5 +101,9 @@ internal static class Program
             "Usage : MyPublisher.Banc rendre <doc.mypub> --sortie <image.png>");
         Console.Error.WriteLine(
             "                              [--page N] [--pixels-par-point 2] [--sans-reperes]");
+        Console.Error.WriteLine(
+            "        MyPublisher.Banc mots <doc> --sortie <lignes.json>");
+        Console.Error.WriteLine(
+            "                              [--charger-d-abord romain|gras|italique] [--coupure-seule]");
     }
 }
