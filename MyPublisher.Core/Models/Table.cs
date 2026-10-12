@@ -98,9 +98,13 @@ public partial class TableCell : ObservableObject
     /// <summary>
     /// Portions de texte qui s'écartent du style du tableau, comme sur un bloc de texte.
     /// Vide veut dire « d'un seul style ».
+    ///
+    /// Remplie et vidée, jamais remplacée après la construction (poste Q17) : le bloc
+    /// que <c>TableFrame.CellFrames</c> construit pour la case EMPRUNTE cette
+    /// collection, et le contrôle qui le dessine s'y abonne.
     /// </summary>
     [JsonPropertyOrder(40)]
-    public ObservableCollection<StyleSpan> Spans { get; set; } = [];
+    public ObservableCollection<StyleSpan> Spans { get; init; } = [];
 
     /// <summary>
     /// Alignement propre à la case : dans une bande à trois cases, l'intitulé est à

@@ -41,8 +41,19 @@ public abstract partial class FillBrush : ObservableObject
     /// n'en ont pas. C'est ce que lisent les endroits qui ne savent dessiner qu'un
     /// aplat — la vignette du catalogue de modèles, qui assume depuis B1 d'être un
     /// schéma et non un rendu.
+    ///
+    /// Sans jeu de couleurs, une référence au jeu reste écrite telle quelle : c'est la
+    /// lecture du modèle, pas celle d'un rendu. Les rendus lisent
+    /// <see cref="UniformeSelon"/>.
     /// </summary>
-    [JsonIgnore] public abstract string? Uniforme { get; }
+    [JsonIgnore] public string? Uniforme => UniformeSelon(null);
+
+    /// <summary>
+    /// La couleur unie de ce remplissage dans un document donné : une référence au jeu
+    /// y devient la couleur du jeu — celle d'un aplat comme la base d'une teinte, qu'on
+    /// mélange APRÈS l'avoir résolue (poste C5b). Null ne résout rien.
+    /// </summary>
+    public abstract string? UniformeSelon(Charte? charte);
 
     public abstract FillBrush Clone();
 
@@ -84,7 +95,7 @@ public sealed partial class SolidFill : FillBrush
     [property: JsonPropertyOrder(10)]
     private string _color = "#FFFFFFFF";
 
-    [JsonIgnore] public override string? Uniforme => Color;
+    public override string? UniformeSelon(Charte? charte) => charte is null ? Color : charte.Couleur(Color);
 
     public override FillBrush Clone() => new SolidFill(Color);
 }
@@ -124,7 +135,7 @@ public sealed partial class GradientFill : FillBrush
     private double _angle = 90;
 
     /// <summary>Un dégradé n'a pas de couleur unique : la vignette prendra sa couleur de départ.</summary>
-    [JsonIgnore] public override string? Uniforme => null;
+    public override string? UniformeSelon(Charte? charte) => null;
 
     /// <summary>
     /// Les deux extrémités de l'axe, dans le repère du bloc, en points.
@@ -202,7 +213,7 @@ public sealed partial class ImageFill : FillBrush
     [property: JsonPropertyOrder(30)]
     private double _rotation;
 
-    [JsonIgnore] public override string? Uniforme => null;
+    public override string? UniformeSelon(Charte? charte) => null;
 
     /// <summary>Vrai quand la rotation échange la largeur et la hauteur du cadre.</summary>
     [JsonIgnore] public bool QuartDeTour => Math.Abs(Math.Cos(Rotation * Math.PI / 180)) < 0.5;
@@ -271,21 +282,22 @@ public sealed partial class TintFill : FillBrush
     /// d'un ton sans que rien ne le signale.
     ///
     /// L'octet alpha de la base est conservé : éclaircir une couleur ne la rend pas opaque.
+    ///
+    /// Une base prise dans le jeu de couleurs est résolue AVANT le mélange : changer de
+    /// jeu change la teinte, et ce qui est mélangé est la couleur du jeu, pas sa
+    /// référence.
     /// </summary>
-    [JsonIgnore]
-    public override string? Uniforme
+    public override string? UniformeSelon(Charte? charte)
     {
-        get
-        {
-            if (!HexColor.TryParse(Color, out var a, out var r, out var g, out var b)) return Color;
+        var baseResolue = charte is null ? Color : charte.Couleur(Color);
+        if (!HexColor.TryParse(baseResolue, out var a, out var r, out var g, out var b)) return baseResolue;
 
-            var taux = Math.Clamp(Percent, 0, 200);
-            // Vers le blanc en dessous de 100, vers le noir au-dessus : une seule
-            // interpolation, dont seule la cible change.
-            var (cible, part) = taux <= 100 ? (255.0, 1 - taux / 100) : (0.0, taux / 100 - 1);
+        var taux = Math.Clamp(Percent, 0, 200);
+        // Vers le blanc en dessous de 100, vers le noir au-dessus : une seule
+        // interpolation, dont seule la cible change.
+        var (cible, part) = taux <= 100 ? (255.0, 1 - taux / 100) : (0.0, taux / 100 - 1);
 
-            return HexColor.Format(a, Melanger(r, cible, part), Melanger(g, cible, part), Melanger(b, cible, part));
-        }
+        return HexColor.Format(a, Melanger(r, cible, part), Melanger(g, cible, part), Melanger(b, cible, part));
     }
 
     private static byte Melanger(byte source, double cible, double part) =>

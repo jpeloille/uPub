@@ -32,6 +32,8 @@ public partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(PageCountLabel))]
     [NotifyPropertyChangedFor(nameof(FieldContext))]
+    [NotifyPropertyChangedFor(nameof(ChosenColorScheme))]
+    [NotifyPropertyChangedFor(nameof(ChosenFontScheme))]
     private Document _document = Document.CreateDefault();
 
     [ObservableProperty]
@@ -130,7 +132,7 @@ public partial class MainWindowViewModel : ViewModelBase
         Contacts = contacts ?? BusinessInfoStore.Load();
         _horloge = horloge ?? (() => DateTime.Now);
         CurrentPage = Document.Pages.FirstOrDefault();
-        FontFamilies = LoadSystemFonts();
+        FontFamilies = PolicesProposees(Document);
         // L'initialiseur de champ ne passe pas par OnDocumentChanged : le premier
         // document s'abonne donc ici, et lui seul.
         Document.PropertyChanged += OnDocumentPropertyChanged;
@@ -150,6 +152,9 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         if (oldValue is not null) oldValue.PropertyChanged -= OnDocumentPropertyChanged;
         newValue.PropertyChanged += OnDocumentPropertyChanged;
+
+        FontFamilies = PolicesProposees(newValue);
+        OnPropertyChanged(nameof(FontFamilies));
     }
 
     private void OnDocumentPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -160,6 +165,9 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             SyncPageSetup();
         }
+
+        if (e.PropertyName == nameof(Models.Document.ColorScheme)) OnPropertyChanged(nameof(ChosenColorScheme));
+        if (e.PropertyName == nameof(Models.Document.FontScheme)) OnPropertyChanged(nameof(ChosenFontScheme));
     }
 
     /// <summary>
@@ -255,7 +263,99 @@ public partial class MainWindowViewModel : ViewModelBase
         CommitEdit();
     }
 
-    public IReadOnlyList<string> FontFamilies { get; }
+    /// <summary>
+    /// Les polices proposées : le titre et le corps du jeu de polices d'abord — ce sont
+    /// des références, qui suivront le jeu (poste C5b) —, puis les polices que le
+    /// document emploie et que la machine n'a pas, puis celles de la machine.
+    ///
+    /// Les polices absentes y sont pour le poste Q20 : une liste déroulante qui n'a pas la
+    /// police du bloc reste sans sélection, et en passant d'un bloc à l'autre elle
+    /// renvoyait null au bloc — la police d'un .pub composé ailleurs était perdue, et le
+    /// rendu levait ensuite.
+    ///
+    /// La liste se fait à l'ouverture du document — fichier, modèle, page neuve,
+    /// annulation — et ne change pas sous les gestes : ni quand on change de jeu, seul
+    /// le libellé des deux premières entrées le fait, ni quand un bloc quitte sa police
+    /// absente. Remplacer la liste pendant qu'un bloc est affiché remettrait à vide la
+    /// sélection de la liste déroulante.
+    /// </summary>
+    public IReadOnlyList<string> FontFamilies { get; private set; }
+
+    /// <summary>Les polices de la machine, pour dire au panneau lesquelles manquent.</summary>
+    public IReadOnlyList<string> PolicesDeLaMachine { get; } = LoadSystemFonts();
+
+    private IReadOnlyList<string> PolicesProposees(Document document)
+    {
+        var absentes = document.Pages
+            .SelectMany(page => page.Frames)
+            .SelectMany(Descendance)
+            .Select(bloc => bloc switch
+            {
+                TextFrame texte => texte.FontFamily,
+                TableFrame tableau => tableau.FontFamily,
+                _ => null,
+            })
+            .OfType<string>()
+            .Where(police => police.Length > 0 && !PolicesDeLaMachine.Contains(police)
+                             && !ReferenceDuJeu.TryPolice(police, out _))
+            .Distinct()
+            .Order(StringComparer.CurrentCultureIgnoreCase);
+
+        return
+        [
+            ReferenceDuJeu.Police(EmplacementDePolice.Heading),
+            ReferenceDuJeu.Police(EmplacementDePolice.Body),
+            .. absentes,
+            .. PolicesDeLaMachine,
+        ];
+    }
+
+    private static IEnumerable<Frame> Descendance(Frame bloc) =>
+        bloc is GroupFrame groupe ? [bloc, .. groupe.Children.SelectMany(Descendance)] : [bloc];
+
+    /// <summary>Les jeux de couleurs proposés au panneau.</summary>
+    public IReadOnlyList<JeuDeCouleurs> ColorSchemes => JeuxPredefinis.Couleurs;
+
+    /// <summary>Les jeux de polices proposés au panneau.</summary>
+    public IReadOnlyList<JeuDePolices> FontSchemes => JeuxPredefinis.Polices;
+
+    /// <summary>
+    /// Le jeu de couleurs du document, tel que le choisit la liste du panneau. Changer de
+    /// jeu est un geste qui s'annule, comme changer de format.
+    ///
+    /// Une valeur nulle est ignorée, et ce n'est pas une précaution de principe : un
+    /// document dont le jeu n'est pas dans la liste — modifié à la main, venu d'une
+    /// version future — laisse la liste sans sélection, et elle renvoie alors null. Le
+    /// document ne doit pas perdre son jeu pour autant.
+    /// </summary>
+    public JeuDeCouleurs? ChosenColorScheme
+    {
+        get => Document.ColorScheme;
+        set
+        {
+            if (value is null || value == Document.ColorScheme) return;
+
+            BeginEdit();
+            Document.ColorScheme = value;
+            CommitEdit();
+            Status = $"Jeu de couleurs : {value.Name}";
+        }
+    }
+
+    /// <summary>Le jeu de polices du document ; même règle que le jeu de couleurs.</summary>
+    public JeuDePolices? ChosenFontScheme
+    {
+        get => Document.FontScheme;
+        set
+        {
+            if (value is null || value == Document.FontScheme) return;
+
+            BeginEdit();
+            Document.FontScheme = value;
+            CommitEdit();
+            Status = $"Jeu de polices : {value.Name}";
+        }
+    }
 
     public IReadOnlyList<PageSize> PageSizes => PageSize.All;
 
@@ -459,6 +559,10 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             NotifyFrameGeometry();
         }
+        else if (e.PropertyName is nameof(TextFrame.Field))
+        {
+            OnPropertyChanged(nameof(PeutImporterTexte));
+        }
     }
 
     private void NotifyFrameGeometry()
@@ -502,6 +606,7 @@ public partial class MainWindowViewModel : ViewModelBase
         OnPropertyChanged(nameof(HasMultipleSelection));
         OnPropertyChanged(nameof(SingleSelected));
         OnPropertyChanged(nameof(SelectionLabel));
+        OnPropertyChanged(nameof(PeutImporterTexte));
         NotifyFrameGeometry();
 
         DeleteSelectedCommand.NotifyCanExecuteChanged();
@@ -680,6 +785,10 @@ public partial class MainWindowViewModel : ViewModelBase
         // rouvrir, et n'a pas à relire le disque. Poste Q3.
         BitmapCache.OublierLesEchecs();
 
+        // De même pour une image retouchée sur le disque depuis qu'on l'a lue : l'écran
+        // la relit, comme l'export la relit déjà. Poste Q15.
+        BitmapCache.OublierLesRetouchees();
+
         Document = document;
         if (Document.Pages.Count == 0) Document.Pages.Add(new Page { Name = "Page 1" });
         CurrentPage = Document.Pages[0];
@@ -728,23 +837,41 @@ public partial class MainWindowViewModel : ViewModelBase
     /// </summary>
     private Frame BuildFrame(EditorTool tool) => tool switch
     {
+        // Les blocs neufs prennent leurs couleurs et leurs polices dans les jeux du
+        // document, comme dans Publisher : un texte dans la couleur principale et la
+        // police du corps, un titre dans celle du titre, une forme dans les accents. Ce
+        // sont des références — changer de jeu les suivra. Le jeu par défaut porte
+        // exactement les valeurs que ces gabarits écrivaient en dur jusqu'ici (voir
+        // « JeuxPredefinis ») : un document neuf ne change donc pas d'allure.
         EditorTool.Text => new TextFrame
         {
-            Name = "Texte", Width = 260, Height = 90, Text = "Saisissez votre texte."
+            Name = "Texte", Width = 260, Height = 90, Text = "Saisissez votre texte.",
+            FontFamily = ReferenceDuJeu.Police(EmplacementDePolice.Body),
+            Foreground = ReferenceDuJeu.Couleur(EmplacementDeCouleur.Main),
         },
         EditorTool.Heading => new TextFrame
         {
             Name = "Titre", Width = Document.MarginBoxWidth, Height = 60,
-            Text = "Titre", FontSize = 28, Bold = true
+            Text = "Titre", FontSize = 28, Bold = true,
+            FontFamily = ReferenceDuJeu.Police(EmplacementDePolice.Heading),
+            Foreground = ReferenceDuJeu.Couleur(EmplacementDeCouleur.Main),
         },
-        EditorTool.Rectangle => new ShapeFrame { Name = "Rectangle", Width = 200, Height = 120 },
-        EditorTool.Ellipse => new ShapeFrame
+        EditorTool.Rectangle => FormeDuJeu(new ShapeFrame { Name = "Rectangle", Width = 200, Height = 120 }),
+        EditorTool.Ellipse => FormeDuJeu(new ShapeFrame
         {
             Name = "Ellipse", Shape = ShapeKind.Ellipse, Width = 160, Height = 160
-        },
+        }),
         EditorTool.Table => BuildTable(),
         _ => throw new ArgumentOutOfRangeException(nameof(tool), tool, "Outil sans gabarit de bloc.")
     };
+
+    /// <summary>Une forme neuve : fond dans l'accent 2, contour dans l'accent 1.</summary>
+    private static ShapeFrame FormeDuJeu(ShapeFrame forme)
+    {
+        forme.Fill = new SolidFill(ReferenceDuJeu.Couleur(EmplacementDeCouleur.Accent2));
+        forme.Stroke = ReferenceDuJeu.Couleur(EmplacementDeCouleur.Accent1);
+        return forme;
+    }
 
     /// <summary>
     /// Une bande de trois cases sur toute la largeur de composition : c'est la forme
@@ -754,7 +881,14 @@ public partial class MainWindowViewModel : ViewModelBase
     /// </summary>
     private TableFrame BuildTable()
     {
-        var table = new TableFrame { Name = "Tableau" };
+        // Police, couleur du texte et filets pris dans les jeux, comme les autres blocs
+        // neufs ; le gris des filets est l'accent 4 du jeu par défaut.
+        var table = new TableFrame
+        {
+            Name = "Tableau",
+            FontFamily = ReferenceDuJeu.Police(EmplacementDePolice.Body),
+            Foreground = ReferenceDuJeu.Couleur(EmplacementDeCouleur.Main),
+        };
         var largeur = Document.MarginBoxWidth / 3;
 
         for (var colonne = 0; colonne < 3; colonne++) table.Columns.Add(new TableColumn(largeur));
@@ -764,7 +898,8 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             table.Cells.Add(new TableCell
             {
-                Row = 0, Column = colonne, Stroke = "#FF6B7280", StrokeThickness = 1
+                Row = 0, Column = colonne, Stroke = ReferenceDuJeu.Couleur(EmplacementDeCouleur.Accent4),
+                StrokeThickness = 1
             });
         }
 
@@ -870,6 +1005,78 @@ public partial class MainWindowViewModel : ViewModelBase
         BeginEdit();
         fond.Path = chemin;
         CommitEdit();
+    }
+
+    /// <summary>
+    /// Le bloc que « Importer un texte… » remplirait : un bloc de texte seul sélectionné,
+    /// dont le texte n'est pas calculé par un champ. Sous un champ, le texte est caché et
+    /// gardé pour le jour où l'on retire le champ ; l'y remplacer sans qu'on le voie n'est
+    /// pas un geste qu'on attend.
+    /// </summary>
+    public bool PeutImporterTexte => SingleSelected is TextFrame { HasField: false };
+
+    /// <summary>
+    /// Remplit le bloc de texte sélectionné à partir d'un fichier (poste B2). Le
+    /// sélecteur de fichier reste à la fenêtre ; tout le reste est ici, où un test
+    /// l'atteint sans dialogue — c'est le partage que Q3 a fait pour
+    /// <see cref="ChoisirImageDeFond"/>.
+    ///
+    /// **Le texte repart du style du bloc.** Fragments et écarts de paragraphe sont
+    /// vidés, puis le texte est posé par <see cref="TextFrame.Saisie"/>, qui n'a alors
+    /// plus rien à recaler. L'autre lecture — tout poser par la saisie, et laisser le
+    /// texte neuf prendre le style du premier caractère qu'il remplace — ferait dépendre
+    /// le résultat de ce qui était là : trois mille signes au gras et au corps d'un
+    /// titre, parce que le bloc commençait par lui ; et, la saisie retenant le plus long
+    /// début et la plus longue fin communs aux deux textes, quelques caractères gardant
+    /// par hasard leur style d'avant. Un fichier texte ne porte aucun style : il prend
+    /// celui du bloc, qu'on règle ensuite au panneau.
+    ///
+    /// Un seul pas d'annulation, ouvert et refermé ici : vider puis écrire font trois
+    /// changements du modèle, et le dialogue de fichier a pris puis rendu le focus qui
+    /// règle la transaction du panneau. Une transaction restée ouverte — une saisie sur
+    /// la page, un champ du panneau — est d'abord refermée en un pas à elle : sans cela,
+    /// celle de l'import s'y emboîterait, n'empilerait rien, et une seule annulation
+    /// défairait à la fois la frappe et l'import. La fenêtre referme sa saisie avant
+    /// d'appeler ici (<c>MainWindow.ImporterTexte</c>) ; ceci couvre le reste.
+    ///
+    /// Un fichier refusé par le noyau — vide, trop gros, qui n'est pas du texte — ne
+    /// touche pas au bloc, et la barre d'état dit pourquoi.
+    /// </summary>
+    /// <returns>Vrai si le texte a été posé.</returns>
+    public bool ImporterTexte(string chemin)
+    {
+        if (SingleSelected is not TextFrame bloc)
+        {
+            Status = "Import impossible : sélectionnez un bloc de texte.";
+            return false;
+        }
+
+        if (bloc.HasField)
+        {
+            Status = "Import impossible : le texte de ce bloc est calculé par un champ.";
+            return false;
+        }
+
+        TexteLu lu;
+        try
+        {
+            lu = TexteImporte.Lire(chemin);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or TexteRefuseException)
+        {
+            Status = $"Import impossible : {ex.Message}";
+            return false;
+        }
+
+        EndPendingEdit();
+        BeginEdit();
+        bloc.Spans.Clear();
+        bloc.Paragraphs.Clear();
+        bloc.Saisie = lu.Texte;
+        CommitEdit();
+
+        Status = $"Texte importé de « {Path.GetFileName(chemin)} » ({lu.Encodage}, {lu.Texte.Length} signes)";
+        return true;
     }
 
     private void Insert(Frame frame)

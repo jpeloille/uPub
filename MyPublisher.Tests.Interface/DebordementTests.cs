@@ -72,8 +72,12 @@ public class DebordementTests
         return image.Pixels[i + 2] > 150 && image.Pixels[i + 1] < 110 && image.Pixels[i] < 110;
     }
 
-    /// <summary>Combien de pixels rouges dans le voisinage du coin inférieur droit du bloc.</summary>
-    private static int Marqueur(Image image, Frame bloc)
+    /// <summary>
+    /// Combien de pixels rouges dans le voisinage du coin inférieur droit du bloc. Le
+    /// poste B2 s'en sert aussi : un texte importé trop long doit faire paraître le même
+    /// marqueur.
+    /// </summary>
+    internal static int Marqueur(Image image, Frame bloc)
     {
         var compte = 0;
         for (var y = (int)((bloc.Bottom - 16) * PixelsParPoint); y < (bloc.Bottom + 8) * PixelsParPoint; y++)
@@ -254,11 +258,13 @@ public class DebordementTests
             {
                 var largeur = Math.Max(1, bloc.Width - bloc.PaddingLeft - bloc.PaddingRight);
                 var hauteur = Math.Max(1, bloc.Height - bloc.PaddingTop - bloc.PaddingBottom);
-                var commun = new StyleEffectif(
-                    bloc.FontFamily, bloc.FontSize, bloc.Bold, bloc.Italic, bloc.Foreground, 0);
+                // Résolu par la charte du document, comme les deux rendus le font depuis
+                // C5b : un modèle qui prend ses polices dans le jeu se mesure dans la
+                // police du jeu, pas dans « scheme:body ».
+                var commun = document.Charte.StyleCommun(bloc);
 
                 var lignes = Compositeur.Composer(
-                    bloc.Text, bloc.Spans, commun, bloc.Paragraphs, bloc.Paragraph,
+                    bloc.Text, document.Charte.Fragments(bloc.Spans), commun, bloc.Paragraphs, bloc.Paragraph,
                     largeur, hauteur, bloc.Colonnage, bloc.LineHeight, metriques);
 
                 var trop = Compositeur.Debordement(

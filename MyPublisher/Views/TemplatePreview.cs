@@ -41,6 +41,33 @@ public class TemplatePreview : Control
     private static readonly IPen PlaceholderEdge = new Pen(new SolidColorBrush(Color.Parse("#FFB6BFCA")));
     private static readonly IBrush BlankHint = new SolidColorBrush(Color.Parse("#FFF6F7F9"));
 
+    /// <summary>
+    /// Les filets de chaque bloc de texte, en coordonnées de la page, dans l'ordre où le
+    /// rendu rencontre les blocs.
+    ///
+    /// Composer un bloc coûte : recomposée à chaque rendu, la vignette du bulletin
+    /// prenait 2,5 à 2,7 ms par appel de <see cref="Render"/>, contre 0,06 ms en relisant
+    /// ses filets — l'affiche 1,2 ms contre 0,03 (134 pixels de côté, moyenne de 500
+    /// rendus, deux passes, poste chargé). On ne compose donc qu'au premier rendu, pour
+    /// un document et une taille donnés.
+    ///
+    /// Le rang plutôt que le bloc sert de clé : les cases d'un tableau sont des blocs
+    /// reconstruits à chaque lecture de <c>CellFrames</c>, et une clé par référence ne
+    /// les retrouverait jamais. Le parcours, lui, ne change pas tant que le document ne
+    /// change pas.
+    ///
+    /// Ce qui invalide la mémoire : un autre <see cref="Document"/>, ou une autre taille
+    /// de contrôle — l'épaisseur des filets dépend de l'échelle. Ce qui ne l'invalide
+    /// PAS : une modification du document en place. Le catalogue n'en fait aucune — ses
+    /// documents sont lus sur le disque pour la vignette, et le modèle choisi est relu
+    /// depuis son fichier —, mais un appelant qui éditerait le document affiché devrait
+    /// en poser un autre.
+    /// </summary>
+    private readonly List<Rect[]> _filets = [];
+    private Document? _filetsDe;
+    private Size _filetsA;
+    private int _rang;
+
     public override void Render(DrawingContext context)
     {
         var box = Bounds.Size;
@@ -61,10 +88,22 @@ public class TemplatePreview : Control
 
         var scale = page.Width / document.PageWidth;
 
+        if (!ReferenceEquals(document, _filetsDe) || box != _filetsA)
+        {
+            _filets.Clear();
+            _filetsDe = document;
+            _filetsA = box;
+        }
+
+        _rang = 0;
+
         using (context.PushClip(page))
         using (context.PushTransform(Matrix.CreateScale(scale, scale) * Matrix.CreateTranslation(page.X, page.Y)))
         {
-            foreach (var frame in document.Pages[0].Frames) Draw(context, frame, scale);
+            // Les couleurs prises dans le jeu se résolvent par la charte du modèle : sa
+            // vignette montre ses couleurs à lui (poste C5b).
+            var charte = document.Charte;
+            foreach (var frame in document.Pages[0].Frames) Draw(context, frame, scale, charte);
         }
     }
 
@@ -88,18 +127,18 @@ public class TemplatePreview : Control
     /// rendu serait la régression que tout l'équilibre du projet cherche à éviter. Un
     /// dégradé se donne donc par sa première couleur, une image par un gris neutre.
     /// </summary>
-    private static string? Aplat(FillBrush? fill) => fill switch
+    private static string? Aplat(FillBrush? fill, Charte charte) => fill switch
     {
-        GradientFill degrade => degrade.From,
+        GradientFill degrade => charte.Couleur(degrade.From),
         ImageFill => "#FFD5DAE1",
-        _ => fill?.Uniforme,
+        _ => fill?.UniformeSelon(charte),
     };
 
     /// <summary>
     /// Dessine un bloc dans le repère de la page. Récursif comme le reste : un groupe
     /// translate le repère et redescend.
     /// </summary>
-    private static void Draw(DrawingContext context, Frame frame, double scale)
+    private void Draw(DrawingContext context, Frame frame, double scale, Charte charte)
     {
         using var _ = frame.Rotation == 0
             ? (IDisposable)new NoTransform()
@@ -109,8 +148,8 @@ public class TemplatePreview : Control
                 Matrix.CreateTranslation(frame.CenterX, frame.CenterY));
 
         var rect = new Rect(frame.X, frame.Y, frame.Width, frame.Height);
-        var fill = Conv.ToBrush(Aplat(frame.Fill));
-        var stroke = Conv.ToBrush(frame.Stroke);
+        var fill = Conv.ToBrush(Aplat(frame.Fill, charte));
+        var stroke = Conv.ToBrush(charte.Couleur(frame.Stroke));
         var pen = stroke is null || frame.StrokeThickness <= 0
             ? null
             : new Pen(stroke, Math.Max(frame.StrokeThickness, 0.5 / scale));
@@ -135,7 +174,7 @@ public class TemplatePreview : Control
                 if (fill is not null || pen is not null) context.DrawRectangle(fill, pen, rect);
                 using (context.PushTransform(Matrix.CreateTranslation(frame.X, frame.Y)))
                 {
-                    foreach (var child in group.Children) Draw(context, child, scale);
+                    foreach (var child in group.Children) Draw(context, child, scale, charte);
                 }
 
                 return;
@@ -147,14 +186,14 @@ public class TemplatePreview : Control
                 if (fill is not null || pen is not null) context.DrawRectangle(fill, pen, rect);
                 using (context.PushTransform(Matrix.CreateTranslation(frame.X, frame.Y)))
                 {
-                    foreach (var cellule in table.CellFrames) Draw(context, cellule, scale);
+                    foreach (var cellule in table.CellFrames) Draw(context, cellule, scale, charte);
                 }
 
                 return;
 
             case TextFrame text:
                 if (fill is not null || pen is not null) context.DrawRectangle(fill, pen, rect);
-                DrawTextBars(context, text, scale);
+                DrawTextBars(context, text, scale, charte);
                 return;
         }
     }
@@ -174,14 +213,31 @@ public class TemplatePreview : Control
     /// qu'on allait ouvrir. Ce n'est toujours pas un rendu : les glyphes restent des
     /// filets. Mais ce sont les lignes de la page.
     /// </summary>
-    private static void DrawTextBars(DrawingContext context, TextFrame text, double scale)
+    private void DrawTextBars(DrawingContext context, TextFrame text, double scale, Charte charte)
     {
-        if (string.IsNullOrWhiteSpace(text.Text) && text.Field == FieldKind.None) return;
+        var rang = _rang++;
+        if (rang == _filets.Count) _filets.Add(Filets(text, scale, charte));
 
-        var brush = Conv.ToBrush(text.Foreground) ?? Brushes.Black;
+        var filets = _filets[rang];
+        if (filets.Length == 0) return;
+
+        var brush = Conv.ToBrush(charte.Couleur(text.Foreground)) ?? Brushes.Black;
+
+        // Découpé au bloc, comme la page l'est depuis A2 : une ligne qui sort du bloc
+        // n'est pas imprimée, elle n'a pas à paraître dans la vignette.
+        using var _ = context.PushClip(new Rect(text.X, text.Y, text.Width, text.Height));
+
+        foreach (var filet in filets) context.FillRectangle(brush, filet);
+    }
+
+    /// <summary>Les rectangles des filets d'un bloc, en coordonnées de la page.</summary>
+    private static Rect[] Filets(TextFrame text, double scale, Charte charte)
+    {
+        if (string.IsNullOrWhiteSpace(text.Text) && text.Field == FieldKind.None) return [];
+
         var width = text.Width - text.PaddingLeft - text.PaddingRight;
         var height = text.Height - text.PaddingTop - text.PaddingBottom;
-        if (width <= 0 || height <= 0) return;
+        if (width <= 0 || height <= 0) return [];
 
         // Épaisseur du filet : celle de l'œil de la lettre, sans jamais descendre sous
         // le pixel, faute de quoi la vignette perdrait ses textes les plus fins.
@@ -189,14 +245,13 @@ public class TemplatePreview : Control
         var left = text.X + text.PaddingLeft;
         var top = text.Y + text.PaddingTop;
 
-        // Découpé au bloc, comme la page l'est depuis A2 : une ligne qui sort du bloc
-        // n'est pas imprimée, elle n'a pas à paraître dans la vignette.
-        using var _ = context.PushClip(new Rect(text.X, text.Y, text.Width, text.Height));
-
-        foreach (var (x, y, run, advance) in Bars(text, width, height))
+        var filets = new List<Rect>();
+        foreach (var (x, y, run, advance) in Bars(text, width, height, charte))
         {
-            context.FillRectangle(brush, new Rect(left + x, top + y + (advance - weight) / 2, run, weight));
+            filets.Add(new Rect(left + x, top + y + (advance - weight) / 2, run, weight));
         }
+
+        return [.. filets];
     }
 
     /// <summary>
@@ -204,11 +259,13 @@ public class TemplatePreview : Control
     /// la ligne, longueur, avance.
     /// </summary>
     private static IEnumerable<(double X, double Y, double Run, double Advance)> Bars(
-        TextFrame text, double width, double height)
+        TextFrame text, double width, double height, Charte charte)
     {
         var metriques = new MetriquesAvalonia();
-        var commun = new StyleEffectif(
-            text.FontFamily, text.FontSize, text.Bold, text.Italic, text.Foreground, 0);
+        // Le style commun et les fragments résolus par la charte du modèle, comme l'écran
+        // et l'export : une police du jeu se mesure dans la police du jeu, et le nombre
+        // de lignes en dépend (postes C5b et Q9).
+        var commun = charte.StyleCommun(text);
 
         // Un champ tient sur une ligne, et son contenu n'est pas celui du catalogue — les
         // coordonnées de l'utilisateur, la date du jour où il ouvrira le document : on
@@ -220,7 +277,7 @@ public class TemplatePreview : Control
         }
 
         var lignes = Compositeur.Composer(
-            text.Text, text.Spans, commun, text.Paragraphs, text.Paragraph,
+            text.Text, charte.Fragments(text.Spans), commun, text.Paragraphs, text.Paragraph,
             width, height, text.Colonnage, text.LineHeight, metriques);
         var descente = Compositeur.Decalage(lignes, height, text.VerticalAlign);
 

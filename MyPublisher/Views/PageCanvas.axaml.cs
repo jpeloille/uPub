@@ -782,6 +782,23 @@ public partial class PageCanvas : UserControl
         var dx = page.X - _startPointer.X;
         var dy = page.Y - _startPointer.Y;
 
+        // Un pointeur qui n'a pas quitté son point de prise ne déplace rien. Sans cette
+        // garde, l'aimantation ci-dessous attire vers un repère voisin un bloc qu'on n'a
+        // fait que cliquer : un mouvement nul, que la plate-forme peut signaler entre
+        // les deux clics d'un double-clic, déplaçait alors le bloc et empilait un pas
+        // d'annulation (poste Q14). Mesuré sur ATA 21 : trois des huit blocs qu'un clic
+        // atteint en leur centre.
+        if (dx == 0 && dy == 0)
+        {
+            foreach (var (frame, startX, startY) in _moveStart)
+            {
+                frame.X = startX;
+                frame.Y = startY;
+            }
+
+            return;
+        }
+
         // Alt désactive l'aimantation ; un bloc tourné la désactive aussi, faute de
         // bords parallèles aux repères. On aimante l'empreinte de l'ensemble, puis on
         // reporte le même écart sur chaque bloc : la sélection garde sa forme.

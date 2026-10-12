@@ -137,11 +137,11 @@
         <DataTemplate DataType="models:GradientFill">
             <StackPanel>
                 <TextBlock Classes="field" Text="Première couleur" Margin="0,6,0,2"/>
-                <ColorPicker HorizontalAlignment="Left"
-                             Color="{Binding From, Converter={x:Static conv:HexToColor.Instance}}"/>
+                <views:SelecteurDeCouleur Valeur="{Binding From}"
+                       Jeu="{Binding #Root.((vm:MainWindowViewModel)DataContext).Document.ColorScheme}"/>
                 <TextBlock Classes="field" Text="Seconde couleur" Margin="0,6,0,2"/>
-                <ColorPicker HorizontalAlignment="Left"
-                             Color="{Binding To, Converter={x:Static conv:HexToColor.Instance}}"/>
+                <views:SelecteurDeCouleur Valeur="{Binding To}"
+                       Jeu="{Binding #Root.((vm:MainWindowViewModel)DataContext).Document.ColorScheme}"/>
                 <TextBlock Classes="field" Text="Angle (°)" Margin="0,6,0,2"/>
                 <!-- Zéro va de gauche à droite, 90 de haut en bas : l'axe Y descend,
                      comme en PDF. Les quatre ombrages de Publisher — horizontal,
@@ -172,8 +172,8 @@
         <DataTemplate DataType="models:TintFill">
             <StackPanel>
                 <TextBlock Classes="field" Text="Couleur de base" Margin="0,6,0,2"/>
-                <ColorPicker HorizontalAlignment="Left"
-                             Color="{Binding Color, Converter={x:Static conv:HexToColor.Instance}}"/>
+                <views:SelecteurDeCouleur Valeur="{Binding Color}"
+                       Jeu="{Binding #Root.((vm:MainWindowViewModel)DataContext).Document.ColorScheme}"/>
                 <TextBlock Classes="field" Text="Teinte (%)" Margin="0,6,0,2"/>
                 <!-- Cent, c'est la couleur de base ; en dessous on va vers le blanc,
                      au-dessus vers le noir. -->
@@ -219,6 +219,11 @@
                 <Separator/>
                 <MenuItem Header="_Rectangle" Command="{Binding AddRectangleCommand}"/>
                 <MenuItem Header="_Ellipse" Command="{Binding AddEllipseCommand}"/>
+                <Separator/>
+                <!-- Remplit le bloc de texte sélectionné, comme « Fichier texte » dans
+                     Publisher ; le même geste est au panneau du bloc. -->
+                <MenuItem Name="MenuImporterTexte" Header="Importer un te_xte…" Click="OnImportText"
+                          IsEnabled="{Binding PeutImporterTexte}"/>
             </MenuItem>
 
             <MenuItem Header="_Disposition">
@@ -424,6 +429,56 @@
                                        Value="{Binding Document.MarginBottom, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
                     </Grid>
 
+                    <!-- Les jeux du document, réglés une fois pour toute la publication
+                         comme sous « Format ▸ Color Schemes » et « Font Schemes » de
+                         Publisher, et modifiables à tout moment (fiche 01). Changer de jeu
+                         recolore les blocs qui y font référence, et eux seuls (poste C5b). -->
+                    <TextBlock Classes="field" Text="Jeu de couleurs" Margin="0,10,0,2"/>
+                    <ComboBox x:Name="JeuDeCouleurs" HorizontalAlignment="Stretch"
+                              ItemsSource="{Binding ColorSchemes}"
+                              SelectedItem="{Binding ChosenColorScheme}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate DataType="models:JeuDeCouleurs">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <ItemsControl ItemsSource="{Binding Couleurs}" VerticalAlignment="Center">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <StackPanel Orientation="Horizontal" Spacing="2"/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate DataType="x:String">
+                                                <Border Width="12" Height="12" BorderBrush="#FFB6BFCA" BorderThickness="1"
+                                                        Background="{Binding Converter={x:Static conv:Conv.Brush}}"/>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <TextBlock Text="{Binding Name}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                    <TextBlock Classes="field" Text="Jeu de polices" Margin="0,6,0,2"/>
+                    <ComboBox x:Name="JeuDePolices" HorizontalAlignment="Stretch"
+                              ItemsSource="{Binding FontSchemes}"
+                              SelectedItem="{Binding ChosenFontScheme}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate DataType="models:JeuDePolices">
+                                <StackPanel>
+                                    <TextBlock Text="{Binding Name}"/>
+                                    <TextBlock FontSize="11" Foreground="#FF8A929E">
+                                        <Run Text="{Binding Heading}" FontFamily="{Binding Heading, Converter={x:Static conv:Conv.Font}}"/>
+                                        <Run Text=" / "/>
+                                        <Run Text="{Binding Body}" FontFamily="{Binding Body, Converter={x:Static conv:Conv.Font}}"/>
+                                    </TextBlock>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                    <TextBlock Text="Une pastille du jeu fait suivre le jeu à la couleur ; une couleur choisie au sélecteur reste libre."
+                               FontSize="11" Foreground="#FF8A929E"
+                               TextWrapping="Wrap" Margin="0,4,0,0"/>
+
                     <!-- Le fond de page, réglé une fois pour toutes les pages, comme le
                          fait « Format ▸ Background » de Publisher : un fond change
                          l'allure de la publication entière. Il emprunte les mêmes
@@ -436,8 +491,8 @@
                                   ItemsSource="{Binding FillKinds}"
                                   SelectedItem="{Binding Document.BackgroundKind}"/>
                         <StackPanel IsVisible="{Binding Document.BackgroundIsSolid}">
-                            <ColorPicker HorizontalAlignment="Left" Margin="0,6,0,0"
-                                         Color="{Binding Document.BackgroundColor, Converter={x:Static conv:HexToColor.Instance}}"/>
+                            <views:SelecteurDeCouleur Margin="0,6,0,0" Valeur="{Binding Document.BackgroundColor}"
+                                   Jeu="{Binding #Root.((vm:MainWindowViewModel)DataContext).Document.ColorScheme}"/>
                         </StackPanel>
                         <ContentControl Content="{Binding Document.Background}"/>
                     </StackPanel>
@@ -593,11 +648,36 @@
                                                IsVisible="{Binding HasField}"
                                                FontSize="11" Foreground="#FF8A929E"
                                                TextWrapping="Wrap" Margin="0,4,0,0"/>
+                                    <Button Name="BoutonImporterTexte" Content="Importer un texte…"
+                                            Margin="0,4,0,0" Click="OnImportText"
+                                            IsEnabled="{Binding !HasField}"/>
 
                                     <TextBlock Classes="field" Text="Police" Margin="0,8,0,2"/>
                                     <ComboBox HorizontalAlignment="Stretch" MaxDropDownHeight="320"
                                               ItemsSource="{Binding #Root.((vm:MainWindowViewModel)DataContext).FontFamilies}"
-                                              SelectedItem="{Binding FontFamily}"/>
+                                              SelectedItem="{Binding FontFamily, Converter={x:Static conv:JamaisNul.Instance}}">
+                                        <!-- Les deux premières entrées sont le titre et le corps du
+                                             jeu de polices : la valeur retenue est la référence, le
+                                             libellé dit la police qu'elle désigne aujourd'hui.
+
+                                             La police du bloc est toujours dans la liste, même absente
+                                             de la machine, et la liste ne renvoie jamais null au bloc :
+                                             sans cela, passer d'un bloc à l'autre effaçait la police
+                                             d'un .pub composé ailleurs (poste Q20). -->
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate DataType="x:String">
+                                                <TextBlock>
+                                                    <TextBlock.Text>
+                                                        <MultiBinding Converter="{x:Static conv:LibelleDePolice.Instance}">
+                                                            <Binding/>
+                                                            <Binding Path="#Root.((vm:MainWindowViewModel)DataContext).Document.FontScheme"/>
+                                                            <Binding Path="#Root.((vm:MainWindowViewModel)DataContext).PolicesDeLaMachine"/>
+                                                        </MultiBinding>
+                                                    </TextBlock.Text>
+                                                </TextBlock>
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
 
                                     <Grid ColumnDefinitions="*,8,*" RowDefinitions="Auto,Auto">
                                         <TextBlock Grid.Row="0" Grid.Column="0" Classes="field" Text="Corps (pt)"/>
@@ -708,8 +788,8 @@
                                     </Grid>
 
                                     <TextBlock Classes="field" Text="Couleur" Margin="0,8,0,2"/>
-                                    <ColorPicker HorizontalAlignment="Left"
-                                                 Color="{Binding Foreground, Converter={x:Static conv:HexToColor.Instance}}"/>
+                                    <views:SelecteurDeCouleur Valeur="{Binding Foreground}"
+                                           Jeu="{Binding #Root.((vm:MainWindowViewModel)DataContext).Document.ColorScheme}"/>
                                 </StackPanel>
                             </DataTemplate>
 
@@ -750,7 +830,29 @@
                                     <TextBlock Classes="field" Text="Police" Margin="0,8,0,2"/>
                                     <ComboBox HorizontalAlignment="Stretch" MaxDropDownHeight="320"
                                               ItemsSource="{Binding #Root.((vm:MainWindowViewModel)DataContext).FontFamilies}"
-                                              SelectedItem="{Binding FontFamily}"/>
+                                              SelectedItem="{Binding FontFamily, Converter={x:Static conv:JamaisNul.Instance}}">
+                                        <!-- Les deux premières entrées sont le titre et le corps du
+                                             jeu de polices : la valeur retenue est la référence, le
+                                             libellé dit la police qu'elle désigne aujourd'hui.
+
+                                             La police du bloc est toujours dans la liste, même absente
+                                             de la machine, et la liste ne renvoie jamais null au bloc :
+                                             sans cela, passer d'un bloc à l'autre effaçait la police
+                                             d'un .pub composé ailleurs (poste Q20). -->
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate DataType="x:String">
+                                                <TextBlock>
+                                                    <TextBlock.Text>
+                                                        <MultiBinding Converter="{x:Static conv:LibelleDePolice.Instance}">
+                                                            <Binding/>
+                                                            <Binding Path="#Root.((vm:MainWindowViewModel)DataContext).Document.FontScheme"/>
+                                                            <Binding Path="#Root.((vm:MainWindowViewModel)DataContext).PolicesDeLaMachine"/>
+                                                        </MultiBinding>
+                                                    </TextBlock.Text>
+                                                </TextBlock>
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
 
                                     <Grid ColumnDefinitions="*,8,*" RowDefinitions="Auto,Auto">
                                         <TextBlock Grid.Row="0" Grid.Column="0" Classes="field" Text="Corps (pt)"/>
@@ -772,8 +874,8 @@
                                                    Value="{Binding CellPadding, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
 
                                     <TextBlock Classes="field" Text="Couleur du texte" Margin="0,8,0,2"/>
-                                    <ColorPicker HorizontalAlignment="Left"
-                                                 Color="{Binding Foreground, Converter={x:Static conv:HexToColor.Instance}}"/>
+                                    <views:SelecteurDeCouleur Valeur="{Binding Foreground}"
+                                           Jeu="{Binding #Root.((vm:MainWindowViewModel)DataContext).Document.ColorScheme}"/>
 
                                     <!-- La grille se règle pour toutes les cases à la fois ; chacune
                                          garde pourtant son contour dans le fichier, comme Publisher
@@ -782,8 +884,8 @@
                                     <CheckBox Content="Encadrer les cases" Margin="0,10,0,0"
                                               IsChecked="{Binding HasGrid}"/>
                                     <StackPanel IsEnabled="{Binding HasGrid}">
-                                        <ColorPicker HorizontalAlignment="Left" Margin="0,2,0,0"
-                                                     Color="{Binding GridColor, Converter={x:Static conv:HexToColor.Instance}}"/>
+                                        <views:SelecteurDeCouleur Margin="0,2,0,0" Valeur="{Binding GridColor}"
+                                               Jeu="{Binding #Root.((vm:MainWindowViewModel)DataContext).Document.ColorScheme}"/>
                                         <TextBlock Classes="field" Text="Épaisseur des filets (pt)" Margin="0,6,0,2"/>
                                         <NumericUpDown FormatString="0.#" Increment="0.5" Minimum="0"
                                                        Value="{Binding GridThickness, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
@@ -832,9 +934,9 @@
                                                             <CheckBox Grid.Column="2" Content="Fond"
                                                                       IsChecked="{Binding HasFill}"/>
                                                         </Grid>
-                                                        <ColorPicker HorizontalAlignment="Left" Margin="0,4,0,0"
-                                                                     IsEnabled="{Binding HasFill}"
-                                                                     Color="{Binding FillColor, Converter={x:Static conv:HexToColor.Instance}}"/>
+                                                        <views:SelecteurDeCouleur Margin="0,4,0,0"
+                                                               IsEnabled="{Binding HasFill}" Valeur="{Binding FillColor}"
+                                                               Jeu="{Binding #Root.((vm:MainWindowViewModel)DataContext).Document.ColorScheme}"/>
                                                     </StackPanel>
                                                 </Border>
                                             </DataTemplate>
@@ -896,8 +998,8 @@
                                              qu'il lit dès qu'il s'affiche, et il ne doit
                                              écrire que si le fond est bien un aplat. -->
                                         <StackPanel IsVisible="{Binding FillIsSolid}">
-                                            <ColorPicker HorizontalAlignment="Left" Margin="0,6,0,0"
-                                                         Color="{Binding FillColor, Converter={x:Static conv:HexToColor.Instance}}"/>
+                                            <views:SelecteurDeCouleur Margin="0,6,0,0" Valeur="{Binding FillColor}"
+                                                   Jeu="{Binding #Root.((vm:MainWindowViewModel)DataContext).Document.ColorScheme}"/>
                                             <TextBlock Classes="field" Text="Opacité du fond (%)" Margin="0,6,0,2"/>
                                             <NumericUpDown FormatString="0" Increment="5" Minimum="0" Maximum="100"
                                                            Value="{Binding FillOpacity, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
@@ -913,8 +1015,8 @@
 
                                     <CheckBox Content="Appliquer un contour" Margin="0,10,0,0" IsChecked="{Binding HasStroke}"/>
                                     <StackPanel IsEnabled="{Binding HasStroke}">
-                                        <ColorPicker HorizontalAlignment="Left" Margin="0,2,0,0"
-                                                     Color="{Binding StrokeColor, Converter={x:Static conv:HexToColor.Instance}}"/>
+                                        <views:SelecteurDeCouleur Margin="0,2,0,0" Valeur="{Binding StrokeColor}"
+                                               Jeu="{Binding #Root.((vm:MainWindowViewModel)DataContext).Document.ColorScheme}"/>
                                         <Grid ColumnDefinitions="*,8,*" RowDefinitions="Auto,Auto" Margin="0,6,0,0">
                                             <TextBlock Grid.Row="0" Grid.Column="0" Classes="field" Text="Épaisseur (pt)"/>
                                             <TextBlock Grid.Row="0" Grid.Column="2" Classes="field" Text="Trait"/>

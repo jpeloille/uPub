@@ -14,6 +14,8 @@
 #
 #   Scripts/eprouver-le-juge.sh            # tous les sabotages
 #   Scripts/eprouver-le-juge.sh 'motif'    # ceux dont l'intitulé répond au motif (grep -E)
+#   Scripts/eprouver-le-juge.sh --cibles   # sans rien saboter : chaque texte visé est-il
+#                                          # présent, et une seule fois ? (quelques secondes)
 #
 # L'arbre de travail doit être propre : le script écrit dans les sources et les
 # restaure par « git checkout ». Il refuse de tourner autrement, pour ne pas
@@ -25,7 +27,14 @@ export LC_ALL=C
 racine="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$racine"
 
-if [ -n "$(git status --porcelain)" ]; then
+# --cibles ne lit que les sources : ni arbre propre exigé, ni verrou, ni restauration.
+cibles=0
+if [ "${1:-}" = "--cibles" ]; then
+    cibles=1
+    shift
+fi
+
+if [ "$cibles" = 0 ] && [ -n "$(git status --porcelain)" ]; then
     echo "ÉCHEC : l'arbre de travail n'est pas propre." >&2
     echo "Ce script sabote les sources et les restaure par « git checkout » :" >&2
     echo "il emporterait le travail en cours." >&2
@@ -37,16 +46,19 @@ fi
 # emporté sans un mot. C'est arrivé une fois, le 6 septembre 2026, à deux fichiers
 # de documentation — et rien ne l'avait signalé.
 verrou="$racine/.juge-en-cours"
-if [ -e "$verrou" ]; then
+if [ "$cibles" = 1 ]; then
+    :
+elif [ -e "$verrou" ]; then
     echo "ÉCHEC : une épreuve du juge est déjà en cours ($verrou)." >&2
     echo "Ce script restaure l'arbre en sortant : deux instances se marcheraient dessus." >&2
     exit 2
 fi
-touch "$verrou"
-
-restaurer() { git checkout -- . 2>/dev/null || true; }
-nettoyer() { restaurer; rm -f "$verrou"; }
-trap nettoyer EXIT
+if [ "$cibles" = 0 ]; then
+    touch "$verrou"
+    restaurer() { git checkout -- . 2>/dev/null || true; }
+    nettoyer() { restaurer; rm -f "$verrou"; }
+    trap nettoyer EXIT
+fi
 
 trous=0
 sabotages=0
@@ -61,12 +73,23 @@ saboter() {
     if [ -n "$filtre" ] && ! grep -qE "$filtre" <<< "$intitule"; then return; fi
     sabotages=$((sabotages + 1))
 
-    if ! grep -qF "$avant" "$fichier"; then
+    # Le texte visé doit y être une fois et une seule : présent plusieurs fois, le
+    # sabotage frapperait la première occurrence, qui n'est peut-être pas celle que
+    # l'intitulé décrit.
+    local occurrences
+    occurrences="$(python3 -c 'import sys, pathlib; print(pathlib.Path(sys.argv[1]).read_text().count(sys.argv[2]))' "$fichier" "$avant")"
+    if [ "$occurrences" = 0 ]; then
         echo "  ?  $intitule — le code visé a changé, sabotage impossible" >&2
         echo "     ($fichier ne contient plus « ${avant:0:60}… »)" >&2
         trous=$((trous + 1))
         return
+    elif [ "$occurrences" != 1 ]; then
+        echo "  ?  $intitule — le texte visé est ambigu, sabotage refusé" >&2
+        echo "     ($fichier contient $occurrences fois « ${avant:0:60}… »)" >&2
+        trous=$((trous + 1))
+        return
     fi
+    if [ "$cibles" = 1 ]; then return; fi
 
     python3 - "$fichier" "$avant" "$apres" <<'PY'
 import sys, pathlib
@@ -122,8 +145,8 @@ saboter "l'aimantation ne s'accroche plus" \
 
 saboter "une copie de bloc perd son interligne" \
     MyPublisher.Core/Models/Frame.cs \
-    'LineHeight = LineHeight,' \
-    ''
+    'LineHeight = LineHeight, PaddingLeft = PaddingLeft,' \
+    'PaddingLeft = PaddingLeft,'
 
 saboter "la migration de la version 1 ne fait plus rien" \
     MyPublisher.Core/Services/FormatMigrations.cs \
@@ -163,8 +186,10 @@ saboter "l interligne redevient un multiple du corps" \
 # contour dans PageCanvas.axaml, qui est celle du gabarit d'image.
 saboter "à l'écran, le filet d'une image passe sous elle" \
     MyPublisher/Views/PageCanvas.axaml \
-    '<Rectangle Classes="frameStroke"/>' \
-    '<Rectangle Classes="frameStroke" ZIndex="-1"/>' \
+    '</Image>
+                <Rectangle Classes="frameStroke"/>' \
+    '</Image>
+                <Rectangle Classes="frameStroke" ZIndex="-1"/>' \
     'C1-fond-et-filet'
 
 # C2b : un repère libre qui sort de la table d'aimantation ne casse aucun calcul — il
@@ -230,8 +255,8 @@ saboter "un document parti d un modèle en garde le chemin" \
 # Le folio de l'écran resterait juste : seul le PDF, relu page par page, le voit.
 saboter "le folio du PDF reste à 1 sur toutes les pages" \
     MyPublisher.Core/Services/PdfExporter.cs \
-    'new FieldContext(index + 1, document.Pages.Count' \
-    'new FieldContext(1, document.Pages.Count' \
+    'new FieldContext(index + 1, document.Pages.Count, now' \
+    'new FieldContext(1, document.Pages.Count, now' \
     'C4-champs'
 
 # Une marge unique appliquée des deux côtés : le fer gauche reste juste, et seul un
@@ -391,6 +416,267 @@ saboter "un collage qui porte du texte est poussé à gauche comme un saut" \
     '' \
     'Q1-styles-frappe|RecalageTests|FrappeTests'
 
+# C5b — les jeux de couleurs et de polices. La référence se résout en un seul endroit
+# du noyau, que les deux rendus appellent : un sabotage du noyau tombe des deux côtés à
+# la fois, et c'est la recette — qui calcule les couleurs attendues depuis les valeurs
+# des jeux — ou les tests du noyau qui le voient, jamais la comparaison écran ↔ PDF.
+saboter "l'export ne résout plus le départ d'un dégradé du jeu" \
+    MyPublisher.Core/Services/PdfExporter.cs \
+    'var depart = ParseColor(charte.Couleur(fill.From));' \
+    'var depart = ParseColor(fill.From);' \
+    'C5b-jeux'
+
+saboter "l'écran peint un fond du jeu sans le résoudre" \
+    MyPublisher/Views/FondBloc.cs \
+    'if (fond is not GradientFill degrade) return Conv.ToBrush(fond.UniformeSelon(charte));' \
+    'if (fond is not GradientFill degrade) return Conv.ToBrush(fond.Uniforme);' \
+    'C5b-jeux|JeuxTests'
+
+saboter "un fragment de style du jeu garde sa référence" \
+    MyPublisher.Core/Models/Jeux.cs \
+    'if (copie.Foreground is { } couleur) copie.Foreground = Couleur(couleur) ?? couleur;' \
+    '' \
+    'C5b-jeux|JeuxTests'
+
+saboter "une teinte du jeu mélange sa référence et non la couleur du jeu" \
+    MyPublisher.Core/Models/FillBrush.cs \
+    'var baseResolue = charte is null ? Color : charte.Couleur(Color);' \
+    'var baseResolue = Color;' \
+    'C5b-jeux|JeuxTests'
+
+saboter "la police du jeu ne se résout plus" \
+    MyPublisher.Core/Models/Jeux.cs \
+    'FontFamily = Police(style.FontFamily),' \
+    'FontFamily = style.FontFamily,' \
+    'C5b-jeux|JeuxTests'
+
+saboter "la migration laisse une valeur de la version 4 devenir une référence" \
+    MyPublisher.Core/Services/FormatMigrations.cs \
+    'objet[nom] = ReferenceDuJeu.Liberer(chaine);' \
+    'objet[nom] = chaine;' \
+    'JeuxTests'
+
+# Le piège du sélecteur, troisième du nom après C1 et C5c : il renvoie ce qu'il lit.
+saboter "le sélecteur renvoie au bloc la couleur du jeu qu'il vient d'afficher" \
+    MyPublisher/Views/SelecteurDeCouleur.cs \
+    'if (_posee == couleur) return;' \
+    '' \
+    'JeuxTests|C5b-jeux'
+
+# Le banc rend la page de force : seul un test qui lit la fenêtre composée voit qu'elle
+# ne s'est pas repeinte.
+saboter "changer de jeu ne repeint plus un fond du jeu à l'écran" \
+    MyPublisher/Views/FondBloc.cs \
+    'JeuAffiche.CharteProperty.Changed.AddClassHandler<FondBloc>((c, _) => c.InvalidateVisual());' \
+    '' \
+    'JeuxTests'
+
+saboter "changer de jeu ne repeint plus un texte du jeu à l'écran" \
+    MyPublisher/Views/ControleDeBloc.cs \
+    'JeuAffiche.CharteProperty.Changed.AddClassHandler<ControleDeBloc>((c, _) => c.InvalidateVisual());' \
+    '' \
+    'JeuxTests'
+
+# Trouvés par la relecture de C5b : deux trous que les neuf sabotages ci-dessus ne
+# couvraient pas.
+saboter "la migration ne surveille plus la seconde couleur d'un dégradé" \
+    MyPublisher.Core/Services/FormatMigrations.cs \
+    '["Color", "From", "To", "Stroke", "Foreground", "FontFamily"];' \
+    '["Color", "From", "Stroke", "Foreground", "FontFamily"];' \
+    'JeuxTests'
+
+saboter "une pastille du jeu perd l'opacité propre du fond" \
+    MyPublisher/Views/SelecteurDeCouleur.cs \
+    'Valeur = ReferenceDuJeu.Couleur(emplacement, alpha is { } a && a != 0xFF ? a : null);' \
+    'Valeur = ReferenceDuJeu.Couleur(emplacement);' \
+    'JeuxTests'
+
+# Q20 : une police absente de la machine survit à la sélection. Deux garde-fous, et
+# chacun a son test : la liste qui propose la police du bloc, et la liaison qui ne
+# renvoie jamais null au bloc — seule à tenir pour un bloc venu après la liste.
+saboter "la liste des polices ne propose plus les polices absentes du document" \
+    MyPublisher/ViewModels/MainWindowViewModel.cs \
+    '            .. absentes,' \
+    '' \
+    'PolicesAbsentesTests|Q20-police-absente'
+
+saboter "la liste des polices renvoie null au bloc qu'elle ne sait pas montrer" \
+    MyPublisher/Converters/JeuConverters.cs \
+    'value ?? BindingOperations.DoNothing;' \
+    'value;' \
+    'PolicesAbsentesTests|Q20-police-absente'
+
+# Salve 2, lot « noyau » : Q8, Q15 et Q17. Chaque sabotage a été joué à la main contre
+# la recette de son poste avant d'être écrit ici.
+
+# Q8 : le défaut d'origine, rétabli tel quel — la passe relit l'héritage des fragments
+# pour son compte au lieu des styles composés. Huit des neuf tests de Q8 tombent, et
+# la recette, sur le document du plan.
+saboter "la passe des polices relit l'héritage des fragments au lieu des styles composés" \
+    MyPublisher.Core/Services/PdfExporter.cs \
+    'foreach (var style in StylesDessines(bloc, content, charte))' \
+    'foreach (var style in bloc.Spans.Select(f => Commun(bloc, charte) with { FontFamily = charte.Police(f.FontFamily ?? bloc.FontFamily), Bold = f.Bold ?? bloc.Bold, Italic = f.Italic ?? bloc.Italic }).Prepend(Commun(bloc, charte)))' \
+    'Q8-polices|PolicesTests'
+
+# Q8 : la passe lit les fragments d'un bloc qui montre un champ, que le dessin ignore.
+# Seul le test du folio le voit.
+saboter "la passe des polices lit les fragments d'un champ, que le dessin ignore" \
+    MyPublisher.Core/Services/PdfExporter.cs \
+    'content, Fragments(text, content, charte), Commun(text, charte)))' \
+    'content, charte.Fragments(text.Spans), Commun(text, charte)))' \
+    'Q8-polices|PolicesTests'
+
+# Q8 : la passe ne descend plus dans les cases d'un tableau. Trouvé par la relecture :
+# rien ne le gardait. Seul le test de la case le voit.
+saboter "la passe des polices ne voit plus les cases d'un tableau" \
+    MyPublisher.Core/Services/PdfExporter.cs \
+    'TableFrame tableau => tableau.CellFrames,' \
+    '' \
+    'Q8-polices|PolicesTests'
+
+# Q15 : l'ouverture ne compare plus les empreintes. L'écran garde l'image d'avant la
+# retouche, le PDF montre la nouvelle.
+saboter "rouvrir un document ne relit plus une image retouchée" \
+    MyPublisher/ViewModels/MainWindowViewModel.cs \
+    'BitmapCache.OublierLesRetouchees();' \
+    '' \
+    'Q15-image|ImagesTests'
+
+# Q15 : chaque moitié de l'empreinte a son test. La taille oubliée, seule la retouche
+# qui garde sa date passe ; la date oubliée, seule la retouche de même taille passe.
+saboter "l'empreinte d'une image oublie la taille de son fichier" \
+    MyPublisher/Converters/Conv.cs \
+    'new Empreinte(fichier.LastWriteTimeUtc, fichier.Length)' \
+    'new Empreinte(fichier.LastWriteTimeUtc, 0)' \
+    'Q15-image|ImagesTests'
+
+saboter "l'empreinte d'une image oublie la date de son fichier" \
+    MyPublisher/Converters/Conv.cs \
+    'new Empreinte(fichier.LastWriteTimeUtc, fichier.Length)' \
+    'new Empreinte(default, fichier.Length)' \
+    'Q15-image|ImagesTests'
+
+# Q15 : l'empreinte prise APRÈS la lecture. Seul un fichier réécrit pendant qu'on le
+# lit le trahit ; le lecteur injecté du test le joue. Trouvé par la relecture.
+saboter "l'empreinte d'une image se prend après sa lecture" \
+    MyPublisher/Converters/Conv.cs \
+    'Cache[cle] = new Entree(bitmap, empreinte);' \
+    'Cache[cle] = new Entree(bitmap, Prendre(cle));' \
+    'Q15-image|ImagesTests'
+
+# Q17 : l'accesseur des fragments rouvert. Tout compile, rien ne casse à l'écran
+# aujourd'hui ; la sonde de la recette compile le remplacement, et la réflexion voit
+# la marque « init » disparaître.
+saboter "les fragments d'un bloc se remplacent de nouveau après la construction" \
+    MyPublisher.Core/Models/Frame.cs \
+    'public ObservableCollection<StyleSpan> Spans { get; init; } = [];' \
+    'public ObservableCollection<StyleSpan> Spans { get; set; } = [];' \
+    'Q17-collections|CollectionsFermeesTests'
+
+# Salve 2, lot « rendu » : Q4, Q5, Q6 et Q16, les écarts entre l'écran et le PDF.
+# Chacun éprouvé à la main avant d'être écrit ici : appliqué, la cible tombée, restauré.
+
+# Q4 : l'écran rentrait le filet d'une demi-épaisseur. La marge qui le recentre ôtée,
+# le contour commun des blocs rentre de nouveau d'une demi-épaisseur — la recette de Q4
+# le voit sur vingt côtés sur quarante-huit (image, textes, groupe), celle de C1,
+# resserrée, sur ses douze.
+saboter "à l'écran, le filet d'un bloc rentre de nouveau dans le bloc" \
+    MyPublisher/Views/PageCanvas.axaml \
+    $'            <Setter Property="Margin" Value="{Binding StrokeThickness, Converter={x:Static conv:Conv.FiletCentre}}"/>\n' \
+    '' \
+    'Q4-filet|C1-fond'
+
+# L'ellipse a son propre élément : seule la recette de Q4 la porte.
+saboter "à l'écran, le filet d'une ellipse rentre dans la forme" \
+    MyPublisher/Views/PageCanvas.axaml \
+    $'<Ellipse IsVisible="{Binding IsEllipse}"\n                         Margin="{Binding StrokeThickness, Converter={x:Static conv:Conv.FiletCentre}}"' \
+    '<Ellipse IsVisible="{Binding IsEllipse}"' \
+    'Q4-filet'
+
+# Q5 : l'export ne découpe plus les blocs d'un groupe. Le texte de 400 pt court de
+# nouveau 280 pt au-delà de son groupe dans le PDF, et pas à l'écran.
+saboter "l'export ne découpe plus au groupe" \
+    MyPublisher.Core/Services/PdfExporter.cs \
+    $'            gfx.IntersectClip(new XRect(zone.Left, zone.Top, zone.Width, zone.Height));\n' \
+    '' \
+    'Q5-groupe'
+
+# Q5 : la découpe ramenée au cadre exact du porteur rogne de moitié, à l'écran comme
+# au PDF, le filet d'un bloc posé sur le bord d'un groupe ou d'un tableau.
+saboter "la découpe d'un groupe rogne le filet de ses blocs" \
+    MyPublisher.Core/Models/Decoupe.cs \
+    'return new Extent(-marge, -marge, largeur + marge, hauteur + marge);' \
+    'return new Extent(0, 0, largeur, hauteur);' \
+    'Q5-groupe|DecoupeTests'
+
+# Q6 : la découpe d'un remplissage par image oublie l'arrondi, au PDF puis à l'écran.
+# Avant Q6, ces deux-là traversaient toute la vérification : la page de C5 ne portait
+# pas de bloc arrondi rempli d'une image.
+saboter "au PDF, un remplissage par image oublie l'arrondi du bloc" \
+    MyPublisher.Core/Services/PdfExporter.cs \
+    $'        else if (pourtour.Arrondi > 0)\n        {\n            chemin.AddRoundedRectangle(' \
+    $'        else if (pourtour.Arrondi < 0)\n        {\n            chemin.AddRoundedRectangle(' \
+    'C5-Q6-fonds'
+
+saboter "à l'écran, un remplissage par image oublie l'arrondi du bloc" \
+    MyPublisher/Views/FondBloc.cs \
+    ': (Geometry)new RectangleGeometry(rect, Arrondi, Arrondi);' \
+    ': (Geometry)new RectangleGeometry(rect);' \
+    'C5-Q6-fonds'
+
+# Q16 : le pointillé d'un bloc image ne regarde plus si l'image est chargée, puis ne
+# regarde plus l'interrupteur des repères. Chacune des deux conditions a son test.
+saboter "le pointillé d'un bloc image se dessine sur l'image chargée" \
+    MyPublisher/Views/PageCanvas.axaml \
+    $'                            <Binding Path="#Photo.Source" Converter="{x:Static ObjectConverters.IsNull}"/>\n' \
+    '' \
+    'Q16-pointille|PointilleTests'
+
+saboter "le pointillé d'un bloc image n'obéit plus aux repères" \
+    MyPublisher/Views/PageCanvas.axaml \
+    $'                            <Binding Path="#Board.((vm:MainWindowViewModel)DataContext).ShowGuides"/>\n                            <Binding Path="#Photo.Source"' \
+    '                            <Binding Path="#Photo.Source"' \
+    'Q16-pointille|PointilleTests'
+
+# Relecture du lot « rendu », 12 octobre 2026. La marge seule ne centrait que les filets
+# dont la demi-épaisseur est un point entier : Avalonia l'arrondissait au point, en
+# arrondi bancaire. Rétabli sur l'un des trois éléments du filet, l'arrondi remet les
+# filets de 1 et de 3 pt à un demi-point du PDF.
+saboter "à l'écran, le contour commun reprend l'arrondi de mise en page" \
+    MyPublisher/Views/PageCanvas.axaml \
+    $'            <Setter Property="UseLayoutRounding" Value="False"/>\n' \
+    '' \
+    'Q4-filet'
+
+saboter "à l'écran, le rectangle d'une forme reprend l'arrondi de mise en page" \
+    MyPublisher/Views/PageCanvas.axaml \
+    $'                           Margin="{Binding StrokeThickness, Converter={x:Static conv:Conv.FiletCentre}}"\n                           UseLayoutRounding="False"' \
+    '                           Margin="{Binding StrokeThickness, Converter={x:Static conv:Conv.FiletCentre}}"' \
+    'Q4-filet'
+
+saboter "à l'écran, l'ellipse d'une forme reprend l'arrondi de mise en page" \
+    MyPublisher/Views/PageCanvas.axaml \
+    $'                         Margin="{Binding StrokeThickness, Converter={x:Static conv:Conv.FiletCentre}}"\n                         UseLayoutRounding="False"' \
+    '                         Margin="{Binding StrokeThickness, Converter={x:Static conv:Conv.FiletCentre}}"' \
+    'Q4-filet|C5-Q6-fonds'
+
+# Le sabotage du relecteur, qui passait toute la vérification : la demi-épaisseur
+# arrondie à l'entier inférieur. Les filets de 4 pt restent justes ; ceux de 1 et de
+# 3 pt, non.
+saboter "la marge qui centre le filet est arrondie à l'entier inférieur" \
+    MyPublisher/Converters/Conv.cs \
+    'new(epaisseur => new Thickness(-Math.Max(0, epaisseur) / 2));' \
+    'new(epaisseur => new Thickness(-Math.Floor(Math.Max(0, epaisseur) / 2)));' \
+    'Q4-filet'
+
+# Q5 : un bloc tourné ne compte plus que t/2. La pointe d'onglet de son angle, qui sort
+# de t/2·√2, est émoussée par la découpe du groupe.
+saboter "la découpe d'un groupe émousse la pointe d'un bloc tourné" \
+    MyPublisher.Core/Models/Decoupe.cs \
+    'marge = Math.Max(marge, Tourne(bloc) ? propre * Math.Sqrt(2) : propre);' \
+    'marge = Math.Max(marge, propre);' \
+    'Q5-groupe|DecoupeTests'
+
 # Q9 : la vignette espace ses filets du corps, comme le faisait AbsoluteLineHeight,
 # et non de l'avance que la composition donne. Le compte des filets ne bouge pas ;
 # leur place, si.
@@ -399,6 +685,215 @@ saboter "la vignette espace ses filets du corps et non de la hauteur naturelle" 
     'yield return (x, descente + ligne.Haut, run, ligne.Avance);' \
     'yield return (x, descente + ligne.Haut * text.FontSize / metriques.Naturelle(commun), run, ligne.Avance);' \
     'Q9-vignette|VignetteTests'
+
+# Q9, après relecture : le fer et la longueur des filets, la découpe au bloc, le filet
+# d'un champ et la mémoire des filets. Chacun passait à travers un test qui ne lisait
+# que l'ordonnée des filets du bulletin.
+saboter "la vignette perd le fer : chaque filet part du retrait et court sur toute la colonne" \
+    MyPublisher/Views/TemplatePreview.cs \
+    'var justifiee = ligne.Fer == TextAlign.Justify && !ligne.FinDeParagraphe;' \
+    'var justifiee = true;' \
+    'Q9-vignette|VignetteTests'
+
+saboter "la vignette ne découpe plus ses filets au bloc" \
+    MyPublisher/Views/TemplatePreview.cs \
+    'using var _ = context.PushClip(new Rect(text.X, text.Y, text.Width, text.Height));' \
+    '' \
+    'Q9-vignette|VignetteTests'
+
+saboter "un champ ne laisse plus de filet dans la vignette" \
+    MyPublisher/Views/TemplatePreview.cs \
+    'yield return (0, 0, width, Compositeur.Avance(metriques.Naturelle(commun), text.LineHeight));' \
+    '' \
+    'Q9-vignette|VignetteTests'
+
+saboter "la vignette garde les filets du premier document qu'on lui pose" \
+    MyPublisher/Views/TemplatePreview.cs \
+    'if (!ReferenceEquals(document, _filetsDe) || box != _filetsA)' \
+    'if (_filetsDe is null)' \
+    'Q9-vignette|VignetteTests'
+
+# La fusion de C5b et de Q9 : la vignette compose et peint ses filets par la charte du
+# modèle, comme la page. Les modèles prennent leurs couleurs et leurs polices dans leur
+# jeu : sans la charte, un filet n'a plus la couleur du texte, ni ses lignes.
+saboter "la vignette peint ses filets sans résoudre la couleur du jeu" \
+    MyPublisher/Views/TemplatePreview.cs \
+    'var brush = Conv.ToBrush(charte.Couleur(text.Foreground)) ?? Brushes.Black;' \
+    'var brush = Conv.ToBrush(text.Foreground) ?? Brushes.Black;' \
+    'Q9-vignette|VignetteTests'
+
+saboter "la vignette compose ses filets sans résoudre la police du jeu" \
+    MyPublisher/Views/TemplatePreview.cs \
+    '        var commun = charte.StyleCommun(text);' \
+    '        var commun = new StyleEffectif(text.FontFamily, text.FontSize, text.Bold, text.Italic, text.Foreground, 0);' \
+    'Q9-vignette|VignetteTests'
+
+# Le poste B2. Le décodage peut être juste et le branchement faux : deux sabotages
+# visent le noyau, trois le modèle de vue. Chacun joué à la main contre la recette du
+# poste et ses tests avant d'être écrit ici.
+saboter "un fichier Latin-1 est lu en UTF-8 et perd ses accents" \
+    MyPublisher.Core/Services/TexteImporte.cs \
+    'texte = Windows1252.GetString(octets);' \
+    'texte = Encoding.UTF8.GetString(octets);' \
+    'B2-import-texte|TexteImporteTests|ImportTexteTests'
+
+saboter "un texte importé garde ses fins de ligne CRLF" \
+    MyPublisher.Core/Services/TexteImporte.cs \
+    "var lignes = texte.Replace(\"\\r\\n\", \"\\n\").Replace('\\r', '\\n');" \
+    'var lignes = texte;' \
+    'B2-import-texte|TexteImporteTests|ImportTexteTests'
+
+saboter "importer un texte ne s'annule plus en un pas" \
+    MyPublisher/ViewModels/MainWindowViewModel.cs \
+    $'        BeginEdit();\n        bloc.Spans.Clear();' \
+    $'        bloc.Spans.Clear();' \
+    'B2-import-texte|TexteImporteTests|ImportTexteTests'
+
+# Posé par la seule saisie, le texte importé garderait le style du début qu'il partage
+# avec l'ancien : un titre gras resterait gras.
+saboter "le texte importé garde les fragments d'avant" \
+    MyPublisher/ViewModels/MainWindowViewModel.cs \
+    $'        bloc.Spans.Clear();\n        bloc.Paragraphs.Clear();\n' \
+    '' \
+    'B2-import-texte|TexteImporteTests|ImportTexteTests'
+
+saboter "le menu offre l'import à tout bloc sélectionné" \
+    MyPublisher/ViewModels/MainWindowViewModel.cs \
+    'public bool PeutImporterTexte => SingleSelected is TextFrame { HasField: false };' \
+    'public bool PeutImporterTexte => SingleSelected is not null;' \
+    'B2-import-texte|TexteImporteTests|ImportTexteTests'
+
+# Après la relecture : l'import pendant une autre édition, et les fichiers qu'on refuse.
+saboter "importer pendant la saisie sur la page la laisse ouverte" \
+    MyPublisher/Views/MainWindow.axaml.cs \
+    $'        PageView.EndTextEdit();\n' \
+    '' \
+    'B2-import-texte|ImportTexteTests'
+
+saboter "l'import s'emboîte dans la transaction ouverte au panneau" \
+    MyPublisher/ViewModels/MainWindowViewModel.cs \
+    $'        EndPendingEdit();\n        BeginEdit();\n        bloc.Spans.Clear();' \
+    $'        BeginEdit();\n        bloc.Spans.Clear();' \
+    'B2-import-texte|ImportTexteTests'
+
+saboter "un fichier UTF-16 petit-boutiste n'est plus reconnu à sa marque" \
+    MyPublisher.Core/Services/TexteImporte.cs \
+    'else if (octets.StartsWith(MarqueUtf16Petit) || octets.StartsWith(MarqueUtf16Gros))' \
+    'else if (octets.StartsWith(MarqueUtf16Gros))' \
+    'B2-import-texte|TexteImporteTests'
+
+saboter "un fichier binaire entre dans le bloc, octets nuls compris" \
+    MyPublisher.Core/Services/TexteImporte.cs \
+    "if (!char.IsControl(c) || c is '\\t' or '\\n' or '\\r' or '\\f') continue;" \
+    "if (!char.IsControl(c) || c is '\\t' or '\\n' or '\\r' or '\\f' or '\\0') continue;" \
+    'B2-import-texte|TexteImporteTests|ImportTexteTests'
+
+saboter "un code d'échappement entre dans le bloc" \
+    MyPublisher.Core/Services/TexteImporte.cs \
+    "if (!char.IsControl(c) || c is '\\t' or '\\n' or '\\r' or '\\f') continue;" \
+    "if (c != '\\0') continue;" \
+    'B2-import-texte|TexteImporteTests'
+
+saboter "un fichier de plusieurs mégaoctets est versé dans le bloc" \
+    MyPublisher.Core/Services/TexteImporte.cs \
+    'if (flux.Length > TailleMax)' \
+    'if (flux.Length > 100 * TailleMax)' \
+    'B2-import-texte|TexteImporteTests|ImportTexteTests'
+
+saboter "du Windows-1252 qui passe pour de l'UTF-8 n'est plus relu en Latin-1" \
+    MyPublisher.Core/Services/TexteImporte.cs \
+    "if (c is >= '\\u0080' and <= '\\u009F') return null;" \
+    "if (c is >= '\\u0080' and <= '\\u009F') break;" \
+    'B2-import-texte|TexteImporteTests'
+
+saboter "un fichier qui ne porte qu'une fin de ligne efface le bloc" \
+    MyPublisher.Core/Services/TexteImporte.cs \
+    'if (texte.Length == 0)' \
+    'if (texte.Length < 0)' \
+    'B2-import-texte|TexteImporteTests'
+
+saboter "un fichier fermé en lecture fait tomber l'import au lieu d'être refusé" \
+    MyPublisher/ViewModels/MainWindowViewModel.cs \
+    'when (ex is IOException or UnauthorizedAccessException or TexteRefuseException)' \
+    'when (ex is IOException or TexteRefuseException)' \
+    'B2-import-texte|ImportTexteTests'
+
+# Q7 : la recette de A6 trace ses blocs à l'outil. Les deux sabotages du chemin par
+# lequel un bloc naît, que l'ancienne recette — blocs posés à la main, sélectionnés
+# par le modèle de vue — laissait passer.
+saboter "le tracé ne donne plus sa largeur au bloc" \
+    MyPublisher/ViewModels/MainWindowViewModel.cs \
+    'frame.Width = width;' \
+    '' \
+    'A6-Q7-taille|PanneauEtBarreTests'
+
+saboter "le bloc tracé n'est plus sélectionné" \
+    MyPublisher/ViewModels/MainWindowViewModel.cs \
+    'SelectOnly(frame);' \
+    '' \
+    'A6-Q7-taille|PanneauEtBarreTests'
+
+# Q14 : les deux causes du double-clic qui réécrivait le bloc, chacune à sa ligne.
+saboter "le panneau réécrit la position du bloc qu'on sélectionne" \
+    MyPublisher/Converters/UnitConverters.cs \
+    'decimal millimetres when _affiches.Retrouver(millimetres, out var points) => points,' \
+    '' \
+    'Q14-double-clic|DoubleClicTests'
+
+saboter "le panneau arrondit l'angle du bloc qu'on sélectionne" \
+    MyPublisher/Converters/UnitConverters.cs \
+    'decimal number when _affiches.Retrouver(number, out var exact) => exact,' \
+    '' \
+    'Q14-double-clic|DoubleClicTests'
+
+saboter "un mouvement nul du pointeur aimante le bloc cliqué" \
+    MyPublisher/Views/PageCanvas.axaml.cs \
+    'if (dx == 0 && dy == 0)' \
+    'if (dx == 0 && dy == 0 && _moveStart.Count < 0)' \
+    'Q14-double-clic|DoubleClicTests'
+
+# Q14, repris après relecture : la garde ne fait pas que s'abstenir, elle remet le bloc
+# à son départ. Sans cette remise, un geste qui part puis revient au point de prise
+# laisse le bloc là où le pointeur l'avait mené ; aucun des trois premiers tests ne le
+# voyait.
+saboter "un geste revenu au point de prise laisse le bloc où il était allé" \
+    MyPublisher/Views/PageCanvas.axaml.cs \
+    'frame.X = startX;' \
+    '' \
+    'Q14-double-clic|DoubleClicTests'
+
+# Q14, repris après relecture : le convertisseur ne se souvient que du nombre qu'il vient
+# de donner. Le sabotage remet la mémoire d'avant, un dictionnaire gardé toute la session :
+# une frappe y retrouvait la valeur exacte qu'un autre bloc avait affichée.
+saboter "une frappe prend la valeur exacte qu'un autre bloc a affichée" \
+    MyPublisher/Converters/UnitConverters.cs \
+'    private decimal? _affiche;
+    private double _valeur;
+
+    public decimal Retenir(decimal affiche, double valeur)
+    {
+        _affiche = affiche;
+        _valeur = valeur;
+        return affiche;
+    }
+
+    public bool Retrouver(decimal affiche, out double valeur)
+    {
+        var reconnu = _affiche == affiche;
+        valeur = _valeur;
+        _affiche = null;
+        return reconnu;
+    }' \
+'    private readonly Dictionary<decimal, double> _valeurs = [];
+
+    public decimal Retenir(decimal affiche, double valeur)
+    {
+        _valeurs[affiche] = valeur;
+        return affiche;
+    }
+
+    public bool Retrouver(decimal affiche, out double valeur) => _valeurs.TryGetValue(affiche, out valeur);' \
+    'Q14-double-clic|DoubleClicTests'
 
 # Q13 : la décision de renvoi lit la mesure du dessin, comme avant le poste. L'écran et
 # le PDF recoupent chacun à sa mesure, et « jamais » change de ligne dans la première
@@ -418,6 +913,14 @@ saboter "l'écran résout ses polices par Avalonia et non par la collection du p
     'Q13-coupure|CoupureTests'
 
 echo
+if [ "$cibles" = 1 ]; then
+    if [ "$trous" = 0 ]; then
+        echo "Les $sabotages textes visés sont présents, chacun une seule fois."
+        exit 0
+    fi
+    echo "CIBLES À REPRENDRE : $trous sur $sabotages." >&2
+    exit 1
+fi
 if [ "$trous" = 0 ]; then
     echo "Le juge sait échouer : $sabotages sabotages, $sabotages attrapés."
 else

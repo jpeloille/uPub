@@ -8,6 +8,10 @@ using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using MyPublisher.Models;
 
+// Le banc d'interface atteint le cache d'images et son lecteur, pour éprouver l'ordre
+// de l'empreinte et de la lecture (poste Q15).
+[assembly: System.Runtime.CompilerServices.InternalsVisibleTo("MyPublisher.Tests.Interface")]
+
 namespace MyPublisher.Converters;
 
 /// <summary>
@@ -104,6 +108,21 @@ public static class Conv
     public static readonly FuncValueConverter<StrokeStyle, AvaloniaList<double>?> Dash =
         new(style => Frame.DashPattern(style) is { } pattern ? new AvaloniaList<double>(pattern) : null);
 
+    /// <summary>
+    /// La marge qui centre un filet sur le bord de son bloc : une demi-épaisseur, vers
+    /// l'extérieur.
+    ///
+    /// Un <c>Rectangle</c> ou une <c>Ellipse</c> d'Avalonia RENTRENT leur trait dans leurs
+    /// limites : leur géométrie est le cadre diminué d'une demi-épaisseur. Posés sur le
+    /// cadre du bloc, ils traçaient donc un filet de 2 pt sur [bord, bord + 2] quand
+    /// l'export, qui dit vrai (« centré sur le bord », <see cref="Frame.StrokeThickness"/>),
+    /// le trace sur [bord − 1, bord + 1] — poste Q4. Élargir l'élément de la même
+    /// demi-épaisseur ramène sa géométrie exactement sur le cadre, arrondi compris : les
+    /// rayons s'appliquent à la géométrie, qui est désormais celle que trace l'export.
+    /// </summary>
+    public static readonly FuncValueConverter<double, Thickness> FiletCentre =
+        new(epaisseur => new Thickness(-Math.Max(0, epaisseur) / 2));
+
     public static readonly FuncValueConverter<string?, Bitmap?> Image =
         new(path => string.IsNullOrWhiteSpace(path) ? null : BitmapCache.Get(path));
 
@@ -126,10 +145,28 @@ public static class Conv
 /// modèle avait gardé la forme relue du fichier, deux documents rangés dans deux
 /// dossiers et portant chacun « images/logo.png » se seraient partagé une seule
 /// entrée — la seconde aurait affiché l'image de la première.
+///
+/// Chaque image lue garde l'empreinte de son fichier — date de modification et
+/// taille, prises avant la lecture —, et l'ouverture d'un document oublie celles dont
+/// le fichier a changé depuis : poste Q15. L'empreinte se compare à l'ouverture, et
+/// non à chaque lecture du cache, qui a lieu à chaque image d'un glissé.
 /// </summary>
 internal static class BitmapCache
 {
-    private static readonly Dictionary<string, Bitmap?> Cache = new();
+    /// <summary>Ce qui dit qu'un fichier a changé : sa date de modification et sa taille.</summary>
+    private readonly record struct Empreinte(DateTime Date, long Taille);
+
+    /// <summary>Une image lue, ou nulle pour un échec, et l'empreinte de son fichier.</summary>
+    private readonly record struct Entree(Bitmap? Image, Empreinte? Empreinte);
+
+    private static readonly Dictionary<string, Entree> Cache = new();
+
+    /// <summary>
+    /// Ce qui lit une image sur le disque. Un point d'injection pour le seul banc
+    /// d'interface : il lui permet de réécrire le fichier PENDANT la lecture, et
+    /// d'éprouver ainsi que l'empreinte est prise avant elle (poste Q15).
+    /// </summary>
+    internal static Func<string, Bitmap> Lecteur { get; set; } = chemin => new Bitmap(chemin);
 
     public static Bitmap? Get(string path)
     {
@@ -140,19 +177,24 @@ internal static class BitmapCache
 
         lock (Cache)
         {
-            if (Cache.TryGetValue(cle, out var cached)) return cached;
+            if (Cache.TryGetValue(cle, out var cached)) return cached.Image;
+
+            // L'empreinte AVANT la lecture : un fichier réécrit pendant qu'on le lit
+            // laisse une empreinte périmée, et sera relu à la prochaine ouverture,
+            // plutôt que l'inverse.
+            var empreinte = Prendre(cle);
 
             Bitmap? bitmap = null;
             try
             {
-                bitmap = new Bitmap(cle);
+                bitmap = Lecteur(cle);
             }
             catch (Exception)
             {
                 // Fichier absent ou format non géré : le bloc reste vide, sans planter.
             }
 
-            Cache[cle] = bitmap;
+            Cache[cle] = new Entree(bitmap, empreinte);
             return bitmap;
         }
     }
@@ -174,20 +216,70 @@ internal static class BitmapCache
     /// Appelé à l'ouverture d'un document, qui est le moment où l'on s'attend à ce que
     /// le disque soit relu. Les réussites restent : une image lue est juste tant que
     /// son fichier ne change pas, et la relire à chaque ouverture ne réparerait aucun
-    /// défaut de ce poste. Une image MODIFIÉE sur le disque pendant que le processus
-    /// vit reste donc périmée à l'écran — c'est écrit au poste Q3 du plan.
+    /// défaut de ce poste. Une image MODIFIÉE sur le disque, elle, est l'affaire de
+    /// <see cref="OublierLesRetouchees"/> (poste Q15).
     /// </summary>
     public static void OublierLesEchecs()
     {
         lock (Cache)
         {
             var echecs = new List<string>();
-            foreach (var (cle, bitmap) in Cache)
+            foreach (var (cle, entree) in Cache)
             {
-                if (bitmap is null) echecs.Add(cle);
+                if (entree.Image is null) echecs.Add(cle);
             }
 
             foreach (var cle in echecs) Cache.Remove(cle);
+        }
+    }
+
+    /// <summary>
+    /// Oublie les images dont le fichier a changé depuis qu'on les a lues, et elles
+    /// seules — poste Q15. Le pendant de <see cref="OublierLesEchecs"/>, appelé au même
+    /// endroit : l'ouverture d'un document.
+    ///
+    /// Une image retouchée sur le disque pendant la session restait périmée à l'écran,
+    /// réouverture comprise, alors que l'export, qui lit le disque à chaque fois,
+    /// montrait la nouvelle : un écart écran ↔ PDF. Une image dont le fichier n'a pas
+    /// bougé reste, elle, la même instance — l'épingle de Q3 tient. Un fichier disparu
+    /// change d'empreinte : l'image est oubliée, et le bloc se vide comme le PDF le
+    /// dit déjà (« Image introuvable »).
+    ///
+    /// Pourquoi à l'ouverture et non à chaque lecture du cache : celle-ci a lieu à
+    /// chaque notification de liaison, donc à chaque image d'un glissé, et interroger
+    /// le disque là — un partage réseau, parfois — coûterait sur le geste le plus
+    /// fréquent ce qu'on n'achète que rarement. L'annulation, de même, ne relit rien :
+    /// annuler n'est pas rouvrir.
+    /// </summary>
+    public static void OublierLesRetouchees()
+    {
+        lock (Cache)
+        {
+            var retouchees = new List<string>();
+            foreach (var (cle, entree) in Cache)
+            {
+                if (entree.Image is not null && Prendre(cle) != entree.Empreinte) retouchees.Add(cle);
+            }
+
+            foreach (var cle in retouchees) Cache.Remove(cle);
+        }
+    }
+
+    /// <summary>
+    /// L'empreinte d'un fichier, ou null s'il n'existe pas ou ne se lit pas. La date
+    /// seule ne suffirait pas toujours : certains systèmes de fichiers la comptent à la
+    /// seconde, et une retouche faite dans la même seconde que la lecture passerait.
+    /// </summary>
+    private static Empreinte? Prendre(string cle)
+    {
+        try
+        {
+            var fichier = new System.IO.FileInfo(cle);
+            return fichier.Exists ? new Empreinte(fichier.LastWriteTimeUtc, fichier.Length) : null;
+        }
+        catch (Exception)
+        {
+            return null;
         }
     }
 

@@ -29,6 +29,7 @@ public static class FormatMigrations
         if (version < 2) ToVersion2(root);
         if (version < 3) ToVersion3(root);
         if (version < 4) ToVersion4(root);
+        if (version < 5) ToVersion5(root);
 
         root["FormatVersion"] = Document.CurrentFormatVersion;
     }
@@ -110,6 +111,61 @@ public static class FormatMigrations
             ["$kind"] = "solid",
             ["Color"] = valeur.GetValue<string>(),
         };
+    }
+
+    /// <summary>Les propriétés qui portent une couleur ou une police, où qu'elles soient.</summary>
+    private static readonly HashSet<string> CouleursEtPolices =
+        ["Color", "From", "To", "Stroke", "Foreground", "FontFamily"];
+
+    /// <summary>
+    /// Version 5 : le document porte un jeu de couleurs et un jeu de polices, et une
+    /// couleur ou une police peut y faire référence — <c>scheme:accent1</c>,
+    /// <c>scheme:heading</c> (poste C5b).
+    ///
+    /// Un document de la version 4 n'a aucune référence, et doit s'ouvrir à l'identique :
+    /// ses couleurs et ses polices restent libres, toutes. La migration ne tente donc
+    /// AUCUN rapprochement — une couleur saisie qui se trouverait égale à un accent du
+    /// jeu par défaut ne devient pas cet accent : elle changerait de couleur au premier
+    /// changement de jeu, sans que personne l'ait demandé. Les jeux eux-mêmes ne sont pas
+    /// écrits ici : un fichier qui n'en a pas reçoit ceux du document neuf, qu'aucun de
+    /// ses blocs ne consulte.
+    ///
+    /// Ce qu'elle fait, c'est garder libre une valeur que la version 4 tenait pour libre
+    /// et que la version 5 lirait comme une référence : une chaîne qui commencerait par
+    /// <c>scheme:</c>. Rien dans l'interface n'en écrivait, mais un fichier écrit à la
+    /// main ou un import le pouvaient ; elle reçoit un préfixe
+    /// (<see cref="ReferenceDuJeu.Liberer"/>) qui n'en change pas le rendu — une telle
+    /// couleur était illisible et le reste, une telle police introuvable et le reste.
+    ///
+    /// La descente est générique, comme celle des chemins d'images : les couleurs vivent
+    /// dans les remplissages, les fragments de style, les cases, le fond de page, et
+    /// une marche dirigée en oublierait une le jour où un type composé apparaît.
+    /// </summary>
+    private static void ToVersion5(JsonNode? noeud)
+    {
+        switch (noeud)
+        {
+            case JsonObject objet:
+                foreach (var (nom, valeur) in objet.ToList())
+                {
+                    if (CouleursEtPolices.Contains(nom)
+                        && valeur is JsonValue texte
+                        && texte.TryGetValue<string>(out var chaine)
+                        && ReferenceDuJeu.EstReference(chaine))
+                    {
+                        objet[nom] = ReferenceDuJeu.Liberer(chaine);
+                        continue;
+                    }
+
+                    ToVersion5(valeur);
+                }
+
+                break;
+
+            case JsonArray tableau:
+                foreach (var element in tableau) ToVersion5(element);
+                break;
+        }
     }
 
     /// <summary>Tous les blocs du document, ceux des groupes compris, à toute profondeur.</summary>

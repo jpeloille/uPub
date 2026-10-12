@@ -1,6 +1,7 @@
 using System;
 using System.Globalization;
 using System.Linq;
+using MyPublisher.Models;
 
 namespace MyPublisher.Banc;
 
@@ -10,8 +11,15 @@ namespace MyPublisher.Banc;
 ///
 ///   MyPublisher.Banc rendre &lt;doc.mypub&gt; --sortie &lt;image.png&gt;
 ///                          [--page N] [--pixels-par-point 2] [--sans-reperes]
+///                          [--jeu-de-couleurs Nom] [--jeu-de-polices Nom]
+///                          [--enregistrer &lt;copie.mypub&gt;]
 ///   MyPublisher.Banc mots &lt;doc&gt; --sortie &lt;lignes.json&gt;
 ///                          [--charger-d-abord romain|gras|italique] [--coupure-seule]
+///
+/// Les deux jeux se choisissent par le modèle de vue, exactement comme la liste du
+/// panneau les choisit — c'est le geste « changer de jeu » du poste C5b, rejoué sans
+/// pointeur. « --enregistrer » écrit ensuite le document tel que ce geste l'a laissé,
+/// pour qu'une recette l'exporte et compare le PDF à l'écran qu'on vient de rendre.
 /// </summary>
 internal static class Program
 {
@@ -58,6 +66,20 @@ internal static class Program
 
         var (fenetre, vm) = Banc.Ouvrir(document);
 
+        if (Option(args, "--jeu-de-couleurs") is { } couleurs)
+        {
+            vm.ChosenColorScheme = JeuxPredefinis.CouleursNommees(couleurs)
+                ?? throw new ArgumentException($"Jeu de couleurs inconnu : « {couleurs} ».");
+        }
+
+        if (Option(args, "--jeu-de-polices") is { } polices)
+        {
+            vm.ChosenFontScheme = JeuxPredefinis.PolicesNommees(polices)
+                ?? throw new ArgumentException($"Jeu de polices inconnu : « {polices} ».");
+        }
+
+        if (Option(args, "--enregistrer") is { } copie) vm.SaveTo(copie);
+
         // Les repères ne s'impriment jamais : pour comparer l'écran au PDF, il faut
         // pouvoir les éteindre, sinon l'écart mesuré est celui qu'on a demandé.
         if (sansReperes)
@@ -101,6 +123,8 @@ internal static class Program
             "Usage : MyPublisher.Banc rendre <doc.mypub> --sortie <image.png>");
         Console.Error.WriteLine(
             "                              [--page N] [--pixels-par-point 2] [--sans-reperes]");
+        Console.Error.WriteLine(
+            "                              [--jeu-de-couleurs Nom] [--jeu-de-polices Nom] [--enregistrer <copie.mypub>]");
         Console.Error.WriteLine(
             "        MyPublisher.Banc mots <doc> --sortie <lignes.json>");
         Console.Error.WriteLine(

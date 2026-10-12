@@ -32,7 +32,8 @@ Scripts/verifier.sh                 # tests, contrôle, recettes — c'est lui q
 Scripts/controle.sh                 # le seul contrôle de la chaîne d'écriture
 Scripts/controle.sh --enregistrer   # remplace le relevé de référence, après examen
 Scripts/eprouver-le-juge.sh         # sabote le code et vérifie qu'on s'en aperçoit
-Scripts/comparer-rendus.sh doc.mypub 1   # formes et images : l'écran contre le PDF, au pixel
+Scripts/eprouver-le-juge.sh --cibles   # chaque texte visé est là, une seule fois
+Scripts/comparer-rendus.sh doc.mypub 1   # formes et images : l'écran contre le PDF, à deux pixels par point
 Scripts/comparer-mots.sh doc.mypub 1     # texte : l'écran contre le PDF, mot à mot, ligne à ligne
 Scripts/bilan.sh                    # poste par poste : clos ou non, recette ou non
 Scripts/verifier-dependances.sh     # aucune dépendance vulnérable (réseau ; à part)
@@ -68,7 +69,9 @@ chose en ligne de commande, pour les scripts.
 `Scripts/eprouver-le-juge.sh` est le contrôle du contrôle : il casse le code une chose à
 la fois — l'aimantation, une propriété perdue à la copie, une étape de migration, la
 mise à l'échelle d'un groupe — et exige que chaque sabotage soit attrapé. Un contrôle
-qu'on n'a jamais vu échouer ne prouve rien.
+qu'on n'a jamais vu échouer ne prouve rien. Chaque sabotage vise un texte présent une seule fois
+dans son fichier ; `--cibles` le contrôle en quelques secondes, sans rien saboter, et
+se lance avant d'ajouter un sabotage ou après une fusion.
 
 Quatre vérifications : `Samples/exemple-bulletin.mypub` se relit, se réécrit au
 caractère près, et son export PDF donne le même nombre de pages et les mêmes
@@ -167,13 +170,23 @@ la barre du haut regroupe les commandes du document : fichier, annulation, zoom.
   continue sous le bloc, comme un texte trop long l'a toujours fait.
 - Tout bloc — texte, image, forme, groupe — porte un fond et un contour : épaisseur,
   trait continu, tirets ou points, angles arrondis. Encadrer une image d'un filet ne
-  demande donc plus de lui superposer une forme.
+  demande donc plus de lui superposer une forme. Le contour est centré sur le bord du
+  bloc, à l'écran comme au PDF — mesuré de 0,5 à 5 pt sur des blocs de texte, des
+  rectangles et des ellipses ; un contour en tirets ne commence pas son motif au même point des deux côtés.
 - **Le fond n'est pas forcément uni** : c'est au choix un aplat avec son opacité, un
   dégradé de deux couleurs le long d'un angle, une image, ou une teinte dérivée d'une
   couleur de base. Textures et motifs : non, délibérément.
 - **Fond de page** : le même choix, posé sur la publication entière — panneau
   *DOCUMENT*. Un dégradé de page se règle en trois gestes et change tout l'air d'un
   document.
+- **Jeu de couleurs et jeu de polices**, panneau *DOCUMENT* : cinq couleurs nommées et
+  une paire titre/corps, portées par le document. Chaque sélecteur de couleur montre les
+  cinq pastilles du jeu, et la liste des polices commence par le titre et le corps du
+  jeu. Comme dans Publisher, ce qu'on y prend est une **référence** : changer de jeu
+  recolore — ou change de police — tous les blocs qui s'y réfèrent, à l'écran comme au
+  PDF, et eux seuls. Une couleur choisie au sélecteur reste libre. Les blocs neufs
+  prennent leurs couleurs et leurs polices dans le jeu ; six jeux de couleurs et cinq
+  jeux de polices sont livrés, et les quatre modèles portent le jeu « Marine ».
 - Rotation libre de n'importe quel bloc, y compris pour la sélection et le
   redimensionnement. Elle se prend **à la souris**, par une neuvième poignée posée
   au-dessus du bloc — un disque vert au bout d'une tige — ou se saisit au degré près
@@ -195,6 +208,20 @@ la barre du haut regroupe les commandes du document : fichier, annulation, zoom.
   Repères* et *Règles* les effacent de l'écran — et *Repères* efface aussi le marqueur
   de débordement, qui ne s'imprime pas davantage.
 - Édition du texte directement sur la page (double-clic).
+- **Importer un texte** — *Insertion ▸ Importer un texte…*, ou le bouton du même nom au
+  panneau d'un bloc de texte : un fichier texte remplit le bloc sélectionné, au style du
+  bloc. Il se lit en UTF-8, avec ou sans BOM, en UTF-16 s'il porte sa marque (FF FE ou
+  FE FF), ou en Latin-1 quand il n'est pas de l'UTF-8 valide (lu comme Windows-1252, qui
+  garde aussi « ’ », « œ » et « € ») ; les fins de ligne CRLF deviennent un seul saut.
+  Un texte trop long se signale comme tout autre, et une seule annulation rend le bloc
+  d'avant ; une saisie ouverte sur la page est refermée d'abord, en un pas à elle.
+  Sont refusés, bloc intact et raison à la barre d'état : un fichier vide, un fichier
+  de plus de 128 Kio, un fichier qui porte un octet nul ou un caractère de commande
+  (un binaire, de l'UTF-16 sans marque), un fichier qu'on n'a pas le droit de lire.
+  *Limite* : un fichier Latin-1 dont tous les accents forment par hasard de l'UTF-8
+  valide — un texte court en capitales, « CAFÉ » suivi d'une espace insécable — se lit
+  en UTF-8 ; un seul « é » suivi d'une lettre ailleurs dans le fichier suffit à le
+  faire lire en Latin-1.
 - Ordre de superposition ; alignement (gauche, centre, droite, haut, milieu, bas) et
   répartition d'une sélection ; ajustement aux marges. L'alignement se fait par
   rapport à la zone de composition, ou — case *Disposition ▸ Par rapport aux marges*
@@ -206,6 +233,9 @@ la barre du haut regroupe les commandes du document : fichier, annulation, zoom.
 - **Un dossier de travail se déplace sans casser ses images** : les images rangées à
   côté du document — ou sous son dossier — y sont référencées relativement à lui.
   Celles qui vivent ailleurs gardent leur chemin absolu.
+- **Une image retouchée dans un autre outil se relit en rouvrant le document.** Tant
+  qu'on ne le rouvre pas, l'écran garde l'image qu'il a lue, alors que l'export relit
+  toujours le fichier ; l'annulation ne relit rien.
 - **Ouverture des documents Microsoft Publisher (`.pub`)** : pages, blocs de texte avec
   leurs fragments de style, retraits et fers par paragraphe, tabulations, tableaux,
   cadres, traits, et les **images posées en remplissage de forme** — c'est ainsi que
@@ -220,7 +250,11 @@ la barre du haut regroupe les commandes du document : fichier, annulation, zoom.
 - **L'export dit quelles polices il n'a pas trouvées**, et par quoi il les a
   remplacées : « Police substituée : « Wingdings » demandée, « DejaVu Sans »
   employée ». Une substitution muette ne dégrade pas seulement l'allure — sur une
-  fiche de procédure, elle remplace une flèche par une lettre.
+  fiche de procédure, elle remplace une flèche par une lettre. Il ne nomme que les
+  polices qu'il dessine : un fragment entièrement recouvert par un autre ne dit rien.
+  Au panneau, la liste des polices propose aussi celles que le document emploie sans
+  que la machine les ait, marquées « (absente) » : sélectionner un tel bloc ne touche
+  pas à sa police.
 
 ## Raccourcis
 
@@ -304,7 +338,9 @@ unité vaut exactement un point : les liaisons XAML n'ont donc aucune conversion
 faire, et l'export PDF se fait à l'identité.
 
 **Le modèle (`Models/`) ne référence aucun type Avalonia.** Les couleurs y sont des
-chaînes `#AARRGGBB`, les alignements des énumérations maison. La traduction vers les
+chaînes `#AARRGGBB` — ou une référence au jeu de couleurs, `scheme:accent1`, que
+`Charte` résout, une fois, pour l'écran comme pour l'export —, les alignements des
+énumérations maison. La traduction vers les
 types Avalonia se fait dans `Converters/`. C'est ce qui permet au rendu écran et à
 l'export PDF de partager exactement les mêmes données, sans couche de conversion
 intermédiaire susceptible de diverger.
@@ -345,12 +381,19 @@ coordonnées de ce collègue, ce qui est précisément l'intérêt d'un modèle.
 
 ## Format de fichier
 
-`.mypub` est du JSON indenté, versionné par `FormatVersion` (aujourd'hui 4). Un
+`.mypub` est du JSON indenté, versionné par `FormatVersion` (aujourd'hui 5). Un
 fichier d'une version antérieure est migré à l'ouverture — la version 1 nommait
 `Background` le fond des blocs de texte, il s'appelle `Fill` partout depuis ; la
 version 2 n'avait qu'une marge intérieure, il y en a quatre ; la version 3 écrivait
-le fond en couleur, c'est désormais un objet — et un fichier d'une version plus
+le fond en couleur, c'est désormais un objet ; la version 4 ne connaissait pas les
+jeux, et ses couleurs et ses polices restent libres — et un fichier d'une version plus
 récente est refusé plutôt que lu de travers.
+
+Le document porte `ColorScheme` (un nom, `Main` et quatre accents) et `FontScheme`
+(un nom, `Heading` et `Body`). Là où une couleur est attendue, `scheme:main` ou
+`scheme:accent1` à `scheme:accent4` y font référence, avec une opacité propre
+facultative (`scheme:accent1/80`) ; là où une police est attendue, `scheme:heading` ou
+`scheme:body`. Toute autre valeur est libre.
 
 Un remplissage porte son propre discriminant `$kind` : `solid` et sa couleur,
 `gradient` et ses deux couleurs avec son angle, `image` et son chemin, `tint` et sa
@@ -374,7 +417,9 @@ texte saisi ou le chemin, lesquels restent écrits dans le fichier et se retrouv
 intacts si l'on retire le champ.
 
 Un groupe contient ses blocs en coordonnées relatives à son coin supérieur gauche,
-écrits après sa géométrie — le rendu et l'export composent les deux repères. Un tableau
+écrits après sa géométrie — le rendu et l'export composent les deux repères. Un bloc
+qui dépasse de son groupe y est coupé, à l'écran comme au PDF ; la coupe laisse passer
+le demi-filet des blocs posés sur le bord. Un tableau
 suit la même règle : ses colonnes et ses lignes sont écrites après sa taille, et ses
 cases sont repérées par leur ligne et leur colonne, si bien qu'un tableau dont la
 plupart des cases sont vides n'écrit que celles qui disent quelque chose.

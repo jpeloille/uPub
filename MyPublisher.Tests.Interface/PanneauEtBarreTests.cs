@@ -330,42 +330,77 @@ public class PanneauEtBarreTests
     }
 
     // ------------------------------------------------------------- A6 · barre d'état
+    //
+    // Les blocs de ces tests sont tracés comme l'utilisateur les trace : l'outil armé au
+    // clavier, puis un cadre tiré au pointeur sur la page. Ils sortent donc de la
+    // fabrique de l'application — gabarit de l'outil, taille tracée, insertion,
+    // sélection — et non d'un « new » posé dans le document avant d'ouvrir la fenêtre.
+    // La première écriture de ces tests faisait ce second choix, et tout ce chemin-là
+    // lui échappait (poste Q7).
+
+    /// <summary>
+    /// Trace un bloc : la touche de l'outil, puis un cadre tiré d'un coin à l'autre.
+    /// Rend le bloc que le tracé a ajouté à la page.
+    /// </summary>
+    private static Frame Tracer(Window fenetre, MainWindowViewModel vm, PhysicalKey outil,
+        double x1, double y1, double x2, double y2)
+    {
+        var page = vm.CurrentPage!;
+        var avant = page.Frames.ToList();
+
+        fenetre.KeyPressQwerty(outil, RawInputModifiers.None);
+        Rendu.Battre();
+        Assert.True(vm.IsDrawing, $"la touche {outil} n'a armé aucun outil");
+
+        fenetre.MouseDown(SurLaPage(fenetre, x1, y1), MouseButton.Left);
+        fenetre.MouseMove(SurLaPage(fenetre, x2, y2), RawInputModifiers.LeftMouseButton);
+        fenetre.MouseUp(SurLaPage(fenetre, x2, y2), MouseButton.Left);
+        Rendu.Battre();
+
+        return Assert.Single(page.Frames.Except(avant));
+    }
 
     [AvaloniaFact]
     [Trait("poste", "A6")]
-    public void La_barre_annonce_la_position_et_la_taille_du_bloc_selectionne()
+    public void La_barre_annonce_la_position_et_la_taille_du_bloc_trace()
     {
-        var bloc = Carre("A", 100, 100);
-        var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(bloc));
+        // L'outil texte, le plus employé : son bloc s'ouvre aussitôt en saisie, et la
+        // barre doit le mesurer quand même — c'est quand on vient de le tracer qu'on
+        // regarde ce qu'il mesure.
+        var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille());
 
         var position = Trouver<TextBlock>(fenetre, "PositionDuBloc");
         var taille = Trouver<TextBlock>(fenetre, "TailleDuBloc");
-
         Assert.False(position.IsVisible);
         Assert.False(taille.IsVisible);
 
-        vm.SelectOnly(bloc);
-        Rendu.Battre();
+        var bloc = Tracer(fenetre, vm, PhysicalKey.T, 100, 120, 250, 210);
+        Assert.IsType<TextFrame>(bloc);
 
+        // Le tracé, et non le gabarit de l'outil (260 × 90) : c'est ce que la barre
+        // doit annoncer, et ce qu'un bloc posé à la main ne mettait pas à l'épreuve.
+        Assert.Equal((100, 120, 150, 90), (bloc.X, bloc.Y, bloc.Width, bloc.Height));
+
+        Assert.True(position.IsVisible);
         Assert.True(taille.IsVisible);
-        Assert.Contains(Millimetres(100), position.Text);
-        Assert.Contains(Millimetres(60), taille.Text);
+        Assert.Equal($"X {Millimetres(100)}   Y {Millimetres(120)} mm", position.Text);
+        Assert.Equal($"{Millimetres(150)} × {Millimetres(90)} mm", taille.Text);
     }
 
     [AvaloniaFact]
     [Trait("poste", "A6")]
     public void La_taille_suit_le_geste_de_redimensionnement_et_pas_seulement_sa_fin()
     {
-        var bloc = Carre("A", 100, 100);
-        var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(bloc));
+        var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille());
 
-        // Le bloc est pris AVANT la première image : sans cela la case passerait de
-        // vide à remplie, et la différence prouverait la sélection, pas le geste.
-        vm.SelectOnly(bloc);
-        Rendu.Battre();
+        // Le bloc est pris AVANT la première image — le tracé le sélectionne : sans
+        // cela la case passerait de vide à remplie, et la différence prouverait la
+        // sélection, pas le geste.
+        var bloc = Tracer(fenetre, vm, PhysicalKey.R, 100, 100, 160, 160);
+        Assert.Same(bloc, vm.SingleSelected);
 
         var taille = Trouver<TextBlock>(fenetre, "TailleDuBloc");
-        Assert.Contains(Millimetres(60), taille.Text);
+        Assert.Equal($"{Millimetres(60)} × {Millimetres(60)} mm", taille.Text);
         var avant = Rendu.Bande(fenetre, taille);
 
         // Poignée sud-est, tirée de 60 pt. Le bouton n'est PAS relâché : c'est
@@ -375,7 +410,7 @@ public class PanneauEtBarreTests
         Rendu.Battre();
 
         Assert.Equal(120, bloc.Width, precision: 6);
-        Assert.Contains(Millimetres(120), taille.Text);
+        Assert.Equal($"{Millimetres(120)} × {Millimetres(120)} mm", taille.Text);
 
         // Et l'écran a réellement suivi. « CaptureRenderedFrame » et non
         // « RenderTargetBitmap.Render » : le second redessine de force et passerait
@@ -389,13 +424,11 @@ public class PanneauEtBarreTests
     [Trait("poste", "A6")]
     public void La_position_suit_le_geste_de_deplacement()
     {
-        var bloc = Carre("A", 100, 100);
-        var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(bloc));
-
-        vm.SelectOnly(bloc);
-        Rendu.Battre();
+        var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille());
+        var bloc = Tracer(fenetre, vm, PhysicalKey.R, 100, 100, 160, 160);
 
         var position = Trouver<TextBlock>(fenetre, "PositionDuBloc");
+        Assert.Equal($"X {Millimetres(100)}   Y {Millimetres(100)} mm", position.Text);
         var avant = Rendu.Bande(fenetre, position);
 
         // Alt écarte l'aimantation : ce test mesure la barre d'état, pas les repères.
@@ -405,7 +438,7 @@ public class PanneauEtBarreTests
         Rendu.Battre();
 
         Assert.Equal(200, bloc.X, precision: 6);
-        Assert.Contains(Millimetres(200), position.Text);
+        Assert.Equal($"X {Millimetres(200)}   Y {Millimetres(160)} mm", position.Text);
         Assert.NotEqual(avant, Rendu.Bande(fenetre, position));
 
         fenetre.MouseUp(SurLaPage(fenetre, 230, 190), MouseButton.Left);
@@ -423,20 +456,29 @@ public class PanneauEtBarreTests
         // plusieurs blocs le panneau de propriétés ne montre aucun champ, donc aucune
         // géométrie n'est réécrite, donc l'abonnement aux blocs ne dit rien. Seule la
         // liste écrite à la main de « NotifySelection » peut alors rafraîchir la barre.
-        // Interroger le modèle de vue plutôt que la case ne prouverait rien : une
-        // propriété calculée rend la bonne valeur même quand personne n'a été prévenu —
-        // la première écriture de ce test s'y est laissé prendre.
-        var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(Carre("A", 100, 100), Carre("B", 200, 300)));
+        // On lit la case et non le modèle de vue : une propriété calculée rend la bonne
+        // valeur même quand personne n'a été prévenu.
+        //
+        // Les deux blocs sont tracés, puis réunis comme l'utilisateur les réunit : un
+        // Ctrl+clic sur le premier, le second restant pris de son tracé.
+        var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille());
+        var premier = Tracer(fenetre, vm, PhysicalKey.R, 100, 100, 160, 160);
+        var second = Tracer(fenetre, vm, PhysicalKey.R, 200, 300, 260, 360);
+        Assert.Same(second, vm.SingleSelected);
 
-        var page = vm.CurrentPage!;
-        vm.SetSelection([page.Frames[0], page.Frames[1]]);
+        var point = SurLaPage(fenetre, 130, 130);
+        fenetre.MouseDown(point, MouseButton.Left, RawInputModifiers.Control);
+        fenetre.MouseUp(point, MouseButton.Left, RawInputModifiers.Control);
         Rendu.Battre();
 
-        Assert.Contains(Millimetres(100), Trouver<TextBlock>(fenetre, "PositionDuBloc").Text);
+        Assert.Equal(2, vm.Selection.Count);
+        Assert.Contains(premier, vm.Selection);
+
         // De 100 à 260 en abscisse, de 100 à 360 en ordonnée.
-        var taille = Trouver<TextBlock>(fenetre, "TailleDuBloc").Text;
-        Assert.Contains(Millimetres(160), taille);
-        Assert.Contains(Millimetres(260), taille);
+        Assert.Equal($"X {Millimetres(100)}   Y {Millimetres(100)} mm",
+            Trouver<TextBlock>(fenetre, "PositionDuBloc").Text);
+        Assert.Equal($"{Millimetres(160)} × {Millimetres(260)} mm",
+            Trouver<TextBlock>(fenetre, "TailleDuBloc").Text);
     }
 
     /// <summary>
