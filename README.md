@@ -166,7 +166,9 @@ la barre du haut regroupe les commandes du document : fichier, annulation, zoom.
   continue sous le bloc, comme un texte trop long l'a toujours fait.
 - Tout bloc — texte, image, forme, groupe — porte un fond et un contour : épaisseur,
   trait continu, tirets ou points, angles arrondis. Encadrer une image d'un filet ne
-  demande donc plus de lui superposer une forme.
+  demande donc plus de lui superposer une forme. Le contour est centré sur le bord du
+  bloc, à l'écran comme au PDF — mesuré de 0,5 à 5 pt sur des blocs de texte, des
+  rectangles et des ellipses ; un contour en tirets ne commence pas son motif au même point des deux côtés.
 - **Le fond n'est pas forcément uni** : c'est au choix un aplat avec son opacité, un
   dégradé de deux couleurs le long d'un angle, une image, ou une teinte dérivée d'une
   couleur de base. Textures et motifs : non, délibérément.
@@ -213,6 +215,9 @@ la barre du haut regroupe les commandes du document : fichier, annulation, zoom.
 - **Un dossier de travail se déplace sans casser ses images** : les images rangées à
   côté du document — ou sous son dossier — y sont référencées relativement à lui.
   Celles qui vivent ailleurs gardent leur chemin absolu.
+- **Une image retouchée dans un autre outil se relit en rouvrant le document.** Tant
+  qu'on ne le rouvre pas, l'écran garde l'image qu'il a lue, alors que l'export relit
+  toujours le fichier ; l'annulation ne relit rien.
 - **Ouverture des documents Microsoft Publisher (`.pub`)** : pages, blocs de texte avec
   leurs fragments de style, retraits et fers par paragraphe, tabulations, tableaux,
   cadres, traits, et les **images posées en remplissage de forme** — c'est ainsi que
@@ -227,9 +232,11 @@ la barre du haut regroupe les commandes du document : fichier, annulation, zoom.
 - **L'export dit quelles polices il n'a pas trouvées**, et par quoi il les a
   remplacées : « Police substituée : « Wingdings » demandée, « DejaVu Sans »
   employée ». Une substitution muette ne dégrade pas seulement l'allure — sur une
-  fiche de procédure, elle remplace une flèche par une lettre. Au panneau, la liste des
-  polices propose aussi celles que le document emploie sans que la machine les ait,
-  marquées « (absente) » : sélectionner un tel bloc ne touche pas à sa police.
+  fiche de procédure, elle remplace une flèche par une lettre. Il ne nomme que les
+  polices qu'il dessine : un fragment entièrement recouvert par un autre ne dit rien.
+  Au panneau, la liste des polices propose aussi celles que le document emploie sans
+  que la machine les ait, marquées « (absente) » : sélectionner un tel bloc ne touche
+  pas à sa police.
 
 ## Raccourcis
 
@@ -375,7 +382,9 @@ texte saisi ou le chemin, lesquels restent écrits dans le fichier et se retrouv
 intacts si l'on retire le champ.
 
 Un groupe contient ses blocs en coordonnées relatives à son coin supérieur gauche,
-écrits après sa géométrie — le rendu et l'export composent les deux repères. Un tableau
+écrits après sa géométrie — le rendu et l'export composent les deux repères. Un bloc
+qui dépasse de son groupe y est coupé, à l'écran comme au PDF ; la coupe laisse passer
+le demi-filet des blocs posés sur le bord. Un tableau
 suit la même règle : ses colonnes et ses lignes sont écrites après sa taille, et ses
 cases sont repérées par leur ligne et leur colonne, si bien qu'un tableau dont la
 plupart des cases sont vides n'écrit que celles qui disent quelque chose.

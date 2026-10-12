@@ -36,10 +36,14 @@ public static class PdfExporter
 
         var warnings = new List<string>();
 
+        // Une seule lecture de l'horloge : toutes les pages d'un même export portent
+        // la même date, même si le document est long à écrire.
+        var now = date ?? DateTime.Now;
+
         // Avant les pages, et non pendant : la barre d'état ne montre que le premier
         // avertissement, et une flèche de procédure d'urgence remplacée par une lettre
         // passe avant une image manquante.
-        AvertirSurLesPolices(document, warnings);
+        AvertirSurLesPolices(document, warnings, now, contact ?? new BusinessInfo());
 
         // Les références au jeu de couleurs et de polices se résolvent ici, une fois pour
         // tout l'export, par la même charte que l'écran consulte.
@@ -50,10 +54,6 @@ public static class PdfExporter
         var pdf = new PdfDocument();
         pdf.Info.Title = document.Title;
         pdf.Info.Creator = "MyPublisher";
-
-        // Une seule lecture de l'horloge : toutes les pages d'un même export portent
-        // la même date, même si le document est long à écrire.
-        var now = date ?? DateTime.Now;
 
         for (var index = 0; index < document.Pages.Count; index++)
         {
@@ -92,8 +92,17 @@ public static class PdfExporter
     /// fragments en Wingdings, qui feraient 119 lignes disant la même chose. C'est la
     /// police qui est substituée, pas le bloc — comme « Image introuvable » nomme le
     /// fichier et non le cadre qui l'affiche.
+    ///
+    /// Et seulement les polices que l'export dessine — poste Q8. La passe relisait
+    /// l'héritage des fragments pour son compte : un fragment entièrement recouvert par
+    /// un autre, ou un bloc dont tout le texte est recouvert, faisait avertir d'une
+    /// police que rien ne dessine. Elle lit maintenant les styles composés, par la
+    /// découpe même que la composition emploie, sur le contenu même que
+    /// <see cref="DrawText"/> compose — d'où la date et les coordonnées, qui résolvent
+    /// les champs page par page comme le dessin les résout.
     /// </summary>
-    private static void AvertirSurLesPolices(Document document, List<string> warnings)
+    private static void AvertirSurLesPolices(
+        Document document, List<string> warnings, DateTime date, BusinessInfo contact)
     {
         // La paire demandée/employée, et non le libellé : le romain et le gras d'une
         // même famille absente tombent souvent sur le même substitut, et ne valent
@@ -103,51 +112,54 @@ public static class PdfExporter
         // n'est la police de personne, et passerait sinon pour une police introuvable.
         var charte = document.Charte;
 
-        foreach (var bloc in Blocs(document).OfType<TextFrame>())
+        for (var index = 0; index < document.Pages.Count; index++)
         {
-            foreach (var (demandee, gras, italique) in Polices(bloc))
+            var context = new FieldContext(index + 1, document.Pages.Count, date, contact);
+            var blocs = document.Pages[index].Frames.SelectMany(Descendance).OfType<TextFrame>();
+
+            foreach (var bloc in blocs)
             {
-                var police = charte.Police(demandee);
-                if (string.IsNullOrWhiteSpace(police)) continue;
+                var content = FieldResolver.Resolve(bloc.Field, bloc.Text, context);
 
-                var resolution = FontconfigFontResolver.Resoudre(police, gras, italique);
-                if (resolution.Exacte) continue;
-                if (!vues.Add((resolution.Demandee, resolution.Employee))) continue;
+                foreach (var style in StylesDessines(bloc, content, charte))
+                {
+                    if (string.IsNullOrWhiteSpace(style.FontFamily)) continue;
 
-                warnings.Add(resolution.Employee.Length == 0
-                    ? $"Police introuvable : « {resolution.Demandee} » — aucune police sur cette machine."
-                    : $"Police substituée : « {resolution.Demandee} » demandée, "
-                      + $"« {resolution.Employee} » employée ({resolution.Motif}).");
+                    var resolution = FontconfigFontResolver.Resoudre(style.FontFamily, style.Bold, style.Italic);
+                    if (resolution.Exacte) continue;
+                    if (!vues.Add((resolution.Demandee, resolution.Employee))) continue;
+
+                    warnings.Add(resolution.Employee.Length == 0
+                        ? $"Police introuvable : « {resolution.Demandee} » — aucune police sur cette machine."
+                        : $"Police substituée : « {resolution.Demandee} » demandée, "
+                          + $"« {resolution.Employee} » employée ({resolution.Motif}).");
+                }
             }
         }
     }
 
     /// <summary>
-    /// Les polices qu'un bloc de texte demande : la sienne, et celle de chacun de ses
-    /// fragments — une propriété nulle sur un fragment voulant dire « comme le bloc ».
+    /// Les styles qu'un bloc de texte dessine : ceux de la découpe que la composition
+    /// fait elle-même (<see cref="StyleEffectif.Decouper"/>), sur le contenu résolu et
+    /// les fragments qui s'y appliquent (<see cref="Fragments"/>), comme
+    /// <see cref="DrawText"/>. Le fragment recouvert, celui qui tombe hors du texte, la
+    /// police d'un bloc dont chaque caractère porte un fragment, les fragments d'un
+    /// bloc qui affiche un champ : rien de tout cela n'est dessiné, et rien de tout cela
+    /// n'avertit plus.
     ///
-    /// On les lit sur le modèle et non sur le texte réellement composé. Un fragment
-    /// hors des bornes du texte, ou un bloc portant un champ, fait ainsi un
-    /// avertissement de trop plutôt qu'un de moins. Le déséquilibre est voulu : une
-    /// police annoncée à tort est du bruit, une flèche de procédure d'urgence
-    /// silencieusement remplacée par une lettre ne l'est pas.
+    /// Un morceau blanc — espaces, tabulations, sauts de ligne — ne compte pas : c'est la
+    /// règle de <see cref="Tracer"/>, qui ne le dessine pas. Sa largeur se mesure
+    /// pourtant dans sa police, substituée ou non ; c'est le seul effet d'une police
+    /// que la passe tait.
     /// </summary>
-    private static IEnumerable<(string Police, bool Gras, bool Italique)> Polices(TextFrame bloc)
+    private static IEnumerable<StyleEffectif> StylesDessines(TextFrame text, string content, Charte charte)
     {
-        yield return (bloc.FontFamily, bloc.Bold, bloc.Italic);
-
-        foreach (var fragment in bloc.Spans)
+        foreach (var (morceau, style) in StyleEffectif.Decouper(
+                     content, Fragments(text, content, charte), Commun(text, charte)))
         {
-            yield return (
-                fragment.FontFamily ?? bloc.FontFamily,
-                fragment.Bold ?? bloc.Bold,
-                fragment.Italic ?? bloc.Italic);
+            if (!string.IsNullOrWhiteSpace(morceau)) yield return style;
         }
     }
-
-    /// <summary>Tous les blocs du document, groupes traversés.</summary>
-    private static IEnumerable<Frame> Blocs(Document document) =>
-        document.Pages.SelectMany(page => page.Frames).SelectMany(Descendance);
 
     /// <summary>
     /// Le bloc et tout ce qu'il contient. Les deux types qui portent des enfants sont
@@ -268,14 +280,36 @@ public static class PdfExporter
 
     private static void DrawChildren(
         XGraphics gfx, GroupFrame group, List<string> warnings, FieldContext context, Charte charte,
-        string repere)
+        string repere) =>
+        DessinerPortes(gfx, group, group.Children, warnings, context, charte, repere);
+
+    /// <summary>
+    /// Les blocs d'un groupe ou les cases d'un tableau, dans le repère de leur porteur et
+    /// découpés à lui.
+    ///
+    /// La translation et la découpe ne valent que pour eux : le contour du porteur, tracé
+    /// ensuite, est en coordonnées de page comme son fond, et ne doit pas être rogné.
+    ///
+    /// La découpe est celle de l'écran, lue au même endroit (<see cref="Decoupe"/>) :
+    /// jusqu'au poste Q5, un bloc plus large que son groupe s'arrêtait au bord du groupe
+    /// à l'écran et courait jusqu'au bout dans le PDF.
+    /// </summary>
+    private static void DessinerPortes(
+        XGraphics gfx, Frame porteur, IReadOnlyList<Frame> blocs, List<string> warnings,
+        FieldContext context, Charte charte, string repere)
     {
-        // La translation ne vaut que pour les enfants : le contour du groupe, tracé
-        // ensuite, est en coordonnées de page comme son fond.
         var state = gfx.Save();
-        gfx.TranslateTransform(group.X, group.Y);
-        DessinerTous(gfx, group.Children, warnings, context, charte, repere);
-        gfx.Restore(state);
+        try
+        {
+            gfx.TranslateTransform(porteur.X, porteur.Y);
+            var zone = Decoupe.DesBlocs(porteur.Width, porteur.Height, blocs);
+            gfx.IntersectClip(new XRect(zone.Left, zone.Top, zone.Width, zone.Height));
+            DessinerTous(gfx, blocs, warnings, context, charte, repere);
+        }
+        finally
+        {
+            gfx.Restore(state);
+        }
     }
 
     /// <summary>
@@ -288,13 +322,8 @@ public static class PdfExporter
     /// </summary>
     private static void DrawTable(
         XGraphics gfx, TableFrame table, List<string> warnings, FieldContext context, Charte charte,
-        string repere)
-    {
-        var state = gfx.Save();
-        gfx.TranslateTransform(table.X, table.Y);
-        DessinerTous(gfx, table.CellFrames, warnings, context, charte, repere);
-        gfx.Restore(state);
-    }
+        string repere) =>
+        DessinerPortes(gfx, table, table.CellFrames, warnings, context, charte, repere);
 
     /// <summary>
     /// La zone qu'un remplissage doit couvrir, et sa forme. Un bloc, une case ou la page
@@ -524,11 +553,11 @@ public static class PdfExporter
         // Le style commun et les fragments arrivent résolus par la charte du document —
         // la même fonction que l'écran appelle : une police du jeu se MESURE dans la
         // police du jeu, et la coupure des lignes en dépend.
-        var fragments = content == text.Text ? charte.Fragments(text.Spans) : (IReadOnlyList<StyleSpan>)[];
+        var fragments = Fragments(text, content, charte);
         var ecarts = content == text.Text ? text.Paragraphs : (IReadOnlyList<ParagraphSpan>)[];
 
         var metriques = new MetriquesPdf(gfx);
-        var commun = charte.StyleCommun(text);
+        var commun = Commun(text, charte);
         var lignes = Compositeur.Composer(
             content, fragments, commun, ecarts, text.Paragraph,
             box.Width, box.Height, text.Colonnage, text.LineHeight, metriques);
@@ -625,6 +654,19 @@ public static class PdfExporter
             }
         }
     }
+
+    /// <summary>
+    /// Les fragments qui s'appliquent au contenu dessiné : ceux du bloc s'il montre son
+    /// texte saisi, aucun s'il montre un champ résolu. Une seule règle pour le dessin et
+    /// pour la passe des polices, qui doivent parler du même texte. Ils arrivent résolus
+    /// par la charte (poste C5b) : une référence au jeu y est déjà la police et la couleur
+    /// qu'elle désigne.
+    /// </summary>
+    private static IReadOnlyList<StyleSpan> Fragments(TextFrame text, string content, Charte charte) =>
+        content == text.Text ? charte.Fragments(text.Spans) : [];
+
+    /// <summary>Le style du bloc, celui dont les fragments s'écartent, résolu par la charte.</summary>
+    private static StyleEffectif Commun(TextFrame text, Charte charte) => charte.StyleCommun(text);
 
     private static XFont Police(StyleEffectif style)
     {

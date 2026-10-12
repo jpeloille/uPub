@@ -72,7 +72,8 @@ etape "Tests"
 # passait pour pris par personne.
 if ! dotnet test MyPublisher.sln --no-build --nologo -v q > /tmp/tests-$$.txt 2>&1; then
     grep -E "^(Passed!|Failed!|Erreur|error)" /tmp/tests-$$.txt || true
-    grep -oE "[A-Za-z0-9_.]+ \[FAIL\]" /tmp/tests-$$.txt | sed 's/ \[FAIL\]//; s/^.*\.\([A-Za-z_]*Tests\.[A-Za-z0-9_]*\)$/\1/; s/^/  en échec : /' >&2 || true
+    # Une théorie porte ses paramètres entre le nom et « [FAIL] » : on lit le nom seul.
+    grep -E "\[FAIL\]" /tmp/tests-$$.txt | grep -oE "[A-Za-z0-9_]+Tests\.[A-Za-z0-9_]+" | sort -u | sed 's/^/  en échec : /' >&2 || true
     echo "ÉCHEC : les tests ne passent pas." >&2
     echec=1
 else

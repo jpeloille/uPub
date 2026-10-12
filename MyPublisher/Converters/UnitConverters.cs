@@ -118,3 +118,29 @@ public sealed class FieldToImage : IMultiValueConverter
         return string.IsNullOrWhiteSpace(resolved) ? null : BitmapCache.Get(resolved);
     }
 }
+
+/// <summary>
+/// La découpe des blocs d'un groupe ou des cases d'un tableau, lue dans le noyau
+/// (<see cref="Decoupe"/>) — celle-là même que l'export pose.
+///
+/// Elle remplace le <c>ClipToBounds</c> que le thème met sur la liste des blocs : celui-là
+/// découpait au cadre du porteur, et rognait de sa moitié extérieure le filet d'un bloc
+/// posé sur le bord du groupe, une fois ce filet centré sur le bord (poste Q4).
+///
+/// Valeurs liées : le porteur, sa largeur et sa hauteur — liées pour que la découpe suive
+/// un redimensionnement —, et pour un tableau ses cases, qui changent d'instance à chaque
+/// retouche d'une cellule.
+/// </summary>
+public sealed class DecoupeDesBlocs : IMultiValueConverter
+{
+    public static readonly DecoupeDesBlocs Instance = new();
+
+    public object? Convert(IList<object?> values, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (values.Count == 0 || values[0] is not Frame porteur) return null;
+
+        var blocs = values.Count > 3 && values[3] is IEnumerable<Frame> cases ? cases : Decoupe.Portes(porteur);
+        var zone = Decoupe.DesBlocs(porteur.Width, porteur.Height, blocs);
+        return new RectangleGeometry(new Rect(zone.Left, zone.Top, zone.Width, zone.Height));
+    }
+}

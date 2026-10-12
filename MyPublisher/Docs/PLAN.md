@@ -73,27 +73,28 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **Q1** | Les styles suivent la frappe | **100 %** | Fragments et écarts recalés à la saisie par une fonction pure du noyau (`Recalage`), à la règle de Publisher : le style qui précède, celui qui suit en tête de paragraphe, le premier remplacé pour une sélection retapée. Seules les zones de saisie s'y lient ; lecture, import, copie et annulation ne recalent rien. `FormatVersion` reste à 4 ; recette dans `Scripts/recettes/` |
 | **Q2** | Le texte composé se détache de son bloc | **100 %** | `ControleDeBloc` suit l'attachement, comme `FondBloc`, et lâche l'ancien bloc quand on lui en donne un autre. Mesuré : le changement de page ne fuyait pas ; la fuite ne frappait qu'un contrôle sorti de l'arbre avec son bloc. Recette dans `Scripts/recettes/` |
 | **Q3** | Le cache d'images oublie ses échecs | **100 %** | L'ouverture d'un document (fichier ou modèle) oublie les échecs du cache, et eux seuls ; insérer une image ou la choisir pour un fond relit le fichier. L'annulation ne relit pas le disque. Recette dans `Scripts/recettes/` |
-| **Q4** | Un filet au même endroit à l'écran et au PDF | 0 % | Relevé en A2 et à la relecture du 7 septembre |
-| **Q5** | Un groupe rogne pareil à l'écran et au PDF | 0 % | Relevé en C9 |
-| **Q6** | Mesurer la découpe d'un remplissage par image | 0 % | Relevé à la relecture du 7 septembre |
+| **Q4** | Un filet au même endroit à l'écran et au PDF | **100 %** | L'écran élargit l'élément du filet d'une demi-épaisseur, sans arrondi au pixel de mise en page : centré sur le bord comme à l'export, de 0,5 à 5 pt (écart ≤ 0,01 pt mesuré à 8 px/pt). Les recettes de C1 et C5 resserrées en conséquence. Recette dans `Scripts/recettes/` |
+| **Q5** | Un groupe rogne pareil à l'écran et au PDF | **100 %** | Découpe calculée dans le noyau (`Decoupe`), lue par l'écran et l'export, groupes et tableaux, tournés et imbriqués ; elle déborde du plus large demi-filet des blocs portés (√2 fois pour un bloc tourné). Recette dans `Scripts/recettes/` |
+| **Q6** | Mesurer la découpe d'un remplissage par image | **100 %** | Bloc arrondi rempli d'une image dans le document de C5 ; ses coins sont relevés au PDF et à l'écran, et les deux sabotages de la découpe tombent ; recette `C5-Q6-fonds` dans `Scripts/recettes/` |
 | **Q7** | La recette de A6 sur le cas réel | 0 % | Relevé à la relecture du 7 septembre |
-| **Q8** | N'avertir que des polices dessinées | 0 % | Relevé à la relecture du 6 septembre |
-| **Q9** | Retirer `AbsoluteLineHeight` | 0 % | Relevé en A2 : survivant de l'ancienne sémantique de l'interligne |
+| **Q8** | N'avertir que des polices dessinées | **100 %** | La passe des polices lit les styles composés (`StyleEffectif.Decouper`) sur le contenu que `DrawText` compose, cases de tableau comprises ; un fragment recouvert, blanc, hors du texte, ou celui d'un champ n'avertit plus. Une seule règle `Fragments` pour la passe et le dessin. Recette dans `Scripts/recettes/` |
+| **Q9** | Retirer `AbsoluteLineHeight` | **100 %** | La vignette des modèles lit les lignes de la composition ; repris après relecture : fer, découpe et filet de champ éprouvés, filets gardés en mémoire ; recette dans `Scripts/recettes/` |
 | **Q10** | Saisir une poignée hors de la page | 0 % | Relevé en A1 |
 | **Q11** | La liste des blocs défile pendant le glissé | 0 % | Relevé en A4 |
 | **Q12** | Dépendance vulnérable | **100 %** | `Tmds.DBus.Protocol` relevé à 0.21.3 (correctif rétroporté) par une référence directe dans `MyPublisher` ; Avalonia reste en 11.3.9. Recette à part, `Scripts/verifier-dependances.sh`, parce qu'elle demande le réseau : elle lit la base des vulnérabilités et le prouve sur un projet témoin |
 | **Q13** | Couper la ligne au même mot à l'écran et au PDF | 0 % | Trouvé le 11 octobre 2026 : le document d'exemple coupe une ligne différemment |
 | **Q14** | Un double-clic ne déplace pas le bloc | 0 % | Trouvé par Q1 : un double-clic sur un bloc importé réécrit son ordonnée et empile un pas d'annulation |
-| **Q15** | Une image modifiée sur le disque se relit | 0 % | Trouvé par Q3 : le cache garde ses réussites, l'écran reste périmé quand le PDF relit le fichier |
-| **Q16** | Le pointillé d'un bloc image obéit aux repères | 0 % | Trouvé par la recette de C1 : toujours dessiné, image chargée ou non, repères allumés ou non |
-| **Q17** | Le texte composé suit une collection remplacée | 0 % | Trouvé par Q2 : `Spans` et `Paragraphs` ont un setter public, qu'aucun contrôle n'écoute |
+| **Q15** | Une image modifiée sur le disque se relit | **100 %** | Chaque image du cache garde l'empreinte de son fichier (date et taille, prise avant la lecture) ; l'ouverture oublie les retouchées, une image intacte reste la même instance, l'annulation ne relit rien. Recette dans `Scripts/recettes/` |
+| **Q16** | Le pointillé d'un bloc image obéit aux repères | **100 %** | Dessiné seulement repères allumés et sans image affichée ; recette dans `Scripts/recettes/` |
+| **Q17** | Le texte composé suit une collection remplacée | **100 %** | Accesseur fermé (`init`) sur `TextFrame.Spans`, `TextFrame.Paragraphs` et `TableCell.Spans` : le remplacement ne compile plus (CS8852), le sérialiseur les pose encore. Recette dans `Scripts/recettes/` |
 | **Q18** | Paquets marqués « Legacy » | 0 % | Trouvé par Q12 : `Avalonia.Diagnostics` et xunit 2 ont des remplaçants ; aucun n'est vulnérable |
+| **Q19** | Les autres collections ne se remplacent plus | 0 % | Trouvé par Q17 : `Page.Frames`, `GroupFrame.Children`, `Document.Pages` et les listes de repères ont un setter public que des `ItemsControl` lient sans l'écouter |
 | **D** | Moteur de composition | — | Décision non ouverte ; à rouvrir quand A, B et C sont livrées |
 
 **Par phase** — P : 4 sur 4 · A : 7 sur 15 · B : 2 sur 7 · C : 6 sur 9 · R : 5 sur 7 ·
-Q : 4 sur 18 · D : non planifié.
+Q : 12 sur 19 · D : non planifié.
 
-Soit **28 postes sur 60**. Le compte a doublé le 11 octobre 2026 sans que rien ne
+Soit **36 postes sur 61**. Le compte a doublé le 11 octobre 2026 sans que rien ne
 recule : il porte désormais les onze postes de l'audit des fiches (A8 à A15, B6, B7,
 C8), deux postes que les documents réels demandaient (R6, R7), et la phase Q, qui
 recense les défauts que les postes et les relectures ont **trouvés et consignés sans les
@@ -1877,7 +1878,7 @@ un angle ; les deux radiaux — depuis un coin, depuis le centre — ne sont pas
 
 #### La recette, et le sabotage qu'elle a laissé passer
 
-`Scripts/recettes/C5-fonds.sh`, en deux temps. Le premier porte sur ATA 21 lui-même : les
+`Scripts/recettes/C5-Q6-fonds.sh` (nommée `C5-fonds.sh` avant Q6), en deux temps. Le premier porte sur ATA 21 lui-même : les
 cinq remplissages par image arrivent, les cinq fichiers sont écrits, un seul quart de tour,
 et `pdfimages -list` donne la définition posée de chaque image en largeur et en hauteur —
 elles ne sont égales que si l'image n'a pas été étirée de travers. Le second mesure neuf
@@ -2118,6 +2119,23 @@ compare donc les dimensions au millionième. La vignette d'un modèle ignore le 
 page — aucun modèle livré n'en porte. L'import ne lit aucun jeu de couleurs d'un `.pub` :
 ni cherché ni demandé. La relecture a trouvé que la liste des polices effaçait la police
 d'un bloc absente de la machine : c'est le poste Q20, fait sur la même branche.
+
+**Ce que la fusion avec `main` a demandé, le 12 octobre 2026.** Trois postes de la salve
+touchaient les mêmes fonctions. À l'export, `DessinerPortes` de Q5 — la découpe au
+porteur — reçoit la charte et la passe aux blocs des groupes et aux cases des tableaux.
+Les fragments et le style commun de Q8 passent par `Fragments(text, content, charte)` et
+`Commun(text, charte)` : un champ résolu n'a toujours aucun fragment, et la passe des
+polices et le dessin découpent le même texte, désormais résolu — la passe n'a donc plus
+à traduire la police elle-même. Les deux sabotages de Q8 au juge visaient l'ancien texte ;
+ils sont réécrits sur le nouveau, et rejoués à la main : la recette de Q8 tombe sur
+chacun. La vignette de Q9 compose ses filets avec le style et les fragments résolus, et
+les peint de la couleur du jeu : sans cela, les modèles, qui ont adopté « Marine », y
+perdaient la couleur et les polices de leurs textes. Les tests de Q9 lisaient la couleur
+d'un texte de modèle par `Color.Parse` et composaient sans charte : ils levaient sur
+`scheme:main`, et lisent maintenant la charte du modèle. Deux sabotages de plus au juge —
+la vignette sans la couleur du jeu, puis sans sa police —, chacun attrapé par
+`VignetteTests`. À l'écran, le filet centré de Q4 garde sa marge et prend la couleur du
+jeu.
 
 ### C6 — Marges intérieures par côté *(fiche 12)*
 
@@ -2919,6 +2937,66 @@ bord » : c'est donc l'écran qui a tort.
 *Recette* : sur un filet de 4 pt, les bords relevés à l'écran et au PDF concordent à
 0,25 pt près. Effort : faible.
 
+*Fait le 12 octobre 2026.* Un `Rectangle` ou une `Ellipse` d'Avalonia tracent leur
+trait sur leur cadre **diminué d'une demi-épaisseur** : posés sur le cadre du bloc, ils
+le rentraient d'autant. L'élément du filet est donc élargi d'une demi-épaisseur vers
+l'extérieur (`Conv.FiletCentre`, une marge négative), **et rendu sans arrondi de mise
+en page** (`UseLayoutRounding="False"`). Sans ce second point, Avalonia arrondit la
+marge au pixel de mise en page — un point, sous la mise à l'échelle — en arrondi
+bancaire : seule une demi-épaisseur entière était respectée. Trois éléments sont
+concernés : le contour commun des blocs (`Rectangle.frameStroke` : image, texte,
+groupe, tableau, cases), le rectangle et l'ellipse des formes. L'export n'a pas bougé :
+il disait vrai.
+
+*Ce que la relecture a trouvé.* La première version ne portait que la marge, et sa
+recette que des filets de 4 pt, dont la demi-épaisseur est entière : elle passait. La
+relecture a mesuré, écran − PDF, +0,50 pt pour un filet de 1 pt, −0,25 pour 1,5, −0,50
+pour 3, +0,50 pour 5. Or 1 pt est le filet du modèle, et 77 des 88 filets des Samples.
+Le sabotage du relecteur — la demi-épaisseur arrondie à l'entier inférieur — passait
+toute la vérification ; il fait désormais tomber la recette de Q4 sur 24 côtés.
+
+*Mesuré.* Recette `Q4-filet-centre.sh` : douze blocs, 48 côtés relevés à l'écran et au
+PDF à deux pixels par point — six chemins filés de 4 pt (image cadrée pour remplir,
+texte, forme, forme arrondie, ellipse, groupe) et une rangée de 1 pt et de 3 pt (forme,
+texte, ellipse). Avant ce poste : 48 côtés en échec, la comparaison de la page à
+3,41 % pour 3,34 % calculés. Avec la seule marge : 24 côtés en échec, les filets de 1
+et 3 pt, et 0,36 %. Après : 0,00 pt sur les 48 côtés et 0,04 %, seuil à 0,3 %. Le
+script de la relecture, appliqué de 0,5 à 5 pt sur des formes, des textes et des
+ellipses (84 côtés) : |écran − PDF| ≤ 0,01 pt à huit pixels par point. À deux pixels par point, les
+filets de 0,5 et 1,5 pt montrent ±0,25 pt **au PDF seul** — pdftoppm cale sur le pixel
+entier un trait dont le bord tombe au milieu d'un pixel —, et c'est pourquoi la recette
+mesure 1 et 3 pt plutôt que 1,5.
+
+La recette de C1, qui tolérait l'écart de 0 à +1,25 pt, l'exige désormais à
+0 ± 0,25 pt ; sa comparaison est passée de 0,88 % à 0,04 % — le lissage du mot
+« Légende » et une colonne de pixels au bord droit du portrait —, et son seuil de
+1,2 % à 0,25 %, recalculé sans Q4 et écrit dans la recette. Celle de C5 est passée de
+0,99 % à 0,09 %. Le premier relevé, 0,35 %, avait été pris pour le lissage de
+l'ellipse : c'était encore Q4, son filet de 3 pt restant à −0,5 pt. Son seuil passe de
+2 % à 0,2 %, sous ces 0,35 %.
+
+*Ce que la réparation a déplacé.* Centré, le filet d'un bloc posé sur le bord d'un
+groupe ou d'un tableau en sort d'une demi-épaisseur — et la découpe du groupe, faite au
+cadre exact, l'aurait rogné de moitié à l'écran, là où il était entier, rentré. C'est
+ce qui a fixé la découpe de Q5, qui en tient compte.
+
+*Choisi sans certitude.* La marge se calcule sur l'épaisseur seule, que le filet soit
+tracé ou non : sans filet, elle n'a rien à déplacer.
+
+*Trouvé et laissé tel quel* (relevés par la relecture, non corrigés) :
+- **la phase des tirets** diffère entre l'écran et le PDF : la géométrie d'un filet en
+  tirets est la même des deux côtés, pas l'origine de son motif ;
+- **les positions fractionnaires** sont arrondies à l'écran : `Canvas.Left` et
+  `Canvas.Top` passent par le même arrondi de mise en page, au point entier ; un bloc à
+  une abscisse fractionnaire se dessine à l'écran jusqu'à ≈ 0,3 pt de sa place au PDF.
+  Le même remède — retirer l'arrondi — porterait sur tout le canevas, et demande sa
+  propre mesure.
+
+Six sabotages au juge : la marge du contour commun ôtée (Q4 et C1) ; celle de
+l'ellipse ôtée (Q4) ; l'arrondi de mise en page rétabli sur le contour commun, sur le
+rectangle des formes, sur l'ellipse (Q4 ; C5 aussi pour l'ellipse) ; la demi-épaisseur
+arrondie à l'entier inférieur (Q4).
+
 ### Q5 — Un groupe rogne pareil à l'écran et au PDF
 
 Un bloc qui dépasse de son groupe est coupé à l'écran et pas au PDF. Le geste ne
@@ -2928,6 +3006,58 @@ trancher dans le sens de A2 : **l'export rogne au groupe, comme l'écran**.
 *Recette* : groupe de 120 pt portant un texte de 400 pt ; rien n'est dessiné au-delà
 du groupe dans le PDF, et `comparer-rendus.sh` passe. Effort : faible.
 
+*Fait le 12 octobre 2026.* L'écran découpait les blocs d'un groupe sans qu'aucune
+ligne du dépôt le dise : c'est le thème d'Avalonia qui pose `ClipToBounds` sur la liste
+qui les porte — mesuré en le retirant. La découpe est désormais calculée dans le noyau,
+`Decoupe.DesBlocs`, et les deux rendus la lisent : l'export la pose par
+`IntersectClip` avant de dessiner les blocs d'un groupe ou les cases d'un tableau, et
+l'écran la pose sur la liste, dont le `ClipToBounds` du thème est éteint
+(`DecoupeDesBlocs`, liée au porteur, à sa taille et, pour un tableau, à ses cases).
+
+**La découpe n'est pas le cadre du groupe.** Elle en déborde, de chaque côté, du plus
+large demi-filet des blocs qu'il porte, groupes imbriqués et cases comprises. Grouper
+ajuste le groupe aux cadres de ses blocs, filets non compris ; depuis Q4, le filet d'un
+bloc posé sur le bord en sort d'une demi-épaisseur, et une découpe au cadre exact le
+rogne de moitié — mesuré en l'y ramenant : 2 pt sur un filet de 4, à l'écran comme au
+PDF. **Un bloc tourné compte pour √2 fois** : le filet est joint en onglet, et la pointe
+de l'angle d'un bloc tourné sort de t/2·√2 — à 45°, c'est elle qui dépasse le plus. La
+première version comptait t/2 pour tous : la relecture a trouvé la pointe d'un losange
+émoussée dans son groupe. Ce qu'un bloc tourné porte compte de même.
+
+*Mesuré.* Recette `Q5-groupe-rogne.sh`, sur le cas du plan : un texte de 400 pt à fond
+jaune dans un groupe de 120. Avant : 67 200 pixels dessinés au-delà du groupe dans le
+PDF — les 280 pt de fond qui dépassent, sur 60 pt de haut —, aucun à l'écran ; la
+comparaison de la page à 4,35 %. Après : aucun pixel des deux côtés, et 0,05 %. La même
+page porte un groupe et un tableau filés de 4 pt sur leur bord : 4 pt mesurés des deux
+côtés. Ajoutés après la relecture, sur ses documents : un groupe tourné de 30°, un
+groupe dans un groupe — chacun découpe à sa marge, rien au-delà ni de l'un ni de
+l'autre — et un losange filé de 6 pt dans un groupe ajusté à son empreinte, dont la
+pointe d'onglet est relevée bleue à 3,25 pt au-dessus de l'angle, des deux côtés. Page
+à six blocs : 8,03 % avant le poste, 0,13 % après, seuil 0,3 %. Douze tests du noyau
+sous `poste=Q5`, que la recette joue d'abord.
+
+*Choisi sans certitude.* Une marge commune au groupe et non propre à chaque bloc : un
+bloc sans filet qui dépasse d'un groupe dont un autre bloc est filé s'arrête à un
+demi-filet au-delà du bord, et non sur le bord. Une découpe par bloc l'éviterait, au
+prix d'une découpe par enfant à l'écran ; aucun geste ne produit ce cas. Les tableaux
+reçoivent la même découpe que les groupes, bien que leurs cases ne dépassent jamais :
+c'est le même chemin de rendu des deux côtés, et le seul effet est de laisser entiers
+les filets des cases du bord. Le premier pixel au-delà de la découpe, dans le PDF, porte
+un soupçon de la couleur coupée — (255, 249, 223) sur un fond (255, 204, 0) — : c'est le
+lissage de `pdftoppm`, que la recette tolère et dit. La marge commune a été acceptée
+par le propriétaire le 12 octobre 2026.
+
+*Laissé tel quel.* À l'écran, la découpe n'est liée qu'au porteur et à sa taille — et,
+pour un tableau, à ses cases —, non à `Children` ni aux filets des blocs portés : elle
+ne se recalcule pas si l'on change le filet d'un bloc déjà groupé, ou si l'on remplace
+les blocs d'un groupe affiché. Aucun geste ne le fait aujourd'hui — un bloc groupé ne se
+sélectionne pas, et grouper ou dissocier recrée le groupe —, mais un futur geste qui le
+ferait trouverait l'écran en retard sur l'export.
+
+Trois sabotages au juge : la découpe ôtée de l'export (Q5), la découpe ramenée au cadre
+exact (Q5 et `DecoupeTests`), le facteur √2 des blocs tournés ôté (Q5 et
+`DecoupeTests`).
+
 ### Q6 — Mesurer la découpe d'un remplissage par image
 
 Le document de recette de C5 ne porte que des rectangles à angles droits : un sabotage
@@ -2936,6 +3066,22 @@ de la découpe d'un remplissage par image traverse toute la vérification.
 *Recette* : ajouter au document de C5 un bloc arrondi rempli d'une image, relever la
 couleur du fond de page dans le coin, et ajouter à `eprouver-le-juge.sh` le sabotage
 qui doit tomber. Effort : faible.
+
+*Fait le 12 octobre 2026.* `Samples/recette-fonds.mypub` porte un bloc de 200 × 120 pt
+aux angles arrondis de 30 pt, rempli d'une image — un aplat magenta,
+`Samples/recette-fonds-trame.png`, étiré au bloc —, sans filet. La recette de C5 y
+relève quatre points de plus, au PDF puis à l'écran : l'image au centre et à 2 pt du
+bord gauche, juste sous l'arc ; le fond de page dans les coins haut-gauche et
+bas-droite, à 9,6 pt hors de l'arc. La couleur attendue dans les coins se calcule — le
+dégradé de page, du blanc au #336699 — et concorde avec le relevé.
+
+*Mesuré.* Deux sabotages, joués à la main sur l'ancienne recette puis sur la nouvelle.
+La découpe de l'export privée de son arrondi : l'ancienne recette passe, la nouvelle
+tombe sur les deux coins (magenta au lieu du fond, et l'écran en désaccord avec le PDF).
+La même chose à l'écran (`FondBloc`) : la nouvelle tombe sur le désaccord écran ≠ PDF.
+La comparaison de la page n'avait pas bougé en ajoutant ce bloc (0,35 %, alors), et elle
+est à 0,09 % depuis la seconde réparation de Q4 : un coin rogné de travers ne pèse que
+quelques centaines de pixels, et c'est bien pourquoi la mesure est ponctuelle.
 
 ### Q7 — La recette de A6 sur le cas réel
 
@@ -2955,6 +3101,54 @@ avertissement pour une police que rien ne dessine.
 DejaVu Sans, avec un fragment intermédiaire « Police Inexistante » lui-même recouvert ;
 l'export n'avertit de rien. Effort : faible.
 
+*Fait le 12 octobre 2026.* La passe des polices de `PdfExporter` lit les styles
+composés : pour chaque bloc de texte, page par page, elle résout le contenu comme
+`DrawText` le résout — champ compris, avec la date et les coordonnées de l'export —, et
+passe le contenu à `StyleEffectif.Decouper`, la découpe que la composition fait
+elle-même. Seuls les styles des morceaux obtenus sont confrontés à fontconfig. Quels
+fragments s'appliquent au contenu (aucun pour un champ résolu) est une seule fonction,
+`Fragments`, que `DrawText` appelle désormais aussi : la passe et le dessin ne peuvent
+plus parler de deux textes différents. L'ancienne fonction `Polices`, qui relisait
+l'héritage pour son compte, a disparu, et avec elle l'asymétrie qu'elle assumait (« un
+avertissement de trop plutôt qu'un de moins ») : ce qui n'est pas dessiné ne compte pas.
+
+Mesuré. Le comportement d'avant, rétabli par le premier sabotage, nomme sur le document
+de la recette deux polices que rien ne dessine : « Police Inexistante » et la police
+propre du bloc, toutes deux remplacées par Noto Sans, que `fc-match` rend sur cette
+machine pour une famille inconnue. Corrigé, l'export ne dit rien, et `pdffonts` relève
+dans le PDF la seule DejaVu Sans. La contre-épreuve retire le fragment qui recouvre
+tout : les deux polices sont nommées, et Noto Sans entre dans le PDF.
+
+Neuf tests sous `poste=Q8`, dans `PolicesTests` : le cas du plan, le texte laissé à
+découvert (qui avertit toujours), le fragment hors du texte, le champ dont les fragments
+ne sont pas dessinés alors que sa police l'est, le champ de coordonnées vide qui ne
+dessine rien, le fragment blanc — saut de ligne, espace, tabulation — et la case de
+tableau, où un fragment absent dessiné avertit et le même recouvert se tait. Ce dernier
+vient de la relecture : retirer les cases de la descente de la passe laissait
+`verifier.sh` vert. *Recette* :
+`Scripts/recettes/Q8-polices-dessinees.sh`. Elle joue le document du plan, avec un
+second bloc dont la police propre est absente, plus exigeant que le bloc en Noto Sans,
+qui est installée ici et ne dirait rien de toute façon. Elle relève les polices du PDF,
+rejoue le document découvert, et compte les tests. Trois sabotages au juge : l'héritage
+relu pour son compte (la recette tombe, et huit des neuf tests), les fragments
+d'un champ lus comme s'ils étaient dessinés (seul le test du folio tombe), et les cases
+de tableau retirées de la descente (seul le test de la case tombe).
+
+*Choisi sans certitude.* Un morceau blanc — espaces, tabulations, sauts de ligne — ne
+compte pas, comme `Tracer` le saute en dessinant : `pdffonts` ne relève pas sa police.
+Sa largeur se mesure pourtant dans cette police, substituée ou non ; c'est le seul
+effet d'une police que la passe tait. La première version comptait les espaces ; la
+relecture a demandé de s'aligner sur le dessin et sur ce que dit le README. Une ligne vide prend
+sa hauteur dans la police du bloc (`Naturelle(commun)` dans `Compositeur`) : un bloc
+dont tout le texte est recouvert mais qui porte une ligne vide fait mesurer sa police
+sans la dessiner, et ne la nomme pas. Le texte coupé par le bord du bloc est compté
+comme dessiné.
+
+*Trouvé et laissé tel quel.* L'écran garde sa propre copie de la règle « un champ résolu
+n'a pas de fragments » (`ControleDeBloc.Mesurer`) : la règle n'est partagée qu'entre la
+passe et le dessin du PDF, pas avec l'écran. La partager demanderait de la poser dans le
+noyau ; le poste ne l'a pas fait.
+
 ### Q9 — Retirer `AbsoluteLineHeight`
 
 C'est le survivant de l'ancienne sémantique de l'interligne (`FontSize × LineHeight`),
@@ -2963,6 +3157,85 @@ que R4 a remplacée. Seule la vignette des modèles la lit encore, et se trompe 
 
 *Recette* : la propriété n'existe plus, et la vignette du bulletin a autant de lignes
 que son rendu réel. Effort : faible.
+
+*Fait le 12 octobre 2026.* `AbsoluteLineHeight` quitte `TextFrame`, avec les deux
+`NotifyPropertyChangedFor` qui la tenaient à jour ; le commentaire de `LineHeight`, qui
+parlait encore d'un « multiple du corps », dit désormais la sémantique de R4. La
+vignette ne compte plus ses filets à la louche : elle compose chaque bloc par
+`Compositeur`, avec la règle d'Avalonia, et pose un filet par ligne non vide, à
+l'ordonnée, à la longueur et au fer de la ligne — une ligne justifiée court jusqu'au
+bout de sa colonne —, sous le calage vertical, découpé au bloc. `EstimateLines` est
+parti avec.
+
+*Mesuré.* La vignette du bulletin, rendue à deux pixels par point
+(`VignetteTests`), porte 48 filets dans ses huit blocs de texte saisi, un par ligne de
+la page, chacun à deux pixels au plus de la place de sa ligne. L'ancienne en aurait
+posé 45 : 13 au lieu de 14 dans chacune des trois colonnes. Le sabotage qui rétablit
+l'espacement du corps décale déjà le deuxième filet des colonnes de 3,2 pixels
+(1,6 pt) à 9,5 pt, et le test tombe ; il est au juge.
+
+*Choisi sans certitude.* Un champ garde un seul filet, de toute la largeur, à l'avance
+de sa police : son contenu — les coordonnées de l'utilisateur, la date du jour où il
+ouvrira le document — n'est pas celui du catalogue, et la carte de visite n'est faite
+que de champs. Il reste en haut de son bloc, quel que soit son calage vertical, comme
+avant. Le filet est centré dans sa ligne, là où l'ancien en occupait le haut. Le test
+admet deux pixels d'écart, parce que le lissage peut allumer la rangée du dessus.
+
+*Trouvé et laissé tel quel.* La vignette mesure avec `MetriquesAvalonia`, et hérite
+donc de ce que Q13 a trouvé : l'italique d'une famille qui n'en a pas — DejaVu Sans, ici
+— se résout selon l'histoire du processus, en gras ou en romain penché. Les quatre
+modèles portent de l'italique — le chapeau et la légende du bulletin. Dans le
+catalogue, un filet d'italique peut donc être plus long ou plus court d'une ouverture à
+l'autre, et une ligne passer à la suivante. Le test ne le voit pas : il compose ses
+attentes dans le même processus que la vignette, avec la même résolution.
+
+*Repris le 12 octobre 2026, après relecture.* La relecture a fait passer trois
+sabotages à travers les tests : la vignette qui perd son fer et la longueur de ses
+filets, celle qui ne découpe plus au bloc, et le champ qui ne laisse plus de filet. Le
+test ne lisait que le nombre et l'ordonnée des filets du bulletin : ce que le
+paragraphe précédent dit de la longueur, du fer et de la découpe était écrit dans le
+code, mais pas éprouvé. `VignetteTests` passe de deux tests à six :
+
+- le début et la fin de chaque filet du bulletin, à un point près de ceux de sa ligne à
+  la page. Le bulletin ne centre aucun texte saisi : le test centre le titre de une et
+  le chapeau, et cale le sous-titre à droite. Il éprouve ainsi les 48 lignes, dont 36
+  justifiées, 3 centrées et une à droite, et exige plus de vingt justifiées, deux
+  centrées et une à droite : un fer qu'aucune ligne n'éprouverait passerait vert ;
+- un filet et un seul par champ de la carte de visite, de toute la largeur de sa zone de
+  texte, au milieu de sa première ligne ;
+- la première colonne du bulletin ramenée à cent points : sa composition en pose
+  207,3 points de haut, et aucune rangée de sa couleur ne paraît entre le bas du cadre et son bas
+  d'origine ;
+- une même vignette qui reçoit deux documents de suite recompose ses filets.
+
+*Mesuré.* Un sabotage de chacune des trois sortes que la relecture a fait passer — ses
+textes exacts n'ont pas été gardés —, et des variantes, font tomber un test et la
+recette, éprouvés à la main un par un : le fer perdu (`justifiee` toujours vraie, ou toujours fausse,
+centre ou droite ramenés au retrait, longueur toujours pleine) fait tomber les
+abscisses ; la découpe retirée, ou élargie au double de la hauteur, le débordement ; le
+filet de champ retiré, réduit à la moitié de la largeur, ou effacé par la garde du texte
+vide, la carte de visite. Les trois sont au juge, avec un quatrième : la mémoire des
+filets qui ne se renouvelle plus quand le document change.
+
+*La vignette garde ses filets.* Elle composait chaque bloc à chaque rendu. Les filets de
+chaque bloc, en coordonnées de la page, sont désormais gardés pour un document et une
+taille de contrôle, et rangés par ordre de rencontre : les cases d'un tableau sont des
+blocs refaits à chaque lecture, une clé par référence ne les retrouverait pas. À 134
+pixels de côté, moyenne de 500 rendus, deux passes, poste chargé : le bulletin passe
+de 2,5 et 2,7 ms par rendu à 0,06 ms, l'affiche de 1,2 et 1,3 ms à 0,03 ms, le dépliant
+de 0,34 à 0,03 ms ; la carte de visite, qui n'a que des champs, reste vers 0,02 ms.
+
+*Choisi sans certitude.* La mémoire ne voit pas une modification du document en place.
+Le catalogue n'en fait aucune — ses documents sont lus pour la vignette, et le modèle
+choisi est rouvert depuis son fichier —, et c'est écrit dans le commentaire de
+`TemplatePreview`. Un appelant qui afficherait un document qu'on édite devrait en poser
+un autre.
+
+*Ce que la recette ne prouve pas*, et qu'elle dit désormais en tête : la justesse de la
+composition elle-même — les attentes sont composées par le même `Compositeur`, avec les
+mêmes métriques —, la vignette à la taille du catalogue, les blocs tournés, les groupes,
+les tableaux, le calage vertical d'un champ, les retraits, l'affiche et le dépliant, et
+le gain de la mémoire, mesuré à la main seulement.
 
 ### Q10 — Saisir une poignée hors de la page
 
@@ -3070,6 +3343,61 @@ prix : un mot qui tiendrait de justesse passe à la ligne des deux côtés.
 Effort : moyen. **Si la voie d'attente ne suffit pas, le poste devient la question du
 seuil D**, et l'on s'arrête pour la poser au propriétaire du projet.
 
+*Éprouvé le 12 octobre 2026, et arrêté : la voie d'attente ne suffit pas seule.* La
+question revient au propriétaire ; rien du code de ce poste n'est commité. Le code
+éprouvé est gardé hors du dépôt, en un correctif qui s'applique sur `b17e569`.
+
+*Mesuré avant.* Chaque règle décidant seule, sur les blocs de texte des trois
+documents, groupes et cases compris : l'exemple coupe autrement **1 bloc sur 15, 2 lignes
+sur 57** — la première colonne, où l'écran garde « jamais » à 231,11 pt d'une ligne de
+232 pt et où le PDF le renvoie ; ATA 21, 0 ligne sur 79 ; les fiches ATR, 0 sur 152.
+D'un morceau à l'autre, les deux mesures diffèrent au plus de 2,38 pt sur l'exemple
+(0,15 % en moyenne, le PDF jamais plus étroit), 2,96 pt sur ATA 21 (0,47 %), 2,29 pt sur
+les fiches (0,20 %). Sur l'exemple et les fiches, l'écart est le crénage : l'écran
+privé de crénage (essai, non gardé) y mesure chaque morceau comme le PDF, à 0,0001 pt
+près. Sur ATA 21, un écart de 2,96 pt reste sans crénage ; sa cause n'a pas été
+cherchée. La hauteur naturelle, qui décide du passage de colonne, est la même des deux
+côtés sur les trois documents.
+
+*La voie d'attente, écrite.* `IMetriques` gagne `LargeurDeCoupure` : chacun rend la plus
+large de sa mesure et de celle de l'autre, et le compositeur ne décide plus que sur
+elle, en dessinant à la sienne. L'export reçoit la règle de l'écran de l'application ;
+`--export` monte d'Avalonia ce qu'il faut pour mesurer, sans fenêtre. Dans un même
+processus, les trois documents coupent alors aux mêmes mots, ligne pour ligne.
+
+*Pourquoi elle ne suffit pas.* La règle de l'écran n'est pas une fonction du texte et du
+style. DejaVu Sans n'a pas d'italique sur cette machine ; Avalonia 11.3.9 lui donne la
+face qu'il a déjà chargée : le gras si le gras est venu le premier, le romain sinon. La
+même ligne de la légende mesure 262,83 pt ou 233,96 pt selon l'histoire du processus.
+La voie d'attente fait entrer cette mesure dans la coupure du PDF, qui n'en dépendait
+pas. Charger les quatre faces d'une famille dans un ordre fixe, à sa première mesure,
+donne le romain à l'export, mais pas à un processus qui a déjà composé autre chose : après une
+autre famille et les deux documents ATR, l'italique y repasse au gras. La confrontation
+de bout en bout — le PDF du vrai binaire, lu mot par mot par `pdftotext -bbox`, contre
+les lignes de l'écran — tombe ainsi, aux trois passages, sur la légende et le rappel.
+
+*Ce que `comparer-rendus.sh` mesure vraiment.* Pas la coupure. Page 1 et page 2 de
+l'exemple : 4,87 % et 3,72 % avant ; 4,78 % et 3,72 % avec la voie d'attente ; 4,80 %
+et 3,91 % avec, en plus, l'écran privé de crénage, donc des morceaux de même largeur ;
+0,37 % et 0,03 % sans aucun texte. Deux rastériseurs du **même** PDF, `pdftoppm` et
+`pdftocairo`, diffèrent déjà de 2,36 % et 1,77 % ; l'écran et `pdftocairo`, de 4,28 % et
+3,35 %. L'excédent est le dessin des glyphes. Le seuil de 3 % n'est pas à la portée
+d'une page de texte, coupée juste ou non, et les en-têtes de `verifier.sh` et de
+`comparer-rendus.sh`, qui attribuent l'écart à la coupure, se trompent de cause ; ils
+sont laissés tels quels.
+
+*Trouvé et laissé tel quel.* L'italique de DejaVu Sans sort droit au PDF : PDFsharp
+reçoit le fichier romain et ne simule rien. L'écran, lui, le penche.
+
+*Question au propriétaire.* Trois voies. Garder la voie d'attente et rendre la mesure
+de l'écran indépendante de l'histoire — résoudre chaque face une fois, par une
+collection de polices à soi, et la garder : c'est toucher tout le texte de l'écran.
+Ou franchir le seuil D pour la coupure seulement : décider sur la mesure de PDFsharp,
+que le noyau a partout, l'écran dessinant à la sienne et pouvant déborder sa ligne du
+crénage, 2,38 pt au plus sur l'exemple. Ou laisser la dette. Et, quelle que soit la
+voie, remplacer `comparer-rendus.sh` par la confrontation mot à mot pour les pages de
+texte.
+
 ### Q14 — Un double-clic ne déplace pas le bloc
 
 *Trouvé le 11 octobre 2026 par Q1.* Un double-clic sur un bloc importé, pour y entrer
@@ -3096,6 +3424,61 @@ du cache porte la date de modification du fichier en plus de son chemin.
 réouverture, l'écran et le PDF montrent la nouvelle couleur. Sans retouche, le cache
 rend la même instance (l'épingle de Q3 tient). Effort : faible.
 
+*Fait le 12 octobre 2026.* Chaque entrée de `BitmapCache` garde l'empreinte de son
+fichier, sa date de modification et sa taille, prise **avant** la lecture : un fichier
+réécrit pendant qu'on le lit sera relu à l'ouverture suivante, plutôt que l'inverse.
+`BitmapCache.OublierLesRetouchees` retire les images dont le fichier n'a plus la même
+empreinte ; `Adopt` l'appelle juste après `OublierLesEchecs`, donc à l'ouverture d'un
+fichier comme au départ d'un modèle. Une image intacte reste la même instance.
+L'annulation ne relit rien, comme pour Q3.
+
+**La piste du plan n'a pas été suivie à la lettre**, et voici pourquoi. Mettre la date
+dans la **clé** obligerait à interroger le disque à chaque lecture du cache, donc à
+chaque notification de liaison, donc à chaque image d'un glissé, et sur un partage
+réseau pour les documents qui y vivent. Les entrées périmées s'y accumuleraient en plus
+sous leurs anciennes clés. L'empreinte vit donc dans l'entrée, et ne se compare qu'à
+l'ouverture. La taille s'y ajoute parce que la date seule laisse passer une retouche
+faite dans le même pas d'horloge que la lecture.
+
+Mesuré. Sans l'appel dans `Adopt` (le premier sabotage), les deux tests tombent sur
+« l'écran ne montre pas l'image retouchée (0 pixels) » : le défaut est reproduit. Avec
+lui, l'écran montre le cyan sur toute l'image du bloc et plus un pixel magenta, et le
+PDF exporté au même instant porte une image cyan, relue par PDFsharp dans le fichier.
+Les deux PNG de 8 pixels, magenta puis cyan, écrits par Avalonia ont la même taille de
+fichier : le test le vérifie, puisque c'est la date seule qui doit trahir ce cas.
+
+Trois tests d'interface sous `poste=Q15`, dans `ImagesTests`. Le premier fait la retouche
+ordinaire : même taille, date plus récente. Il épingle aussi l'instance rendue sans
+retouche (Q3) et l'annulation qui ne relit pas. Le second fait la retouche qui garde la
+date, avec une autre taille. Chacun ne trahit ainsi qu'une moitié de l'empreinte, et
+les deux sabotages qui en retirent une moitié le prouvent : la taille oubliée ne fait
+tomber que le second, la date oubliée que le premier. Le troisième test, ajouté après la
+relecture, éprouve l'ordre. Un lecteur injecté dans le cache (`BitmapCache.Lecteur`,
+interne, visible du seul banc d'interface) réécrit le fichier en cyan juste après
+l'avoir lu en magenta. L'ouverture suivante doit montrer le cyan. L'empreinte prise
+après la lecture le fait tomber, et lui seul : sans ce test, rien ne gardait l'ordre.
+*Recette* : `Scripts/recettes/Q15-image-retouchee.sh`. Quatre sabotages au juge :
+l'appel retiré, la taille oubliée, la date oubliée, l'empreinte prise après la
+lecture.
+
+*Choisi sans certitude.* Le test pose lui-même les dates. Quand l'horloge des fichiers
+n'a pas avancé entre deux écritures rapprochées, il avance la date d'une seconde ; pour
+le second cas, il remet la date d'avant. Le coût d'une date lue à chaque lecture du cache
+n'a pas été mesuré : c'est une prudence, pas une mesure. Une image dont le fichier a
+disparu change d'empreinte, est oubliée, et le bloc se vide à la réouverture, comme le
+PDF le dit déjà (« Image introuvable »). Les images oubliées ne sont pas libérées
+(`Dispose`) : un contrôle peut encore les afficher jusqu'à sa prochaine liaison. C'est
+ce que fait déjà `Invalidate`.
+
+*Trouvé et laissé tel quel.* Une image retouchée pendant que le document reste ouvert
+n'est relue qu'à la réouverture, ou en la réinsérant ; d'ici là, l'export montre déjà la
+nouvelle. L'écart écran ↔ PDF demeure donc dans cet intervalle ; le README le dit.
+Mesuré en écrivant le test : après une annulation, la première image que le banc capture
+à la réouverture (`CaptureRenderedFrame`) est en retard d'un tour, la page sans son
+image, ni magenta ni cyan ; la capture suivante compte 32 000 pixels cyan, soit
+200 × 160. Le test jette la première capture et l'écrit. Ce retard tient au banc ou au
+rendu, et n'a pas été cherché plus loin.
+
 ### Q16 — Le pointillé d'un bloc image obéit aux repères
 
 *Trouvé le 11 octobre 2026 par la recette de C1.* Le pointillé gris d'un bloc image,
@@ -3107,6 +3490,27 @@ comparaison écran ↔ PDF (0,06 % de la page pour un bloc seul).
 *Recette* : un bloc image chargé, rendu par le banc repères éteints, ne porte aucun
 pixel de la couleur du pointillé ; un bloc image sans fichier le montre repères
 allumés et le cache repères éteints. Effort : faible.
+
+*Fait le 12 octobre 2026.* Le pointillé n'est plus dessiné que si les repères sont
+allumés **et** qu'aucune image n'est affichée dans le bloc : sa visibilité est le « et »
+de `ShowGuides` et d'une source d'image nulle, lue sur l'élément image du gabarit. Une
+image introuvable sur le disque donne une source nulle : le bloc montre alors sa place,
+comme un bloc sans chemin.
+
+*Mesuré.* Trois tests d'interface sous `poste=Q16` et la recette
+`Q16-pointille-image.sh`, qui les joue puis rend au banc une page portant un bloc
+chargé et un bloc sans fichier. Pixels du gris du pointillé sur le pourtour : bloc
+chargé, 0 repères éteints comme allumés ; bloc sans fichier, 616 repères allumés, 0
+éteints. La comparaison de la page de C1, où le défaut a été trouvé, tombe à 0,04 %
+avec Q4.
+
+*Choisi sans certitude.* Une image chargée cache le pointillé même repères allumés :
+c'est ce que dit le commentaire d'origine (« tant qu'aucune image n'est chargée »), et
+le cadre du bloc reste visible à la sélection. Publisher n'a pas été consulté sur ce
+point.
+
+Deux sabotages au juge, un par condition : la source d'image retirée de la condition,
+puis l'interrupteur des repères ; chacun fait tomber un test différent.
 
 ### Q17 — Le texte composé suit une collection remplacée
 
@@ -3120,6 +3524,52 @@ le setter.
 *Recette* : un contrôle affiché, dont on remplace les `Spans` du bloc, redessine au
 style de la nouvelle collection ; l'ancienne n'a plus d'abonné. Effort : faible.
 
+*Fait le 12 octobre 2026.* **Le setter est fermé** : `TextFrame.Spans`,
+`TextFrame.Paragraphs` et `TableCell.Spans` n'ont plus qu'un accesseur `init`.
+L'initialiseur et le sérialiseur les posent encore ; plus personne après. La troisième
+n'était pas nommée par le plan, mais c'est la même mine : `CellFrames` prête la
+collection de la case au bloc qu'il construit pour elle, et le contrôle qui dessine la
+case s'y abonne.
+
+**Pourquoi fermer plutôt qu'écouter.** Rien ne remplaçait ces collections hors de la
+construction : la solution entière compile avec `init` sans autre retouche. Les seuls
+écrivains de la propriété étaient l'initialiseur de `CellFrames` et le sérialiseur, qui
+la pose sur l'objet qu'il est en train de construire, et l'annulation avec lui,
+puisqu'elle relit un instantané. `Clone()` et l'import remplissent la collection d'un
+bloc neuf, ils ne la remplacent pas. Écouter le remplacement aurait demandé trois choses :
+- que le bloc annonce un changement de `Spans`, qu'il n'annonce pas aujourd'hui ;
+- que `ControleDeBloc` garde l'ancienne collection pour s'en désabonner, l'événement ne
+  la donnant pas ;
+- que chaque observateur à venir (l'aperçu de B6, la vignette de C7) le refasse.
+
+Fermer règle la question pour tous les observateurs à la fois, et au compilateur, pas à
+la discipline. `TableFrame` a fait l'autre choix pour ses colonnes, lignes et cases
+(`Adopter`), parce qu'il s'abonne lui-même à ses collections dès le constructeur, et que
+le sérialiseur les remplace après. Ici, le bloc ne s'abonne à rien. Le prix : un code qui
+voudrait tout remplacer videra puis remplira, une notification par élément, que le
+contrôle entend déjà.
+
+La recette du plan, un contrôle affiché dont on remplace les fragments, ne peut donc plus
+se jouer : le geste ne compile plus. *Recette* : `Scripts/recettes/Q17-collections-fermees.sh`.
+Elle compile une sonde contre le noyau construit, qui remplace les trois collections sur
+des objets déjà construits ; elle exige trois erreurs CS8852, une par ligne. Une seconde
+sonde compile ce qui doit rester permis : l'initialiseur, le prêt d'une case, le
+remplissage sur place. Six tests sous `poste=Q17`, dans `CollectionsFermeesTests` :
+- la marque `IsExternalInit` sur chaque collection observable de `TextFrame` et de
+  `TableCell`, découvertes par réflexion, avec un témoin que la découverte trouve bien
+  les trois ;
+- la lecture d'un document, qui pose encore les collections ;
+- la case, qui prête toujours la même instance.
+
+Un sabotage au juge, l'accesseur des fragments rouvert : la sonde n'obtient plus que
+deux refus, et le test de réflexion tombe.
+
+*Trouvé et laissé tel quel.* La même mine existe ailleurs, hors du périmètre :
+`Page.Frames`, `GroupFrame.Children`, `Document.Pages` et les deux listes de repères ont
+un accesseur public en écriture, sans annonce de changement, alors que des
+`ItemsControl` s'y lient (`CurrentPage.Frames`, `Children`, `Document.Pages`). Rien dans
+le dépôt ne les remplace après la construction, d'après une recherche dans les sources.
+
 ### Q18 — Paquets marqués « Legacy »
 
 *Trouvé le 11 octobre 2026 par Q12.* `dotnet list package --deprecated` signale
@@ -3130,6 +3580,18 @@ d'interface : à faire seul, et pas au milieu d'une salve.
 
 *Recette* : `dotnet list package --deprecated` ne signale plus rien, et les deux
 projets de tests comptent autant de tests qu'avant. Effort : moyen.
+
+### Q19 — Les autres collections ne se remplacent plus
+
+*Trouvé le 12 octobre 2026 par Q17*, qui a fermé `Spans` et `Paragraphs`. La même mine
+existe ailleurs : `Page.Frames`, `GroupFrame.Children`, `Document.Pages` et les deux
+listes de repères libres ont un setter public sans notification, alors que des
+`ItemsControl` s'y lient. Aucune affectation n'existe aujourd'hui dans les sources hors
+du sérialiseur : c'est une mine, pas un défaut visible. Remède : le même que Q17,
+l'accesseur `init`.
+
+*Recette* : une sonde compilée contre le noyau obtient un refus CS8852 par collection,
+et l'aller-retour JSON des documents livrés reste identique. Effort : faible.
 
 ### Q20 — La liste des polices garde la police du bloc
 
@@ -3200,7 +3662,7 @@ touchent, le second attend la salve suivante.
 | **3** | R6 · A8 · A9 · A15 · B7 · B4 | Le paragraphe au panneau, et des postes courts, indépendants les uns des autres |
 | **4** | R7 · A12 · C7 · B3 + B6 | Le texte riche à la souris, et ce qui reprend les commandes des salves précédentes |
 | **5** | A10 · A11 · A13 · Q10 · Q11 | La géométrie et la couche de saisie |
-| **6** | A14 · C8 · Q18 | Les deux postes à risque, chacun précédé de son essai |
+| **6** | A14 · C8 · Q18 · Q19 | Les deux postes à risque, chacun précédé de son essai |
 | **D** | Note de décision | Rédigée après la salve 6 ; **la décision revient au propriétaire du projet** |
 
 Trois points où l'on s'arrête pour demander, plutôt que de décider seul : le choix de
@@ -3286,7 +3748,7 @@ finissent toujours par se contredire.
 | **B** | B1 modèles · B2 import texte · B3 impression · B4 archive · B5 polices · B6 aperçu · B7 panneaux repliables | usage | — |
 | **C** | C1 remplissage · C2 repères · C3 sélection multiple · C4 champs · C5 couleurs · C6 marges · C7 bibliothèque · C8 miroir · C9 tableau | structure | P1, P2 |
 | **R** | R1 texte riche · R2 retraits · R3 colonnes · R4 interligne · R5 import `.pub` · R6 paragraphe au panneau · R7 texte riche à la souris | documents réels | R6 et R7 : Q1 |
-| **Q** | Q1 à Q18 | dettes consignées | — |
+| **Q** | Q1 à Q19 | dettes consignées | — |
 | **D** | moteur de composition | décision | Q13, puis A, B, C |
 
 Trois postes à faire en premier si l'on ne devait en retenir que trois, au

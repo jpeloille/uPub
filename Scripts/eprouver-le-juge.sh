@@ -481,6 +481,228 @@ saboter "la liste des polices renvoie null au bloc qu'elle ne sait pas montrer" 
     'value;' \
     'PolicesAbsentesTests|Q20-police-absente'
 
+# Salve 2, lot « noyau » : Q8, Q15 et Q17. Chaque sabotage a été joué à la main contre
+# la recette de son poste avant d'être écrit ici.
+
+# Q8 : le défaut d'origine, rétabli tel quel — la passe relit l'héritage des fragments
+# pour son compte au lieu des styles composés. Huit des neuf tests de Q8 tombent, et
+# la recette, sur le document du plan.
+saboter "la passe des polices relit l'héritage des fragments au lieu des styles composés" \
+    MyPublisher.Core/Services/PdfExporter.cs \
+    'foreach (var style in StylesDessines(bloc, content, charte))' \
+    'foreach (var style in bloc.Spans.Select(f => Commun(bloc, charte) with { FontFamily = charte.Police(f.FontFamily ?? bloc.FontFamily), Bold = f.Bold ?? bloc.Bold, Italic = f.Italic ?? bloc.Italic }).Prepend(Commun(bloc, charte)))' \
+    'Q8-polices|PolicesTests'
+
+# Q8 : la passe lit les fragments d'un bloc qui montre un champ, que le dessin ignore.
+# Seul le test du folio le voit.
+saboter "la passe des polices lit les fragments d'un champ, que le dessin ignore" \
+    MyPublisher.Core/Services/PdfExporter.cs \
+    'content, Fragments(text, content, charte), Commun(text, charte)))' \
+    'content, charte.Fragments(text.Spans), Commun(text, charte)))' \
+    'Q8-polices|PolicesTests'
+
+# Q8 : la passe ne descend plus dans les cases d'un tableau. Trouvé par la relecture :
+# rien ne le gardait. Seul le test de la case le voit.
+saboter "la passe des polices ne voit plus les cases d'un tableau" \
+    MyPublisher.Core/Services/PdfExporter.cs \
+    'TableFrame tableau => tableau.CellFrames,' \
+    '' \
+    'Q8-polices|PolicesTests'
+
+# Q15 : l'ouverture ne compare plus les empreintes. L'écran garde l'image d'avant la
+# retouche, le PDF montre la nouvelle.
+saboter "rouvrir un document ne relit plus une image retouchée" \
+    MyPublisher/ViewModels/MainWindowViewModel.cs \
+    'BitmapCache.OublierLesRetouchees();' \
+    '' \
+    'Q15-image|ImagesTests'
+
+# Q15 : chaque moitié de l'empreinte a son test. La taille oubliée, seule la retouche
+# qui garde sa date passe ; la date oubliée, seule la retouche de même taille passe.
+saboter "l'empreinte d'une image oublie la taille de son fichier" \
+    MyPublisher/Converters/Conv.cs \
+    'new Empreinte(fichier.LastWriteTimeUtc, fichier.Length)' \
+    'new Empreinte(fichier.LastWriteTimeUtc, 0)' \
+    'Q15-image|ImagesTests'
+
+saboter "l'empreinte d'une image oublie la date de son fichier" \
+    MyPublisher/Converters/Conv.cs \
+    'new Empreinte(fichier.LastWriteTimeUtc, fichier.Length)' \
+    'new Empreinte(default, fichier.Length)' \
+    'Q15-image|ImagesTests'
+
+# Q15 : l'empreinte prise APRÈS la lecture. Seul un fichier réécrit pendant qu'on le
+# lit le trahit ; le lecteur injecté du test le joue. Trouvé par la relecture.
+saboter "l'empreinte d'une image se prend après sa lecture" \
+    MyPublisher/Converters/Conv.cs \
+    'Cache[cle] = new Entree(bitmap, empreinte);' \
+    'Cache[cle] = new Entree(bitmap, Prendre(cle));' \
+    'Q15-image|ImagesTests'
+
+# Q17 : l'accesseur des fragments rouvert. Tout compile, rien ne casse à l'écran
+# aujourd'hui ; la sonde de la recette compile le remplacement, et la réflexion voit
+# la marque « init » disparaître.
+saboter "les fragments d'un bloc se remplacent de nouveau après la construction" \
+    MyPublisher.Core/Models/Frame.cs \
+    'public ObservableCollection<StyleSpan> Spans { get; init; } = [];' \
+    'public ObservableCollection<StyleSpan> Spans { get; set; } = [];' \
+    'Q17-collections|CollectionsFermeesTests'
+
+# Salve 2, lot « rendu » : Q4, Q5, Q6 et Q16, les écarts entre l'écran et le PDF.
+# Chacun éprouvé à la main avant d'être écrit ici : appliqué, la cible tombée, restauré.
+
+# Q4 : l'écran rentrait le filet d'une demi-épaisseur. La marge qui le recentre ôtée,
+# le contour commun des blocs rentre de nouveau d'une demi-épaisseur — la recette de Q4
+# le voit sur vingt côtés sur quarante-huit (image, textes, groupe), celle de C1,
+# resserrée, sur ses douze.
+saboter "à l'écran, le filet d'un bloc rentre de nouveau dans le bloc" \
+    MyPublisher/Views/PageCanvas.axaml \
+    $'            <Setter Property="Margin" Value="{Binding StrokeThickness, Converter={x:Static conv:Conv.FiletCentre}}"/>\n' \
+    '' \
+    'Q4-filet|C1-fond'
+
+# L'ellipse a son propre élément : seule la recette de Q4 la porte.
+saboter "à l'écran, le filet d'une ellipse rentre dans la forme" \
+    MyPublisher/Views/PageCanvas.axaml \
+    $'<Ellipse IsVisible="{Binding IsEllipse}"\n                         Margin="{Binding StrokeThickness, Converter={x:Static conv:Conv.FiletCentre}}"' \
+    '<Ellipse IsVisible="{Binding IsEllipse}"' \
+    'Q4-filet'
+
+# Q5 : l'export ne découpe plus les blocs d'un groupe. Le texte de 400 pt court de
+# nouveau 280 pt au-delà de son groupe dans le PDF, et pas à l'écran.
+saboter "l'export ne découpe plus au groupe" \
+    MyPublisher.Core/Services/PdfExporter.cs \
+    $'            gfx.IntersectClip(new XRect(zone.Left, zone.Top, zone.Width, zone.Height));\n' \
+    '' \
+    'Q5-groupe'
+
+# Q5 : la découpe ramenée au cadre exact du porteur rogne de moitié, à l'écran comme
+# au PDF, le filet d'un bloc posé sur le bord d'un groupe ou d'un tableau.
+saboter "la découpe d'un groupe rogne le filet de ses blocs" \
+    MyPublisher.Core/Models/Decoupe.cs \
+    'return new Extent(-marge, -marge, largeur + marge, hauteur + marge);' \
+    'return new Extent(0, 0, largeur, hauteur);' \
+    'Q5-groupe|DecoupeTests'
+
+# Q6 : la découpe d'un remplissage par image oublie l'arrondi, au PDF puis à l'écran.
+# Avant Q6, ces deux-là traversaient toute la vérification : la page de C5 ne portait
+# pas de bloc arrondi rempli d'une image.
+saboter "au PDF, un remplissage par image oublie l'arrondi du bloc" \
+    MyPublisher.Core/Services/PdfExporter.cs \
+    $'        else if (pourtour.Arrondi > 0)\n        {\n            chemin.AddRoundedRectangle(' \
+    $'        else if (pourtour.Arrondi < 0)\n        {\n            chemin.AddRoundedRectangle(' \
+    'C5-Q6-fonds'
+
+saboter "à l'écran, un remplissage par image oublie l'arrondi du bloc" \
+    MyPublisher/Views/FondBloc.cs \
+    ': (Geometry)new RectangleGeometry(rect, Arrondi, Arrondi);' \
+    ': (Geometry)new RectangleGeometry(rect);' \
+    'C5-Q6-fonds'
+
+# Q16 : le pointillé d'un bloc image ne regarde plus si l'image est chargée, puis ne
+# regarde plus l'interrupteur des repères. Chacune des deux conditions a son test.
+saboter "le pointillé d'un bloc image se dessine sur l'image chargée" \
+    MyPublisher/Views/PageCanvas.axaml \
+    $'                            <Binding Path="#Photo.Source" Converter="{x:Static ObjectConverters.IsNull}"/>\n' \
+    '' \
+    'Q16-pointille|PointilleTests'
+
+saboter "le pointillé d'un bloc image n'obéit plus aux repères" \
+    MyPublisher/Views/PageCanvas.axaml \
+    $'                            <Binding Path="#Board.((vm:MainWindowViewModel)DataContext).ShowGuides"/>\n                            <Binding Path="#Photo.Source"' \
+    '                            <Binding Path="#Photo.Source"' \
+    'Q16-pointille|PointilleTests'
+
+# Relecture du lot « rendu », 12 octobre 2026. La marge seule ne centrait que les filets
+# dont la demi-épaisseur est un point entier : Avalonia l'arrondissait au point, en
+# arrondi bancaire. Rétabli sur l'un des trois éléments du filet, l'arrondi remet les
+# filets de 1 et de 3 pt à un demi-point du PDF.
+saboter "à l'écran, le contour commun reprend l'arrondi de mise en page" \
+    MyPublisher/Views/PageCanvas.axaml \
+    $'            <Setter Property="UseLayoutRounding" Value="False"/>\n' \
+    '' \
+    'Q4-filet'
+
+saboter "à l'écran, le rectangle d'une forme reprend l'arrondi de mise en page" \
+    MyPublisher/Views/PageCanvas.axaml \
+    $'                           Margin="{Binding StrokeThickness, Converter={x:Static conv:Conv.FiletCentre}}"\n                           UseLayoutRounding="False"' \
+    '                           Margin="{Binding StrokeThickness, Converter={x:Static conv:Conv.FiletCentre}}"' \
+    'Q4-filet'
+
+saboter "à l'écran, l'ellipse d'une forme reprend l'arrondi de mise en page" \
+    MyPublisher/Views/PageCanvas.axaml \
+    $'                         Margin="{Binding StrokeThickness, Converter={x:Static conv:Conv.FiletCentre}}"\n                         UseLayoutRounding="False"' \
+    '                         Margin="{Binding StrokeThickness, Converter={x:Static conv:Conv.FiletCentre}}"' \
+    'Q4-filet|C5-Q6-fonds'
+
+# Le sabotage du relecteur, qui passait toute la vérification : la demi-épaisseur
+# arrondie à l'entier inférieur. Les filets de 4 pt restent justes ; ceux de 1 et de
+# 3 pt, non.
+saboter "la marge qui centre le filet est arrondie à l'entier inférieur" \
+    MyPublisher/Converters/Conv.cs \
+    'new(epaisseur => new Thickness(-Math.Max(0, epaisseur) / 2));' \
+    'new(epaisseur => new Thickness(-Math.Floor(Math.Max(0, epaisseur) / 2)));' \
+    'Q4-filet'
+
+# Q5 : un bloc tourné ne compte plus que t/2. La pointe d'onglet de son angle, qui sort
+# de t/2·√2, est émoussée par la découpe du groupe.
+saboter "la découpe d'un groupe émousse la pointe d'un bloc tourné" \
+    MyPublisher.Core/Models/Decoupe.cs \
+    'marge = Math.Max(marge, Tourne(bloc) ? propre * Math.Sqrt(2) : propre);' \
+    'marge = Math.Max(marge, propre);' \
+    'Q5-groupe|DecoupeTests'
+
+# Q9 : la vignette espace ses filets du corps, comme le faisait AbsoluteLineHeight,
+# et non de l'avance que la composition donne. Le compte des filets ne bouge pas ;
+# leur place, si.
+saboter "la vignette espace ses filets du corps et non de la hauteur naturelle" \
+    MyPublisher/Views/TemplatePreview.cs \
+    'yield return (x, descente + ligne.Haut, run, ligne.Avance);' \
+    'yield return (x, descente + ligne.Haut * text.FontSize / metriques.Naturelle(commun), run, ligne.Avance);' \
+    'Q9-vignette|VignetteTests'
+
+# Q9, après relecture : le fer et la longueur des filets, la découpe au bloc, le filet
+# d'un champ et la mémoire des filets. Chacun passait à travers un test qui ne lisait
+# que l'ordonnée des filets du bulletin.
+saboter "la vignette perd le fer : chaque filet part du retrait et court sur toute la colonne" \
+    MyPublisher/Views/TemplatePreview.cs \
+    'var justifiee = ligne.Fer == TextAlign.Justify && !ligne.FinDeParagraphe;' \
+    'var justifiee = true;' \
+    'Q9-vignette|VignetteTests'
+
+saboter "la vignette ne découpe plus ses filets au bloc" \
+    MyPublisher/Views/TemplatePreview.cs \
+    'using var _ = context.PushClip(new Rect(text.X, text.Y, text.Width, text.Height));' \
+    '' \
+    'Q9-vignette|VignetteTests'
+
+saboter "un champ ne laisse plus de filet dans la vignette" \
+    MyPublisher/Views/TemplatePreview.cs \
+    'yield return (0, 0, width, Compositeur.Avance(metriques.Naturelle(commun), text.LineHeight));' \
+    '' \
+    'Q9-vignette|VignetteTests'
+
+saboter "la vignette garde les filets du premier document qu'on lui pose" \
+    MyPublisher/Views/TemplatePreview.cs \
+    'if (!ReferenceEquals(document, _filetsDe) || box != _filetsA)' \
+    'if (_filetsDe is null)' \
+    'Q9-vignette|VignetteTests'
+
+# La fusion de C5b et de Q9 : la vignette compose et peint ses filets par la charte du
+# modèle, comme la page. Les modèles prennent leurs couleurs et leurs polices dans leur
+# jeu : sans la charte, un filet n'a plus la couleur du texte, ni ses lignes.
+saboter "la vignette peint ses filets sans résoudre la couleur du jeu" \
+    MyPublisher/Views/TemplatePreview.cs \
+    'var brush = Conv.ToBrush(charte.Couleur(text.Foreground)) ?? Brushes.Black;' \
+    'var brush = Conv.ToBrush(text.Foreground) ?? Brushes.Black;' \
+    'Q9-vignette|VignetteTests'
+
+saboter "la vignette compose ses filets sans résoudre la police du jeu" \
+    MyPublisher/Views/TemplatePreview.cs \
+    '        var commun = charte.StyleCommun(text);' \
+    '        var commun = new StyleEffectif(text.FontFamily, text.FontSize, text.Bold, text.Italic, text.Foreground, 0);' \
+    'Q9-vignette|VignetteTests'
+
 echo
 if [ "$trous" = 0 ]; then
     echo "Le juge sait échouer : $sabotages sabotages, $sabotages attrapés."

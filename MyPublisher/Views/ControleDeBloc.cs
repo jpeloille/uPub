@@ -67,7 +67,8 @@ public abstract class ControleDeBloc : Control
 
     /// <summary>
     /// On s'abonne au bloc et à ses deux collections d'écarts — ajouter un fragment de
-    /// style ne change aucune propriété du bloc.
+    /// style ne change aucune propriété du bloc. S'abonner aux collections une fois
+    /// suffit : elles ne se remplacent pas après la construction du bloc (poste Q17).
     /// </summary>
     private void Suivre(AvaloniaPropertyChangedEventArgs e)
     {

@@ -63,9 +63,16 @@
             <Setter Property="Arrondi" Value="{Binding CornerRadius}"/>
             <Setter Property="IsHitTestVisible" Value="False"/>
         </Style>
-        <!-- La couleur du contour passe par la charte héritée de la page : un contour pris
-             dans le jeu de couleurs suit le jeu (poste C5b). -->
+        <!-- Le filet est CENTRÉ sur le bord, comme à l'export : un Rectangle rentre son
+             trait dans ses limites, on l'élargit donc d'une demi-épaisseur (poste Q4).
+             Sans arrondi de mise en page : sous la mise à l'échelle, Avalonia arrondirait
+             cette marge au point entier, en arrondi bancaire — un filet de 1 pt resterait
+             décalé d'un demi-point, un de 3 pt aussi (relecture du 12 octobre 2026).
+             Sa couleur passe par la charte héritée de la page : un contour pris dans le
+             jeu de couleurs suit le jeu (poste C5b). -->
         <Style Selector="Rectangle.frameStroke" x:DataType="models:Frame">
+            <Setter Property="Margin" Value="{Binding StrokeThickness, Converter={x:Static conv:Conv.FiletCentre}}"/>
+            <Setter Property="UseLayoutRounding" Value="False"/>
             <Setter Property="Stroke">
                 <MultiBinding Converter="{x:Static conv:CouleurDuJeu.Pinceau}">
                     <Binding Path="Stroke"/>
@@ -94,7 +101,11 @@
                      poser. C'est aussi l'ordre de l'export, qui a cessé pour cela de
                      tracer la forme d'un seul trait. -->
                 <views:FondBloc Classes="frameFill" Ellipse="{Binding IsEllipse}"/>
+                <!-- Centrés sur le bord, comme le filet de tout bloc (poste Q4), et pour la
+                     même raison sans arrondi de mise en page. -->
                 <Rectangle IsVisible="{Binding IsRectangle}"
+                           Margin="{Binding StrokeThickness, Converter={x:Static conv:Conv.FiletCentre}}"
+                           UseLayoutRounding="False"
                            StrokeThickness="{Binding StrokeThickness}"
                            StrokeDashArray="{Binding StrokeStyle, Converter={x:Static conv:Conv.Dash}}"
                            RadiusX="{Binding CornerRadius}"
@@ -107,6 +118,8 @@
                     </Rectangle.Stroke>
                 </Rectangle>
                 <Ellipse IsVisible="{Binding IsEllipse}"
+                         Margin="{Binding StrokeThickness, Converter={x:Static conv:Conv.FiletCentre}}"
+                         UseLayoutRounding="False"
                          StrokeThickness="{Binding StrokeThickness}"
                          StrokeDashArray="{Binding StrokeStyle, Converter={x:Static conv:Conv.Dash}}">
                     <Ellipse.Stroke>
@@ -124,11 +137,22 @@
                    RenderTransformOrigin="50%,50%"
                    RenderTransform="{Binding Rotation, Converter={x:Static conv:Conv.Rotate}}">
                 <views:FondBloc Classes="frameFill"/>
-                <!-- Repère visible tant qu'aucune image n'est chargée. -->
-                <Rectangle Stroke="#FFB0B0B0" StrokeThickness="0.5" StrokeDashArray="4,3"/>
+                <!-- Repère visible tant qu'aucune image n'est chargée, et seulement si les
+                     repères le sont : il ne s'imprime pas. Jusqu'au poste Q16, il était
+                     toujours dessiné — une image cadrée sans déformation le laissait voir
+                     sur le bord du bloc, et il entrait dans toute comparaison au PDF. -->
+                <Rectangle Classes="emplacementImage"
+                           Stroke="#FFB0B0B0" StrokeThickness="0.5" StrokeDashArray="4,3">
+                    <Rectangle.IsVisible>
+                        <MultiBinding Converter="{x:Static BoolConverters.And}">
+                            <Binding Path="#Board.((vm:MainWindowViewModel)DataContext).ShowGuides"/>
+                            <Binding Path="#Photo.Source" Converter="{x:Static ObjectConverters.IsNull}"/>
+                        </MultiBinding>
+                    </Rectangle.IsVisible>
+                </Rectangle>
                 <!-- Même découpage que pour le texte : le chemin passe par le résolveur,
                      ce qui permet à un bloc de porter le logo du jeu de coordonnées. -->
-                <Image Stretch="{Binding Fit, Converter={x:Static conv:Conv.Fit}}">
+                <Image x:Name="Photo" Stretch="{Binding Fit, Converter={x:Static conv:Conv.Fit}}">
                     <Image.Source>
                         <MultiBinding Converter="{x:Static conv:FieldToImage.Instance}">
                             <Binding Path="Path"/>
@@ -231,7 +255,17 @@
                    RenderTransformOrigin="50%,50%"
                    RenderTransform="{Binding Rotation, Converter={x:Static conv:Conv.Rotate}}">
                 <views:FondBloc Classes="frameFill"/>
-                <ItemsControl Classes="frames" ItemsSource="{Binding Children}">
+                <!-- Les blocs sont découpés à la zone que le noyau calcule, la même qu'à
+                     l'export (poste Q5), et non au cadre du groupe comme le ferait le
+                     thème : un filet centré sur le bord du groupe y perdrait sa moitié. -->
+                <ItemsControl Classes="frames" ItemsSource="{Binding Children}" ClipToBounds="False">
+                    <ItemsControl.Clip>
+                        <MultiBinding Converter="{x:Static conv:DecoupeDesBlocs.Instance}">
+                            <Binding/>
+                            <Binding Path="Width"/>
+                            <Binding Path="Height"/>
+                        </MultiBinding>
+                    </ItemsControl.Clip>
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
                             <Canvas/>
@@ -252,7 +286,16 @@
                    RenderTransformOrigin="50%,50%"
                    RenderTransform="{Binding Rotation, Converter={x:Static conv:Conv.Rotate}}">
                 <views:FondBloc Classes="frameFill"/>
-                <ItemsControl Classes="frames" ItemsSource="{Binding CellFrames}">
+                <!-- Même découpe qu'un groupe, lue au même endroit. -->
+                <ItemsControl Classes="frames" ItemsSource="{Binding CellFrames}" ClipToBounds="False">
+                    <ItemsControl.Clip>
+                        <MultiBinding Converter="{x:Static conv:DecoupeDesBlocs.Instance}">
+                            <Binding/>
+                            <Binding Path="Width"/>
+                            <Binding Path="Height"/>
+                            <Binding Path="CellFrames"/>
+                        </MultiBinding>
+                    </ItemsControl.Clip>
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
                             <Canvas/>

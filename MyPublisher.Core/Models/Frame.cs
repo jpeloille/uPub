@@ -515,7 +515,6 @@ public partial class TextFrame : Frame
     private string _fontFamily = "DejaVu Sans";
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(AbsoluteLineHeight))]
     [property: JsonPropertyOrder(120)]
     private double _fontSize = 11;
 
@@ -536,17 +535,26 @@ public partial class TextFrame : Frame
     /// documents écrits jusqu'ici — veut dire que le bloc est d'un seul style, et rien
     /// ne change pour lui : c'est pourquoi cette addition ne demande aucune migration
     /// et laisse <c>FormatVersion</c> à 3.
+    ///
+    /// La collection se remplit et se vide, elle ne se remplace pas : l'accesseur en
+    /// écriture n'existe qu'à la construction (<c>init</c>), pour l'initialiseur et le
+    /// sérialiseur — poste Q17. Un contrôle qui dessine le bloc s'abonne à CETTE
+    /// collection-ci ; une collection remplacée sous lui le laisserait sourd à la
+    /// nouvelle et accroché à l'ancienne, sans que rien ne le dise.
     /// </summary>
     [JsonPropertyOrder(160)]
-    public ObservableCollection<StyleSpan> Spans { get; set; } = [];
+    public ObservableCollection<StyleSpan> Spans { get; init; } = [];
 
     [ObservableProperty]
     [property: JsonPropertyOrder(170)]
     private TextAlign _align = TextAlign.Left;
 
-    /// <summary>Interligne exprimé en multiple du corps.</summary>
+    /// <summary>
+    /// Interligne exprimé en multiple de la hauteur naturelle de la police, et non du
+    /// corps : c'est la sémantique de R4 (cf. <see cref="Compositeur.Avance"/>). La
+    /// propriété qui en tirait encore <c>FontSize × LineHeight</c> est partie au poste Q9.
+    /// </summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(AbsoluteLineHeight))]
     [property: JsonPropertyOrder(180)]
     private double _lineHeight = 1.25;
 
@@ -627,9 +635,12 @@ public partial class TextFrame : Frame
     /// dire que le bloc est d'un seul tenant — et dans les documents réels, il ne l'est
     /// pas : un même bloc d'ATA 21 mêle des paragraphes au fer à gauche et des listes à
     /// puces en retrait négatif.
+    ///
+    /// Remplie et vidée, jamais remplacée après la construction : voir
+    /// <see cref="Spans"/>, poste Q17.
     /// </summary>
     [JsonPropertyOrder(290)]
-    public ObservableCollection<ParagraphSpan> Paragraphs { get; set; } = [];
+    public ObservableCollection<ParagraphSpan> Paragraphs { get; init; } = [];
 
     /// <summary>
     /// Nombre de colonnes à l'intérieur du bloc (<c>fo:column-count</c>). Une seule est
@@ -690,8 +701,6 @@ public partial class TextFrame : Frame
     [ObservableProperty]
     [property: JsonIgnore]
     private bool _isEditing;
-
-    [JsonIgnore] public double AbsoluteLineHeight => FontSize * LineHeight;
 
     [JsonIgnore] public override string Kind => "Texte";
 
