@@ -501,13 +501,13 @@ saboter "au PDF, un remplissage par image oublie l'arrondi du bloc" \
     MyPublisher.Core/Services/PdfExporter.cs \
     $'        else if (pourtour.Arrondi > 0)\n        {\n            chemin.AddRoundedRectangle(' \
     $'        else if (pourtour.Arrondi < 0)\n        {\n            chemin.AddRoundedRectangle(' \
-    'C5-fonds'
+    'C5-Q6-fonds'
 
 saboter "à l'écran, un remplissage par image oublie l'arrondi du bloc" \
     MyPublisher/Views/FondBloc.cs \
     ': (Geometry)new RectangleGeometry(rect, Arrondi, Arrondi);' \
     ': (Geometry)new RectangleGeometry(rect);' \
-    'C5-fonds'
+    'C5-Q6-fonds'
 
 # Q16 : le pointillé d'un bloc image ne regarde plus si l'image est chargée, puis ne
 # regarde plus l'interrupteur des repères. Chacune des deux conditions a son test.
@@ -543,7 +543,7 @@ saboter "à l'écran, l'ellipse d'une forme reprend l'arrondi de mise en page" \
     MyPublisher/Views/PageCanvas.axaml \
     $'                         Margin="{Binding StrokeThickness, Converter={x:Static conv:Conv.FiletCentre}}"\n                         UseLayoutRounding="False"' \
     '                         Margin="{Binding StrokeThickness, Converter={x:Static conv:Conv.FiletCentre}}"' \
-    'Q4-filet|C5-fonds'
+    'Q4-filet|C5-Q6-fonds'
 
 # Le sabotage du relecteur, qui passait toute la vérification : la demi-épaisseur
 # arrondie à l'entier inférieur. Les filets de 4 pt restent justes ; ceux de 1 et de

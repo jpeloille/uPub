@@ -75,7 +75,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **Q3** | Le cache d'images oublie ses échecs | **100 %** | L'ouverture d'un document (fichier ou modèle) oublie les échecs du cache, et eux seuls ; insérer une image ou la choisir pour un fond relit le fichier. L'annulation ne relit pas le disque. Recette dans `Scripts/recettes/` |
 | **Q4** | Un filet au même endroit à l'écran et au PDF | **100 %** | L'écran élargit l'élément du filet d'une demi-épaisseur, sans arrondi au pixel de mise en page : centré sur le bord comme à l'export, de 0,5 à 5 pt (écart ≤ 0,01 pt mesuré à 8 px/pt). Les recettes de C1 et C5 resserrées en conséquence. Recette dans `Scripts/recettes/` |
 | **Q5** | Un groupe rogne pareil à l'écran et au PDF | **100 %** | Découpe calculée dans le noyau (`Decoupe`), lue par l'écran et l'export, groupes et tableaux, tournés et imbriqués ; elle déborde du plus large demi-filet des blocs portés (√2 fois pour un bloc tourné). Recette dans `Scripts/recettes/` |
-| **Q6** | Mesurer la découpe d'un remplissage par image | **100 %** | Bloc arrondi rempli d'une image dans le document de C5 ; ses coins sont relevés au PDF et à l'écran, et les deux sabotages de la découpe tombent |
+| **Q6** | Mesurer la découpe d'un remplissage par image | **100 %** | Bloc arrondi rempli d'une image dans le document de C5 ; ses coins sont relevés au PDF et à l'écran, et les deux sabotages de la découpe tombent ; recette `C5-Q6-fonds` dans `Scripts/recettes/` |
 | **Q7** | La recette de A6 sur le cas réel | 0 % | Relevé à la relecture du 7 septembre |
 | **Q8** | N'avertir que des polices dessinées | **100 %** | La passe des polices lit les styles composés (`StyleEffectif.Decouper`) sur le contenu que `DrawText` compose, cases de tableau comprises ; un fragment recouvert, blanc, hors du texte, ou celui d'un champ n'avertit plus. Une seule règle `Fragments` pour la passe et le dessin. Recette dans `Scripts/recettes/` |
 | **Q9** | Retirer `AbsoluteLineHeight` | 0 % | Relevé en A2 : survivant de l'ancienne sémantique de l'interligne |
@@ -1878,7 +1878,7 @@ un angle ; les deux radiaux — depuis un coin, depuis le centre — ne sont pas
 
 #### La recette, et le sabotage qu'elle a laissé passer
 
-`Scripts/recettes/C5-fonds.sh`, en deux temps. Le premier porte sur ATA 21 lui-même : les
+`Scripts/recettes/C5-Q6-fonds.sh` (nommée `C5-fonds.sh` avant Q6), en deux temps. Le premier porte sur ATA 21 lui-même : les
 cinq remplissages par image arrivent, les cinq fichiers sont écrits, un seul quart de tour,
 et `pdfimages -list` donne la définition posée de chaque image en largeur et en hauteur —
 elles ne sont égales que si l'image n'a pas été étirée de travers. Le second mesure neuf
