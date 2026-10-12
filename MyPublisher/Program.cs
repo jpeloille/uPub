@@ -117,6 +117,11 @@ sealed class Program
     /// lance aussi d'une session sans affichage. Les polices sont celles de
     /// <see cref="BuildAvaloniaApp"/>, la collection des documents comprise, pour que la mesure soit
     /// celle de l'application et non une voisine.
+    ///
+    /// Sans la porte privée d'Avalonia (<see cref="PolicesDuDocument.Indisponible"/>),
+    /// l'export REFUSE : la mesure de l'écran dépendrait alors de ce que ce processus-ci
+    /// a chargé, et non de ce que l'application aurait montré. Il échoue avant d'écrire,
+    /// avec un code non nul — un PDF muet et vert est ce que la relecture de Q13 a trouvé.
     /// </summary>
     private static Compositeur.IMetriques MesureDeLEcran()
     {
@@ -128,6 +133,12 @@ sealed class Program
                 .AvecLesPolicesDeMyPublisher()
                 .UseWindowingSubsystem(() => { }, "aucun")
                 .SetupWithoutStarting();
+        }
+
+        if (PolicesDuDocument.Indisponible is { } motif)
+        {
+            throw new InvalidOperationException(
+                $"la mesure de l'écran est indisponible, aucun PDF n'est écrit. {motif}");
         }
 
         return new MetriquesAvalonia();
