@@ -25,13 +25,20 @@ namespace MyPublisher.Banc;
 internal static class Mots
 {
     /// <summary>
-    /// Les ordres de chargement des faces. « gras » charge le gras d'abord : c'est
-    /// l'ordre qui, avant Q13, faisait sortir l'italique absent de DejaVu Sans en gras.
+    /// Les ordres de chargement des faces, chacun choisi pour un état de la résolution
+    /// d'Avalonia d'avant Q13. Sondé le 12 octobre 2026 sur DejaVu Serif, qui n'a pas
+    /// d'italique : l'italique demandé sort en GRAS penché quand le gras est la seule
+    /// face de la famille déjà chargée, en romain penché dès que le romain l'est, ou
+    /// que rien ne l'est. Charger « gras, gras italique, romain, italique » donne donc
+    /// le romain : il faut demander l'italique entre le gras et le romain.
+    ///
+    /// « romain » demande l'italique après le seul romain, « gras » après le seul gras,
+    /// « italique » avant toute autre face.
     /// </summary>
     private static readonly Dictionary<string, (bool Gras, bool Italique)[]> Ordres = new()
     {
-        ["romain"] = [(false, false), (true, false), (false, true), (true, true)],
-        ["gras"] = [(true, false), (true, true), (false, false), (false, true)],
+        ["romain"] = [(false, false), (false, true), (true, false), (true, true)],
+        ["gras"] = [(true, false), (false, true), (true, true), (false, false)],
         ["italique"] = [(false, true), (true, true), (true, false), (false, false)],
     };
 
