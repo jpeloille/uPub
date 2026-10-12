@@ -171,4 +171,29 @@ public class DoubleClicTests
         Rendu.Battre();
         Assert.Equal(avant, DocumentSerializer.ToJson(vm.Document));
     }
+
+    [AvaloniaFact]
+    [Trait("poste", "Q14")]
+    public void Revenir_au_point_de_prise_dans_le_meme_geste_ramene_le_bloc()
+    {
+        // La garde ne se contente pas de ne rien faire quand le pointeur est à son point
+        // de prise : elle remet le bloc à son départ. Un geste qui part puis revient
+        // exactement là où il a pris le bloc doit le rendre là où il était, et non le
+        // laisser au dernier endroit où le pointeur l'a mené. Alt écarte l'aimantation.
+        var bloc = new ShapeFrame { Name = "A", X = 100, Y = 100, Width = 100, Height = 100 };
+        var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(bloc));
+        var prise = SurLaPage(fenetre, 150, 150);
+
+        fenetre.MouseDown(prise, MouseButton.Left);
+        fenetre.MouseMove(new Point(prise.X + 40, prise.Y + 30),
+            RawInputModifiers.LeftMouseButton | RawInputModifiers.Alt);
+        Rendu.Battre();
+        Assert.Equal((140.0, 130.0), (bloc.X, bloc.Y));
+
+        fenetre.MouseMove(prise, RawInputModifiers.LeftMouseButton | RawInputModifiers.Alt);
+        fenetre.MouseUp(prise, MouseButton.Left, RawInputModifiers.Alt);
+        Rendu.Battre();
+
+        Assert.Equal((100.0, 100.0), (bloc.X, bloc.Y));
+    }
 }

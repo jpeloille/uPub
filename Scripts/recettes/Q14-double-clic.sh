@@ -30,6 +30,8 @@
 #      et l'arrondi remontait dans le modèle ;
 #   3. un glissé d'un point, lui, déplace le bloc d'un point et empile son pas, que
 #      l'annulation défait jusqu'au document d'ouverture.
+#   4. un geste qui part et revient exactement au point de prise rend le bloc à son
+#      départ : la garde ne fait pas que s'abstenir, elle remet le bloc en place.
 #
 set -euo pipefail
 export LC_ALL=C
@@ -59,7 +61,7 @@ if [ -z "${MYPUBLISHER_DEJA_COMPILE:-}" ] && ! dotnet build MyPublisher.sln -c D
     exit 1
 fi
 
-attendus=3
+attendus=4
 if ! dotnet test MyPublisher.Tests.Interface/MyPublisher.Tests.Interface.csproj ${MYPUBLISHER_DEJA_COMPILE:+--no-build} \
         --nologo -v q --filter "poste=Q14" > "$travail/tests.txt" 2>&1; then
     sed 's/^/    /' "$travail/tests.txt" >&2

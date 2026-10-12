@@ -425,6 +425,16 @@ saboter "un mouvement nul du pointeur aimante le bloc cliqué" \
     'if (dx == 0 && dy == 0 && _moveStart.Count < 0)' \
     'Q14-double-clic|DoubleClicTests'
 
+# Q14, repris après relecture : la garde ne fait pas que s'abstenir, elle remet le bloc
+# à son départ. Sans cette remise, un geste qui part puis revient au point de prise
+# laisse le bloc là où le pointeur l'avait mené ; aucun des trois premiers tests ne le
+# voyait.
+saboter "un geste revenu au point de prise laisse le bloc où il était allé" \
+    MyPublisher/Views/PageCanvas.axaml.cs \
+    'frame.X = startX;' \
+    '' \
+    'Q14-double-clic|DoubleClicTests'
+
 echo
 if [ "$trous" = 0 ]; then
     echo "Le juge sait échouer : $sabotages sabotages, $sabotages attrapés."
