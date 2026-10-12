@@ -65,6 +65,21 @@ public class DoubleClicTests
         fenetre.MouseUp(point, MouseButton.Left);
     }
 
+    // Pourquoi les deux tests du double-clic sélectionnent le bloc AVANT le geste, par le
+    // modèle de vue, au lieu de laisser le premier clic le prendre.
+    //
+    // Avalonia reconnaît un double-clic à l'horloge : deux pressions à moins de 500 ms. Le
+    // banc sans tête date chaque pression du moment où il la livre, et une pression sur un
+    // bloc non sélectionné ne rend la main qu'une fois le panneau recomposé — mesuré le
+    // 12 octobre 2026 : 170 à 470 ms la pression, sur une machine au repos (poste Q23).
+    // Le test du bloc tourné tombait une fois sur deux. Le bloc déjà sélectionné, chaque
+    // pression tient sous 130 ms.
+    //
+    // Rien de ce que Q14 éprouve n'est perdu : le relevé d'avant est pris avant cette
+    // sélection — un panneau qui réécrirait le bloc en l'affichant serait vu —, et le
+    // geste passe toujours par la pression, le mouvement nul et le relâchement, où
+    // l'aimantation mordait.
+
     [AvaloniaFact]
     [Trait("poste", "Q14")]
     public void Un_double_clic_ouvre_la_saisie_sans_rien_reecrire()
@@ -81,14 +96,17 @@ public class DoubleClicTests
 
         foreach (var bloc in blocs)
         {
-            // Rien n'est sélectionné : le premier clic prend le bloc et arme le
-            // déplacement, le second ouvre la saisie. C'est le geste entier.
+            // Rien n'est sélectionné au relevé ; puis le bloc l'est, comme le premier clic
+            // l'aurait fait (voir plus haut pourquoi pas par lui). Le premier clic arme
+            // le déplacement, le second ouvre la saisie.
             vm.SetSelection([]);
             Rendu.Battre();
             Assert.False(vm.CanUndo);
             Assert.False(vm.IsDirty);
 
             var avant = DocumentSerializer.ToJson(vm.Document);
+            vm.SetSelection([bloc]);
+            Rendu.Battre(8);
             var centre = SurLaPage(fenetre, bloc.X + bloc.Width / 2, bloc.Y + bloc.Height / 2);
 
             Cliquer(fenetre, centre);
@@ -129,6 +147,8 @@ public class DoubleClicTests
         var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(bloc));
         var avant = DocumentSerializer.ToJson(vm.Document);
 
+        vm.SetSelection([bloc]);
+        Rendu.Battre(8);
         var centre = SurLaPage(fenetre, bloc.X + bloc.Width / 2, bloc.Y + bloc.Height / 2);
         Cliquer(fenetre, centre);
         Cliquer(fenetre, centre);

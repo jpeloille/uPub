@@ -92,12 +92,13 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **Q20** | La liste des polices garde la police du bloc | **100 %** | Trouvé par la relecture de C5b. La liste propose les polices du document absentes de la machine, libellées « (absente) », et la liaison ne renvoie jamais null au bloc. Recette dans `Scripts/recettes/` |
 | **Q21** | Un tremblement ne déplace pas le bloc | 0 % | Trouvé par la relecture de Q14 : un pixel de mouvement pendant le clic, près d'une marge, fait sauter le bloc de 3 pt par l'aimantation |
 | **Q22** | Un clic sur une poignée ne redimensionne pas | 0 % | Trouvé par la relecture de Q14 : une pression sans mouvement près d'un coin fait passer le bloc de 100 à 96 pt et empile un pas d'annulation |
+| **Q23** | Sélectionner un bloc ne fige pas la fenêtre | 0 % | Trouvé à la fusion de Q14 : une pression sur un bloc non sélectionné rend la main après 170 à 470 ms, le temps de recomposer le panneau ; les tests du double-clic s'en écartent en sélectionnant d'abord |
 | **D** | Moteur de composition | — | Décision non ouverte ; à rouvrir quand A, B et C sont livrées |
 
 **Par phase** — P : 4 sur 4 · A : 7 sur 15 · B : 3 sur 7 · C : 7 sur 9 · R : 5 sur 7 ·
-Q : 13 sur 22 · D : non planifié.
+Q : 13 sur 23 · D : non planifié.
 
-Soit **39 postes sur 64**. Le compte a doublé le 11 octobre 2026 sans que rien ne
+Soit **39 postes sur 65**. Le compte a doublé le 11 octobre 2026 sans que rien ne
 recule : il porte désormais les onze postes de l'audit des fiches (A8 à A15, B6, B7,
 C8), deux postes que les documents réels demandaient (R6, R7), et la phase Q, qui
 recense les défauts que les postes et les relectures ont **trouvés et consignés sans les
@@ -3994,6 +3995,29 @@ pointeur pour le coin, au lieu d'appliquer un écart au coin d'origine.
 *Recette* : au pointeur synthétisé, une pression puis un relâchement sur chacune des
 huit poignées laissent le bloc identique et l'historique vide. Effort : faible.
 
+### Q23 — Sélectionner un bloc ne fige pas la fenêtre
+
+*Trouvé le 12 octobre 2026, à la fusion de Q14 dans main.* Le test du double-clic sur un
+bloc tourné tombait une fois sur deux, sur une machine au repos. Avalonia reconnaît un
+double-clic à l'horloge — deux pressions à moins de 500 ms —, et le banc sans tête date
+chaque pression du moment où il la livre. Mesuré au chronomètre autour de la pression :
+sur un bloc non sélectionné, elle rend la main après **170 à 470 ms** (ATA 21, 3 passes),
+la première d'un processus jusqu'à 720 ms ; sur un bloc déjà sélectionné, sous 130 ms.
+Un clic d'échauffement ne suffit pas : ce n'est pas la compilation à la volée, c'est la
+sélection elle-même, chaque fois. La cause n'est pas cherchée ; le panneau recomposé à
+chaque changement de sélection est le premier suspect (la liste des polices, faite de
+toutes celles de la machine, en est un candidat).
+
+Pour l'utilisateur, une vraie plate-forme date le clic à la frappe et le double-clic
+reste reconnu, mais la fenêtre ne répond pas pendant ce temps. En attendant, les deux
+tests du double-clic sélectionnent le bloc par le modèle de vue avant le geste — le
+relevé d'avant est pris plus tôt, si bien que rien de Q14 n'est perdu.
+
+*Recette* : au pointeur synthétisé, sur ATA 21, la pression sur chaque bloc non
+sélectionné rend la main en moins de 100 ms (médiane de trois passes) ; les tests du
+double-clic reprennent le geste entier, le premier clic prenant le bloc, et passent vingt
+fois de suite. Effort : à mesurer — la cause d'abord.
+
 ---
 
 ## Ordre d'exécution
@@ -4007,7 +4031,7 @@ touchent, le second attend la salve suivante.
 |---|---|---|
 | **1** | Q1 · les sept recettes de P3 · Q2 · Q3 · Q12 | La dette qui abîme des données, le banc complet, et trois réparations courtes. **Fusionnée le 11 octobre 2026** |
 | **2** | Q4 à Q9 · Q13 à Q17 · B2 · C5b · Q20 | Les écarts écran ↔ PDF, et les deux postes d'usage qui ne demandent rien |
-| **3** | R6 · A8 · A9 · A15 · B7 · B4 | Le paragraphe au panneau, et des postes courts, indépendants les uns des autres |
+| **3** | R6 · A8 · A9 · A15 · B7 · B4 · Q23 | Le paragraphe au panneau, et des postes courts, indépendants les uns des autres |
 | **4** | R7 · A12 · C7 · B3 + B6 | Le texte riche à la souris, et ce qui reprend les commandes des salves précédentes |
 | **5** | A10 · A11 · A13 · Q10 · Q11 · Q21 · Q22 | La géométrie et la couche de saisie |
 | **6** | A14 · C8 · Q18 · Q19 | Les deux postes à risque, chacun précédé de son essai |
@@ -4096,7 +4120,7 @@ finissent toujours par se contredire.
 | **B** | B1 modèles · B2 import texte · B3 impression · B4 archive · B5 polices · B6 aperçu · B7 panneaux repliables | usage | — |
 | **C** | C1 remplissage · C2 repères · C3 sélection multiple · C4 champs · C5 couleurs · C6 marges · C7 bibliothèque · C8 miroir · C9 tableau | structure | P1, P2 |
 | **R** | R1 texte riche · R2 retraits · R3 colonnes · R4 interligne · R5 import `.pub` · R6 paragraphe au panneau · R7 texte riche à la souris | documents réels | R6 et R7 : Q1 |
-| **Q** | Q1 à Q22 | dettes consignées | — |
+| **Q** | Q1 à Q23 | dettes consignées | — |
 | **D** | moteur de composition | décision | Q13, puis A, B, C |
 
 Trois postes à faire en premier si l'on ne devait en retenir que trois, au
