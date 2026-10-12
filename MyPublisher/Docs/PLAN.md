@@ -1553,18 +1553,85 @@ du poste, et la recette avec eux. `Scripts/verifier.sh` passe en entier : 280 te
   devenant « � », plutôt que de faire relire tout le fichier en Latin-1, marque comprise.
 
 *Trouvé et laissé tel quel* :
-- un fichier UTF-16 n'est pas reconnu. Sa marque (FF FE ou FE FF) n'est jamais de
-  l'UTF-8 valide, et il se lit donc en Latin-1 : la marque devient « ÿþ » et chaque
-  octet nul un caractère nul. Non mesuré sur un fichier, déduit de l'ordre des essais.
-  Le plan ne le demandait pas ;
-- aucune borne de taille : un fichier est lu en entier et composé d'un coup. Rien n'a
-  mesuré ce que coûte un fichier de plusieurs mégaoctets ;
 - l'import remplace tout le texte du bloc, et n'insère pas au curseur de la saisie :
   la liaison ne transmet pas le curseur (voir Q1), et le geste ne le cherche pas ;
 - une case de tableau ne s'importe pas : le poste dit « le bloc sélectionné », et une
   case n'est pas un bloc qu'on sélectionne ;
 - la fiche 22 dit encore « `manquant` » pour « Text File… » : elle n'a pas été
   retouchée.
+
+*Repris le 12 octobre 2026, après la relecture du poste.* La relecture a trouvé six
+trous ; les six sont refermés, chacun avec ses tests et au moins un sabotage.
+- **Import pendant une saisie ouverte sur la page.** La transaction de l'import
+  s'emboîtait dans celle de la saisie et n'empilait rien : une seule annulation
+  défaisait la frappe et l'import ensemble, et la zone de saisie restait à l'écran sur
+  le texte neuf. Le geste passe maintenant par `MainWindow.ImporterTexte(chemin)`, qui
+  referme la saisie sur la page (`EndTextEdit`) et la transaction du panneau
+  (`ClosePropertyEdit`) avant d'appeler le modèle de vue ; celui-ci referme encore toute
+  transaction restée ouverte (`EndPendingEdit`) avant d'ouvrir la sienne. Deux tests
+  dans la fenêtre : une frappe sur la page puis un import font deux pas, et la zone
+  quitte l'écran ; une transaction ouverte comme le fait le panneau, puis un import,
+  font deux pas aussi.
+- **Binaire et UTF-16.** Les marques FF FE et FE FF sont reconnues, et le reste se lit en
+  UTF-16 strict ; un nombre impair d'octets derrière la marque est refusé. Un fichier
+  qui porte un octet nul ou un caractère de commande — hors tabulation, saut de ligne,
+  retour chariot et saut de page — est refusé, le message disant le caractère et sa
+  place : c'est ce qui arrête un binaire et un fichier UTF-16 sans marque, qui écrit
+  l'ASCII avec un octet nul sur deux.
+- **Taille.** Au-delà de 128 Kio, le fichier est refusé avant d'être lu. Mesuré dans la
+  fenêtre (le banc de la relecture, une ligne accentuée répétée, un bloc de
+  240 × 160 pt) : le premier rendu après l'import prend 0,8 s à 128 Kio, 1,5 s à
+  256 Kio, 3,2 s à 512 Kio, 6,6 s à 1 Mio. La relecture avait mesuré 19 s à 1 Mo et
+  près de 7 Go de mémoire à 10 Mo, dans une autre passe ; l'écart entre 19 s et 6,6 s
+  n'est pas expliqué.
+- **Latin-1 pris pour de l'UTF-8.** Le décodage UTF-8 était déjà strict, avec repli en
+  Windows-1252 sur toute séquence invalide. Il est durci d'un cas : de l'UTF-8 valide
+  qui donne un caractère de commande C1 (U+0080 à U+009F) se relit en Latin-1 — c'est
+  « Â » suivi de « ’ », « € » ou « œ » en Windows-1252. Ce qui reste est une **limite
+  documentée** (ici, dans `TexteImporte` et au README) : un fichier Latin-1 dont tous
+  les accents forment par hasard de l'UTF-8 valide se lit en UTF-8. Il faut qu'aucun
+  accent ne soit suivi d'une lettre ASCII ni d'un blanc ordinaire — un texte court en
+  capitales, « CAFÉ » suivi d'une espace insécable (C9 A0, lu « ɠ ») ; un seul « é »
+  ordinaire ailleurs dans le fichier le fait relire en Latin-1.
+- **Fichier vide.** Refusé, et avec lui un fichier qui ne porte qu'une fin de ligne ou
+  qu'une marque : lus, ils donnent un texte vide qui effaçait le bloc.
+- **Fichier sans droit de lecture.** Il était déjà refusé ; un test le montre
+  maintenant (`chmod 000` par `File.SetUnixFileMode`) : message à la barre d'état,
+  bloc, historique et indicateur de modification intacts. Le test vérifie d'abord que
+  le fichier est vraiment fermé, pour ne pas passer à vide sous root.
+
+Le refus est une exception du noyau, `TexteRefuseException`, dont le message passe tel
+quel à la barre d'état après « Import impossible : ». Les fichiers refusés — vide,
+binaire, trop gros, fermé — ont chacun leur test dans la fenêtre, qui vérifie aussi que
+rien n'est empilé.
+
+*Mesuré à la reprise.* Trente et un tests sous `poste=B2` : vingt purs, onze dans la
+fenêtre ; la recette en exige autant, et passe. Neuf sabotages de plus à la fin du
+juge, chacun appliqué à la main, vu tomber, puis restauré par `git checkout` — et les
+cinq premiers rejoués sur le code repris : tous tombent encore.Les neuf : la saisie sur la page laissée
+ouverte, l'import emboîté dans la transaction du panneau, la marque UTF-16
+petit-boutiste ignorée, l'octet nul admis, les autres commandes admises, la borne de
+taille centuplée, le repli C1 retiré, le texte vide admis, le refus d'un fichier fermé
+retiré. Chacun fait tomber au moins un test du poste, et la recette avec lui.
+`Scripts/verifier.sh` passe en entier : 290 tests purs, 116 d'interface,
+vingt-trois recettes.
+
+*Choisi sans certitude, à la reprise* :
+- **128 Kio.** Le seuil garde le premier rendu sous la seconde, mesuré sur une seule
+  machine ; il est bien au-dessus de ce qu'un bloc montre, et en dessous de ce qu'un
+  long document pourrait vouloir y verser d'un coup ;
+- **le saut de page (FF) est admis**, comme la consigne de la relecture le dit ; rien
+  n'a mesuré ce que la composition en fait ;
+- **un caractère C1 est refusé même lu en Latin-1** : Windows-1252 laisse cinq octets
+  sans lettre (81, 8D, 8F, 90, 9D), qui deviennent des commandes C1 ; un fichier qui les
+  porte n'est vraisemblablement pas du Windows-1252. Déduit, non mesuré sur un fichier ;
+- **un texte de blancs seuls est admis** : il n'est pas vide, et le refuser serait
+  deviner une intention.
+
+*Trouvé à la reprise et laissé tel quel* :
+- un fichier UTF-32 petit-boutiste commence par FF FE 00 00 : il est pris pour de
+  l'UTF-16 et refusé pour ses octets nuls, avec un message qui parle d'UTF-16 sans
+  marque. Déduit de l'ordre des essais, non mesuré ;
 
 ### B3 — Imprimer *(fiche 22)*
 

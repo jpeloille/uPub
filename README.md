@@ -196,10 +196,18 @@ la barre du haut regroupe les commandes du document : fichier, annulation, zoom.
 - Édition du texte directement sur la page (double-clic).
 - **Importer un texte** — *Insertion ▸ Importer un texte…*, ou le bouton du même nom au
   panneau d'un bloc de texte : un fichier texte remplit le bloc sélectionné, au style du
-  bloc. Il se lit en UTF-8, avec ou sans BOM, ou en Latin-1 quand il n'est pas de
-  l'UTF-8 valide (lu comme Windows-1252, qui garde aussi « ’ », « œ » et « € ») ; les
-  fins de ligne CRLF deviennent un seul saut. Un texte trop long se signale comme tout
-  autre, et une seule annulation rend le bloc d'avant.
+  bloc. Il se lit en UTF-8, avec ou sans BOM, en UTF-16 s'il porte sa marque (FF FE ou
+  FE FF), ou en Latin-1 quand il n'est pas de l'UTF-8 valide (lu comme Windows-1252, qui
+  garde aussi « ’ », « œ » et « € ») ; les fins de ligne CRLF deviennent un seul saut.
+  Un texte trop long se signale comme tout autre, et une seule annulation rend le bloc
+  d'avant ; une saisie ouverte sur la page est refermée d'abord, en un pas à elle.
+  Sont refusés, bloc intact et raison à la barre d'état : un fichier vide, un fichier
+  de plus de 128 Kio, un fichier qui porte un octet nul ou un caractère de commande
+  (un binaire, de l'UTF-16 sans marque), un fichier qu'on n'a pas le droit de lire.
+  *Limite* : un fichier Latin-1 dont tous les accents forment par hasard de l'UTF-8
+  valide — un texte court en capitales, « CAFÉ » suivi d'une espace insécable — se lit
+  en UTF-8 ; un seul « é » suivi d'une lettre ailleurs dans le fichier suffit à le
+  faire lire en Latin-1.
 - Ordre de superposition ; alignement (gauche, centre, droite, haut, milieu, bas) et
   répartition d'une sélection ; ajustement aux marges. L'alignement se fait par
   rapport à la zone de composition, ou — case *Disposition ▸ Par rapport aux marges*
