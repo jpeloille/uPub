@@ -42,7 +42,7 @@ public class DebordementExportTests
         var chemin = Path.Combine(Path.GetTempPath(), $"debordement-{Guid.NewGuid():N}.pdf");
         try
         {
-            return [.. PdfExporter.Export(document, chemin, date: new DateTime(2026, 9, 6)).Warnings];
+            return [.. PdfExporter.Export(document, chemin, ecran: null, date: new DateTime(2026, 9, 6)).Warnings];
         }
         finally
         {

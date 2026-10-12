@@ -85,7 +85,9 @@ public static class Conv
         new(factor => new ScaleTransform(factor, factor));
 
     public static readonly FuncValueConverter<string?, FontFamily> Font =
-        new(name => string.IsNullOrWhiteSpace(name) ? FontFamily.Default : new FontFamily(name));
+        // La collection des documents, comme le texte composé : la saisie ne doit pas
+        // montrer l'italique en gras quand l'affichage le montre penché (poste Q13).
+        new(name => string.IsNullOrWhiteSpace(name) ? FontFamily.Default : Views.PolicesDuDocument.Famille(name));
 
     public static readonly FuncValueConverter<Insets, Thickness> Pad =
         new(insets => new Thickness(insets.Left, insets.Top, insets.Right, insets.Bottom));

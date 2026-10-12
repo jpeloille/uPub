@@ -34,7 +34,10 @@ public static class Banc
     public static AppBuilder Configurer() =>
         AppBuilder.Configure<App>()
             .UseSkia()
-            .UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false });
+            .UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false })
+            // Les polices comme l'application les monte : sans cela, le banc mesurerait
+            // le texte autrement que l'écran qu'il prétend reproduire (poste Q13).
+            .AvecLesPolicesDeMyPublisher();
 
     /// <summary>
     /// Ouvre un document dans une vraie fenêtre. Le chemin est passé au modèle de vue

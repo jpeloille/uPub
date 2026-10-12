@@ -56,8 +56,10 @@ public sealed class InterligneConverter : IMultiValueConverter
     {
         try
         {
+            // La même collection que la règle à mesurer : la hauteur d'une ligne ne
+            // doit pas dépendre, elle non plus, de ce qu'Avalonia a chargé avant.
             var typeface = new Typeface(
-                new FontFamily(famille),
+                Views.PolicesDuDocument.Famille(famille),
                 italique ? FontStyle.Italic : FontStyle.Normal,
                 gras ? FontWeight.Bold : FontWeight.Normal);
 

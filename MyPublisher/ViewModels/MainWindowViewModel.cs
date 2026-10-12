@@ -706,7 +706,9 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         // La même horloge que celle des champs de l'écran : sans cela, un export lancé
         // à minuit passé porterait une autre date que ce que la page affiche.
-        var report = PdfExporter.Export(Document, path, Contacts.Active, _horloge());
+        // La règle de l'écran part avec le document : l'export coupe ses lignes sur la
+        // plus large d'elle et de la sienne, comme l'écran le fait (poste Q13).
+        var report = PdfExporter.Export(Document, path, new Views.MetriquesAvalonia(), Contacts.Active, _horloge());
         Status = report.Warnings.Count == 0
             ? $"PDF exporté : {Path.GetFileName(path)} ({report.PageCount} page(s))"
             : $"PDF exporté avec {report.Warnings.Count} avertissement(s) : {report.Warnings[0]}";

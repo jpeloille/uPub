@@ -2,7 +2,9 @@ using Avalonia;
 using System;
 using System.Globalization;
 using System.IO;
+using MyPublisher.Models;
 using MyPublisher.Services;
+using MyPublisher.Views;
 
 namespace MyPublisher;
 
@@ -78,7 +80,7 @@ sealed class Program
                     ? DateTime.Parse(jour, CultureInfo.InvariantCulture)
                     : (DateTime?)null;
 
-                var report = PdfExporter.Export(document, target, contacts, date);
+                var report = PdfExporter.Export(document, target, MesureDeLEcran(), contacts, date);
                 Console.WriteLine($"{report.PageCount} page(s) exportée(s) vers {target}");
                 foreach (var warning in report.Warnings) Console.Error.WriteLine($"Avertissement : {warning}");
             }
@@ -102,6 +104,33 @@ sealed class Program
         }
 
         return true;
+    }
+
+    /// <summary>
+    /// La règle à mesurer de l'écran, pour un export sans fenêtre.
+    ///
+    /// L'export coupe ses lignes sur la plus large de sa mesure et de celle de l'écran
+    /// (poste Q13) : sans elle, « --export » rendrait un PDF coupé autrement que ce que
+    /// l'application aurait produit, et c'est le PDF de référence du contrôle P2 qui
+    /// mentirait. On monte donc d'Avalonia ce qu'il faut pour mesurer un texte — Skia,
+    /// ses polices et son façonnage —, sans plate-forme de fenêtrage : un export se
+    /// lance aussi d'une session sans affichage. Les polices sont celles de
+    /// <see cref="BuildAvaloniaApp"/>, la collection des documents comprise, pour que la mesure soit
+    /// celle de l'application et non une voisine.
+    /// </summary>
+    private static Compositeur.IMetriques MesureDeLEcran()
+    {
+        if (Application.Current is null)
+        {
+            AppBuilder.Configure<Application>()
+                .UseStandardRuntimePlatformSubsystem()
+                .UseSkia()
+                .AvecLesPolicesDeMyPublisher()
+                .UseWindowingSubsystem(() => { }, "aucun")
+                .SetupWithoutStarting();
+        }
+
+        return new MetriquesAvalonia();
     }
 
     /// <summary>Valeur d'une option nommée, ou <c>null</c> si elle n'est pas donnée.</summary>
@@ -135,6 +164,8 @@ sealed class Program
     public static AppBuilder BuildAvaloniaApp()
         => AppBuilder.Configure<App>()
             .UsePlatformDetect()
-            .WithInterFont()
+            // Inter pour le chrome, et la collection des polices des documents : le
+            // banc, l'hôte des tests et l'export sans fenêtre montent les mêmes.
+            .AvecLesPolicesDeMyPublisher()
             .LogToTrace();
 }

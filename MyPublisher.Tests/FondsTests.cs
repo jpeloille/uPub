@@ -307,7 +307,7 @@ public class FondsTests
         var chemin = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"fond-{System.Guid.NewGuid():N}.pdf");
         try
         {
-            var rapport = PdfExporter.Export(document, chemin);
+            var rapport = PdfExporter.Export(document, chemin, ecran: null);
 
             Assert.Empty(rapport.Warnings);
             // Le flux de la page, décompressé : #336699 s'y écrit « 0.2 0.4 0.6 rg »,
@@ -340,7 +340,7 @@ public class FondsTests
         var chemin = System.IO.Path.Combine(System.IO.Path.GetTempPath(), $"fond-{System.Guid.NewGuid():N}.pdf");
         try
         {
-            var rapport = PdfExporter.Export(document, chemin);
+            var rapport = PdfExporter.Export(document, chemin, ecran: null);
 
             Assert.Contains(rapport.Warnings, a => a.Contains("Image de remplissage introuvable"));
         }

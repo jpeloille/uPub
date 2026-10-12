@@ -71,8 +71,32 @@ public static class Compositeur
     /// </summary>
     public interface IMetriques
     {
-        /// <summary>Largeur d'un texte dans un style donné, en points.</summary>
+        /// <summary>
+        /// Largeur d'un texte dans un style donné, en points, telle que CE rendu la
+        /// dessine. C'est elle qui pose les morceaux et cale le fer de la ligne.
+        /// </summary>
         double Largeur(string texte, StyleEffectif style);
+
+        /// <summary>
+        /// Largeur sur laquelle se DÉCIDE le renvoi à la ligne, en points. Elle doit
+        /// être la même, au bit près, pour l'écran et pour l'export : c'est ce qui les
+        /// fait couper aux mêmes mots (poste Q13).
+        ///
+        /// Les deux règles ne mesurent pas pareil. Avalonia crénèle (« PDF. » y est plus
+        /// étroit d'un dixième de point), PDFsharp non ; et une police absente ne se
+        /// remplace pas par la même chez l'un et chez l'autre — sur la machine du
+        /// projet, l'italique de DejaVu Sans, qu'aucun fichier ne porte, sort en gras à
+        /// l'écran et en romain au PDF, plus large de 12 % d'un côté. Chacun rend donc
+        /// ici la plus large des deux mesures, la sienne et celle de l'autre : le
+        /// maximum ne dépend pas de l'ordre de ses termes, et la ligne qui tient sous
+        /// cette mesure tient sous les deux. Le prix : un mot qui tiendrait de justesse
+        /// d'un côté passe à la ligne des deux.
+        ///
+        /// Pas de valeur par défaut qui rendrait <see cref="Largeur"/> : c'est
+        /// exactement ce que faisait le dépôt avant Q13, et une règle qui l'oublierait
+        /// recouperait à sa façon sans que rien ne le dise.
+        /// </summary>
+        double LargeurDeCoupure(string texte, StyleEffectif style);
 
         /// <summary>Hauteur de ligne naturelle de la police, en points.</summary>
         double Naturelle(StyleEffectif style);
@@ -132,6 +156,11 @@ public static class Compositeur
 
         var courante = new List<Morceau>();
         var largeurCourante = 0.0;
+        // La même ligne mesurée à la règle de coupure : c'est sur elle, et sur elle
+        // seule, que se décide le renvoi. Les deux cumuls avancent ensemble ; celui-ci
+        // ne sert à rien d'autre, et ne se rogne pas en fin de ligne puisqu'il repart
+        // de zéro à chaque ligne.
+        var coupureCourante = 0.0;
 
         var paragraphe = 0;
         var premiereLigne = true;
@@ -195,6 +224,7 @@ public static class Compositeur
 
             courante.Clear();
             largeurCourante = 0;
+            coupureCourante = 0;
 
             // Fermer sur une fin de paragraphe ouvre le suivant ; fermer sur un renvoi
             // à la ligne reste dans le même paragraphe, mais n'est plus sa première.
@@ -210,19 +240,32 @@ public static class Compositeur
             // Une tabulation n'a pas de largeur propre : elle vaut la distance qui
             // reste jusqu'au prochain taquet, et dépend donc d'où on en est sur la
             // ligne. On la calcule ici, où cette position est connue.
+            //
+            // Le taquet se calcule deux fois, une par cumul : le dessin le prend sur sa
+            // propre largeur, la décision sur la sienne. Comme la mesure de coupure n'est
+            // jamais plus étroite que celle du dessin, le taquet de la décision n'est
+            // jamais en deçà, et une ligne qui tient pour elle tient pour le dessin.
             var tabulation = mot.Texte == "\t";
             var l = tabulation
                 ? ProchainTaquet(largeurCourante) - largeurCourante
                 : metriques.Largeur(mot.Texte, mot.Style);
+            var c = tabulation
+                ? ProchainTaquet(coupureCourante) - coupureCourante
+                : metriques.LargeurDeCoupure(mot.Texte, mot.Style);
 
             // On ne renvoie à la ligne que si quelque chose y est déjà : un mot plus
             // large que la boîte garde sa ligne plutôt que d'être coupé au milieu.
+            //
+            // La décision ne lit que la règle de coupure, commune aux deux rendus. Lire
+            // ici la largeur du dessin, c'est laisser l'écran et le PDF couper chacun à
+            // sa mesure : c'était le défaut du poste Q13.
             if (!tabulation && courante.Count > 0 &&
-                largeurCourante + metriques.Largeur(mot.Texte.TrimEnd(), mot.Style) > disponible)
+                coupureCourante + metriques.LargeurDeCoupure(mot.Texte.TrimEnd(), mot.Style) > disponible)
             {
                 Fermer(finDeParagraphe: false);
                 var debut = mot.Texte.TrimStart();
                 l = metriques.Largeur(debut, mot.Style);
+                c = metriques.LargeurDeCoupure(debut, mot.Style);
                 courante.Add(new Morceau(debut, mot.Style, largeurCourante, l));
             }
             else
@@ -231,6 +274,7 @@ public static class Compositeur
             }
 
             largeurCourante += l;
+            coupureCourante += c;
         }
 
         Fermer(finDeParagraphe: true);

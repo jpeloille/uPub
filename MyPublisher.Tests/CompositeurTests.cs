@@ -17,6 +17,7 @@ public class CompositeurTests
     private sealed class ChasseFixe : Compositeur.IMetriques
     {
         public double Largeur(string texte, StyleEffectif style) => texte.Length * style.FontSize;
+        public double LargeurDeCoupure(string texte, StyleEffectif style) => Largeur(texte, style);
         public double Naturelle(StyleEffectif style) => style.FontSize;
     }
 
@@ -115,6 +116,64 @@ public class CompositeurTests
 
         Assert.False(lignes[0].FinDeParagraphe);   // « un deux », coupée par la largeur
         Assert.True(lignes[^1].FinDeParagraphe);   // « trois », fin du paragraphe
+    }
+
+    // ------------------------------------------------- la règle de coupure (Q13)
+
+    /// <summary>
+    /// Une règle qui dessine à la chasse fixe, mais décide de ses coupures sur une mesure
+    /// plus large : celle qu'un autre rendu donnerait. Le double, pour que l'écart se lise
+    /// sans calcul.
+    /// </summary>
+    private sealed class CoupeLarge : Compositeur.IMetriques
+    {
+        private readonly ChasseFixe _chasse = new();
+        public double Largeur(string texte, StyleEffectif style) => _chasse.Largeur(texte, style);
+        public double LargeurDeCoupure(string texte, StyleEffectif style) => 2 * _chasse.Largeur(texte, style);
+        public double Naturelle(StyleEffectif style) => _chasse.Naturelle(style);
+    }
+
+    [Fact]
+    [Trait("poste", "Q13")]
+    public void La_coupure_se_decide_sur_la_mesure_de_coupure()
+    {
+        // « aa bb cc » à la chasse fixe tient en 8. À la mesure de coupure, double, « aa »
+        // vaut 4 et « aa bb » 10 : sur 9 de large, la ligne se ferme après « aa ».
+        var lignes = Compositeur.Composer("aa bb cc", [], Commun, [], default,
+            9, Haute, UneColonne, 1, new CoupeLarge());
+
+        Assert.Equal(new[] { "aa", "bb", "cc" }, lignes.Select(l => l.Texte).ToArray());
+    }
+
+    [Fact]
+    [Trait("poste", "Q13")]
+    public void Le_dessin_garde_sa_propre_mesure()
+    {
+        // La décision a lu la mesure double ; les morceaux, eux, sont posés à la chasse
+        // fixe — c'est avec elle que le rendu dessine et justifie.
+        var lignes = Compositeur.Composer("aa bb cc dd", [], Commun, [], default,
+            12, Haute, UneColonne, 1, new CoupeLarge());
+
+        Assert.Equal(new[] { "aa bb", "cc dd" }, lignes.Select(l => l.Texte).ToArray());
+        Assert.Equal(5, lignes[0].Largeur, precision: 9);
+        Assert.Equal(new[] { 0.0, 3.0 }, lignes[0].Morceaux.Select(m => m.X).ToArray());
+        Assert.Equal(new[] { 3.0, 2.0 }, lignes[0].Morceaux.Select(m => m.Largeur).ToArray());
+    }
+
+    [Fact]
+    [Trait("poste", "Q13")]
+    public void Une_tabulation_avance_au_taquet_de_chaque_mesure()
+    {
+        // « a\tb » : le dessin pose « b » au taquet de sa propre largeur (36) ; la décision
+        // compte le taquet de la sienne. Avec 30 unités de « a », la mesure de coupure
+        // vaut 60 et son taquet 72 : « b » y passe la limite de 73 de deux unités et
+        // descend, alors qu'au taquet du dessin (36) il aurait tenu.
+        var a = new string('a', 30);
+        var lignes = Compositeur.Composer($"{a}\tbb", [], Commun, [], default,
+            73, Haute, UneColonne, 1, new CoupeLarge());
+
+        Assert.Equal(2, lignes.Count);
+        Assert.Equal("bb", lignes[1].Texte);
     }
 
     // ------------------------------------------------------- fragments de style

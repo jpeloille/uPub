@@ -254,7 +254,7 @@ public class PolicesTests
         var chemin = Path.Combine(Path.GetTempPath(), $"b5-{Guid.NewGuid():N}.pdf");
         try
         {
-            return PdfExporter.Export(document, chemin).Warnings.ToArray();
+            return PdfExporter.Export(document, chemin, ecran: null).Warnings.ToArray();
         }
         finally
         {

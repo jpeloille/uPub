@@ -8,6 +8,7 @@ using Avalonia.Media;
 using Avalonia.VisualTree;
 using MyPublisher.Converters;
 using MyPublisher.Models;
+using MyPublisher.Services;
 
 namespace MyPublisher.Views;
 
@@ -160,13 +161,26 @@ public abstract class ControleDeBloc : Control
     }
 }
 
-/// <summary>La règle à mesurer d'Avalonia, prêtée au compositeur du noyau.</summary>
+/// <summary>
+/// La règle à mesurer d'Avalonia, prêtée au compositeur du noyau.
+///
+/// Elle dessine à sa mesure, mais ne coupe pas à sa mesure : la coupure se décide sur
+/// la plus large d'elle et de celle du PDF, que l'export calcule de son côté avec les
+/// mêmes deux termes (poste Q13). Sans cela, un mot qui tient au centième de point à
+/// l'écran passe à la ligne dans le PDF, et tout le reste du bloc se décale.
+/// </summary>
 public sealed class MetriquesAvalonia : Compositeur.IMetriques
 {
     private readonly Dictionary<StyleEffectif, Typeface> _polices = [];
 
+    /// <summary>Ce que le PDF mesurerait, sans rien dessiner.</summary>
+    private MetriquesPdf? _pdf;
+
     public double Largeur(string texte, StyleEffectif style) =>
         Composer(texte, style).WidthIncludingTrailingWhitespace;
+
+    public double LargeurDeCoupure(string texte, StyleEffectif style) =>
+        Math.Max(Largeur(texte, style), (_pdf ??= MetriquesPdf.HorsPage(ecran: null)).Largeur(texte, style));
 
     public double Naturelle(StyleEffectif style) =>
         InterligneConverter.HauteurNaturelle(
@@ -188,8 +202,11 @@ public sealed class MetriquesAvalonia : Compositeur.IMetriques
     {
         if (_polices.TryGetValue(style, out var connue)) return connue;
 
+        // La famille est prise dans la collection des documents, et non dans celle du
+        // système : c'est elle qui rend la même face quel que soit ce que le processus
+        // a chargé avant, et le même fichier que l'export (poste Q13).
         var typeface = new Typeface(
-            new FontFamily(style.FontFamily),
+            PolicesDuDocument.Famille(style.FontFamily),
             style.Italic ? FontStyle.Italic : FontStyle.Normal,
             style.Bold ? FontWeight.Bold : FontWeight.Normal);
 
