@@ -3675,6 +3675,98 @@ mémoire, `comparer-rendus.sh` donne 4,52 % et 3,67 % sur les pages 1 et 2 de l'
 - Les blocs tournés ne se comparent pas mot à mot (1 sur l'exemple, 2 sur ATA 21) :
   `pdftotext` ne lit pas leurs lignes comme des lignes. L'outil les nomme.
 
+*Repris le 12 octobre 2026, après relecture.* La relecture adversariale a jugé le lot
+« fusionnable après corrections » : quatre défauts, et la fusion de `main` à faire.
+
+- **La fusion.** `main` est entré dans la branche (Q9, B2, C5b et Q20, Q7, Q14, Q23).
+  L'export garde la charte de C5b et reçoit en plus la règle de l'écran. Le champ de
+  saisie ne passe plus par `Conv.Font` mais par le convertisseur `PoliceDuJeu` de C5b,
+  qui faisait `new FontFamily(...)` : il passe désormais par `PolicesDuDocument.Famille`,
+  sans quoi le changement de Q13 était perdu à la fusion. Les noms `scheme:` sont
+  résolus par `Charte.StyleCommun` et `Charte.Fragments` avant `Compositeur.Composer`,
+  à l'écran (`ControleDeBloc.Mesurer`) comme à l'export (`DrawText`) : la règle à mesurer
+  reçoit un nom de police, jamais une référence au jeu. Un bloc de la recette tient sa
+  police du jeu (« scheme:heading », Noto Serif) et coupe comme le PDF. La **vignette
+  des modèles** (`TemplatePreview`, Q9) compose par `MetriquesAvalonia`, sur la largeur
+  du modèle et avec le style résolu par la charte : elle coupe donc déjà sur la même
+  règle que la page, et n'a pas été touchée. C'est lu dans le code : la recette de Q9
+  reste verte, mais aucune mesure n'a confronté ses filets au PDF.
+- **Trouvé à la fusion : un sabotage de C6 sans cible.** « L'écran ignore la marge du
+  haut » visait `var ligneDeBase = bloc.PaddingTop + descente`, que la refonte de
+  `TexteCompose` par le premier commit de Q13 avait réécrit. `--cibles` l'a vu. Il vise
+  désormais `var haut = bloc.PaddingTop + descente + ligne.Haut;`, et il a été éprouvé
+  à la main : la recette C6 tombe.
+- **L'export pouvait ignorer la mesure de l'écran sans que rien ne tombe.** Remplacer la
+  règle de l'écran par `null`, dans `--export` ou dans l'export de l'application,
+  laissait `verifier.sh` vert : sur le corpus, la mesure du PDF est presque toujours la
+  plus large. Sondé sur dix familles, quatre variantes, les mots de l'exemple et
+  quelques paires : l'écran mesure plus large de plus d'un millième de point dans 370
+  cas sur 11 200, au plus pour « f) » en Noto Serif (+0,9 pt à 10 pt, un crénage
+  positif). La page 3 de `Samples/recette-coupure.mypub` porte donc quatre blocs en
+  Noto Serif à 20 pt — romain, italique, gras, et romain par la police du jeu —, larges
+  de la moitié du chemin entre les deux mesures de « Voir l'alinéa f) » : 134,88 pt au
+  PDF seul, 136,68 pt à la plus large des deux, pour un bloc de 135,78 pt en romain.
+  C'est éprouvé par les deux exports. Pour `--export`, `comparer-mots.sh` lit le PDF du
+  vrai binaire. Pour l'export de l'application, un test d'interface appelle
+  `ExportPdf` du modèle de vue et relit le PDF par `pdftotext`, avec une contre-épreuve :
+  sans la mesure de l'écran, « f) » reste sur la première ligne. Les deux câblages
+  sabotés à la main font tomber la recette.
+- **La largeur disponible.** `Mesurer` composait sur `Bounds` — la taille du contrôle,
+  arrondie au pixel par la mise en page —, l'export sur celle du modèle. Il compose
+  désormais sur `bloc.Width` et `bloc.Height` moins les marges, comme l'export. Sur les
+  48 blocs du relecteur, larges de 150,4 à 173,9 pt au pas de 0,5, `comparer-mots.sh`
+  passe de 19 lignes coupées autrement (5 blocs, tous en « ,4 ») à 0. Ces 48 blocs
+  sont les pages 1 et 2 de `recette-coupure.mypub`. La phrase du README qui disait
+  « l'écran et le PDF coupent aux mêmes mots » ne dit plus que ce qui est mesuré.
+- **`comparer-mots.sh` jetait en silence un mot du PDF sans ligne à l'écran**, alors que
+  son en-tête disait le contraire. Ce mot compte désormais comme écart, sauf s'il tombe
+  dans un bloc non comparé. On en relève 0 sur l'exemple, ATA 21, les fiches et la
+  recette. Avec le sabotage du relecteur — l'écran ne dessine plus la dernière ligne
+  d'un bloc de plusieurs lignes —, on en relève 28 sur la page 1 de l'exemple, et ATA 21
+  tombe aussi. Le même calcul attrape une page ou un bloc entier que l'écran ne relève pas ;
+  ce cas-là n'a pas été joué.
+- **La porte privée d'Avalonia.** `PolicesDuDocument` la cherche une fois par
+  processus, au premier montage des polices, et reçoit le gestionnaire de la
+  plate-forme par `Initialize` au lieu de lire `FontManager.PlatformImpl` par
+  réflexion. Sans elle, la collection n'est pas montée et `Famille` rend la famille du
+  système, c'est-à-dire la résolution d'Avalonia d'avant Q13. Un seul avertissement
+  part alors sur la sortie d'erreur. `--export` échoue, avec le code 1 et sans écrire de
+  PDF, et l'export de l'application le signale dans la barre d'état. Un appel qui lève
+  malgré la porte retombe, pour cette face seule, sur la résolution d'Avalonia. La
+  variable `MYPUBLISHER_SANS_PORTE_PRIVEE=1` fait chercher une méthode qui n'existe pas,
+  si bien que c'est le vrai chemin de l'échec qui est parcouru. Deux tests l'éprouvent
+  dans de vrais processus : `--export` sur l'exemple sort en 1 sans PDF, et le banc
+  ouvre la vraie fenêtre, relève ses 53 lignes et avertit une fois. Ceci remplace la
+  phrase de *Choisi sans certitude* selon laquelle une version sans la porte « lève une
+  exception à la première mesure ».
+
+La recette joue désormais 7 tests purs et 7 tests d'interface, dont 3 nouveaux. Elle
+lance `comparer-mots.sh` sur l'exemple, ATA 21 et les fiches dans les trois ordres, puis
+sur `recette-coupure.mypub` (400 lignes, 3 024 mots, 52 blocs, 0 ligne coupée
+autrement), et finit par la contre-épreuve. Six sabotages s'ajoutent en fin de juge :
+les deux exports sans la mesure de l'écran, la largeur arrondie, la dernière ligne non
+dessinée, le refus de `--export` sans la porte, la collection adressée sans la porte.
+
+*Choisi sans certitude.*
+- Sans la porte, `--export` refuse plutôt que de retomber sur `ecran: null` : un PDF de
+  référence coupé autrement que l'écran, signalé par un simple avertissement, est ce que
+  Q13 combat. Le prix : plus d'export scripté tant que la porte n'est pas remplacée.
+- La variable `MYPUBLISHER_SANS_PORTE_PRIVEE` vit dans le code de l'application et ne
+  sert qu'à l'épreuve.
+- Les largeurs de la page 3 sont figées pour les fichiers Noto Serif de cette machine.
+  Avec une autre version de la police, les blocs pourraient ne plus être à la limite. Le
+  test d'interface le dirait (l'écran doit renvoyer « f) », le PDF seul le garder) ;
+  `comparer-mots.sh`, lui, resterait vert.
+- Composer sur la taille du modèle quand le contrôle a la taille arrondie : une ligne
+  peut dépasser le contrôle de moins d'un pixel et être rognée par son `ClipToBounds`.
+  Ce n'est pas mesuré.
+
+*Trouvé et laissé tel quel.*
+- Le sabotage de `--export` sans la mesure de l'écran est attrapé dans la recette dès
+  l'étape 2, par le test sans la porte : sans l'appel à `MesureDeLEcran`, le refus ne
+  se produit plus. Éprouvée seule à la main, l'étape 4 l'attrape aussi : 24 lignes
+  coupées autrement, toutes sur la page 3.
+
 ### Q14 — Un double-clic ne déplace pas le bloc
 
 *Trouvé le 11 octobre 2026 par Q1.* Un double-clic sur un bloc importé, pour y entrer
