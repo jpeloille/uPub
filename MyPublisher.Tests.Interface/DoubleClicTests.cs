@@ -196,4 +196,43 @@ public class DoubleClicTests
 
         Assert.Equal((100.0, 100.0), (bloc.X, bloc.Y));
     }
+
+    [AvaloniaFact]
+    [Trait("poste", "Q14")]
+    public void Une_valeur_tapee_ne_prend_pas_celle_quun_autre_bloc_a_affichee()
+    {
+        // Le convertisseur rend la valeur exacte d'un nombre qu'il vient d'afficher.
+        // Une mémoire plus longue que ce renvoi prenait une frappe pour un affichage
+        // ancien : A, tourné de 30.00001°, montre « 30 » ; on sélectionne B, on y tape
+        // « 30 », et B recevait 30.00001.
+        var a = new ShapeFrame { Name = "A", X = 50, Y = 50, Width = 100, Height = 100, Rotation = 30.00001 };
+        var b = new ShapeFrame { Name = "B", X = 300, Y = 300, Width = 100, Height = 100 };
+        var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(a, b));
+
+        Cliquer(fenetre, SurLaPage(fenetre, 100, 100));
+        Rendu.Battre();
+        Assert.Same(a, vm.SingleSelected);
+        Cliquer(fenetre, SurLaPage(fenetre, 350, 350));
+        Rendu.Battre();
+        Assert.Same(b, vm.SingleSelected);
+
+        // Sélectionner ne réécrit ni l'un ni l'autre.
+        Assert.Equal(30.00001, a.Rotation);
+        Assert.Equal(0.0, b.Rotation);
+
+        var rotation = fenetre.GetVisualDescendants().OfType<NumericUpDown>()
+            .Single(n => n.IsEffectivelyVisible && n.Minimum == -360 && n.Maximum == 360);
+        Assert.Equal(0m, rotation.Value);
+
+        var saisie = rotation.GetVisualDescendants().OfType<TextBox>().First();
+        saisie.Focus();
+        saisie.SelectAll();
+        fenetre.KeyTextInput("30");
+        fenetre.KeyPressQwerty(PhysicalKey.Enter, RawInputModifiers.None);
+        Rendu.Battre();
+
+        Assert.Equal(30m, rotation.Value);
+        Assert.Equal(30.0, b.Rotation);
+        Assert.Equal(30.00001, a.Rotation);
+    }
 }

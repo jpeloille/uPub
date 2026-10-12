@@ -435,6 +435,39 @@ saboter "un geste revenu au point de prise laisse le bloc où il était allé" \
     '' \
     'Q14-double-clic|DoubleClicTests'
 
+# Q14, repris après relecture : le convertisseur ne se souvient que du nombre qu'il vient
+# de donner. Le sabotage remet la mémoire d'avant, un dictionnaire gardé toute la session :
+# une frappe y retrouvait la valeur exacte qu'un autre bloc avait affichée.
+saboter "une frappe prend la valeur exacte qu'un autre bloc a affichée" \
+    MyPublisher/Converters/UnitConverters.cs \
+'    private decimal? _affiche;
+    private double _valeur;
+
+    public decimal Retenir(decimal affiche, double valeur)
+    {
+        _affiche = affiche;
+        _valeur = valeur;
+        return affiche;
+    }
+
+    public bool Retrouver(decimal affiche, out double valeur)
+    {
+        var reconnu = _affiche == affiche;
+        valeur = _valeur;
+        _affiche = null;
+        return reconnu;
+    }' \
+'    private readonly Dictionary<decimal, double> _valeurs = [];
+
+    public decimal Retenir(decimal affiche, double valeur)
+    {
+        _valeurs[affiche] = valeur;
+        return affiche;
+    }
+
+    public bool Retrouver(decimal affiche, out double valeur) => _valeurs.TryGetValue(affiche, out valeur);' \
+    'Q14-double-clic|DoubleClicTests'
+
 echo
 if [ "$trous" = 0 ]; then
     echo "Le juge sait échouer : $sabotages sabotages, $sabotages attrapés."

@@ -47,41 +47,58 @@ public sealed class PointsToMillimetres : IValueConverter
 }
 
 /// <summary>
-/// Les nombres qu'un champ du panneau affiche, et la valeur exacte du modèle dont chacun
-/// a été tiré.
+/// Le dernier nombre qu'un convertisseur a donné à un champ, et la valeur exacte du
+/// modèle dont il a été tiré.
 ///
 /// Un champ numérique renvoie au modèle la valeur qu'il vient de recevoir, dès que le
 /// bloc ou la page qu'il montre est affiché — rien ne l'a tapée. Si la conversion vers
 /// le champ perd quoi que ce soit, ce renvoi réécrit le document en silence : c'est le
 /// défaut du poste Q14. Aucune arithmétique ne le rend exact — le décimal ne garde que
 /// quinze chiffres d'un double, et l'arrondi d'affichage en garde moins encore —, si
-/// bien que le convertisseur se souvient : un nombre qui lui revient tel qu'il l'a
-/// donné rend la valeur dont il venait. Un nombre qu'il n'a jamais donné — une frappe,
+/// bien que le convertisseur se souvient : un nombre qui lui revient tel qu'il vient de
+/// le donner rend la valeur dont il venait. Un nombre qu'il n'a pas donné — une frappe,
 /// une flèche du champ — est converti comme avant.
 ///
-/// La mémoire est partagée par tous les champs d'un même convertisseur. Deux valeurs
-/// du modèle qui s'affichent sous le même nombre se confondent donc : c'est la
-/// dernière affichée qui revient.
+/// Une seule case, consommée au premier retour. Le renvoi suit son affichage aussitôt
+/// et dans le même appel : la liaison pose la valeur sur le champ, le champ signale son
+/// changement, et la liaison le réécrit vers le modèle
+/// (<c>BindingExpression.OnTargetPropertyChanged</c> → <c>WriteTargetValueToSource</c>).
+/// Rien ne passe entre les deux ; il n'y a donc rien d'autre à reconnaître que le
+/// dernier nombre donné.
+///
+/// Le risque d'une mémoire plus longue n'est pas que deux valeurs du modèle se
+/// confondent : c'est qu'une saisie soit prise pour un nombre affiché plus tôt. La
+/// mémoire d'avant en était une, partagée par tous les champs du convertisseur et gardée toute
+/// la session : un bloc tourné de 30.00001° sélectionné, puis un autre, sur lequel on
+/// tape « 30 », et le second recevait 30.00001 — le nombre tapé était celui que le
+/// premier avait affiché (poste Q14, repris après relecture).
+///
+/// Ce qui reste : un affichage qui ne change pas la valeur du champ n'a pas de renvoi
+/// pour consommer la case, et elle attend le prochain affichage — mesuré, elle reste
+/// pleine après la sélection d'un bloc. Une frappe faite entre-temps dans un autre champ
+/// du même convertisseur, exactement égale à ce nombre, en reprendrait la valeur
+/// exacte. Le document n'en serait altéré que si ce nombre était un arrondi ; le cas
+/// n'a pas été provoqué.
 /// </summary>
 internal sealed class Affiches
 {
-    /// <summary>
-    /// Au-delà, la mémoire repart de zéro. Elle ne sert qu'à reconnaître un nombre que
-    /// le panneau affiche encore — une vingtaine de champs —, pas à tout garder d'une
-    /// session.
-    /// </summary>
-    private const int Capacite = 256;
-
-    private readonly Dictionary<decimal, double> _valeurs = [];
+    private decimal? _affiche;
+    private double _valeur;
 
     public decimal Retenir(decimal affiche, double valeur)
     {
-        if (_valeurs.Count >= Capacite) _valeurs.Clear();
-        _valeurs[affiche] = valeur;
+        _affiche = affiche;
+        _valeur = valeur;
         return affiche;
     }
 
-    public bool Retrouver(decimal affiche, out double valeur) => _valeurs.TryGetValue(affiche, out valeur);
+    public bool Retrouver(decimal affiche, out double valeur)
+    {
+        var reconnu = _affiche == affiche;
+        valeur = _valeur;
+        _affiche = null;
+        return reconnu;
+    }
 }
 
 /// <summary>Passerelle entre les couleurs stockées en #AARRGGBB et le sélecteur de couleur.</summary>

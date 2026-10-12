@@ -32,6 +32,9 @@
 #      l'annulation défait jusqu'au document d'ouverture.
 #   4. un geste qui part et revient exactement au point de prise rend le bloc à son
 #      départ : la garde ne fait pas que s'abstenir, elle remet le bloc en place.
+#   5. une valeur tapée dans le champ de rotation d'un bloc arrive telle quelle au
+#      modèle, même si un autre bloc a affiché ce nombre plus tôt : le convertisseur ne
+#      reconnaît que le nombre qu'il vient de donner.
 #
 set -euo pipefail
 export LC_ALL=C
@@ -61,11 +64,11 @@ if [ -z "${MYPUBLISHER_DEJA_COMPILE:-}" ] && ! dotnet build MyPublisher.sln -c D
     exit 1
 fi
 
-attendus=4
+attendus=5
 if ! dotnet test MyPublisher.Tests.Interface/MyPublisher.Tests.Interface.csproj ${MYPUBLISHER_DEJA_COMPILE:+--no-build} \
         --nologo -v q --filter "poste=Q14" > "$travail/tests.txt" 2>&1; then
     sed 's/^/    /' "$travail/tests.txt" >&2
-    echo "ÉCHEC : un double-clic réécrit encore le document, ou un glissé d'un point ne compte plus." >&2
+    echo "ÉCHEC : un double-clic réécrit encore le document, un glissé ne rend pas le bloc où il le mène, ou une frappe est prise pour un affichage." >&2
     exit 1
 fi
 
