@@ -3779,7 +3779,8 @@ dans l'application est acceptée).
   retiré les deux blocs de hauteur entière. Sain, `comparer-mots.sh` y relève 0 ligne
   coupée autrement (809 lignes, 4 388 mots, 74 blocs sur les quatre pages). L'étape 4
   de la recette exige désormais 74 blocs. Un septième sabotage vise la hauteur, éprouvé
-  à la main : la recette tombe.
+  à la main : la recette tombe à l'étape 4, sur 277 lignes coupées autrement et 17 mots
+  du PDF sans ligne à l'écran.
 - **La page 3 dépend de Noto Serif.** Le test de l'export de l'application vérifie
   d'abord, bloc par bloc, que la police de cette machine départage encore les deux
   mesures, et sinon le dit (« recalculer les largeurs de la page 3 »). La vérification
