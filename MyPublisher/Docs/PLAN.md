@@ -2993,21 +2993,33 @@ prix : un mot qui tiendrait de justesse passe à la ligne des deux côtés.
 Effort : moyen. **Si la voie d'attente ne suffit pas, le poste devient la question du
 seuil D**, et l'on s'arrête pour la poser au propriétaire du projet.
 
-*Éprouvé le 12 octobre 2026, et arrêté : la voie d'attente ne suffit pas seule.* La
-question revient au propriétaire ; rien du code de ce poste n'est commité. Le code
-éprouvé est gardé hors du dépôt, en un correctif qui s'applique sur `b17e569`.
+*Éprouvé le 12 octobre 2026, et arrêté une première fois : la voie d'attente ne suffit
+pas seule.* La question est allée au propriétaire, qui a choisi de garder la voie
+d'attente et de rendre la mesure de l'écran indépendante de l'histoire du processus. Ce
+qui suit, jusqu'au paragraphe *Fait le*, est le récit de cet arrêt.
 
 *Mesuré avant.* Chaque règle décidant seule, sur les blocs de texte des trois
-documents, groupes et cases compris : l'exemple coupe autrement **1 bloc sur 15, 2 lignes
-sur 57** — la première colonne, où l'écran garde « jamais » à 231,11 pt d'une ligne de
-232 pt et où le PDF le renvoie ; ATA 21, 0 ligne sur 79 ; les fiches ATR, 0 sur 152.
-D'un morceau à l'autre, les deux mesures diffèrent au plus de 2,38 pt sur l'exemple
-(0,15 % en moyenne, le PDF jamais plus étroit), 2,96 pt sur ATA 21 (0,47 %), 2,29 pt sur
-les fiches (0,20 %). Sur l'exemple et les fiches, l'écart est le crénage : l'écran
-privé de crénage (essai, non gardé) y mesure chaque morceau comme le PDF, à 0,0001 pt
-près. Sur ATA 21, un écart de 2,96 pt reste sans crénage ; sa cause n'a pas été
-cherchée. La hauteur naturelle, qui décide du passage de colonne, est la même des deux
-côtés sur les trois documents.
+documents, groupes et cases compris. Les chiffres de l'exemple dépendent de la face
+qu'Avalonia donne à l'italique de DejaVu Sans, qui n'existe pas sur cette machine (voir
+plus bas) ; ils valent dans deux états :
+
+- italique résolu en romain — l'état de l'application ouverte sur l'exemple : **1 bloc
+  et 2 lignes sur 57** coupent autrement, la première colonne, où l'écran garde
+  « jamais » à 231,11 pt d'une ligne de 232 pt et où le PDF le renvoie. D'un morceau à
+  l'autre, les deux mesures diffèrent au plus de 2,38 pt (0,15 % en moyenne, le PDF
+  jamais plus étroit) ;
+- italique résolu en gras — le gras chargé d'abord, ou les blocs composés dans l'ordre
+  du document : **3 blocs et 10 lignes sur 59** — la première colonne, la légende (5
+  lignes à l'écran contre 4 au PDF) et le rappel (3 contre 2). Les mesures diffèrent
+  alors au plus de 10,14 pt (2,16 % en moyenne), l'écran plus large 70 fois, le PDF
+  49 fois.
+
+ATA 21 et les fiches ATR ne bougent pas d'un état à l'autre : 0 ligne sur 79 et 0 sur
+152, à 2,96 pt (0,47 %) et 2,29 pt (0,20 %) d'écart au plus. Sur l'exemple et les
+fiches, dans l'état romain, l'écart est le crénage : l'écran privé de crénage (essai,
+non gardé) y mesure chaque morceau comme le PDF, à 0,0001 pt près. Sur ATA 21, un écart
+de 2,96 pt reste sans crénage. La hauteur naturelle, qui décide du passage de colonne,
+est la même des deux côtés sur les trois documents.
 
 *La voie d'attente, écrite.* `IMetriques` gagne `LargeurDeCoupure` : chacun rend la plus
 large de sa mesure et de celle de l'autre, et le compositeur ne décide plus que sur
@@ -3033,20 +3045,86 @@ et 3,91 % avec, en plus, l'écran privé de crénage, donc des morceaux de même
 `pdftocairo`, diffèrent déjà de 2,36 % et 1,77 % ; l'écran et `pdftocairo`, de 4,28 % et
 3,35 %. L'excédent est le dessin des glyphes. Le seuil de 3 % n'est pas à la portée
 d'une page de texte, coupée juste ou non, et les en-têtes de `verifier.sh` et de
-`comparer-rendus.sh`, qui attribuent l'écart à la coupure, se trompent de cause ; ils
-sont laissés tels quels.
+`comparer-rendus.sh` attribuaient l'écart à la coupure.
 
-*Trouvé et laissé tel quel.* L'italique de DejaVu Sans sort droit au PDF : PDFsharp
-reçoit le fichier romain et ne simule rien. L'écran, lui, le penche.
+*La question, et ce que le propriétaire a tranché.* Trois voies étaient posées :
+garder la voie d'attente et rendre la mesure de l'écran indépendante de l'histoire, par
+une collection de polices propre au projet ; franchir le seuil D pour la seule coupure ;
+ou laisser la dette. Le propriétaire a choisi la première, et demandé un outil de
+comparaison mot à mot pour les pages de texte, `comparer-rendus.sh` restant celui des
+formes et des images.
 
-*Question au propriétaire.* Trois voies. Garder la voie d'attente et rendre la mesure
-de l'écran indépendante de l'histoire — résoudre chaque face une fois, par une
-collection de polices à soi, et la garder : c'est toucher tout le texte de l'écran.
-Ou franchir le seuil D pour la coupure seulement : décider sur la mesure de PDFsharp,
-que le noyau a partout, l'écran dessinant à la sienne et pouvant déborder sa ligne du
-crénage, 2,38 pt au plus sur l'exemple. Ou laisser la dette. Et, quelle que soit la
-voie, remplacer `comparer-rendus.sh` par la confrontation mot à mot pour les pages de
-texte.
+*Fait le 12 octobre 2026.* La voie (a), entière.
+
+- **Les polices de l'écran.** Le texte des documents ne passe plus par la résolution
+  d'Avalonia mais par `PolicesDuDocument`, une collection propre au projet : pour une
+  famille, une graisse et une pente, elle demande à fontconfig le fichier que l'export
+  emploie — le même appel, le même cache —, le charge une fois avec les simulations que
+  fontconfig décide (`%{embolden}`, `%{matrix}`), et le garde. Rien n'y dépend de ce que
+  le processus a chargé avant. `FontconfigFontResolver` rend les mêmes drapeaux à
+  PDFsharp : l'italique absent de DejaVu Sans se penche désormais au PDF comme à
+  l'écran, et la trouvaille laissée lors de l'arrêt (« sort droit au PDF ») est close.
+  Le chrome garde les polices du système. L'application, `--export`, le banc et l'hôte
+  des tests montent la collection par le même appel (`AvecLesPolicesDeMyPublisher`).
+- **La coupure.** `IMetriques.LargeurDeCoupure`, comme dans la voie d'attente : chaque
+  règle rend la plus large de sa mesure et de celle de l'autre, la décision ne lit
+  qu'elle, le dessin garde la sienne ; la tabulation compte son taquet sur chacun des
+  deux cumuls. La règle du PDF sort de `PdfExporter` (`MetriquesPdf`) et se consulte
+  hors page ; un test vérifie qu'elle y mesure au bit près comme sur la page.
+- **L'outil.** `Scripts/comparer-mots.sh` : le banc relève, par `TexteCompose.Poser`
+  — la fonction même que le rendu appelle —, chaque ligne de l'écran mot par mot, et les
+  mots que `pdftotext -bbox` lit dans le PDF du vrai binaire s'y rangent ; il compte les
+  lignes coupées autrement, et vérifie la place du premier mot à 1 pt près (la mise en
+  page d'Avalonia arrondit la place d'un bloc au pixel). Les en-têtes de `verifier.sh` et
+  de `comparer-rendus.sh` disent désormais ce que chacun mesure.
+- **La recette**, `Q13-coupure.sh` : 7 tests purs, 4 d'interface, puis `comparer-mots.sh`
+  sur les deux pages de l'exemple et sur les deux documents ATR, trois fois — le banc
+  charge les faces dans trois ordres —, à zéro ligne coupée autrement ; puis la
+  contre-épreuve, l'écran coupant à sa seule mesure, qui doit tomber sur la première
+  colonne de l'exemple. Deux sabotages en fin de juge : la décision qui relit la mesure
+  du dessin, et l'écran qui contourne la collection.
+
+*Mesuré.* Avant, refait en contournant la collection, par le même calcul que les
+chiffres de l'arrêt (chaque règle décidant seule, blocs de l'exemple) : italique résolu
+en **romain**, **2 lignes sur 57** coupent autrement, à 2,38 pt d'écart au plus ;
+italique résolu en **gras**, **10 lignes sur 59** (3 blocs), à **10,14 pt** au plus et
+2,16 % en moyenne. Après, que le gras soit chargé d'abord ou non : chaque règle décidant
+seule, 2 lignes sur 57, à 2,38 pt et 0,15 % — l'écart n'est plus que le crénage, et
+l'italique ne bouge plus d'un processus à l'autre ; sous la plus large des deux mesures,
+**0 ligne sur 57**, et 0 sur 79 (ATA 21), 0 sur 152 (fiches). De bout en bout, par
+`comparer-mots.sh`, dans les trois ordres : **0 ligne coupée autrement** sur 53 lignes
+dessinées de l'exemple, 72 d'ATA 21 et 152 des fiches ; premier mot à 0,52 pt au plus.
+L'italique de la légende est penché des deux côtés, à l'œil sur les deux rendus. Pour
+mémoire, `comparer-rendus.sh` donne 4,52 % et 3,67 % sur les pages 1 et 2 de l'exemple
+(4,87 % et 3,72 % avant) : toujours au-dessus de 3 %, pour la raison écrite plus haut.
+
+*Choisi sans certitude.*
+- « Un ordre fixe » est pris au sens du résultat : chaque variante est résolue seule, à
+  sa première demande, sur le fichier de fontconfig, si bien que l'ordre n'y entre plus.
+  Charger les quatre faces d'une famille dans un ordre fixe avait été essayé lors de
+  l'arrêt, et ne tenait pas après d'autres familles.
+- Avalonia 11.3.9 n'offre pas de porte publique pour charger des octets avec des
+  simulations choisies : `PolicesDuDocument` appelle par réflexion
+  `IFontManagerImpl.TryCreateGlyphTypeface(Stream, FontSimulations, …)`. Une montée de
+  version qui la retirerait lève une exception à la première mesure, et les tests de Q13
+  tombent ; rien ne retombe en silence sur l'ancienne résolution.
+- La règle de l'écran consulte, à chaque rendu d'un bloc, une règle du PDF hors page
+  neuve (un contexte de mesure PDFsharp) ; le coût n'a pas été mesuré.
+- La tolérance de 1 pt de `comparer-mots.sh` sur la place du premier mot.
+
+*Trouvé et laissé tel quel.*
+- La règle d'Avalonia d'avant Q13 est plus précise que ce que disait l'arrêt. Sondé sur
+  DejaVu Serif : l'italique absent sort en gras penché seulement quand le gras est la
+  seule face de la famille déjà chargée ; dès que le romain l'est — avant ou après le
+  gras —, ou que rien ne l'est, il sort en romain penché. Le premier ordre « gras » du
+  banc (gras, gras italique, romain, italique) rendait donc le romain, et les trois
+  ordres n'en faisaient que deux ; il a été repris.
+- `comparer-mots.sh` signale à part les lignes dont un symbole diffère : 5 sur ATA 21,
+  87 sur les fiches. Ce ne sont pas des coupures : les lettres de ces lignes sont les
+  mêmes des deux côtés, seul un symbole manque au PDF (« ≤ » et « → » sur ATA 21, le
+  caractère de contrôle U+0084 sur les fiches). La cause n'a pas été cherchée.
+- Les blocs tournés ne se comparent pas mot à mot (1 sur l'exemple, 2 sur ATA 21) :
+  `pdftotext` ne lit pas leurs lignes comme des lignes. L'outil les nomme.
 
 ### Q14 — Un double-clic ne déplace pas le bloc
 

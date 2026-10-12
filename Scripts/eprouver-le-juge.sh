@@ -400,6 +400,23 @@ saboter "la vignette espace ses filets du corps et non de la hauteur naturelle" 
     'yield return (x, descente + ligne.Haut * text.FontSize / metriques.Naturelle(commun), run, ligne.Avance);' \
     'Q9-vignette|VignetteTests'
 
+# Q13 : la décision de renvoi lit la mesure du dessin, comme avant le poste. L'écran et
+# le PDF recoupent chacun à sa mesure, et « jamais » change de ligne dans la première
+# colonne de l'exemple.
+saboter "la coupure se décide sur la mesure de chaque rendu et non sur la plus large" \
+    MyPublisher.Core/Models/Compositeur.cs \
+    'coupureCourante + metriques.LargeurDeCoupure(mot.Texte.TrimEnd(), mot.Style) > disponible' \
+    'largeurCourante + metriques.Largeur(mot.Texte.TrimEnd(), mot.Style) > disponible' \
+    'Q13-coupure|CoupureTests|CompositeurTests|MetriquesPdfTests'
+
+# Q13 : l'écran reprend la résolution d'Avalonia, et l'italique absent de DejaVu Sans
+# sort de la face qu'il a chargée la première — le gras, dans l'ordre du document.
+saboter "l'écran résout ses polices par Avalonia et non par la collection du projet" \
+    MyPublisher/Views/ControleDeBloc.cs \
+    'PolicesDuDocument.Famille(style.FontFamily),' \
+    'new FontFamily(style.FontFamily),' \
+    'Q13-coupure|CoupureTests'
+
 echo
 if [ "$trous" = 0 ]; then
     echo "Le juge sait échouer : $sabotages sabotages, $sabotages attrapés."

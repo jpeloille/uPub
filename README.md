@@ -32,7 +32,8 @@ Scripts/verifier.sh                 # tests, contrôle, recettes — c'est lui q
 Scripts/controle.sh                 # le seul contrôle de la chaîne d'écriture
 Scripts/controle.sh --enregistrer   # remplace le relevé de référence, après examen
 Scripts/eprouver-le-juge.sh         # sabote le code et vérifie qu'on s'en aperçoit
-Scripts/comparer-rendus.sh doc.mypub 1   # l'écran contre le PDF, à deux pixels par point
+Scripts/comparer-rendus.sh doc.mypub 1   # formes et images : l'écran contre le PDF, au pixel
+Scripts/comparer-mots.sh doc.mypub 1     # texte : l'écran contre le PDF, mot à mot, ligne à ligne
 Scripts/bilan.sh                    # poste par poste : clos ou non, recette ou non
 Scripts/verifier-dependances.sh     # aucune dépendance vulnérable (réseau ; à part)
 ```
@@ -259,6 +260,23 @@ ce n'est pas une élégance depuis qu'il y a des colonnes : le passage à la col
 suivante est un seuil, et un écart de métrique d'un centième de point suffirait à faire
 basculer une ligne d'un côté et pas de l'autre.
 
+**La coupure se décide sur la plus large des deux mesures.** Les deux rendus ne
+mesurent pas un mot à l'identique — Avalonia crénèle, PDFsharp non —, et un mot qui
+tient au centième de point d'un côté passait à la ligne de l'autre. Chacun décide donc
+sur le maximum de sa mesure et de celle de l'autre, qui ne dépend pas de l'ordre de ses
+termes, puis dessine à la sienne. L'export reçoit pour cela la règle de l'écran ;
+`--export`, qui tourne sans fenêtre, monte d'Avalonia ce qu'il faut pour mesurer.
+
+**Les polices du texte des documents sont résolues par MyPublisher.** Avalonia rabat une
+face absente — l'italique de DejaVu Sans, qui n'en a pas — sur la face qu'il a déjà
+chargée : l'italique sortait en gras dans un processus, en romain penché dans un
+autre. `PolicesDuDocument` demande à fontconfig le fichier que l'export emploie, et le
+charge avec les simulations que fontconfig décide : une fois par variante, quoi que le
+processus ait chargé avant. L'italique absent se penche à l'écran et au PDF ; le chrome de
+l'application garde les polices du système. L'application, l'export sans fenêtre, le
+banc et l'hôte des tests montent ces polices de la même façon
+(`AvecLesPolicesDeMyPublisher`).
+
 **Un remplissage ne se calcule qu'une fois.** Les extrémités d'un dégradé et la couleur
 d'une teinte sont calculées dans le modèle ; l'écran et l'export les lisent, aucun des
 deux ne les refait. Ce n'est pas une élégance mais la seule parade contre une erreur
@@ -390,8 +408,10 @@ partout ailleurs — à l'écran, à l'export — un chemin d'image est absolu.
 - L'alignement, les retraits et l'espacement varient d'un paragraphe à l'autre — un
   document Publisher importé les garde, et ils s'affichent et s'exportent —, mais le
   panneau ne règle que le bloc entier.
-- L'écran et le PDF mesurent les mots chacun avec sa bibliothèque : une ligne peut être
-  coupée à un mot différent de part et d'autre. Le document d'exemple le montre.
+- L'écran et le PDF coupent aux mêmes mots, mais chacun dessine à sa mesure : à
+  l'intérieur d'une ligne, un mot peut se poser à quelques points près de part et
+  d'autre (2,96 pt d'écart au plus, mesuré sur un morceau d'ATA 21), et un mot qui
+  tiendrait de justesse d'un seul côté passe à la ligne des deux.
 - Les tableaux ne fusionnent pas de cellules, ne s'imbriquent pas et ne se scindent pas
   entre deux pages : ce sont des bandes de cases, ce dont les documents à reprendre ont
   besoin, et rien de plus.
