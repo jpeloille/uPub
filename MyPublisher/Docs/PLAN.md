@@ -2116,7 +2116,8 @@ renvoient au modèle, si bien que 595,28 devient 595,2800000000013 — relevé p
 de pile, sur cette branche, dans du code que ce poste ne touche pas (A5). La recette
 compare donc les dimensions au millionième. La vignette d'un modèle ignore le fond de
 page — aucun modèle livré n'en porte. L'import ne lit aucun jeu de couleurs d'un `.pub` :
-ni cherché ni demandé.
+ni cherché ni demandé. La relecture a trouvé que la liste des polices effaçait la police
+d'un bloc absente de la machine : c'est le poste Q20, fait sur la même branche.
 
 ### C6 — Marges intérieures par côté *(fiche 12)*
 
@@ -3129,6 +3130,59 @@ d'interface : à faire seul, et pas au milieu d'une salve.
 
 *Recette* : `dotnet list package --deprecated` ne signale plus rien, et les deux
 projets de tests comptent autant de tests qu'avant. Effort : moyen.
+
+### Q20 — La liste des polices garde la police du bloc
+
+*Trouvé le 12 octobre 2026 par la relecture de C5b.* La liste des polices du panneau ne
+proposait que les deux entrées du jeu et les polices de la machine. Un bloc dont la
+police n'y est pas — un `.pub` composé ailleurs, un fichier écrit à la main, une valeur
+que la migration de C5b a gardée libre (`!scheme:heading`) — laissait la liste sans
+sélection ; et en passant de ce bloc à un autre de même sorte puis en y revenant, la
+liste renvoyait null au bloc. La police était perdue, et le
+rendu levait ensuite `ArgumentNullException` en composant le texte. Le défaut abîme des
+données sans aucun geste de l'utilisateur, sinon sélectionner.
+
+*Recette* : sur la vraie fenêtre, sélectionner tour à tour un texte à police absente et
+un texte à police présente, libre ou du jeu ; la police absente est intacte, aucun pas
+d'annulation n'est empilé, la liste la montre, et la page se compose. Même chose d'un
+tableau à l'autre. Choisir une police dans la liste l'écrit toujours. Effort : faible.
+
+*Fait le 12 octobre 2026.* Deux garde-fous. La liste (`FontFamilies`) propose, entre
+les deux entrées du jeu et les polices de la machine, celles que les textes et les
+tableaux du document emploient — groupes compris — et que la machine n'a pas ; une
+référence du jeu n'y est jamais comptée comme absente. Le libellé de ces entrées porte
+« (absente) ». La liste se fait à chaque remplacement du document — ouverture, modèle,
+document neuf, annulation — et ne change pas sous les gestes : choisir une autre police
+laisse la police absente dans la liste, et l'on peut y revenir. Le second garde-fou est
+la liaison elle-même (`JamaisNul`) : elle ne renvoie jamais null au bloc, puisqu'aucun
+geste de l'utilisateur ne choisit null. Les polices de la machine sont lues une fois,
+à la construction du modèle de vue, et exposées à part (`PolicesDeLaMachine`) pour le
+libellé.
+
+*Recette jouée* : `Scripts/recettes/Q20-police-absente.sh`, six tests d'interface sous
+`poste=Q20` (`PolicesAbsentesTests`) : trois passages d'un texte à l'autre — police
+inexistante contre DejaVu Sans, contre `scheme:body`, et `!scheme:heading` contre
+`scheme:body` —, deux tableaux, un bloc posé après que la liste a été faite, et le
+choix dans la liste. La recette compte les tests joués et échoue sous six. Les deux
+garde-fous retirés ensemble, c'est-à-dire le code d'avant, les six tombent : trois sur
+`ArgumentNullException`, deux sur une police changée, un sur une liste sans sélection.
+Deux sabotages au juge, un par garde-fou, éprouvés à la main : sans les polices
+absentes dans la liste, quatre tests tombent — les trois passages d'un texte à l'autre et
+le choix dans la liste ; sans `JamaisNul`, le seul test du bloc venu après la
+liste tombe. Le test des tableaux en prend deux et non un tableau et un texte : le
+tableau a sa propre liste au panneau, et passer d'un tableau à un texte ne montrait pas
+le défaut.
+
+*Choisi sans certitude.* Une police est « absente » quand son nom ne figure pas, à
+l'identique, parmi les familles qu'Avalonia lit sur la machine. L'export, lui, résout
+par fontconfig (B5) : les deux peuvent diverger sur un alias, et le libellé ne promet
+rien de l'export. La liste ne suit pas un bloc posé après coup — aucun geste ne le
+fait aujourd'hui — : c'est alors la liaison seule qui garde la police, sans que la liste
+la montre.
+
+*Laissé tel quel.* La comparaison est exacte, casse comprise : une police écrite
+« dejavu sans » serait proposée à part et libellée absente. Lu dans le code, non
+mesuré. Les fragments de style ont leur police hors du panneau, et ne sont pas concernés.
 
 ---
 

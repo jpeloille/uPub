@@ -67,8 +67,8 @@ public class PolicesAbsentesTests
     [AvaloniaFact]
     public void Passer_dun_tableau_a_lautre_ne_perd_pas_la_police()
     {
-        // Le tableau a sa propre liste au panneau : le défaut ne paraît qu'en passant d'un
-        // tableau à un autre, jamais d'un tableau à un texte.
+        // Le tableau a sa propre liste au panneau : le défaut paraît en passant d'un
+        // tableau à un autre, et ne paraissait pas d'un tableau à un texte.
         var absent = Tableau(40, "Police Absente De Cette Machine");
         var present = Tableau(140, "DejaVu Sans");
         var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(absent, present));
@@ -89,8 +89,8 @@ public class PolicesAbsentesTests
     public void Un_bloc_venu_apres_la_liste_garde_sa_police()
     {
         // La liste se fait à l'ouverture. Un bloc posé ensuite avec une police que ni la
-        // machine ni la liste n'ont — aucun geste ne le fait aujourd'hui, un collage le
-        // fera — laisse la liste sans sélection : le second garde-fou, qui ne renvoie
+        // machine ni la liste n'ont — aucun geste ne le fait aujourd'hui — laisse la
+        // liste sans sélection : le second garde-fou, qui ne renvoie
         // jamais null au bloc, est alors seul à tenir.
         var present = new TextFrame { X = 40, Y = 200, Width = 200, Height = 40, Text = "T2", FontFamily = "DejaVu Sans" };
         var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(present));
