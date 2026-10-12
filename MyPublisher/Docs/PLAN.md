@@ -76,14 +76,14 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **Q4** | Un filet au même endroit à l'écran et au PDF | **100 %** | L'écran élargit l'élément du filet d'une demi-épaisseur, sans arrondi au pixel de mise en page : centré sur le bord comme à l'export, de 0,5 à 5 pt (écart ≤ 0,01 pt mesuré à 8 px/pt). Les recettes de C1 et C5 resserrées en conséquence. Recette dans `Scripts/recettes/` |
 | **Q5** | Un groupe rogne pareil à l'écran et au PDF | **100 %** | Découpe calculée dans le noyau (`Decoupe`), lue par l'écran et l'export, groupes et tableaux, tournés et imbriqués ; elle déborde du plus large demi-filet des blocs portés (√2 fois pour un bloc tourné). Recette dans `Scripts/recettes/` |
 | **Q6** | Mesurer la découpe d'un remplissage par image | **100 %** | Bloc arrondi rempli d'une image dans le document de C5 ; ses coins sont relevés au PDF et à l'écran, et les deux sabotages de la découpe tombent ; recette `C5-Q6-fonds` dans `Scripts/recettes/` |
-| **Q7** | La recette de A6 sur le cas réel | 0 % | Relevé à la relecture du 7 septembre |
+| **Q7** | La recette de A6 sur le cas réel | **100 %** | La recette trace ses blocs à l'outil, au pointeur, comme la main ; renommée `A6-Q7-taille-dans-la-barre`, dans `Scripts/recettes/` |
 | **Q8** | N'avertir que des polices dessinées | **100 %** | La passe des polices lit les styles composés (`StyleEffectif.Decouper`) sur le contenu que `DrawText` compose, cases de tableau comprises ; un fragment recouvert, blanc, hors du texte, ou celui d'un champ n'avertit plus. Une seule règle `Fragments` pour la passe et le dessin. Recette dans `Scripts/recettes/` |
 | **Q9** | Retirer `AbsoluteLineHeight` | **100 %** | La vignette des modèles lit les lignes de la composition ; repris après relecture : fer, découpe et filet de champ éprouvés, filets gardés en mémoire ; recette dans `Scripts/recettes/` |
 | **Q10** | Saisir une poignée hors de la page | 0 % | Relevé en A1 |
 | **Q11** | La liste des blocs défile pendant le glissé | 0 % | Relevé en A4 |
 | **Q12** | Dépendance vulnérable | **100 %** | `Tmds.DBus.Protocol` relevé à 0.21.3 (correctif rétroporté) par une référence directe dans `MyPublisher` ; Avalonia reste en 11.3.9. Recette à part, `Scripts/verifier-dependances.sh`, parce qu'elle demande le réseau : elle lit la base des vulnérabilités et le prouve sur un projet témoin |
 | **Q13** | Couper la ligne au même mot à l'écran et au PDF | 0 % | Trouvé le 11 octobre 2026 : le document d'exemple coupe une ligne différemment |
-| **Q14** | Un double-clic ne déplace pas le bloc | 0 % | Trouvé par Q1 : un double-clic sur un bloc importé réécrit son ordonnée et empile un pas d'annulation |
+| **Q14** | Un double-clic ne déplace pas le bloc | **100 %** | Un mouvement nul ne passe plus par l'aimantation ; les champs en millimètres et d'angle rendent au modèle la valeur exacte qu'ils ont affichée (mémoire d'une case). Ouvre Q21 à Q23. Recette dans `Scripts/recettes/` |
 | **Q15** | Une image modifiée sur le disque se relit | **100 %** | Chaque image du cache garde l'empreinte de son fichier (date et taille, prise avant la lecture) ; l'ouverture oublie les retouchées, une image intacte reste la même instance, l'annulation ne relit rien. Recette dans `Scripts/recettes/` |
 | **Q16** | Le pointillé d'un bloc image obéit aux repères | **100 %** | Dessiné seulement repères allumés et sans image affichée ; recette dans `Scripts/recettes/` |
 | **Q17** | Le texte composé suit une collection remplacée | **100 %** | Accesseur fermé (`init`) sur `TextFrame.Spans`, `TextFrame.Paragraphs` et `TableCell.Spans` : le remplacement ne compile plus (CS8852), le sérialiseur les pose encore. Recette dans `Scripts/recettes/` |
@@ -96,9 +96,9 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **D** | Moteur de composition | — | Décision non ouverte ; à rouvrir quand A, B et C sont livrées |
 
 **Par phase** — P : 4 sur 4 · A : 7 sur 15 · B : 3 sur 7 · C : 7 sur 9 · R : 5 sur 7 ·
-Q : 13 sur 23 · D : non planifié.
+Q : 15 sur 23 · D : non planifié.
 
-Soit **39 postes sur 65**. Le compte a doublé le 11 octobre 2026 sans que rien ne
+Soit **41 postes sur 65**. Le compte a doublé le 11 octobre 2026 sans que rien ne
 recule : il porte désormais les onze postes de l'audit des fiches (A8 à A15, B6, B7,
 C8), deux postes que les documents réels demandaient (R6, R7), et la phase Q, qui
 recense les défauts que les postes et les relectures ont **trouvés et consignés sans les
