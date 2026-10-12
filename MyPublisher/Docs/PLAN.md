@@ -82,7 +82,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **Q10** | Saisir une poignée hors de la page | 0 % | Relevé en A1 |
 | **Q11** | La liste des blocs défile pendant le glissé | 0 % | Relevé en A4 |
 | **Q12** | Dépendance vulnérable | **100 %** | `Tmds.DBus.Protocol` relevé à 0.21.3 (correctif rétroporté) par une référence directe dans `MyPublisher` ; Avalonia reste en 11.3.9. Recette à part, `Scripts/verifier-dependances.sh`, parce qu'elle demande le réseau : elle lit la base des vulnérabilités et le prouve sur un projet témoin |
-| **Q13** | Couper la ligne au même mot à l'écran et au PDF | 0 % | Trouvé le 11 octobre 2026 : le document d'exemple coupe une ligne différemment |
+| **Q13** | Couper la ligne au même mot à l'écran et au PDF | **100 %** | Polices de l'écran résolues par fontconfig, variante par variante (l'italique absent penché des deux côtés) ; coupure sur la plus large des deux mesures, sur la taille du modèle ; 0 ligne coupée autrement sur l'exemple, ATA 21, les fiches et `recette-coupure.mypub`, dans trois ordres de chargement ; outil `comparer-mots.sh`. Recette dans `Scripts/recettes/` |
 | **Q14** | Un double-clic ne déplace pas le bloc | **100 %** | Un mouvement nul ne passe plus par l'aimantation ; les champs en millimètres et d'angle rendent au modèle la valeur exacte qu'ils ont affichée (mémoire d'une case). Ouvre Q21 à Q23. Recette dans `Scripts/recettes/` |
 | **Q15** | Une image modifiée sur le disque se relit | **100 %** | Chaque image du cache garde l'empreinte de son fichier (date et taille, prise avant la lecture) ; l'ouverture oublie les retouchées, une image intacte reste la même instance, l'annulation ne relit rien. Recette dans `Scripts/recettes/` |
 | **Q16** | Le pointillé d'un bloc image obéit aux repères | **100 %** | Dessiné seulement repères allumés et sans image affichée ; recette dans `Scripts/recettes/` |
@@ -96,9 +96,9 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **D** | Moteur de composition | — | Décision non ouverte ; à rouvrir quand A, B et C sont livrées |
 
 **Par phase** — P : 4 sur 4 · A : 7 sur 15 · B : 3 sur 7 · C : 7 sur 9 · R : 5 sur 7 ·
-Q : 15 sur 23 · D : non planifié.
+Q : 16 sur 23 · D : non planifié.
 
-Soit **41 postes sur 65**. Le compte a doublé le 11 octobre 2026 sans que rien ne
+Soit **42 postes sur 65**. Le compte a doublé le 11 octobre 2026 sans que rien ne
 recule : il porte désormais les onze postes de l'audit des fiches (A8 à A15, B6, B7,
 C8), deux postes que les documents réels demandaient (R6, R7), et la phase Q, qui
 recense les défauts que les postes et les relectures ont **trouvés et consignés sans les

@@ -75,7 +75,34 @@ etape "Tests"
 # Les tests en échec sont nommés, et pas seulement comptés : le juge cherche dans cette
 # sortie qui a attrapé son sabotage, et un sabotage pris par les seuls tests du noyau
 # passait pour pris par personne.
-if ! dotnet test MyPublisher.sln --no-build --nologo -v q > /tmp/tests-$$.txt 2>&1; then
+#
+# La commande dotnet elle-même plante parfois sur cette machine (« Internal CLR error »,
+# code 134, sans un seul résultat) : vu deux fois le 12 octobre 2026, sous charge. Comme
+# pour la compilation, on rejoue une fois ; un second plantage sort en 3, l'environnement
+# et non le code. Un test en échec (« [FAIL] ») n'est jamais rejoué.
+tester() {
+    local code=0
+    dotnet test MyPublisher.sln --no-build --nologo -v q > /tmp/tests-$$.txt 2>&1 || code=$?
+    if [ "$code" != 0 ] && ! grep -q "\[FAIL\]" /tmp/tests-$$.txt &&
+       { [ "$code" = 134 ] || grep -qE "Internal CLR error|0x80131506" /tmp/tests-$$.txt; }; then
+        return 3
+    fi
+    return "$code"
+}
+code_tests=0
+tester || code_tests=$?
+if [ "$code_tests" = 3 ]; then
+    echo "  dotnet test a planté sans résultat ; second essai"
+    code_tests=0
+    tester || code_tests=$?
+    if [ "$code_tests" = 3 ]; then
+        tail -20 /tmp/tests-$$.txt | sed 's/^/    /' >&2
+        echo "ÉCHEC : dotnet test a planté deux fois — l'environnement, pas le code." >&2
+        rm -f /tmp/tests-$$.txt
+        exit 3
+    fi
+fi
+if [ "$code_tests" != 0 ]; then
     grep -E "^(Passed!|Failed!|Erreur|error)" /tmp/tests-$$.txt || true
     # Une théorie porte ses paramètres entre le nom et « [FAIL] » : on lit le nom seul.
     grep -E "\[FAIL\]" /tmp/tests-$$.txt | grep -oE "[A-Za-z0-9_]+Tests\.[A-Za-z0-9_]+" | sort -u | sed 's/^/  en échec : /' >&2 || true
