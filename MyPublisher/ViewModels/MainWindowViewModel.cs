@@ -901,7 +901,14 @@ public partial class MainWindowViewModel : ViewModelBase
     ///
     /// Un seul pas d'annulation, ouvert et refermé ici : vider puis écrire font trois
     /// changements du modèle, et le dialogue de fichier a pris puis rendu le focus qui
-    /// règle la transaction du panneau.
+    /// règle la transaction du panneau. Une transaction restée ouverte — une saisie sur
+    /// la page, un champ du panneau — est d'abord refermée en un pas à elle : sans cela,
+    /// celle de l'import s'y emboîterait, n'empilerait rien, et une seule annulation
+    /// défairait à la fois la frappe et l'import. La fenêtre referme sa saisie avant
+    /// d'appeler ici (<c>MainWindow.ImporterTexte</c>) ; ceci couvre le reste.
+    ///
+    /// Un fichier refusé par le noyau — vide, trop gros, qui n'est pas du texte — ne
+    /// touche pas au bloc, et la barre d'état dit pourquoi.
     /// </summary>
     /// <returns>Vrai si le texte a été posé.</returns>
     public bool ImporterTexte(string chemin)
@@ -923,12 +930,13 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             lu = TexteImporte.Lire(chemin);
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or TexteRefuseException)
         {
             Status = $"Import impossible : {ex.Message}";
             return false;
         }
 
+        EndPendingEdit();
         BeginEdit();
         bloc.Spans.Clear();
         bloc.Paragraphs.Clear();

@@ -264,7 +264,24 @@ public partial class MainWindow : Window
             FileTypeFilter = [TextType, AnyType]
         });
 
-        if (files.FirstOrDefault()?.TryGetLocalPath() is { } path) vm.ImporterTexte(path);
+        if (files.FirstOrDefault()?.TryGetLocalPath() is { } path) ImporterTexte(path);
+    }
+
+    /// <summary>
+    /// Ce que fait le geste une fois le fichier choisi : refermer la saisie sur la page et
+    /// la transaction du panneau, puis passer le chemin au modèle de vue. Laissée
+    /// ouverte, la saisie sur la page garderait sa zone à l'écran, et la frappe qui la
+    /// précède partagerait le pas d'annulation de l'import. Publique pour qu'un test la
+    /// joue sans le sélecteur de fichier, qui ne s'ouvre pas sans affichage.
+    /// </summary>
+    /// <returns>Vrai si le texte a été posé.</returns>
+    public bool ImporterTexte(string chemin)
+    {
+        if (Vm is not { } vm) return false;
+
+        PageView.EndTextEdit();
+        ClosePropertyEdit();
+        return vm.ImporterTexte(chemin);
     }
 
     private void OnQuit(object? sender, RoutedEventArgs e) => Close();

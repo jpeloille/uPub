@@ -11,8 +11,10 @@
 # Ce qu'elle éprouve :
 #
 #   1. le geste — « dotnet test » joue les tests du poste, ceux du noyau (encodage, fins
-#      de ligne) et ceux de la fenêtre (le bloc rempli, le marqueur de débordement à
-#      l'écran, le style du bloc, l'annulation, le menu et le panneau). Le premier test
+#      de ligne, refus du vide, du binaire, de l'UTF-16 sans marque et du trop gros) et
+#      ceux de la fenêtre (le bloc rempli, le marqueur de débordement à l'écran, le
+#      style du bloc, l'annulation, l'import pendant une saisie ouverte, les fichiers
+#      refusés ou fermés en lecture, le menu et le panneau). Le premier test
 #      de la fenêtre écrit le fichier importé et les documents d'avant, d'après et
 #      d'après l'annulation là où la variable d'environnement le demande : c'est sur eux
 #      que la suite mesure, indépendamment du code qui les a produits ;
@@ -73,8 +75,8 @@ jouer() {   # <projet> <minimum>
     echo "  1. $projet : $joues tests du poste joués."
 }
 
-jouer MyPublisher.Tests 10
-jouer MyPublisher.Tests.Interface 5
+jouer MyPublisher.Tests 20
+jouer MyPublisher.Tests.Interface 11
 
 for fichier in source.txt avant.mypub importe.mypub annule.mypub; do
     if [ ! -f "$import/$fichier" ]; then
