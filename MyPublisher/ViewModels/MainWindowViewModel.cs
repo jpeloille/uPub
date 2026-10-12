@@ -132,7 +132,7 @@ public partial class MainWindowViewModel : ViewModelBase
         Contacts = contacts ?? BusinessInfoStore.Load();
         _horloge = horloge ?? (() => DateTime.Now);
         CurrentPage = Document.Pages.FirstOrDefault();
-        FontFamilies = LoadSystemFonts();
+        FontFamilies = PolicesProposees(Document);
         // L'initialiseur de champ ne passe pas par OnDocumentChanged : le premier
         // document s'abonne donc ici, et lui seul.
         Document.PropertyChanged += OnDocumentPropertyChanged;
@@ -152,6 +152,9 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         if (oldValue is not null) oldValue.PropertyChanged -= OnDocumentPropertyChanged;
         newValue.PropertyChanged += OnDocumentPropertyChanged;
+
+        FontFamilies = PolicesProposees(newValue);
+        OnPropertyChanged(nameof(FontFamilies));
     }
 
     private void OnDocumentPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -262,12 +265,53 @@ public partial class MainWindowViewModel : ViewModelBase
 
     /// <summary>
     /// Les polices proposées : le titre et le corps du jeu de polices d'abord — ce sont
-    /// des références, qui suivront le jeu (poste C5b) — puis les polices de la machine.
-    /// La liste ne change pas quand on change de jeu : seul le libellé des deux premières
-    /// entrées le fait. Remplacer la liste remettrait à vide la sélection de la liste
-    /// déroulante, qui la renverrait au bloc.
+    /// des références, qui suivront le jeu (poste C5b) —, puis les polices que le
+    /// document emploie et que la machine n'a pas, puis celles de la machine.
+    ///
+    /// Les polices absentes y sont pour le poste Q20 : une liste déroulante qui n'a pas la
+    /// police du bloc reste sans sélection, et en passant d'un bloc à l'autre elle
+    /// renvoyait null au bloc — la police d'un .pub composé ailleurs était perdue, et le
+    /// rendu levait ensuite.
+    ///
+    /// La liste se fait à l'ouverture du document — fichier, modèle, page neuve,
+    /// annulation — et ne change pas sous les gestes : ni quand on change de jeu, seul
+    /// le libellé des deux premières entrées le fait, ni quand un bloc quitte sa police
+    /// absente. Remplacer la liste pendant qu'un bloc est affiché remettrait à vide la
+    /// sélection de la liste déroulante.
     /// </summary>
-    public IReadOnlyList<string> FontFamilies { get; }
+    public IReadOnlyList<string> FontFamilies { get; private set; }
+
+    /// <summary>Les polices de la machine, pour dire au panneau lesquelles manquent.</summary>
+    public IReadOnlyList<string> PolicesDeLaMachine { get; } = LoadSystemFonts();
+
+    private IReadOnlyList<string> PolicesProposees(Document document)
+    {
+        var absentes = document.Pages
+            .SelectMany(page => page.Frames)
+            .SelectMany(Descendance)
+            .Select(bloc => bloc switch
+            {
+                TextFrame texte => texte.FontFamily,
+                TableFrame tableau => tableau.FontFamily,
+                _ => null,
+            })
+            .OfType<string>()
+            .Where(police => police.Length > 0 && !PolicesDeLaMachine.Contains(police)
+                             && !ReferenceDuJeu.TryPolice(police, out _))
+            .Distinct()
+            .Order(StringComparer.CurrentCultureIgnoreCase);
+
+        return
+        [
+            ReferenceDuJeu.Police(EmplacementDePolice.Heading),
+            ReferenceDuJeu.Police(EmplacementDePolice.Body),
+            .. absentes,
+            .. PolicesDeLaMachine,
+        ];
+    }
+
+    private static IEnumerable<Frame> Descendance(Frame bloc) =>
+        bloc is GroupFrame groupe ? [bloc, .. groupe.Children.SelectMany(Descendance)] : [bloc];
 
     /// <summary>Les jeux de couleurs proposés au panneau.</summary>
     public IReadOnlyList<JeuDeCouleurs> ColorSchemes => JeuxPredefinis.Couleurs;
@@ -1507,25 +1551,16 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         try
         {
-            return
-            [
-                ReferenceDuJeu.Police(EmplacementDePolice.Heading),
-                ReferenceDuJeu.Police(EmplacementDePolice.Body),
-                .. FontManager.Current.SystemFonts
-                    .Select(family => family.Name)
-                    .Distinct(StringComparer.OrdinalIgnoreCase)
-                    .OrderBy(name => name, StringComparer.CurrentCultureIgnoreCase)
-            ];
+            return FontManager.Current.SystemFonts
+                .Select(family => family.Name)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(name => name, StringComparer.CurrentCultureIgnoreCase)
+                .ToList();
         }
         catch (Exception)
         {
             // Le concepteur visuel n'a pas toujours de gestionnaire de polices actif.
-            return
-            [
-                ReferenceDuJeu.Police(EmplacementDePolice.Heading),
-                ReferenceDuJeu.Police(EmplacementDePolice.Body),
-                "DejaVu Sans", "Liberation Serif", "Liberation Sans"
-            ];
+            return ["DejaVu Sans", "Liberation Serif", "Liberation Sans"];
         }
     }
 }

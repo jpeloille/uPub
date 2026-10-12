@@ -227,7 +227,9 @@ la barre du haut regroupe les commandes du document : fichier, annulation, zoom.
 - **L'export dit quelles polices il n'a pas trouvées**, et par quoi il les a
   remplacées : « Police substituée : « Wingdings » demandée, « DejaVu Sans »
   employée ». Une substitution muette ne dégrade pas seulement l'allure — sur une
-  fiche de procédure, elle remplace une flèche par une lettre.
+  fiche de procédure, elle remplace une flèche par une lettre. Au panneau, la liste des
+  polices propose aussi celles que le document emploie sans que la machine les ait,
+  marquées « (absente) » : sélectionner un tel bloc ne touche pas à sa police.
 
 ## Raccourcis
 

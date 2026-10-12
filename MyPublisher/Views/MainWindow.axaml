@@ -647,10 +647,15 @@
                                     <TextBlock Classes="field" Text="Police" Margin="0,8,0,2"/>
                                     <ComboBox HorizontalAlignment="Stretch" MaxDropDownHeight="320"
                                               ItemsSource="{Binding #Root.((vm:MainWindowViewModel)DataContext).FontFamilies}"
-                                              SelectedItem="{Binding FontFamily}">
+                                              SelectedItem="{Binding FontFamily, Converter={x:Static conv:JamaisNul.Instance}}">
                                         <!-- Les deux premières entrées sont le titre et le corps du
                                              jeu de polices : la valeur retenue est la référence, le
-                                             libellé dit la police qu'elle désigne aujourd'hui. -->
+                                             libellé dit la police qu'elle désigne aujourd'hui.
+
+                                             La police du bloc est toujours dans la liste, même absente
+                                             de la machine, et la liste ne renvoie jamais null au bloc :
+                                             sans cela, passer d'un bloc à l'autre effaçait la police
+                                             d'un .pub composé ailleurs (poste Q20). -->
                                         <ComboBox.ItemTemplate>
                                             <DataTemplate DataType="x:String">
                                                 <TextBlock>
@@ -658,6 +663,7 @@
                                                         <MultiBinding Converter="{x:Static conv:LibelleDePolice.Instance}">
                                                             <Binding/>
                                                             <Binding Path="#Root.((vm:MainWindowViewModel)DataContext).Document.FontScheme"/>
+                                                            <Binding Path="#Root.((vm:MainWindowViewModel)DataContext).PolicesDeLaMachine"/>
                                                         </MultiBinding>
                                                     </TextBlock.Text>
                                                 </TextBlock>
@@ -816,10 +822,15 @@
                                     <TextBlock Classes="field" Text="Police" Margin="0,8,0,2"/>
                                     <ComboBox HorizontalAlignment="Stretch" MaxDropDownHeight="320"
                                               ItemsSource="{Binding #Root.((vm:MainWindowViewModel)DataContext).FontFamilies}"
-                                              SelectedItem="{Binding FontFamily}">
+                                              SelectedItem="{Binding FontFamily, Converter={x:Static conv:JamaisNul.Instance}}">
                                         <!-- Les deux premières entrées sont le titre et le corps du
                                              jeu de polices : la valeur retenue est la référence, le
-                                             libellé dit la police qu'elle désigne aujourd'hui. -->
+                                             libellé dit la police qu'elle désigne aujourd'hui.
+
+                                             La police du bloc est toujours dans la liste, même absente
+                                             de la machine, et la liste ne renvoie jamais null au bloc :
+                                             sans cela, passer d'un bloc à l'autre effaçait la police
+                                             d'un .pub composé ailleurs (poste Q20). -->
                                         <ComboBox.ItemTemplate>
                                             <DataTemplate DataType="x:String">
                                                 <TextBlock>
@@ -827,6 +838,7 @@
                                                         <MultiBinding Converter="{x:Static conv:LibelleDePolice.Instance}">
                                                             <Binding/>
                                                             <Binding Path="#Root.((vm:MainWindowViewModel)DataContext).Document.FontScheme"/>
+                                                            <Binding Path="#Root.((vm:MainWindowViewModel)DataContext).PolicesDeLaMachine"/>
                                                         </MultiBinding>
                                                     </TextBlock.Text>
                                                 </TextBlock>

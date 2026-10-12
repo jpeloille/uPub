@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
+using Avalonia.Data;
 using Avalonia.Data.Converters;
 using Avalonia.Media;
 using MyPublisher.Models;
@@ -45,6 +47,21 @@ public sealed class PoliceDuJeu : IMultiValueConverter
 }
 
 /// <summary>
+/// Une liaison qui ne renvoie jamais null à sa source. Une liste déroulante sans
+/// sélection rend null, et ce null n'est jamais un choix de l'utilisateur : il ne peut
+/// en faire qu'en choisissant une entrée. C'est le second garde-fou du poste Q20.
+/// </summary>
+public sealed class JamaisNul : IValueConverter
+{
+    public static readonly JamaisNul Instance = new();
+
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture) => value;
+
+    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        value ?? BindingOperations.DoNothing;
+}
+
+/// <summary>
 /// Ce que la liste des polices affiche d'une entrée : son nom, ou, pour les deux
 /// premières entrées, l'emplacement du jeu et la police qu'il désigne aujourd'hui —
 /// « Titre du jeu — DejaVu Serif ». Le libellé suit le jeu ; la valeur choisie, elle,
@@ -58,8 +75,16 @@ public sealed class LibelleDePolice : IMultiValueConverter
     {
         var valeur = values.Count > 0 ? values[0] as string : null;
         var jeu = values.Count > 1 ? values[1] as JeuDePolices : null;
+        var machine = values.Count > 2 ? values[2] as IReadOnlyList<string> : null;
 
-        if (!ReferenceDuJeu.TryPolice(valeur, out var emplacement)) return valeur ?? "";
+        if (!ReferenceDuJeu.TryPolice(valeur, out var emplacement))
+        {
+            // Une police que la machine n'a pas reste proposée — c'est celle du bloc —, et
+            // le libellé dit qu'elle manque (poste Q20).
+            return valeur is not null && machine is not null && !machine.Contains(valeur)
+                ? $"{valeur} (absente)"
+                : valeur ?? "";
+        }
 
         var nom = emplacement == EmplacementDePolice.Heading ? "Titre du jeu" : "Corps du jeu";
         return jeu is null ? nom : $"{nom} — {jeu.Police(emplacement)}";

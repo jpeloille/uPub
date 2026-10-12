@@ -466,6 +466,21 @@ saboter "une pastille du jeu perd l'opacité propre du fond" \
     'Valeur = ReferenceDuJeu.Couleur(emplacement);' \
     'JeuxTests'
 
+# Q20 : une police absente de la machine survit à la sélection. Deux garde-fous, et
+# chacun a son test : la liste qui propose la police du bloc, et la liaison qui ne
+# renvoie jamais null au bloc — seule à tenir pour un bloc venu après la liste.
+saboter "la liste des polices ne propose plus les polices absentes du document" \
+    MyPublisher/ViewModels/MainWindowViewModel.cs \
+    '            .. absentes,' \
+    '' \
+    'PolicesAbsentesTests|Q20-police-absente'
+
+saboter "la liste des polices renvoie null au bloc qu'elle ne sait pas montrer" \
+    MyPublisher/Converters/JeuConverters.cs \
+    'value ?? BindingOperations.DoNothing;' \
+    'value;' \
+    'PolicesAbsentesTests|Q20-police-absente'
+
 echo
 if [ "$trous" = 0 ]; then
     echo "Le juge sait échouer : $sabotages sabotages, $sabotages attrapés."
