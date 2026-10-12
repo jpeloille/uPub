@@ -48,7 +48,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **A14** | Contour et ombre du caractère | 0 % | Spécifié le 11 octobre 2026 ; PDFsharp à éprouver d'abord |
 | **A15** | Sections : numérotation qui repart | 0 % | Spécifié le 11 octobre 2026 |
 | **B1** | Modèles | **100 %** | Catalogue au démarrage et sur `Ctrl+N` ; quatre modèles composés dans `Templates/` ; recette dans `Scripts/recettes/`, qui a remis le nom de la carte de visite à la taille de son texte |
-| **B2** | Importer un fichier texte | 0 % | — |
+| **B2** | Importer un fichier texte | **100 %** | Menu « Importer un texte… » sur le bloc choisi, en un pas d'annulation ; UTF-8 strict, UTF-16 à marque, repli Windows-1252 ; vide, binaire, au-delà de 128 Kio ou illisible : refusé avec un message, bloc intact. Recette dans `Scripts/recettes/` |
 | **B3** | Imprimer | 0 % | — |
 | **B4** | Archive `.mypubz` | 0 % | — |
 | **B5** | Avertir sur les substitutions de polices | **100 %** | L'export nomme la police demandée et celle employée ; recette dans `Scripts/recettes/` |
@@ -91,10 +91,10 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **Q19** | Les autres collections ne se remplacent plus | 0 % | Trouvé par Q17 : `Page.Frames`, `GroupFrame.Children`, `Document.Pages` et les listes de repères ont un setter public que des `ItemsControl` lient sans l'écouter |
 | **D** | Moteur de composition | — | Décision non ouverte ; à rouvrir quand A, B et C sont livrées |
 
-**Par phase** — P : 4 sur 4 · A : 7 sur 15 · B : 2 sur 7 · C : 6 sur 9 · R : 5 sur 7 ·
+**Par phase** — P : 4 sur 4 · A : 7 sur 15 · B : 3 sur 7 · C : 6 sur 9 · R : 5 sur 7 ·
 Q : 12 sur 19 · D : non planifié.
 
-Soit **36 postes sur 61**. Le compte a doublé le 11 octobre 2026 sans que rien ne
+Soit **37 postes sur 61**. Le compte a doublé le 11 octobre 2026 sans que rien ne
 recule : il porte désormais les onze postes de l'audit des fiches (A8 à A15, B6, B7,
 C8), deux postes que les documents réels demandaient (R6, R7), et la phase Q, qui
 recense les défauts que les postes et les relectures ont **trouvés et consignés sans les
