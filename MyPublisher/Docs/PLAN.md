@@ -3033,6 +3033,85 @@ que R4 a remplacée. Seule la vignette des modèles la lit encore, et se trompe 
 *Recette* : la propriété n'existe plus, et la vignette du bulletin a autant de lignes
 que son rendu réel. Effort : faible.
 
+*Fait le 12 octobre 2026.* `AbsoluteLineHeight` quitte `TextFrame`, avec les deux
+`NotifyPropertyChangedFor` qui la tenaient à jour ; le commentaire de `LineHeight`, qui
+parlait encore d'un « multiple du corps », dit désormais la sémantique de R4. La
+vignette ne compte plus ses filets à la louche : elle compose chaque bloc par
+`Compositeur`, avec la règle d'Avalonia, et pose un filet par ligne non vide, à
+l'ordonnée, à la longueur et au fer de la ligne — une ligne justifiée court jusqu'au
+bout de sa colonne —, sous le calage vertical, découpé au bloc. `EstimateLines` est
+parti avec.
+
+*Mesuré.* La vignette du bulletin, rendue à deux pixels par point
+(`VignetteTests`), porte 48 filets dans ses huit blocs de texte saisi, un par ligne de
+la page, chacun à deux pixels au plus de la place de sa ligne. L'ancienne en aurait
+posé 45 : 13 au lieu de 14 dans chacune des trois colonnes. Le sabotage qui rétablit
+l'espacement du corps décale déjà le deuxième filet des colonnes de 3,2 pixels
+(1,6 pt) à 9,5 pt, et le test tombe ; il est au juge.
+
+*Choisi sans certitude.* Un champ garde un seul filet, de toute la largeur, à l'avance
+de sa police : son contenu — les coordonnées de l'utilisateur, la date du jour où il
+ouvrira le document — n'est pas celui du catalogue, et la carte de visite n'est faite
+que de champs. Il reste en haut de son bloc, quel que soit son calage vertical, comme
+avant. Le filet est centré dans sa ligne, là où l'ancien en occupait le haut. Le test
+admet deux pixels d'écart, parce que le lissage peut allumer la rangée du dessus.
+
+*Trouvé et laissé tel quel.* La vignette mesure avec `MetriquesAvalonia`, et hérite
+donc de ce que Q13 a trouvé : l'italique d'une famille qui n'en a pas — DejaVu Sans, ici
+— se résout selon l'histoire du processus, en gras ou en romain penché. Les quatre
+modèles portent de l'italique — le chapeau et la légende du bulletin. Dans le
+catalogue, un filet d'italique peut donc être plus long ou plus court d'une ouverture à
+l'autre, et une ligne passer à la suivante. Le test ne le voit pas : il compose ses
+attentes dans le même processus que la vignette, avec la même résolution.
+
+*Repris le 12 octobre 2026, après relecture.* La relecture a fait passer trois
+sabotages à travers les tests : la vignette qui perd son fer et la longueur de ses
+filets, celle qui ne découpe plus au bloc, et le champ qui ne laisse plus de filet. Le
+test ne lisait que le nombre et l'ordonnée des filets du bulletin : ce que le
+paragraphe précédent dit de la longueur, du fer et de la découpe était écrit dans le
+code, mais pas éprouvé. `VignetteTests` passe de deux tests à six :
+
+- le début et la fin de chaque filet du bulletin, à un point près de ceux de sa ligne à
+  la page. Le bulletin ne centre aucun texte saisi : le test centre le titre de une et
+  le chapeau, et cale le sous-titre à droite. Il éprouve ainsi les 48 lignes, dont 36
+  justifiées, 3 centrées et une à droite, et exige plus de vingt justifiées, deux
+  centrées et une à droite : un fer qu'aucune ligne n'éprouverait passerait vert ;
+- un filet et un seul par champ de la carte de visite, de toute la largeur de sa zone de
+  texte, au milieu de sa première ligne ;
+- la première colonne du bulletin ramenée à cent points : sa composition en pose
+  207,3 points de haut, et aucune rangée de sa couleur ne paraît entre le bas du cadre et son bas
+  d'origine ;
+- une même vignette qui reçoit deux documents de suite recompose ses filets.
+
+*Mesuré.* Un sabotage de chacune des trois sortes que la relecture a fait passer — ses
+textes exacts n'ont pas été gardés —, et des variantes, font tomber un test et la
+recette, éprouvés à la main un par un : le fer perdu (`justifiee` toujours vraie, ou toujours fausse,
+centre ou droite ramenés au retrait, longueur toujours pleine) fait tomber les
+abscisses ; la découpe retirée, ou élargie au double de la hauteur, le débordement ; le
+filet de champ retiré, réduit à la moitié de la largeur, ou effacé par la garde du texte
+vide, la carte de visite. Les trois sont au juge, avec un quatrième : la mémoire des
+filets qui ne se renouvelle plus quand le document change.
+
+*La vignette garde ses filets.* Elle composait chaque bloc à chaque rendu. Les filets de
+chaque bloc, en coordonnées de la page, sont désormais gardés pour un document et une
+taille de contrôle, et rangés par ordre de rencontre : les cases d'un tableau sont des
+blocs refaits à chaque lecture, une clé par référence ne les retrouverait pas. À 134
+pixels de côté, moyenne de 500 rendus, deux passes, poste chargé : le bulletin passe
+de 2,5 et 2,7 ms par rendu à 0,06 ms, l'affiche de 1,2 et 1,3 ms à 0,03 ms, le dépliant
+de 0,34 à 0,03 ms ; la carte de visite, qui n'a que des champs, reste vers 0,02 ms.
+
+*Choisi sans certitude.* La mémoire ne voit pas une modification du document en place.
+Le catalogue n'en fait aucune — ses documents sont lus pour la vignette, et le modèle
+choisi est rouvert depuis son fichier —, et c'est écrit dans le commentaire de
+`TemplatePreview`. Un appelant qui afficherait un document qu'on édite devrait en poser
+un autre.
+
+*Ce que la recette ne prouve pas*, et qu'elle dit désormais en tête : la justesse de la
+composition elle-même — les attentes sont composées par le même `Compositeur`, avec les
+mêmes métriques —, la vignette à la taille du catalogue, les blocs tournés, les groupes,
+les tableaux, le calage vertical d'un champ, les retraits, l'affiche et le dépliant, et
+le gain de la mémoire, mesuré à la main seulement.
+
 ### Q10 — Saisir une poignée hors de la page
 
 La couche de saisie s'arrête au bord de la page. Une poignée de rotation qui en sort,
@@ -3138,6 +3217,61 @@ prix : un mot qui tiendrait de justesse passe à la ligne des deux côtés.
 
 Effort : moyen. **Si la voie d'attente ne suffit pas, le poste devient la question du
 seuil D**, et l'on s'arrête pour la poser au propriétaire du projet.
+
+*Éprouvé le 12 octobre 2026, et arrêté : la voie d'attente ne suffit pas seule.* La
+question revient au propriétaire ; rien du code de ce poste n'est commité. Le code
+éprouvé est gardé hors du dépôt, en un correctif qui s'applique sur `b17e569`.
+
+*Mesuré avant.* Chaque règle décidant seule, sur les blocs de texte des trois
+documents, groupes et cases compris : l'exemple coupe autrement **1 bloc sur 15, 2 lignes
+sur 57** — la première colonne, où l'écran garde « jamais » à 231,11 pt d'une ligne de
+232 pt et où le PDF le renvoie ; ATA 21, 0 ligne sur 79 ; les fiches ATR, 0 sur 152.
+D'un morceau à l'autre, les deux mesures diffèrent au plus de 2,38 pt sur l'exemple
+(0,15 % en moyenne, le PDF jamais plus étroit), 2,96 pt sur ATA 21 (0,47 %), 2,29 pt sur
+les fiches (0,20 %). Sur l'exemple et les fiches, l'écart est le crénage : l'écran
+privé de crénage (essai, non gardé) y mesure chaque morceau comme le PDF, à 0,0001 pt
+près. Sur ATA 21, un écart de 2,96 pt reste sans crénage ; sa cause n'a pas été
+cherchée. La hauteur naturelle, qui décide du passage de colonne, est la même des deux
+côtés sur les trois documents.
+
+*La voie d'attente, écrite.* `IMetriques` gagne `LargeurDeCoupure` : chacun rend la plus
+large de sa mesure et de celle de l'autre, et le compositeur ne décide plus que sur
+elle, en dessinant à la sienne. L'export reçoit la règle de l'écran de l'application ;
+`--export` monte d'Avalonia ce qu'il faut pour mesurer, sans fenêtre. Dans un même
+processus, les trois documents coupent alors aux mêmes mots, ligne pour ligne.
+
+*Pourquoi elle ne suffit pas.* La règle de l'écran n'est pas une fonction du texte et du
+style. DejaVu Sans n'a pas d'italique sur cette machine ; Avalonia 11.3.9 lui donne la
+face qu'il a déjà chargée : le gras si le gras est venu le premier, le romain sinon. La
+même ligne de la légende mesure 262,83 pt ou 233,96 pt selon l'histoire du processus.
+La voie d'attente fait entrer cette mesure dans la coupure du PDF, qui n'en dépendait
+pas. Charger les quatre faces d'une famille dans un ordre fixe, à sa première mesure,
+donne le romain à l'export, mais pas à un processus qui a déjà composé autre chose : après une
+autre famille et les deux documents ATR, l'italique y repasse au gras. La confrontation
+de bout en bout — le PDF du vrai binaire, lu mot par mot par `pdftotext -bbox`, contre
+les lignes de l'écran — tombe ainsi, aux trois passages, sur la légende et le rappel.
+
+*Ce que `comparer-rendus.sh` mesure vraiment.* Pas la coupure. Page 1 et page 2 de
+l'exemple : 4,87 % et 3,72 % avant ; 4,78 % et 3,72 % avec la voie d'attente ; 4,80 %
+et 3,91 % avec, en plus, l'écran privé de crénage, donc des morceaux de même largeur ;
+0,37 % et 0,03 % sans aucun texte. Deux rastériseurs du **même** PDF, `pdftoppm` et
+`pdftocairo`, diffèrent déjà de 2,36 % et 1,77 % ; l'écran et `pdftocairo`, de 4,28 % et
+3,35 %. L'excédent est le dessin des glyphes. Le seuil de 3 % n'est pas à la portée
+d'une page de texte, coupée juste ou non, et les en-têtes de `verifier.sh` et de
+`comparer-rendus.sh`, qui attribuent l'écart à la coupure, se trompent de cause ; ils
+sont laissés tels quels.
+
+*Trouvé et laissé tel quel.* L'italique de DejaVu Sans sort droit au PDF : PDFsharp
+reçoit le fichier romain et ne simule rien. L'écran, lui, le penche.
+
+*Question au propriétaire.* Trois voies. Garder la voie d'attente et rendre la mesure
+de l'écran indépendante de l'histoire — résoudre chaque face une fois, par une
+collection de polices à soi, et la garder : c'est toucher tout le texte de l'écran.
+Ou franchir le seuil D pour la coupure seulement : décider sur la mesure de PDFsharp,
+que le noyau a partout, l'écran dessinant à la sienne et pouvant déborder sa ligne du
+crénage, 2,38 pt au plus sur l'exemple. Ou laisser la dette. Et, quelle que soit la
+voie, remplacer `comparer-rendus.sh` par la confrontation mot à mot pour les pages de
+texte.
 
 ### Q14 — Un double-clic ne déplace pas le bloc
 
