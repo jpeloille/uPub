@@ -78,7 +78,8 @@ magick "$travail/pdf.png" -background white -extent "$geometrie" "$travail/pdf-c
 
 # Le total se calcule ici et non par « %[fx:w*h] » : passé le million, ImageMagick
 # l'écrit en notation scientifique (« 2.00733e+06 pixels comparés »), même sous int().
-read -r largeur hauteur < <(magick "$travail/ecran.png" -format "%w %h" info:)
+# Le saut de ligne final compte : sans lui, « read » sort en 1 et « set -e » arrête tout.
+read -r largeur hauteur < <(magick "$travail/ecran.png" -format "%w %h\n" info:)
 total=$((largeur * hauteur))
 # « -fuzz 12% » : ce qu'on cherche est un décalage de forme, pas une nuance de
 # lissage. Sans ce seuil, chaque bord de lettre compterait pour une différence.

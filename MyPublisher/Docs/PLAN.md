@@ -3073,10 +3073,11 @@ octet, ou un rendu sans encre — et non plus leur symptôme ; une page sans blo
 tomber, mesuré.
 
 *Choisi sans certitude.* La mémoire est partagée par tous les champs d'un même
-convertisseur et se vide au-delà de 256 nombres : deux valeurs du modèle qui s'affichent
-sous le même décimal se confondent, et c'est la dernière affichée qui revient. L'écart
-serait de l'ordre du dernier chiffre ; je ne l'ai pas provoqué. Je n'ai pas non plus
-vérifié qu'une vraie plate-forme livre un mouvement nul entre les deux clics d'un
+convertisseur et garde jusqu'à 256 nombres. J'en ai mal décrit le risque : il n'est pas
+que deux valeurs du modèle affichées sous le même décimal se confondent, mais qu'une
+saisie soit prise pour un nombre affiché plus tôt, et reçoive la valeur exacte dont ce
+nombre était tiré. La relecture l'a provoqué ; la reprise ci-dessous le corrige. Je n'ai
+pas vérifié qu'une vraie plate-forme livre un mouvement nul entre les deux clics d'un
 double-clic : le banc l'émet parce que c'est ce qui passait par l'aimantation. Q1
 attribuait le défaut à `ApplyMove` ; je n'ai pas retrouvé par quel geste il l'y avait vu
 passer.
@@ -3087,6 +3088,50 @@ empile un pas. La garde ne couvre que le mouvement nul. Un seuil réglerait cela
 mangerait le glissé d'un point que la recette exige ; c'est une décision, pas une
 réparation. Et l'on ne sait toujours pas pourquoi le champ renvoie au modèle une valeur
 qu'il vient de recevoir : la correction rend ce renvoi inoffensif sans l'expliquer.
+
+*Repris le 12 octobre 2026, après relecture.* Une relecture adversariale du lot a trouvé
+un trou dans le filet et un défaut dans la mémoire ; les deux sont corrigés, avec un test
+et un sabotage chacun.
+
+**Le trou du filet.** La garde d'`ApplyMove` remet chaque bloc à son départ
+(`frame.X = startX;`, `frame.Y = startY;`). Neutraliser ces deux lignes passait toute la
+vérification, alors qu'un geste qui part de (+40, +30), Alt tenu, puis revient exactement
+au point de prise laissait le bloc en (140, 130) au lieu de (100, 100). Le code était
+juste ; aucun test ne le demandait. Le quatrième test de `DoubleClicTests`,
+`Revenir_au_point_de_prise_dans_le_meme_geste_ramene_le_bloc`, fait ce geste, et le juge
+porte le sabotage de `frame.X = startX;` : éprouvé à la main, la recette Q14 tombe sur ce
+seul test.
+
+**La mémoire des affichages.** Une valeur tapée recevait la valeur exacte qu'un autre bloc
+avait affichée : A tourné de 30.00001°, B à 0 ; on clique A, puis B, on tape « 30 » dans le
+champ de rotation, et B recevait 30.00001. `Affiches` n'a plus qu'une case : `Retenir` la
+remplace, `Retrouver` ne reconnaît que le nombre égal à celui qu'elle porte et la vide dans
+tous les cas. La capacité de 256 disparaît. Une case suffit parce que le renvoi d'un champ
+suit son affichage aussitôt, dans le même appel (`BindingExpression.OnTargetPropertyChanged`
+→ `WriteTargetValueToSource`, trace de la relecture). Le cinquième test,
+`Une_valeur_tapee_ne_prend_pas_celle_quun_autre_bloc_a_affichee`, joue ce scénario au
+clavier ; il tombe sur l'ancienne mémoire, et c'est elle que le sabotage remet. Les trois
+sabotages d'avant, rejoués à la main sur les cinq tests, sont toujours attrapés : sans la
+mémoire en millimètres, quatre tests tombent ; sans celle de la rotation, deux ; sans la
+garde, un. Le commentaire d'`Affiches` dit maintenant le risque tel qu'il est.
+
+Ce qui reste, mesuré mais non provoqué : un affichage qui ne change pas la valeur du champ
+n'est suivi d'aucun renvoi, et la case reste pleine. Une sonde l'a vue porter « 0 → 0 »
+après la sélection d'un bloc. Une frappe faite alors dans un autre champ du même
+convertisseur, exactement égale à ce nombre, en reprendrait la valeur exacte ; cela
+n'altère le document que si ce nombre était un arrondi. Je n'ai pas trouvé de geste qui
+le fasse : taper 30 dans l'épaisseur d'un bloc tourné de 30.00002°, après en avoir
+sélectionné un tourné de 30.00001°, donne une épaisseur de 30.
+
+**Hors du poste, `Scripts/comparer-rendus.sh`.** Le commit 2e02036 acceptait la notation
+scientifique pour l'encre seulement. Le compte des pixels différents l'accepte aussi, et
+le total se calcule en entier, de la largeur et de la hauteur : `%[fx:int(w*h)]` s'écrit
+2.00684e+06 pour une image de 1191 × 1685, mesuré avec l'ImageMagick des outils.
+
+*Trouvé et laissé tel quel*, par la relecture, et ouvert en postes Q à part : il n'y a pas
+de seuil de glissement, si bien qu'un tremblement d'un pixel près d'une marge fait sauter
+le bloc de 3 pt par l'aimantation ; et un clic sans mouvement sur une poignée redimensionne
+le bloc (100 → 96 pt).
 
 ### Q15 — Une image modifiée sur le disque se relit
 
