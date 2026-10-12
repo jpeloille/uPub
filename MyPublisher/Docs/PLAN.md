@@ -3776,10 +3776,13 @@ dans l'application est acceptée).
   59 à l'écran, et la 7e ligne restait en colonne 1 quand le PDF la passait en
   colonne 2. `recette-coupure.mypub` porte désormais une page 4 : 22 blocs à deux
   colonnes, de 58,05 à 58,65 pt de haut, tirés du document du relecteur, dont on a
-  retiré les deux blocs de hauteur entière. Sain, `comparer-mots.sh` y relève 0 ligne
-  coupée autrement (809 lignes, 4 388 mots, 74 blocs sur les quatre pages). L'étape 4
+  retiré les deux blocs de hauteur entière. Leur texte s'arrête après « puis du PDF. »
+  (35 mots) : entier, il débordait de 42 à 51 pt, et un document livré ne déborde pas
+  (recette A2-A7, `DebordementTests`). Raccourci, il tient sur 10 ou 11 lignes, la 7e
+  toujours à la charnière des colonnes. Sain, `comparer-mots.sh` y relève 0 ligne
+  coupée autrement (638 lignes, 3 794 mots, 74 blocs sur les quatre pages). L'étape 4
   de la recette exige désormais 74 blocs. Un septième sabotage vise la hauteur, éprouvé
-  à la main : la recette tombe à l'étape 4, sur 277 lignes coupées autrement et 17 mots
+  à la main : la recette tombe à l'étape 4, sur 106 lignes coupées autrement et 90 mots
   du PDF sans ligne à l'écran.
 - **La page 3 dépend de Noto Serif.** Le test de l'export de l'application vérifie
   d'abord, bloc par bloc, que la police de cette machine départage encore les deux
