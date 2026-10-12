@@ -219,6 +219,11 @@
                 <Separator/>
                 <MenuItem Header="_Rectangle" Command="{Binding AddRectangleCommand}"/>
                 <MenuItem Header="_Ellipse" Command="{Binding AddEllipseCommand}"/>
+                <Separator/>
+                <!-- Remplit le bloc de texte sélectionné, comme « Fichier texte » dans
+                     Publisher ; le même geste est au panneau du bloc. -->
+                <MenuItem Name="MenuImporterTexte" Header="Importer un te_xte…" Click="OnImportText"
+                          IsEnabled="{Binding PeutImporterTexte}"/>
             </MenuItem>
 
             <MenuItem Header="_Disposition">
@@ -643,6 +648,9 @@
                                                IsVisible="{Binding HasField}"
                                                FontSize="11" Foreground="#FF8A929E"
                                                TextWrapping="Wrap" Margin="0,4,0,0"/>
+                                    <Button Name="BoutonImporterTexte" Content="Importer un texte…"
+                                            Margin="0,4,0,0" Click="OnImportText"
+                                            IsEnabled="{Binding !HasField}"/>
 
                                     <TextBlock Classes="field" Text="Police" Margin="0,8,0,2"/>
                                     <ComboBox HorizontalAlignment="Stretch" MaxDropDownHeight="320"

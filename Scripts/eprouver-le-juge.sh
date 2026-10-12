@@ -703,6 +703,96 @@ saboter "la vignette compose ses filets sans résoudre la police du jeu" \
     '        var commun = new StyleEffectif(text.FontFamily, text.FontSize, text.Bold, text.Italic, text.Foreground, 0);' \
     'Q9-vignette|VignetteTests'
 
+# Le poste B2. Le décodage peut être juste et le branchement faux : deux sabotages
+# visent le noyau, trois le modèle de vue. Chacun joué à la main contre la recette du
+# poste et ses tests avant d'être écrit ici.
+saboter "un fichier Latin-1 est lu en UTF-8 et perd ses accents" \
+    MyPublisher.Core/Services/TexteImporte.cs \
+    'texte = Windows1252.GetString(octets);' \
+    'texte = Encoding.UTF8.GetString(octets);' \
+    'B2-import-texte|TexteImporteTests|ImportTexteTests'
+
+saboter "un texte importé garde ses fins de ligne CRLF" \
+    MyPublisher.Core/Services/TexteImporte.cs \
+    "var lignes = texte.Replace(\"\\r\\n\", \"\\n\").Replace('\\r', '\\n');" \
+    'var lignes = texte;' \
+    'B2-import-texte|TexteImporteTests|ImportTexteTests'
+
+saboter "importer un texte ne s'annule plus en un pas" \
+    MyPublisher/ViewModels/MainWindowViewModel.cs \
+    $'        BeginEdit();\n        bloc.Spans.Clear();' \
+    $'        bloc.Spans.Clear();' \
+    'B2-import-texte|TexteImporteTests|ImportTexteTests'
+
+# Posé par la seule saisie, le texte importé garderait le style du début qu'il partage
+# avec l'ancien : un titre gras resterait gras.
+saboter "le texte importé garde les fragments d'avant" \
+    MyPublisher/ViewModels/MainWindowViewModel.cs \
+    $'        bloc.Spans.Clear();\n        bloc.Paragraphs.Clear();\n' \
+    '' \
+    'B2-import-texte|TexteImporteTests|ImportTexteTests'
+
+saboter "le menu offre l'import à tout bloc sélectionné" \
+    MyPublisher/ViewModels/MainWindowViewModel.cs \
+    'public bool PeutImporterTexte => SingleSelected is TextFrame { HasField: false };' \
+    'public bool PeutImporterTexte => SingleSelected is not null;' \
+    'B2-import-texte|TexteImporteTests|ImportTexteTests'
+
+# Après la relecture : l'import pendant une autre édition, et les fichiers qu'on refuse.
+saboter "importer pendant la saisie sur la page la laisse ouverte" \
+    MyPublisher/Views/MainWindow.axaml.cs \
+    $'        PageView.EndTextEdit();\n' \
+    '' \
+    'B2-import-texte|ImportTexteTests'
+
+saboter "l'import s'emboîte dans la transaction ouverte au panneau" \
+    MyPublisher/ViewModels/MainWindowViewModel.cs \
+    $'        EndPendingEdit();\n        BeginEdit();\n        bloc.Spans.Clear();' \
+    $'        BeginEdit();\n        bloc.Spans.Clear();' \
+    'B2-import-texte|ImportTexteTests'
+
+saboter "un fichier UTF-16 petit-boutiste n'est plus reconnu à sa marque" \
+    MyPublisher.Core/Services/TexteImporte.cs \
+    'else if (octets.StartsWith(MarqueUtf16Petit) || octets.StartsWith(MarqueUtf16Gros))' \
+    'else if (octets.StartsWith(MarqueUtf16Gros))' \
+    'B2-import-texte|TexteImporteTests'
+
+saboter "un fichier binaire entre dans le bloc, octets nuls compris" \
+    MyPublisher.Core/Services/TexteImporte.cs \
+    "if (!char.IsControl(c) || c is '\\t' or '\\n' or '\\r' or '\\f') continue;" \
+    "if (!char.IsControl(c) || c is '\\t' or '\\n' or '\\r' or '\\f' or '\\0') continue;" \
+    'B2-import-texte|TexteImporteTests|ImportTexteTests'
+
+saboter "un code d'échappement entre dans le bloc" \
+    MyPublisher.Core/Services/TexteImporte.cs \
+    "if (!char.IsControl(c) || c is '\\t' or '\\n' or '\\r' or '\\f') continue;" \
+    "if (c != '\\0') continue;" \
+    'B2-import-texte|TexteImporteTests'
+
+saboter "un fichier de plusieurs mégaoctets est versé dans le bloc" \
+    MyPublisher.Core/Services/TexteImporte.cs \
+    'if (flux.Length > TailleMax)' \
+    'if (flux.Length > 100 * TailleMax)' \
+    'B2-import-texte|TexteImporteTests|ImportTexteTests'
+
+saboter "du Windows-1252 qui passe pour de l'UTF-8 n'est plus relu en Latin-1" \
+    MyPublisher.Core/Services/TexteImporte.cs \
+    "if (c is >= '\\u0080' and <= '\\u009F') return null;" \
+    "if (c is >= '\\u0080' and <= '\\u009F') break;" \
+    'B2-import-texte|TexteImporteTests'
+
+saboter "un fichier qui ne porte qu'une fin de ligne efface le bloc" \
+    MyPublisher.Core/Services/TexteImporte.cs \
+    'if (texte.Length == 0)' \
+    'if (texte.Length < 0)' \
+    'B2-import-texte|TexteImporteTests'
+
+saboter "un fichier fermé en lecture fait tomber l'import au lieu d'être refusé" \
+    MyPublisher/ViewModels/MainWindowViewModel.cs \
+    'when (ex is IOException or UnauthorizedAccessException or TexteRefuseException)' \
+    'when (ex is IOException or TexteRefuseException)' \
+    'B2-import-texte|ImportTexteTests'
+
 echo
 if [ "$trous" = 0 ]; then
     echo "Le juge sait échouer : $sabotages sabotages, $sabotages attrapés."

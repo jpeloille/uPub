@@ -72,8 +72,12 @@ public class DebordementTests
         return image.Pixels[i + 2] > 150 && image.Pixels[i + 1] < 110 && image.Pixels[i] < 110;
     }
 
-    /// <summary>Combien de pixels rouges dans le voisinage du coin inférieur droit du bloc.</summary>
-    private static int Marqueur(Image image, Frame bloc)
+    /// <summary>
+    /// Combien de pixels rouges dans le voisinage du coin inférieur droit du bloc. Le
+    /// poste B2 s'en sert aussi : un texte importé trop long doit faire paraître le même
+    /// marqueur.
+    /// </summary>
+    internal static int Marqueur(Image image, Frame bloc)
     {
         var compte = 0;
         for (var y = (int)((bloc.Bottom - 16) * PixelsParPoint); y < (bloc.Bottom + 8) * PixelsParPoint; y++)
