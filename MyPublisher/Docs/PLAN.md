@@ -58,7 +58,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **C2** | Repères | **100 %** | C2a grille de composition · C2b règles graduées et repères libres ; recette dans `Scripts/recettes/` |
 | **C3** | Sélection multiple, puis groupement | **100 %** | C3a sélection · C3b alignement et répartition · C3c groupe persistant ; recette dans `Scripts/recettes/` |
 | **C4** | Champs | **100 %** | Folio, nombre de pages, date, coordonnées et logo ; les coordonnées servent depuis B1 ; recette dans `Scripts/recettes/` |
-| **C5** | Remplissage riche et cohérence visuelle | C5a et C5c faits | Fond de page, et remplissage uni, dégradé, image ou teinte sur tout bloc ; `FormatVersion` 4. Les cinq images d'ATA 21 sont portées. **C5b — jeux de couleurs et de polices — reste ouvert** |
+| **C5** | Remplissage riche et cohérence visuelle | **100 %** | Fond de page, et remplissage uni, dégradé, image ou teinte sur tout bloc ; les cinq images d'ATA 21 sont portées. C5b : couleurs et polices du jeu par référence (`scheme:accent1/80`, `scheme:heading`), résolues dans le noyau pour l'écran et le PDF ; six jeux de couleurs et cinq de polices, modèles sur « Marine ». `FormatVersion` 5, migration testée propriété par propriété. Recettes dans `Scripts/recettes/` |
 | **C6** | Marges intérieures par côté | **100 %** | Quatre marges sur le bloc de texte ; `FormatVersion` 3 ; recette dans `Scripts/recettes/` |
 | **C7** | Bibliothèque de blocs | 0 % | Débloqué depuis C3a |
 | **C8** | Miroir horizontal et vertical | 0 % | Spécifié le 11 octobre 2026 |
@@ -89,12 +89,15 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **Q17** | Le texte composé suit une collection remplacée | **100 %** | Accesseur fermé (`init`) sur `TextFrame.Spans`, `TextFrame.Paragraphs` et `TableCell.Spans` : le remplacement ne compile plus (CS8852), le sérialiseur les pose encore. Recette dans `Scripts/recettes/` |
 | **Q18** | Paquets marqués « Legacy » | 0 % | Trouvé par Q12 : `Avalonia.Diagnostics` et xunit 2 ont des remplaçants ; aucun n'est vulnérable |
 | **Q19** | Les autres collections ne se remplacent plus | 0 % | Trouvé par Q17 : `Page.Frames`, `GroupFrame.Children`, `Document.Pages` et les listes de repères ont un setter public que des `ItemsControl` lient sans l'écouter |
+| **Q20** | La liste des polices garde la police du bloc | **100 %** | Trouvé par la relecture de C5b. La liste propose les polices du document absentes de la machine, libellées « (absente) », et la liaison ne renvoie jamais null au bloc. Recette dans `Scripts/recettes/` |
+| **Q21** | Un tremblement ne déplace pas le bloc | 0 % | Trouvé par la relecture de Q14 : un pixel de mouvement pendant le clic, près d'une marge, fait sauter le bloc de 3 pt par l'aimantation |
+| **Q22** | Un clic sur une poignée ne redimensionne pas | 0 % | Trouvé par la relecture de Q14 : une pression sans mouvement près d'un coin fait passer le bloc de 100 à 96 pt et empile un pas d'annulation |
 | **D** | Moteur de composition | — | Décision non ouverte ; à rouvrir quand A, B et C sont livrées |
 
-**Par phase** — P : 4 sur 4 · A : 7 sur 15 · B : 3 sur 7 · C : 6 sur 9 · R : 5 sur 7 ·
-Q : 12 sur 19 · D : non planifié.
+**Par phase** — P : 4 sur 4 · A : 7 sur 15 · B : 3 sur 7 · C : 7 sur 9 · R : 5 sur 7 ·
+Q : 13 sur 22 · D : non planifié.
 
-Soit **37 postes sur 61**. Le compte a doublé le 11 octobre 2026 sans que rien ne
+Soit **39 postes sur 64**. Le compte a doublé le 11 octobre 2026 sans que rien ne
 recule : il porte désormais les onze postes de l'audit des fiches (A8 à A15, B6, B7,
 C8), deux postes que les documents réels demandaient (R6, R7), et la phase Q, qui
 recense les défauts que les postes et les relectures ont **trouvés et consignés sans les
@@ -3797,6 +3800,32 @@ la montre.
 « dejavu sans » serait proposée à part et libellée absente. Lu dans le code, non
 mesuré. Les fragments de style ont leur police hors du panneau, et ne sont pas concernés.
 
+### Q21 — Un tremblement ne déplace pas le bloc
+
+*Trouvé le 12 octobre 2026 par la relecture de Q14.* Q14 a gardé le bloc d'un clic sans
+mouvement, mais un pointeur réel tremble. Mesuré : une marge à 3 pt du bord gauche du
+bloc, aimantation active ; un pixel de mouvement pendant le clic fait passer X de 59,69
+à 56,69 — le bloc saute sur la marge, et un pas d'annulation est empilé. Q14 n'est donc
+tenu que si le pointeur ne bouge pas du tout. La spécification de Q14 veut qu'un glissé
+de 1 pt compte : le remède n'est pas un seuil sur le déplacement du bloc, mais un seuil
+sur celui du **pointeur** (2 ou 3 px d'écran) avant que le geste ne devienne un
+glissé — l'aimantation ne joue qu'au-delà.
+
+*Recette* : au pointeur synthétisé, un clic qui bouge d'un pixel près d'une marge laisse
+le bloc à sa place et n'empile rien ; un glissé de 1 pt, mené au-delà du seuil puis
+ramené, déplace encore le bloc de 1 pt. Effort : faible.
+
+### Q22 — Un clic sur une poignée ne redimensionne pas
+
+*Trouvé le 12 octobre 2026 par la relecture de Q14.* La garde du mouvement nul de Q14
+n'existe que dans `ApplyMove`. Mesuré : une pression à 4 px du coin sud-est, sans
+mouvement, fait passer le bloc de 100 à 96 pt de côté, et `CanUndo` passe à vrai. Le
+défaut est antérieur à Q14 et de la même famille : la poignée prend la position du
+pointeur pour le coin, au lieu d'appliquer un écart au coin d'origine.
+
+*Recette* : au pointeur synthétisé, une pression puis un relâchement sur chacune des
+huit poignées laissent le bloc identique et l'historique vide. Effort : faible.
+
 ---
 
 ## Ordre d'exécution
@@ -3809,10 +3838,10 @@ touchent, le second attend la salve suivante.
 | Salve | Postes | Pourquoi ensemble |
 |---|---|---|
 | **1** | Q1 · les sept recettes de P3 · Q2 · Q3 · Q12 | La dette qui abîme des données, le banc complet, et trois réparations courtes. **Fusionnée le 11 octobre 2026** |
-| **2** | Q4 à Q9 · Q13 à Q17 · B2 · C5b | Les écarts écran ↔ PDF, et les deux postes d'usage qui ne demandent rien |
+| **2** | Q4 à Q9 · Q13 à Q17 · B2 · C5b · Q20 | Les écarts écran ↔ PDF, et les deux postes d'usage qui ne demandent rien |
 | **3** | R6 · A8 · A9 · A15 · B7 · B4 | Le paragraphe au panneau, et des postes courts, indépendants les uns des autres |
 | **4** | R7 · A12 · C7 · B3 + B6 | Le texte riche à la souris, et ce qui reprend les commandes des salves précédentes |
-| **5** | A10 · A11 · A13 · Q10 · Q11 | La géométrie et la couche de saisie |
+| **5** | A10 · A11 · A13 · Q10 · Q11 · Q21 · Q22 | La géométrie et la couche de saisie |
 | **6** | A14 · C8 · Q18 · Q19 | Les deux postes à risque, chacun précédé de son essai |
 | **D** | Note de décision | Rédigée après la salve 6 ; **la décision revient au propriétaire du projet** |
 
