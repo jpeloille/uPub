@@ -26,6 +26,16 @@ public partial class MainWindow : Window
     private static readonly FilePickerFileType ImageType =
         new("Images") { Patterns = ["*.png", "*.jpg", "*.jpeg", "*.bmp", "*.gif", "*.webp"] };
 
+    private static readonly FilePickerFileType TextType =
+        new("Texte") { Patterns = ["*.txt"] };
+
+    /// <summary>
+    /// Un texte rédigé ailleurs ne finit pas toujours en « .txt » — un « .md », un
+    /// « .csv » : on laisse le choix.
+    /// </summary>
+    private static readonly FilePickerFileType AnyType =
+        new("Tous les fichiers") { Patterns = ["*"] };
+
     /// <summary>
     /// Le panneau de propriétés modifie le modèle par liaison directe : on encadre
     /// la saisie d'un champ par une transaction, ce qui rend chaque édition annulable.
@@ -235,6 +245,43 @@ public partial class MainWindow : Window
         });
 
         if (files.FirstOrDefault()?.TryGetLocalPath() is { } path) vm.ChoisirImageDeFond(fond, path);
+    }
+
+    /// <summary>
+    /// Remplit le bloc de texte sélectionné à partir d'un fichier (poste B2). Le menu et
+    /// le panneau du bloc mènent ici ; seul le sélecteur de fichier est à la fenêtre, le
+    /// reste — encodage, style, pas d'annulation — est au modèle de vue
+    /// (<see cref="MainWindowViewModel.ImporterTexte"/>), où un test l'atteint.
+    /// </summary>
+    private async void OnImportText(object? sender, RoutedEventArgs e)
+    {
+        if (Vm is not { PeutImporterTexte: true } vm) return;
+
+        var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Importer un texte",
+            AllowMultiple = false,
+            FileTypeFilter = [TextType, AnyType]
+        });
+
+        if (files.FirstOrDefault()?.TryGetLocalPath() is { } path) ImporterTexte(path);
+    }
+
+    /// <summary>
+    /// Ce que fait le geste une fois le fichier choisi : refermer la saisie sur la page et
+    /// la transaction du panneau, puis passer le chemin au modèle de vue. Laissée
+    /// ouverte, la saisie sur la page garderait sa zone à l'écran, et la frappe qui la
+    /// précède partagerait le pas d'annulation de l'import. Publique pour qu'un test la
+    /// joue sans le sélecteur de fichier, qui ne s'ouvre pas sans affichage.
+    /// </summary>
+    /// <returns>Vrai si le texte a été posé.</returns>
+    public bool ImporterTexte(string chemin)
+    {
+        if (Vm is not { } vm) return false;
+
+        PageView.EndTextEdit();
+        ClosePropertyEdit();
+        return vm.ImporterTexte(chemin);
     }
 
     private void OnQuit(object? sender, RoutedEventArgs e) => Close();
