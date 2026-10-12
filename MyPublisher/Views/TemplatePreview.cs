@@ -41,6 +41,33 @@ public class TemplatePreview : Control
     private static readonly IPen PlaceholderEdge = new Pen(new SolidColorBrush(Color.Parse("#FFB6BFCA")));
     private static readonly IBrush BlankHint = new SolidColorBrush(Color.Parse("#FFF6F7F9"));
 
+    /// <summary>
+    /// Les filets de chaque bloc de texte, en coordonnées de la page, dans l'ordre où le
+    /// rendu rencontre les blocs.
+    ///
+    /// Composer un bloc coûte : recomposée à chaque rendu, la vignette du bulletin
+    /// prenait 2,5 à 2,7 ms par appel de <see cref="Render"/>, contre 0,06 ms en relisant
+    /// ses filets — l'affiche 1,2 ms contre 0,03 (134 pixels de côté, moyenne de 500
+    /// rendus, deux passes, poste chargé). On ne compose donc qu'au premier rendu, pour
+    /// un document et une taille donnés.
+    ///
+    /// Le rang plutôt que le bloc sert de clé : les cases d'un tableau sont des blocs
+    /// reconstruits à chaque lecture de <c>CellFrames</c>, et une clé par référence ne
+    /// les retrouverait jamais. Le parcours, lui, ne change pas tant que le document ne
+    /// change pas.
+    ///
+    /// Ce qui invalide la mémoire : un autre <see cref="Document"/>, ou une autre taille
+    /// de contrôle — l'épaisseur des filets dépend de l'échelle. Ce qui ne l'invalide
+    /// PAS : une modification du document en place. Le catalogue n'en fait aucune — ses
+    /// documents sont lus sur le disque pour la vignette, et le modèle choisi est relu
+    /// depuis son fichier —, mais un appelant qui éditerait le document affiché devrait
+    /// en poser un autre.
+    /// </summary>
+    private readonly List<Rect[]> _filets = [];
+    private Document? _filetsDe;
+    private Size _filetsA;
+    private int _rang;
+
     public override void Render(DrawingContext context)
     {
         var box = Bounds.Size;
@@ -60,6 +87,15 @@ public class TemplatePreview : Control
         context.DrawRectangle(null, Edge, page);
 
         var scale = page.Width / document.PageWidth;
+
+        if (!ReferenceEquals(document, _filetsDe) || box != _filetsA)
+        {
+            _filets.Clear();
+            _filetsDe = document;
+            _filetsA = box;
+        }
+
+        _rang = 0;
 
         using (context.PushClip(page))
         using (context.PushTransform(Matrix.CreateScale(scale, scale) * Matrix.CreateTranslation(page.X, page.Y)))
@@ -99,7 +135,7 @@ public class TemplatePreview : Control
     /// Dessine un bloc dans le repère de la page. Récursif comme le reste : un groupe
     /// translate le repère et redescend.
     /// </summary>
-    private static void Draw(DrawingContext context, Frame frame, double scale)
+    private void Draw(DrawingContext context, Frame frame, double scale)
     {
         using var _ = frame.Rotation == 0
             ? (IDisposable)new NoTransform()
@@ -174,14 +210,31 @@ public class TemplatePreview : Control
     /// qu'on allait ouvrir. Ce n'est toujours pas un rendu : les glyphes restent des
     /// filets. Mais ce sont les lignes de la page.
     /// </summary>
-    private static void DrawTextBars(DrawingContext context, TextFrame text, double scale)
+    private void DrawTextBars(DrawingContext context, TextFrame text, double scale)
     {
-        if (string.IsNullOrWhiteSpace(text.Text) && text.Field == FieldKind.None) return;
+        var rang = _rang++;
+        if (rang == _filets.Count) _filets.Add(Filets(text, scale));
+
+        var filets = _filets[rang];
+        if (filets.Length == 0) return;
 
         var brush = Conv.ToBrush(text.Foreground) ?? Brushes.Black;
+
+        // Découpé au bloc, comme la page l'est depuis A2 : une ligne qui sort du bloc
+        // n'est pas imprimée, elle n'a pas à paraître dans la vignette.
+        using var _ = context.PushClip(new Rect(text.X, text.Y, text.Width, text.Height));
+
+        foreach (var filet in filets) context.FillRectangle(brush, filet);
+    }
+
+    /// <summary>Les rectangles des filets d'un bloc, en coordonnées de la page.</summary>
+    private static Rect[] Filets(TextFrame text, double scale)
+    {
+        if (string.IsNullOrWhiteSpace(text.Text) && text.Field == FieldKind.None) return [];
+
         var width = text.Width - text.PaddingLeft - text.PaddingRight;
         var height = text.Height - text.PaddingTop - text.PaddingBottom;
-        if (width <= 0 || height <= 0) return;
+        if (width <= 0 || height <= 0) return [];
 
         // Épaisseur du filet : celle de l'œil de la lettre, sans jamais descendre sous
         // le pixel, faute de quoi la vignette perdrait ses textes les plus fins.
@@ -189,14 +242,13 @@ public class TemplatePreview : Control
         var left = text.X + text.PaddingLeft;
         var top = text.Y + text.PaddingTop;
 
-        // Découpé au bloc, comme la page l'est depuis A2 : une ligne qui sort du bloc
-        // n'est pas imprimée, elle n'a pas à paraître dans la vignette.
-        using var _ = context.PushClip(new Rect(text.X, text.Y, text.Width, text.Height));
-
+        var filets = new List<Rect>();
         foreach (var (x, y, run, advance) in Bars(text, width, height))
         {
-            context.FillRectangle(brush, new Rect(left + x, top + y + (advance - weight) / 2, run, weight));
+            filets.Add(new Rect(left + x, top + y + (advance - weight) / 2, run, weight));
         }
+
+        return [.. filets];
     }
 
     /// <summary>
