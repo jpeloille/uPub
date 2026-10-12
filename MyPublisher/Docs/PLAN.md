@@ -24,7 +24,7 @@ Où en est chaque poste. Une seule règle pour la colonne d'avancement : un post
 on écrit ce qui est fait plutôt qu'un pourcentage inventé — un poste à moitié écrit n'est
 pas un poste à moitié livré. La colonne se met à jour dans le commit qui clôt le poste.
 
-*Dernière mise à jour : 11 octobre 2026 (salve 1 fusionnée).*
+*Dernière mise à jour : 13 octobre 2026 (salve 2 fusionnée).*
 
 | Poste | Intitulé | Avancement | Où ça en est |
 |---|---|:---:|---|
@@ -4234,7 +4234,7 @@ touchent, le second attend la salve suivante.
 | Salve | Postes | Pourquoi ensemble |
 |---|---|---|
 | **1** | Q1 · les sept recettes de P3 · Q2 · Q3 · Q12 | La dette qui abîme des données, le banc complet, et trois réparations courtes. **Fusionnée le 11 octobre 2026** |
-| **2** | Q4 à Q9 · Q13 à Q17 · B2 · C5b · Q20 | Les écarts écran ↔ PDF, et les deux postes d'usage qui ne demandent rien |
+| **2** | Q4 à Q9 · Q13 à Q17 · B2 · C5b · Q20 | Les écarts écran ↔ PDF, et les deux postes d'usage qui ne demandent rien. **Fusionnée le 13 octobre 2026** (juge 107/107) |
 | **3** | R6 · A8 · A9 · A15 · B7 · B4 · Q23 | Le paragraphe au panneau, et des postes courts, indépendants les uns des autres |
 | **4** | R7 · A12 · C7 · B3 + B6 | Le texte riche à la souris, et ce qui reprend les commandes des salves précédentes |
 | **5** | A10 · A11 · A13 · Q10 · Q11 · Q21 · Q22 | La géométrie et la couche de saisie |
