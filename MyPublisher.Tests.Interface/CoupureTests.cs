@@ -121,14 +121,14 @@ public class CoupureTests
         public double Naturelle(StyleEffectif style) => regle.Naturelle(style);
     }
 
-    /// <summary>Le bloc composé comme l'écran et l'export le composent, à la règle donnée.</summary>
-    private static string[] Lignes(TextFrame bloc, Compositeur.IMetriques metriques)
+    /// <summary>
+    /// Le bloc composé comme l'écran et l'export le composent, à la règle donnée : style
+    /// et fragments résolus par la charte du document, comme les deux le font depuis C5b.
+    /// </summary>
+    private static string[] Lignes(TextFrame bloc, Charte charte, Compositeur.IMetriques metriques)
     {
-        var commun = new StyleEffectif(
-            bloc.FontFamily, bloc.FontSize, bloc.Bold, bloc.Italic, bloc.Foreground, 0);
-
         return Compositeur.Composer(
-                bloc.Text, bloc.Spans, commun, bloc.Paragraphs, bloc.Paragraph,
+                bloc.Text, charte.Fragments(bloc.Spans), charte.StyleCommun(bloc), bloc.Paragraphs, bloc.Paragraph,
                 Math.Max(1, bloc.Width - bloc.PaddingLeft - bloc.PaddingRight),
                 Math.Max(1, bloc.Height - bloc.PaddingTop - bloc.PaddingBottom),
                 bloc.Colonnage, bloc.LineHeight, metriques)
@@ -143,8 +143,8 @@ public class CoupureTests
         var ecarts = new List<string>();
         foreach (var (bloc, repere, _) in Textes(document))
         {
-            var a = Lignes(bloc, ecran);
-            var b = Lignes(bloc, pdf);
+            var a = Lignes(bloc, document.Charte, ecran);
+            var b = Lignes(bloc, document.Charte, pdf);
             for (var i = 0; i < Math.Max(a.Length, b.Length); i++)
             {
                 var la = i < a.Length ? a[i] : "(rien)";
@@ -277,5 +277,211 @@ public class CoupureTests
         Assert.Contains("Légende", romain);
         Assert.Equal(romain, Relever(exemple, "gras"));
         Assert.Equal(romain, Relever(exemple, "italique"));
+    }
+
+    // ------------------------------------------------------- l'écran plus large que le PDF
+
+    /// <summary>
+    /// Le document de la recette : deux pages de blocs aux largeurs en demi-points, où
+    /// l'arrondi de mise en page faisait couper l'écran autrement (relecture de Q13), et
+    /// une troisième où l'écran mesure PLUS LARGE que le PDF.
+    /// </summary>
+    private static Document Recette() =>
+        DocumentSerializer.Load(Path.Combine(Racine(), "Samples", "recette-coupure.mypub"));
+
+    /// <summary>Les blocs de la page 3, ceux dont la largeur tombe entre les deux mesures.</summary>
+    private const string PlusLarge = "Écran plus large";
+
+    private static string Normaliser(string texte) =>
+        string.Join(" ", texte.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+
+    /// <summary>Les lignes que l'écran DESSINE, lues sur les vrais contrôles de la page.</summary>
+    private static Dictionary<string, string[]> LignesDeLEcran(Avalonia.Controls.Window fenetre)
+    {
+        var regle = new MetriquesAvalonia();
+        return Avalonia.VisualTree.VisualExtensions.GetVisualDescendants(fenetre)
+            .OfType<TexteCompose>()
+            .Where(c => c.IsEffectivelyVisible && c.Bloc is { } b && b.Name.StartsWith(PlusLarge))
+            .ToDictionary(
+                c => c.Bloc!.Name,
+                c => c.Poser(regle, regle)
+                    .GroupBy(p => p.Ligne)
+                    .OrderBy(g => g.Key)
+                    .Select(g => Normaliser(string.Concat(g.Select(p => p.Texte))))
+                    .ToArray());
+    }
+
+    /// <summary>
+    /// Les lignes que le PDF imprime dans chaque bloc d'une page, lues par
+    /// « pdftotext -bbox » : un mot appartient au bloc dont le cadre contient son centre,
+    /// et une ligne réunit les mots de même sommet.
+    /// </summary>
+    private static Dictionary<string, string[]> LignesDuPdf(string pdf, int numero, Page page)
+    {
+        var html = Path.ChangeExtension(pdf, ".html");
+        ProcessStartInfo demarrage;
+        try
+        {
+            demarrage = new ProcessStartInfo("pdftotext")
+            {
+                ArgumentList = { "-bbox", "-f", $"{numero}", "-l", $"{numero}", pdf, html },
+                RedirectStandardError = true,
+            };
+            using var processus = Process.Start(demarrage)!;
+            processus.WaitForExit(60_000);
+            Assert.True(processus.ExitCode == 0, processus.StandardError.ReadToEnd());
+        }
+        catch (System.ComponentModel.Win32Exception)
+        {
+            Assert.Fail("« pdftotext » est introuvable : sudo apt install poppler-utils.");
+            throw;
+        }
+
+        var mots = System.Text.RegularExpressions.Regex.Matches(File.ReadAllText(html),
+                "<word xMin=\"([-\\d.]+)\" yMin=\"([-\\d.]+)\" xMax=\"([-\\d.]+)\" yMax=\"([-\\d.]+)\">(.*?)</word>")
+            .Select(m => (
+                X: double.Parse(m.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture),
+                Y: double.Parse(m.Groups[2].Value, System.Globalization.CultureInfo.InvariantCulture),
+                Xf: double.Parse(m.Groups[3].Value, System.Globalization.CultureInfo.InvariantCulture),
+                Yf: double.Parse(m.Groups[4].Value, System.Globalization.CultureInfo.InvariantCulture),
+                Texte: System.Net.WebUtility.HtmlDecode(m.Groups[5].Value)))
+            .ToList();
+        File.Delete(html);
+
+        return page.Frames.OfType<TextFrame>()
+            .Where(b => b.Name.StartsWith(PlusLarge))
+            .ToDictionary(
+                b => b.Name,
+                b => mots
+                    .Where(m => b.X <= (m.X + m.Xf) / 2 && (m.X + m.Xf) / 2 <= b.X + b.Width
+                                && b.Y <= (m.Y + m.Yf) / 2 && (m.Y + m.Yf) / 2 <= b.Y + b.Height)
+                    .GroupBy(m => Math.Round(m.Y, 1))
+                    .OrderBy(g => g.Key)
+                    .Select(g => string.Join(" ", g.OrderBy(m => m.X).Select(m => m.Texte)))
+                    .ToArray());
+    }
+
+    [AvaloniaFact]
+    [Trait("poste", "Q13")]
+    public void L_export_de_l_application_coupe_comme_l_ecran_quand_l_ecran_mesure_plus_large()
+    {
+        // Sur le corpus, la mesure du PDF est presque toujours la plus large : un export
+        // qui oublierait celle de l'écran y passerait vert (relecture de Q13). Les blocs
+        // de la page 3 sont en Noto Serif, où Avalonia crénèle « f) » PLUS LARGE que
+        // PDFsharp — 16,10 pt contre 14,30 à 20 pt —, et leur largeur tombe à mi-chemin
+        // des deux mesures de la ligne « Voir l'alinéa f) ». L'un d'eux tient sa police
+        // du jeu du document (« scheme:heading ») : la règle doit la recevoir résolue.
+        var document = Recette();
+        var (fenetre, vm) = Rendu.Ouvrir(document);
+        var travail = Path.Combine(Path.GetTempPath(), $"mypublisher-q13-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(travail);
+        try
+        {
+            vm.CurrentPage = document.Pages[2];
+            Rendu.Battre();
+
+            var ecran = LignesDeLEcran(fenetre);
+            Assert.Equal(4, ecran.Count);
+            // L'écran renvoie « f) » : c'est là que sa mesure dépasse celle du PDF.
+            Assert.All(ecran.Values, lignes => Assert.Equal("Voir l'alinéa", lignes[0]));
+
+            // L'export de l'application, par son modèle de vue — le geste du menu.
+            var pdf = Path.Combine(travail, "application.pdf");
+            vm.ExportPdf(pdf);
+            var imprime = LignesDuPdf(pdf, 3, document.Pages[2]);
+            foreach (var (nom, lignes) in ecran)
+            {
+                Assert.Equal(lignes, imprime[nom]);
+            }
+
+            // Contre-épreuve : sans la mesure de l'écran, le PDF garde « f) » sur la première
+            // ligne. Sans elle, le test pourrait passer sur des blocs qu'aucune mesure ne
+            // départage.
+            var seul = Path.Combine(travail, "pdf-seul.pdf");
+            PdfExporter.Export(document, seul, ecran: null, date: new DateTime(2026, 9, 6));
+            Assert.All(LignesDuPdf(seul, 3, document.Pages[2]).Values,
+                lignes => Assert.Equal("Voir l'alinéa f)", lignes[0]));
+        }
+        finally
+        {
+            fenetre.Close();
+            Directory.Delete(travail, recursive: true);
+        }
+    }
+
+    // ------------------------------------------------------------- la porte privée
+
+    [Fact]
+    [Trait("poste", "Q13")]
+    public void La_porte_privee_se_trouve_et_son_absence_se_dit()
+    {
+        // Le chemin de ce processus-ci : la porte existe dans Avalonia 11.3.9.
+        var (methode, motif) = PolicesDuDocument.ChercherLaPorte(PolicesDuDocument.NomDeLaPorte);
+        Assert.NotNull(methode);
+        Assert.Null(motif);
+
+        // Une version qui l'aurait retirée : la recherche le dit, au lieu de lever.
+        var (absente, pourquoi) = PolicesDuDocument.ChercherLaPorte("TryCreateGlyphTypefaceRetiree");
+        Assert.Null(absente);
+        Assert.Contains("TryCreateGlyphTypefaceRetiree", pourquoi);
+    }
+
+    private static (int Code, string Sortie, string Erreurs) Lancer(string binaire, params string[] arguments)
+    {
+        var demarrage = new ProcessStartInfo(binaire)
+        {
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+        };
+        foreach (var argument in arguments) demarrage.ArgumentList.Add(argument);
+        // Comme un script le lance : sans affichage, et sans la porte privée.
+        demarrage.Environment.Remove("DISPLAY");
+        demarrage.Environment.Remove("WAYLAND_DISPLAY");
+        demarrage.Environment[PolicesDuDocument.VariableSansPorte] = "1";
+
+        using var processus = Process.Start(demarrage)!;
+        var erreurs = processus.StandardError.ReadToEndAsync();
+        var sortie = processus.StandardOutput.ReadToEnd();
+        Assert.True(processus.WaitForExit(120_000), $"{Path.GetFileName(binaire)} n'a pas fini en deux minutes");
+        return (processus.ExitCode, sortie, erreurs.Result);
+    }
+
+    [Fact]
+    [Trait("poste", "Q13")]
+    public void Sans_la_porte_privee_l_export_refuse_et_la_fenetre_se_replie()
+    {
+        // Avant la relecture, la porte se cherchait à chaque police : sans elle,
+        // « --export » rendait un PDF SANS TEXTE avec un code nul, et l'application levait
+        // au premier rendu. On la retire ici à un vrai processus, par la variable que
+        // PolicesDuDocument lit au démarrage.
+        var exemple = Path.Combine(Racine(), "Samples", "exemple-bulletin.mypub");
+        var application = Path.Combine(Racine(), "MyPublisher", "bin", "Debug", "net10.0", "MyPublisher");
+        Assert.True(File.Exists(application), $"application introuvable ({application}) : compiler la solution.");
+
+        var travail = Path.Combine(Path.GetTempPath(), $"mypublisher-q13-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(travail);
+        try
+        {
+            // L'export sans fenêtre refuse, avec un code non nul, et n'écrit rien.
+            var pdf = Path.Combine(travail, "sans-porte.pdf");
+            var (code, _, erreurs) = Lancer(application, exemple, "--export", pdf);
+            Assert.NotEqual(0, code);
+            Assert.Contains("la mesure de l'écran est indisponible", erreurs);
+            Assert.False(File.Exists(pdf), "un PDF a été écrit sans la mesure de l'écran");
+
+            // La vraie fenêtre, elle, se replie sur la résolution d'Avalonia : elle
+            // s'ouvre, dessine ses lignes, et le dit une fois.
+            var lignes = Path.Combine(travail, "lignes.json");
+            (code, var compte, erreurs) = Lancer(Banc(), "mots", exemple, "--sortie", lignes);
+            Assert.True(code == 0, $"le banc a échoué sans la porte : {erreurs}");
+            Assert.Contains("Les polices des documents sont résolues par Avalonia", erreurs);
+            Assert.Single(System.Text.RegularExpressions.Regex.Matches(erreurs, "Avertissement"));
+            Assert.Contains("53 ligne(s)", compte);
+            Assert.Contains("Légende", File.ReadAllText(lignes));
+        }
+        finally
+        {
+            Directory.Delete(travail, recursive: true);
+        }
     }
 }

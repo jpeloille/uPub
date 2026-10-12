@@ -453,10 +453,21 @@ partout ailleurs — à l'écran, à l'export — un chemin d'image est absolu.
 - L'alignement, les retraits et l'espacement varient d'un paragraphe à l'autre — un
   document Publisher importé les garde, et ils s'affichent et s'exportent —, mais le
   panneau ne règle que le bloc entier.
-- L'écran et le PDF coupent aux mêmes mots, mais chacun dessine à sa mesure : à
-  l'intérieur d'une ligne, un mot peut se poser à quelques points près de part et
-  d'autre (2,96 pt d'écart au plus, mesuré sur un morceau d'ATA 21), et un mot qui
-  tiendrait de justesse d'un seul côté passe à la ligne des deux.
+- La coupure des lignes se décide, à l'écran comme au PDF, sur la plus large des deux
+  mesures, et sur la largeur du bloc telle que le modèle la donne. Ce qui est vérifié,
+  par `Scripts/comparer-mots.sh` dans la recette de Q13 : aucune ligne coupée
+  autrement sur l'exemple, les deux documents ATR et `Samples/recette-coupure.mypub`
+  — des largeurs au demi-point, et des blocs où l'écran mesure plus large que le PDF —,
+  sur cette machine et avec ses polices. Ce n'est pas une preuve pour toute police ni
+  toute largeur. Chacun dessine ensuite à sa mesure : à l'intérieur d'une ligne, un mot
+  peut se poser à quelques points près de part et d'autre (2,96 pt d'écart au plus,
+  mesuré sur un morceau d'ATA 21), et un mot qui tiendrait de justesse d'un seul côté
+  passe à la ligne des deux. Un caractère que la police du PDF ne porte pas — « ≤ » et
+  « → » dans ATA 21 — se dessine à l'écran et manque au PDF.
+- « --export » mesure le texte comme l'écran, par une méthode qu'Avalonia 11.3.9 cache
+  dans son assemblage de référence. Une version qui la retirerait ferait échouer
+  l'export sans fenêtre, sans écrire de PDF ; l'application, elle, se replierait sur la
+  résolution des polices d'Avalonia, et le dirait dans la barre d'état à l'export.
 - Les tableaux ne fusionnent pas de cellules, ne s'imbriquent pas et ne se scindent pas
   entre deux pages : ce sont des bandes de cases, ce dont les documents à reprendre ont
   besoin, et rien de plus.

@@ -21,14 +21,24 @@
 #      face absente se simule sur le fichier choisi, et pas une face présente ;
 #   2. les tests de l'interface : les deux vraies règles coupent aux mêmes mots sur
 #      l'exemple et les deux documents ATR ; la contre-épreuve, où chaque règle décide
-#      seule ; l'italique qui sort penché et jamais gras, le gras chargé d'abord ; et
+#      seule ; l'italique qui sort penché et jamais gras, le gras chargé d'abord ;
 #      trois PROCESSUS qui chargent les faces dans trois ordres et relèvent les mêmes
-#      lignes, au bit près ;
+#      lignes, au bit près ; l'export du MODÈLE DE VUE, relu par pdftotext, qui coupe
+#      comme l'écran là où l'écran mesure plus large que le PDF ; et, sans la porte
+#      privée d'Avalonia, un « --export » qui refuse et une fenêtre qui se replie ;
 #   3. « comparer-mots.sh » — le banc contre le PDF du vrai binaire, mot à mot — sur
 #      les deux pages de l'exemple et sur toutes celles des deux documents ATR, à zéro
 #      ligne coupée autrement, et cela trois fois : le banc charge d'abord le romain,
 #      puis le gras, puis l'italique ;
-#   4. contre-épreuve du point 3 — l'écran coupant à sa seule mesure, ce que faisait
+#   4. « comparer-mots.sh » sur le document de la recette, Samples/recette-coupure.mypub,
+#      à zéro ligne coupée autrement. Il porte les cas que le corpus ne porte pas,
+#      trouvés à la relecture de Q13 : 48 blocs aux largeurs en demi-points, de 150,4 à
+#      173,9 pt, où l'arrondi de la mise en page faisait composer l'écran sur une autre
+#      largeur que le PDF (19 lignes coupées autrement) ; et, page 3, quatre blocs en
+#      Noto Serif dont la largeur tombe entre la mesure du PDF et celle de l'écran —
+#      PLUS LARGE ici —, l'un d'eux par la police du jeu du document. Un « --export »
+#      qui oublierait la mesure de l'écran y coupe autrement ;
+#   5. contre-épreuve du point 3 — l'écran coupant à sa seule mesure, ce que faisait
 #      le dépôt avant ce poste, comparer-mots.sh tombe sur la première colonne de
 #      l'exemple, là où le défaut a été trouvé.
 #
@@ -87,8 +97,9 @@ echo "  1. le noyau : $joues tests purs joués."
 
 # ------------------------------------------------------------------------------- 2
 
-joues="$(jouer MyPublisher.Tests.Interface/MyPublisher.Tests.Interface.csproj 4 "tests d'interface")"
-echo "  2. l'interface : $joues tests joués, dont trois processus aux faces chargées dans trois ordres."
+joues="$(jouer MyPublisher.Tests.Interface/MyPublisher.Tests.Interface.csproj 7 "tests d'interface")"
+echo "  2. l'interface : $joues tests joués, dont trois processus aux faces chargées dans trois ordres,"
+echo "     l'export du modèle de vue relu par pdftotext, et le repli sans la porte privée."
 
 # ------------------------------------------------------------------------------- 3
 
@@ -124,6 +135,23 @@ done
 
 # ------------------------------------------------------------------------------- 4
 
+recette="Samples/recette-coupure.mypub"
+if ! Scripts/comparer-mots.sh "$recette" tout > "$travail/recette.txt" 2>&1; then
+    echo "ÉCHEC : $(basename "$recette") —" >&2
+    sed 's/^/    /' "$travail/recette.txt" >&2
+    exit 1
+fi
+# Le document doit encore porter ses cas : 52 blocs, dont les quatre de la page 3. Un
+# document appauvri passerait vert sur moins qu'il ne prétend.
+if ! grep -q "dans 52 blocs" "$travail/recette.txt"; then
+    echo "ÉCHEC : $(basename "$recette") ne relève plus ses 52 blocs." >&2
+    sed 's/^/    /' "$travail/recette.txt" >&2
+    exit 1
+fi
+echo "  4. $(basename "$recette") : $(tail -1 "$travail/recette.txt" | sed 's/ Banc : .*//')"
+
+# ------------------------------------------------------------------------------- 5
+
 if MYPUBLISHER_COUPURE_SEULE=1 Scripts/comparer-mots.sh "$exemple" 1 > "$travail/contre.txt" 2>&1; then
     echo "ÉCHEC : comparer-mots.sh ne voit pas un écran qui coupe à sa seule mesure." >&2
     sed 's/^/    /' "$travail/contre.txt" >&2
@@ -134,7 +162,7 @@ if ! grep -q "Colonne de gauche" "$travail/contre.txt" || ! grep -q "CONTRE-ÉPR
     sed 's/^/    /' "$travail/contre.txt" >&2
     exit 1
 fi
-echo "  4. contre-épreuve : l'écran coupant à sa seule mesure, comparer-mots.sh tombe :"
+echo "  5. contre-épreuve : l'écran coupant à sa seule mesure, comparer-mots.sh tombe :"
 grep -A2 "Colonne de gauche" "$travail/contre.txt" | head -3 | sed 's/^/    /'
 
 echo "Q13 : l'écran et le PDF coupent leurs lignes aux mêmes mots, quel que soit l'ordre des polices."
