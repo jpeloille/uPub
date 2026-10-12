@@ -32,7 +32,31 @@ public static class HexColor
 
     public static string Format(byte a, byte r, byte g, byte b) => $"#{a:X2}{r:X2}{g:X2}{b:X2}";
 
-    /// <summary>La même teinte avec un autre octet alpha ; une chaîne illisible est rendue telle quelle.</summary>
-    public static string WithAlpha(string value, byte alpha) =>
-        TryParse(value, out _, out var r, out var g, out var b) ? Format(alpha, r, g, b) : value;
+    /// <summary>
+    /// La même teinte avec un autre octet alpha ; une chaîne illisible est rendue telle quelle.
+    ///
+    /// Une référence au jeu de couleurs garde sa référence et prend l'opacité avec elle
+    /// (<c>scheme:accent1/80</c>) : régler l'opacité d'un fond ne doit pas le détacher du
+    /// jeu. Opaque, elle retombe sur la forme courte, celle que pose une pastille.
+    /// </summary>
+    public static string WithAlpha(string value, byte alpha)
+    {
+        if (ReferenceDuJeu.TryCouleur(value, out var emplacement, out _))
+        {
+            return ReferenceDuJeu.Couleur(emplacement, alpha == 0xFF ? null : alpha);
+        }
+
+        return TryParse(value, out _, out var r, out var g, out var b) ? Format(alpha, r, g, b) : value;
+    }
+
+    /// <summary>
+    /// L'octet alpha d'une couleur, ou null si elle est illisible. Une référence au jeu
+    /// sans opacité propre est réputée opaque : c'est ce qu'elle rend avec les jeux
+    /// livrés, dont aucune couleur n'est transparente.
+    /// </summary>
+    public static byte? Alpha(string? value)
+    {
+        if (ReferenceDuJeu.TryCouleur(value, out _, out var propre)) return propre ?? 0xFF;
+        return TryParse(value, out var a, out _, out _, out _) ? a : null;
+    }
 }

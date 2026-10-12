@@ -2163,6 +2163,131 @@ l'inventer ici sortirait du poste.
 et pour la même raison : c'est ainsi que Publisher le règle, et un fond qui changerait
 d'une page à l'autre est une page maître — poste non planifié.
 
+#### C5b — fait le 12 octobre 2026
+
+**Ce qui a été fait.** Le document porte `ColorScheme` — un nom, `Main` et quatre accents —
+et `FontScheme` — un nom, `Heading` et `Body`. Comme dans Publisher, un bloc qui prend une
+couleur ou une police du jeu y fait **référence** : la chaîne `scheme:accent1` ou
+`scheme:heading` est écrite là où le modèle attendait `#AARRGGBB` ou un nom de famille.
+Écrite dans la chaîne même, la référence vaut d'un coup partout où une couleur se pose —
+aplat, extrémités d'un dégradé, base d'une teinte (résolue *avant* le mélange), contour,
+texte, fragment de style, case, grille, fond de page — sans propriété jumelle à tenir en
+accord. Elle peut porter sa propre opacité, `scheme:accent1/80` : l'opacité du fond se règle
+sans détacher le bloc du jeu. Toute autre valeur est libre, et un changement de jeu ne la
+touche pas.
+
+La résolution vit dans le noyau, `Charte` (`Models/Jeux.cs`) : `Couleur`, `Police`,
+`StyleCommun`, `Fragments`, et `FillBrush.UniformeSelon`. L'export la prend sur le document ;
+l'écran la reçoit par une propriété héritée posée sur la page (`JeuAffiche.Charte`), si
+bien que fonds, textes composés et marqueurs de débordement l'ont tous, groupes et cases
+compris, et se redessinent quand on change de jeu. Les contours et le champ de saisie y
+passent par deux convertisseurs. Le style commun et les fragments arrivent **résolus à la
+composition** : une police du jeu se mesure dans la police du jeu, et les coupures en
+dépendent. Le contrôle des polices de l'export (B5) contrôle la police que le jeu désigne,
+non « scheme:body ».
+
+Au panneau, chacun des dix sélecteurs de couleur est devenu `SelecteurDeCouleur` : cinq
+pastilles qui écrivent une référence, puis le sélecteur libre qui écrit de l'hexadécimal.
+La liste des polices commence par le titre et le corps du jeu, libellés de la police qu'ils
+désignent. Le panneau *DOCUMENT* choisit le jeu de couleurs et le jeu de polices parmi six
+et cinq jeux livrés ; le choix s'annule. Les blocs neufs prennent leurs couleurs et leurs
+polices dans le jeu, et le jeu par défaut, « Ardoise »/« Sobre », porte exactement les
+valeurs que les gabarits écrivaient en dur : un document neuf ne change pas d'allure.
+
+**`FormatVersion` passe à 5.** La migration ne rapproche aucune couleur d'un accent
+qu'elle égalerait ; ce qu'elle fait, c'est garder libre une valeur que la version 4 tenait
+pour libre et que la version 5 lirait comme une référence — une chaîne qui commence par
+`scheme:` dans une couleur ou une police — en la préfixant d'un `!`. La version 4 du
+document d'exemple rejoint les trois précédentes dans `Scripts/fixtures/`. L'import d'un
+`.pub` garde ses polices libres par la même fonction ; ses couleurs le sont par
+construction.
+
+**Les modèles de B1 ont adopté un jeu.** Les quatre partageaient cinq couleurs : elles
+forment le jeu « Marine », et leurs blocs y font référence — le blanc reste libre ; les
+blocs en gras prennent la police du titre, les autres celle du corps.
+
+**Ce qui a été mesuré.** Les seize documents livrés et figés (Samples, fixtures v1 à v3,
+modèles), exportés par le binaire de `main` puis par celui-ci, à 144 points par pouce :
+0 pixel différent, et les mêmes avertissements ; les treize Samples et modèles rendus à
+l'écran par les deux bancs : 0 pixel différent, et de même entre les modèles de `main` et
+les modèles adoptés. `Scripts/recettes/C5b-jeux.sh` sur
+`Samples/recette-jeux.mypub` : quinze points au PDF et à l'écran, avant puis après le
+passage d'Ardoise/Sobre à Océan/Édition — dix références aux couleurs d'Océan, calculées
+depuis les valeurs du jeu, et cinq points libres posés chacun à côté d'une référence et
+portant la couleur qu'Ardoise lui donnait, inchangés. Au PDF, Liberation Serif et
+Liberation Sans n'apparaissent qu'après ; l'encre du titre et du corps change
+(6 532 et 2 148 pixels au PDF, 6 275 et 2 170 à l'écran), celle de la ligne en police
+libre de 3 pixels, du lissage. Écran contre PDF : 1,63 % avant, 1,57 % après. Vingt-deux
+tests du noyau et treize d'interface, trait `poste=C5b`. Onze sabotages, chacun éprouvé à la
+main : l'export qui ne résout plus le départ d'un dégradé, l'écran qui peint un fond sans
+le résoudre, un fragment qui garde sa référence, une teinte qui mélange sa référence, une
+police non résolue, la migration qui laisse une valeur v4 devenir référence, le sélecteur
+qui renvoie ce qu'il affiche, l'écran qui ne se repeint plus — fond, puis texte —, et,
+après la relecture, la migration qui ne surveille plus l'arrivée d'un dégradé et la
+pastille qui perd l'opacité propre du fond. Le test de migration porte chacun des six noms
+de propriété que la migration surveille — `Color`, `From`, `To`, `Stroke`, `Foreground`,
+`FontFamily` — et en retirer un, quel qu'il soit, le fait tomber : les six ont été
+essayés. Le test de la pastille part d'un fond `#80123456` et attend `scheme:accent3/80`.
+
+**Le piège du sélecteur, pour la troisième fois.** Il est réel ici aussi : sans la garde
+qui ignore l'écho de la couleur que le contrôle vient de poser, quatre tests d'interface
+tombent, et la recette tombe à sa première mesure — ouvrir le document dans la fenêtre
+avait réécrit la base de la teinte du fond de page en `#FF9DC3E6`, l'accent qu'elle
+désignait. Le premier essai de la recette l'a montré par accident, sur un binaire resté
+saboté. Le sélecteur libre est lié au contrôle par une liaison et non par un abonnement :
+les deux naissent et meurent ensemble, et la règle de Q2 n'a rien à y redire.
+
+Le test qui dit que changer de jeu repeint la page comparait d'abord la fenêtre entière, et
+il passait encore sans le remède : l'image de la fenêtre change d'autre part. Il lit
+désormais le pixel affiché au point même, et tombe sans l'invalidation du fond comme sans
+celle du texte.
+
+**Choisi sans certitude.** La référence dans la chaîne plutôt qu'un type de couleur : rien
+dans le modèle n'empêche d'écrire `scheme:accent9` ou `scheme:accent1/zz`, que la
+résolution rend illisibles et qui se traitent exactement comme une couleur libre
+illisible. Mesuré à l'écran et au PDF, identiques, côte à côte avec « pas une couleur » :
+un aplat, une teinte ou un contour ne se dessinent pas ; un dégradé dont une extrémité est
+illisible se peint uni de l'autre, et ne se dessine pas si les deux le sont ; un texte
+retombe au noir. Une police en `scheme:` illisible, `scheme:titre`, est un nom de police
+comme un autre, que la machine n'a pas : l'export la substitue et le dit (B5). Cinq
+emplacements, la principale et
+quatre accents, comme le demandait le plan ; Publisher 2007 en a huit, liens compris.
+L'échappement par `!` des valeurs v4 en forme de référence : aucun document connu n'en
+porte, et le préfixe ne change ni une couleur illisible ni une police introuvable. Une
+référence sans opacité propre est réputée opaque par le champ d'opacité : vrai des jeux
+livrés, pas d'un jeu transparent qu'on écrirait à la main. Le jeu de polices ne porte pas
+le gras du titre (« Georgia Bold » chez Publisher) : le gras reste au bloc. Dans les
+modèles, « en gras » vaut « titre ». Choisir au sélecteur libre exactement la couleur qu'il
+affiche pour une référence n'en fait pas une couleur libre : c'est l'écho qu'on ignore.
+On ne compose pas de jeu au panneau : on en choisit un ; un jeu écrit dans le fichier est
+gardé et s'applique, mais la liste reste alors sans sélection.
+
+**Trouvé, et laissé tel quel.** Ouvrir un document dans la fenêtre réécrit ses dimensions :
+les deux champs en millimètres du panneau passent la valeur par un `decimal` et la
+renvoient au modèle, si bien que 595,28 devient 595,2800000000013 — relevé par une trace
+de pile, sur cette branche, dans du code que ce poste ne touche pas (A5). La recette
+compare donc les dimensions au millionième. La vignette d'un modèle ignore le fond de
+page — aucun modèle livré n'en porte. L'import ne lit aucun jeu de couleurs d'un `.pub` :
+ni cherché ni demandé. La relecture a trouvé que la liste des polices effaçait la police
+d'un bloc absente de la machine : c'est le poste Q20, fait sur la même branche.
+
+**Ce que la fusion avec `main` a demandé, le 12 octobre 2026.** Trois postes de la salve
+touchaient les mêmes fonctions. À l'export, `DessinerPortes` de Q5 — la découpe au
+porteur — reçoit la charte et la passe aux blocs des groupes et aux cases des tableaux.
+Les fragments et le style commun de Q8 passent par `Fragments(text, content, charte)` et
+`Commun(text, charte)` : un champ résolu n'a toujours aucun fragment, et la passe des
+polices et le dessin découpent le même texte, désormais résolu — la passe n'a donc plus
+à traduire la police elle-même. Les deux sabotages de Q8 au juge visaient l'ancien texte ;
+ils sont réécrits sur le nouveau, et rejoués à la main : la recette de Q8 tombe sur
+chacun. La vignette de Q9 compose ses filets avec le style et les fragments résolus, et
+les peint de la couleur du jeu : sans cela, les modèles, qui ont adopté « Marine », y
+perdaient la couleur et les polices de leurs textes. Les tests de Q9 lisaient la couleur
+d'un texte de modèle par `Color.Parse` et composaient sans charte : ils levaient sur
+`scheme:main`, et lisent maintenant la charte du modèle. Deux sabotages de plus au juge —
+la vignette sans la couleur du jeu, puis sans sa police —, chacun attrapé par
+`VignetteTests`. À l'écran, le filet centré de Q4 garde sa marge et prend la couleur du
+jeu.
+
 ### C6 — Marges intérieures par côté *(fiche 12)*
 
 Remplacer la marge intérieure unique et symétrique par quatre valeurs. Mécanique, sans
@@ -3618,6 +3743,59 @@ l'accesseur `init`.
 
 *Recette* : une sonde compilée contre le noyau obtient un refus CS8852 par collection,
 et l'aller-retour JSON des documents livrés reste identique. Effort : faible.
+
+### Q20 — La liste des polices garde la police du bloc
+
+*Trouvé le 12 octobre 2026 par la relecture de C5b.* La liste des polices du panneau ne
+proposait que les deux entrées du jeu et les polices de la machine. Un bloc dont la
+police n'y est pas — un `.pub` composé ailleurs, un fichier écrit à la main, une valeur
+que la migration de C5b a gardée libre (`!scheme:heading`) — laissait la liste sans
+sélection ; et en passant de ce bloc à un autre de même sorte puis en y revenant, la
+liste renvoyait null au bloc. La police était perdue, et le
+rendu levait ensuite `ArgumentNullException` en composant le texte. Le défaut abîme des
+données sans aucun geste de l'utilisateur, sinon sélectionner.
+
+*Recette* : sur la vraie fenêtre, sélectionner tour à tour un texte à police absente et
+un texte à police présente, libre ou du jeu ; la police absente est intacte, aucun pas
+d'annulation n'est empilé, la liste la montre, et la page se compose. Même chose d'un
+tableau à l'autre. Choisir une police dans la liste l'écrit toujours. Effort : faible.
+
+*Fait le 12 octobre 2026.* Deux garde-fous. La liste (`FontFamilies`) propose, entre
+les deux entrées du jeu et les polices de la machine, celles que les textes et les
+tableaux du document emploient — groupes compris — et que la machine n'a pas ; une
+référence du jeu n'y est jamais comptée comme absente. Le libellé de ces entrées porte
+« (absente) ». La liste se fait à chaque remplacement du document — ouverture, modèle,
+document neuf, annulation — et ne change pas sous les gestes : choisir une autre police
+laisse la police absente dans la liste, et l'on peut y revenir. Le second garde-fou est
+la liaison elle-même (`JamaisNul`) : elle ne renvoie jamais null au bloc, puisqu'aucun
+geste de l'utilisateur ne choisit null. Les polices de la machine sont lues une fois,
+à la construction du modèle de vue, et exposées à part (`PolicesDeLaMachine`) pour le
+libellé.
+
+*Recette jouée* : `Scripts/recettes/Q20-police-absente.sh`, six tests d'interface sous
+`poste=Q20` (`PolicesAbsentesTests`) : trois passages d'un texte à l'autre — police
+inexistante contre DejaVu Sans, contre `scheme:body`, et `!scheme:heading` contre
+`scheme:body` —, deux tableaux, un bloc posé après que la liste a été faite, et le
+choix dans la liste. La recette compte les tests joués et échoue sous six. Les deux
+garde-fous retirés ensemble, c'est-à-dire le code d'avant, les six tombent : trois sur
+`ArgumentNullException`, deux sur une police changée, un sur une liste sans sélection.
+Deux sabotages au juge, un par garde-fou, éprouvés à la main : sans les polices
+absentes dans la liste, quatre tests tombent — les trois passages d'un texte à l'autre et
+le choix dans la liste ; sans `JamaisNul`, le seul test du bloc venu après la
+liste tombe. Le test des tableaux en prend deux et non un tableau et un texte : le
+tableau a sa propre liste au panneau, et passer d'un tableau à un texte ne montrait pas
+le défaut.
+
+*Choisi sans certitude.* Une police est « absente » quand son nom ne figure pas, à
+l'identique, parmi les familles qu'Avalonia lit sur la machine. L'export, lui, résout
+par fontconfig (B5) : les deux peuvent diverger sur un alias, et le libellé ne promet
+rien de l'export. La liste ne suit pas un bloc posé après coup — aucun geste ne le
+fait aujourd'hui — : c'est alors la liaison seule qui garde la police, sans que la liste
+la montre.
+
+*Laissé tel quel.* La comparaison est exacte, casse comprise : une police écrite
+« dejavu sans » serait proposée à part et libellée absente. Lu dans le code, non
+mesuré. Les fragments de style ont leur police hors du panneau, et ne sont pas concernés.
 
 ---
 

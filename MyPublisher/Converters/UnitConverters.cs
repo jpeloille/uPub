@@ -35,21 +35,6 @@ public sealed class PointsToMillimetres : IValueConverter
     };
 }
 
-/// <summary>Passerelle entre les couleurs stockées en #AARRGGBB et le sélecteur de couleur.</summary>
-public sealed class HexToColor : IValueConverter
-{
-    public static readonly HexToColor Instance = new();
-
-    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
-    {
-        if (value is not string text || string.IsNullOrWhiteSpace(text)) return Colors.Transparent;
-        return Color.TryParse(text, out var color) ? color : Colors.Transparent;
-    }
-
-    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
-        value is Color color ? $"#{color.A:X2}{color.R:X2}{color.G:X2}{color.B:X2}" : AvaloniaProperty.UnsetValue;
-}
-
 /// <summary>NumericUpDown expose des décimaux ; le modèle des doubles.</summary>
 public sealed class DoubleToDecimal : IValueConverter
 {

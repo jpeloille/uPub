@@ -45,15 +45,16 @@ public class VignetteTests
     /// sa cible — le bout de sa colonne si elle est justifiée, le bout de son texte
     /// sinon.
     /// </summary>
-    private static List<Ligne> LignesDeLaPage(TextFrame bloc)
+    private static List<Ligne> LignesDeLaPage(TextFrame bloc, Charte charte)
     {
         var largeur = Math.Max(1, bloc.Width - bloc.PaddingLeft - bloc.PaddingRight);
         var hauteur = Math.Max(1, bloc.Height - bloc.PaddingTop - bloc.PaddingBottom);
-        var commun = new StyleEffectif(
-            bloc.FontFamily, bloc.FontSize, bloc.Bold, bloc.Italic, bloc.Foreground, 0);
+        // Le style et les fragments résolus par la charte du modèle, comme la page les
+        // compose : les modèles prennent leurs polices dans leur jeu (poste C5b).
+        var commun = charte.StyleCommun(bloc);
 
         var lignes = Compositeur.Composer(
-            bloc.Text, bloc.Spans, commun, bloc.Paragraphs, bloc.Paragraph,
+            bloc.Text, charte.Fragments(bloc.Spans), commun, bloc.Paragraphs, bloc.Paragraph,
             largeur, hauteur, bloc.Colonnage, bloc.LineHeight, new MetriquesAvalonia());
         var descente = Compositeur.Decalage(lignes, hauteur, bloc.VerticalAlign);
         var oeil = bloc.FontSize * 0.55;
@@ -172,9 +173,9 @@ public class VignetteTests
     /// cette couleur sur sa rangée du milieu — loin du bord lissé du dessus et du
     /// dessous.
     /// </summary>
-    private static List<Filet> Filets((byte[] Pixels, int Largeur, int Hauteur) image, TextFrame bloc)
+    private static List<Filet> Filets((byte[] Pixels, int Largeur, int Hauteur) image, TextFrame bloc, Charte charte)
     {
-        var couleur = Color.Parse(bloc.Foreground);
+        var couleur = Color.Parse(charte.Couleur(bloc.Foreground)!);
         var x0 = (int)Math.Ceiling(bloc.X * PixelsParPoint);
         var x1 = (int)Math.Floor((bloc.X + bloc.Width) * PixelsParPoint);
         var y0 = (int)Math.Ceiling(bloc.Y * PixelsParPoint);
@@ -238,8 +239,8 @@ public class VignetteTests
         var lignes = 0;
         foreach (var bloc in blocs)
         {
-            var attendues = LignesDeLaPage(bloc);
-            var vues = Filets(image, bloc);
+            var attendues = LignesDeLaPage(bloc, document.Charte);
+            var vues = Filets(image, bloc, document.Charte);
             lignes += attendues.Count;
             if (vues.Count != attendues.Count)
             {
@@ -289,14 +290,14 @@ public class VignetteTests
     /// qui tombe entre deux.
     /// </summary>
     private static (List<string> Ecarts, int Justifiees, int Centrees, int ADroite) EcartsDAbscisse(
-        (byte[] Pixels, int Largeur, int Hauteur) image, IEnumerable<TextFrame> blocs)
+        (byte[] Pixels, int Largeur, int Hauteur) image, IEnumerable<TextFrame> blocs, Charte charte)
     {
         var ecarts = new List<string>();
         int centrees = 0, justifiees = 0, aDroite = 0;
         foreach (var bloc in blocs)
         {
-            var attendues = LignesDeLaPage(bloc);
-            var vues = Filets(image, bloc);
+            var attendues = LignesDeLaPage(bloc, charte);
+            var vues = Filets(image, bloc, charte);
             if (vues.Count != attendues.Count)
             {
                 ecarts.Add($"{bloc.DisplayName} : {vues.Count} filet(s), {attendues.Count} ligne(s) à la page");
@@ -324,7 +325,7 @@ public class VignetteTests
     public void Les_filets_commencent_et_finissent_ou_la_page_pose_ses_lignes()
     {
         var (document, blocs) = BulletinATousLesFers();
-        var (ecarts, justifiees, centrees, aDroite) = EcartsDAbscisse(Rendre(document), blocs);
+        var (ecarts, justifiees, centrees, aDroite) = EcartsDAbscisse(Rendre(document), blocs, document.Charte);
 
         Assert.True(ecarts.Count == 0, string.Join("\n", ecarts));
         // Un fer qu'aucune ligne n'éprouverait passerait vert sans rien prouver.
@@ -355,7 +356,7 @@ public class VignetteTests
         var ecarts = new List<string>();
         foreach (var champ in champs)
         {
-            var vus = Filets(image, champ);
+            var vus = Filets(image, champ, document.Charte);
             if (vus.Count != 1)
             {
                 ecarts.Add($"{champ.DisplayName} : {vus.Count} filet(s), un attendu");
@@ -363,8 +364,7 @@ public class VignetteTests
             }
 
             var avance = Compositeur.Avance(
-                metriques.Naturelle(new StyleEffectif(
-                    champ.FontFamily, champ.FontSize, champ.Bold, champ.Italic, champ.Foreground, 0)),
+                metriques.Naturelle(document.Charte.StyleCommun(champ)),
                 champ.LineHeight);
             var rangee = (champ.Y + champ.PaddingTop + (avance - champ.FontSize * 0.55) / 2) * PixelsParPoint;
             var debut = (champ.X + champ.PaddingLeft) * PixelsParPoint;
@@ -392,8 +392,8 @@ public class VignetteTests
         // Le débordement est réel : la composition pose des lignes sous le cadre.
         var hauteur = colonne.Height - colonne.PaddingTop - colonne.PaddingBottom;
         var lignes = Compositeur.Composer(
-            colonne.Text, colonne.Spans,
-            new StyleEffectif(colonne.FontFamily, colonne.FontSize, colonne.Bold, colonne.Italic, colonne.Foreground, 0),
+            colonne.Text, document.Charte.Fragments(colonne.Spans),
+            document.Charte.StyleCommun(colonne),
             colonne.Paragraphs, colonne.Paragraph,
             colonne.Width - colonne.PaddingLeft - colonne.PaddingRight, hauteur,
             colonne.Colonnage, colonne.LineHeight, new MetriquesAvalonia());
@@ -404,14 +404,14 @@ public class VignetteTests
 
         // Sous le cadre, de la première rangée entièrement dessous jusqu'au bas d'origine
         // de la colonne : aucune rangée de la couleur du texte.
-        var dessous = RangeesTeintees(image, Color.Parse(colonne.Foreground),
+        var dessous = RangeesTeintees(image, Color.Parse(document.Charte.Couleur(colonne.Foreground)!),
             (int)Math.Floor(colonne.X * PixelsParPoint), (int)Math.Ceiling((colonne.X + colonne.Width) * PixelsParPoint),
             (int)Math.Ceiling((colonne.Y + colonne.Height) * PixelsParPoint), (int)Math.Floor(basOrigine * PixelsParPoint));
         Assert.True(dessous.Count == 0,
             $"{dessous.Count} rangée(s) de filet sous le cadre, la première à {dessous.FirstOrDefault()}");
 
         // Et dans le cadre, le texte paraît bien : la découpe n'a pas tout effacé.
-        Assert.NotEmpty(Filets(image, colonne));
+        Assert.NotEmpty(Filets(image, colonne, document.Charte));
     }
 
     [AvaloniaFact]
@@ -426,7 +426,7 @@ public class VignetteTests
         Rendre(DocumentSerializer.Load(Path.Combine(TemplateStore.Folder, "bulletin.mypub")), vignette);
 
         var (document, blocs) = BulletinATousLesFers();
-        var (ecarts, _, centrees, _) = EcartsDAbscisse(Rendre(document, vignette), blocs);
+        var (ecarts, _, centrees, _) = EcartsDAbscisse(Rendre(document, vignette), blocs, document.Charte);
 
         Assert.True(ecarts.Count == 0, string.Join("\n", ecarts));
         Assert.True(centrees >= 2, $"{centrees} ligne(s) centrée(s) seulement");

@@ -45,6 +45,10 @@ public static class PdfExporter
         // passe avant une image manquante.
         AvertirSurLesPolices(document, warnings, now, contact ?? new BusinessInfo());
 
+        // Les références au jeu de couleurs et de polices se résolvent ici, une fois pour
+        // tout l'export, par la même charte que l'écran consulte.
+        var charte = document.Charte;
+
         // Pas de « using » ici : PDFsharp invalide le document lors du Save et
         // lève une exception si on tente ensuite de le libérer.
         var pdf = new PdfDocument();
@@ -63,9 +67,9 @@ public static class PdfExporter
 
             // Le fond de page passe avant tout : c'est le seul remplissage qui n'est pas
             // celui d'un bloc, et il doit se retrouver sous le premier d'entre eux.
-            DrawBackground(gfx, document, warnings);
+            DrawBackground(gfx, document, warnings, charte);
 
-            DessinerTous(gfx, page.Frames, warnings, context, $"Page {index + 1}");
+            DessinerTous(gfx, page.Frames, warnings, context, charte, $"Page {index + 1}");
         }
 
         var pageCount = pdf.PageCount;
@@ -104,6 +108,9 @@ public static class PdfExporter
         // même famille absente tombent souvent sur le même substitut, et ne valent
         // alors qu'un avertissement.
         var vues = new HashSet<(string, string)>();
+        // Une police prise dans le jeu est contrôlée sous son vrai nom : « scheme:body »
+        // n'est la police de personne, et passerait sinon pour une police introuvable.
+        var charte = document.Charte;
 
         for (var index = 0; index < document.Pages.Count; index++)
         {
@@ -114,7 +121,7 @@ public static class PdfExporter
             {
                 var content = FieldResolver.Resolve(bloc.Field, bloc.Text, context);
 
-                foreach (var style in StylesDessines(bloc, content))
+                foreach (var style in StylesDessines(bloc, content, charte))
                 {
                     if (string.IsNullOrWhiteSpace(style.FontFamily)) continue;
 
@@ -145,9 +152,10 @@ public static class PdfExporter
     /// pourtant dans sa police, substituée ou non ; c'est le seul effet d'une police
     /// que la passe tait.
     /// </summary>
-    private static IEnumerable<StyleEffectif> StylesDessines(TextFrame text, string content)
+    private static IEnumerable<StyleEffectif> StylesDessines(TextFrame text, string content, Charte charte)
     {
-        foreach (var (morceau, style) in StyleEffectif.Decouper(content, Fragments(text, content), Commun(text)))
+        foreach (var (morceau, style) in StyleEffectif.Decouper(
+                     content, Fragments(text, content, charte), Commun(text, charte)))
         {
             if (!string.IsNullOrWhiteSpace(morceau)) yield return style;
         }
@@ -183,11 +191,11 @@ public static class PdfExporter
     /// </summary>
     private static void DessinerTous(
         XGraphics gfx, IReadOnlyList<Frame> blocs, List<string> warnings,
-        FieldContext context, string chemin)
+        FieldContext context, Charte charte, string chemin)
     {
         for (var rang = 0; rang < blocs.Count; rang++)
         {
-            DrawFrame(gfx, blocs[rang], warnings, context, Reperer(chemin, blocs, rang));
+            DrawFrame(gfx, blocs[rang], warnings, context, charte, Reperer(chemin, blocs, rang));
         }
     }
 
@@ -230,7 +238,8 @@ public static class PdfExporter
     /// chacun de ses blocs sans qu'aucun calcul n'ait à les combiner.
     /// </summary>
     private static void DrawFrame(
-        XGraphics gfx, Frame frame, List<string> warnings, FieldContext context, string repere)
+        XGraphics gfx, Frame frame, List<string> warnings, FieldContext context, Charte charte,
+        string repere)
     {
         var state = gfx.Save();
         if (frame.Rotation != 0)
@@ -245,7 +254,7 @@ public static class PdfExporter
         // de contenu, et suit donc le même chemin sans cas particulier : depuis C5c, le
         // fond peut être une image, qu'un tracé « fond et contour d'un trait » ne
         // saurait pas poser.
-        DrawFill(gfx, frame, warnings);
+        DrawFill(gfx, frame, warnings, charte);
 
         // Seul le contenu est sous surveillance : une image illisible se signale et
         // laisse son cadre en place, comme une image manquante laisse le sien.
@@ -253,10 +262,10 @@ public static class PdfExporter
         {
             switch (frame)
             {
-                case TextFrame text: DrawText(gfx, text, context, warnings, repere); break;
+                case TextFrame text: DrawText(gfx, text, context, charte, warnings, repere); break;
                 case ImageFrame image: DrawImage(gfx, image, warnings, context, repere); break;
-                case GroupFrame group: DrawChildren(gfx, group, warnings, context, repere); break;
-                case TableFrame table: DrawTable(gfx, table, warnings, context, repere); break;
+                case GroupFrame group: DrawChildren(gfx, group, warnings, context, charte, repere); break;
+                case TableFrame table: DrawTable(gfx, table, warnings, context, charte, repere); break;
             }
         }
         catch (Exception ex)
@@ -264,14 +273,15 @@ public static class PdfExporter
             warnings.Add($"{repere} : {ex.Message}");
         }
 
-        DrawStroke(gfx, frame);
+        DrawStroke(gfx, frame, charte);
 
         gfx.Restore(state);
     }
 
     private static void DrawChildren(
-        XGraphics gfx, GroupFrame group, List<string> warnings, FieldContext context, string repere) =>
-        DessinerPortes(gfx, group, group.Children, warnings, context, repere);
+        XGraphics gfx, GroupFrame group, List<string> warnings, FieldContext context, Charte charte,
+        string repere) =>
+        DessinerPortes(gfx, group, group.Children, warnings, context, charte, repere);
 
     /// <summary>
     /// Les blocs d'un groupe ou les cases d'un tableau, dans le repère de leur porteur et
@@ -286,7 +296,7 @@ public static class PdfExporter
     /// </summary>
     private static void DessinerPortes(
         XGraphics gfx, Frame porteur, IReadOnlyList<Frame> blocs, List<string> warnings,
-        FieldContext context, string repere)
+        FieldContext context, Charte charte, string repere)
     {
         var state = gfx.Save();
         try
@@ -294,7 +304,7 @@ public static class PdfExporter
             gfx.TranslateTransform(porteur.X, porteur.Y);
             var zone = Decoupe.DesBlocs(porteur.Width, porteur.Height, blocs);
             gfx.IntersectClip(new XRect(zone.Left, zone.Top, zone.Width, zone.Height));
-            DessinerTous(gfx, blocs, warnings, context, repere);
+            DessinerTous(gfx, blocs, warnings, context, charte, repere);
         }
         finally
         {
@@ -311,8 +321,9 @@ public static class PdfExporter
     /// comparer pour s'en assurer.
     /// </summary>
     private static void DrawTable(
-        XGraphics gfx, TableFrame table, List<string> warnings, FieldContext context, string repere) =>
-        DessinerPortes(gfx, table, table.CellFrames, warnings, context, repere);
+        XGraphics gfx, TableFrame table, List<string> warnings, FieldContext context, Charte charte,
+        string repere) =>
+        DessinerPortes(gfx, table, table.CellFrames, warnings, context, charte, repere);
 
     /// <summary>
     /// La zone qu'un remplissage doit couvrir, et sa forme. Un bloc, une case ou la page
@@ -330,18 +341,18 @@ public static class PdfExporter
     /// Le fond de page : le même remplissage que celui d'un bloc, posé sur la page
     /// entière avant que rien d'autre ne soit tracé.
     /// </summary>
-    private static void DrawBackground(XGraphics gfx, Document document, List<string> warnings) =>
+    private static void DrawBackground(XGraphics gfx, Document document, List<string> warnings, Charte charte) =>
         RemplirOuSignaler(gfx, document.Background,
             new Pourtour(new XRect(0, 0, document.PageWidth, document.PageHeight), false, 0),
-            warnings, "Fond de page");
+            warnings, "Fond de page", charte);
 
     /// <summary>
     /// Le fond couvre le bloc entier, marge intérieure comprise, et se dessine même sans
     /// contenu : un bloc vide muni d'un fond est un aplat voulu. Un fond absent, comme un
     /// alpha nul, ne pose rien du tout et laisse voir ce qui est dessous.
     /// </summary>
-    private static void DrawFill(XGraphics gfx, Frame frame, List<string> warnings) =>
-        RemplirOuSignaler(gfx, frame.Fill, Contour(frame), warnings, frame.DisplayName);
+    private static void DrawFill(XGraphics gfx, Frame frame, List<string> warnings, Charte charte) =>
+        RemplirOuSignaler(gfx, frame.Fill, Contour(frame), warnings, frame.DisplayName, charte);
 
     /// <summary>
     /// Pose un remplissage dans un pourtour. Trois des quatre sortes se ramènent à un
@@ -358,11 +369,11 @@ public static class PdfExporter
     /// le reste du fichier applique déjà : signaler, et laisser le bloc en place.
     /// </summary>
     private static void RemplirOuSignaler(
-        XGraphics gfx, FillBrush? fill, Pourtour pourtour, List<string> warnings, string nom)
+        XGraphics gfx, FillBrush? fill, Pourtour pourtour, List<string> warnings, string nom, Charte charte)
     {
         try
         {
-            Remplir(gfx, fill, pourtour, warnings, nom);
+            Remplir(gfx, fill, pourtour, warnings, nom, charte);
         }
         catch (Exception ex)
         {
@@ -371,7 +382,7 @@ public static class PdfExporter
     }
 
     private static void Remplir(
-        XGraphics gfx, FillBrush? fill, Pourtour pourtour, List<string> warnings, string nom)
+        XGraphics gfx, FillBrush? fill, Pourtour pourtour, List<string> warnings, string nom, Charte charte)
     {
         if (fill is ImageFill image)
         {
@@ -379,11 +390,11 @@ public static class PdfExporter
             return;
         }
 
-        Tracer(gfx, pourtour, Pinceau(fill, pourtour.Rect), null);
+        Tracer(gfx, pourtour, Pinceau(fill, pourtour.Rect, charte), null);
     }
 
-    private static void DrawStroke(XGraphics gfx, Frame frame) =>
-        Tracer(gfx, Contour(frame), null, MakePen(frame));
+    private static void DrawStroke(XGraphics gfx, Frame frame, Charte charte) =>
+        Tracer(gfx, Contour(frame), null, MakePen(frame, charte));
 
     /// <summary>
     /// Trace le pourtour avec le fond et le contour qu'on lui passe : une ellipse pour la
@@ -484,9 +495,9 @@ public static class PdfExporter
         }
     }
 
-    private static XPen? MakePen(Frame frame)
+    private static XPen? MakePen(Frame frame, Charte charte)
     {
-        var pen = ParsePen(frame.Stroke, frame.StrokeThickness);
+        var pen = ParsePen(charte.Couleur(frame.Stroke), frame.StrokeThickness);
         if (pen is not null && Frame.DashPattern(frame.StrokeStyle) is { } pattern)
         {
             // PDFsharp multiplie le motif par l'épaisseur, comme le fait Avalonia :
@@ -516,7 +527,8 @@ public static class PdfExporter
     /// bloc.
     /// </summary>
     private static void DrawText(
-        XGraphics gfx, TextFrame text, FieldContext context, List<string> warnings, string repere)
+        XGraphics gfx, TextFrame text, FieldContext context, Charte charte, List<string> warnings,
+        string repere)
     {
         // Le contenu passe par le résolveur de champs, celui-là même que l'écran
         // appelle : un folio vu à l'écran est le folio imprimé.
@@ -537,11 +549,15 @@ public static class PdfExporter
         // ne s'y appliquent pas. Un folio ou une date sont d'un seul style, et c'est
         // bien ainsi. Les écarts de paragraphe tombent de même — un champ n'a pas les
         // mêmes paragraphes — alors que les réglages du bloc, eux, valent toujours.
-        var fragments = Fragments(text, content);
+        //
+        // Le style commun et les fragments arrivent résolus par la charte du document —
+        // la même fonction que l'écran appelle : une police du jeu se MESURE dans la
+        // police du jeu, et la coupure des lignes en dépend.
+        var fragments = Fragments(text, content, charte);
         var ecarts = content == text.Text ? text.Paragraphs : (IReadOnlyList<ParagraphSpan>)[];
 
         var metriques = new MetriquesPdf(gfx);
-        var commun = Commun(text);
+        var commun = Commun(text, charte);
         var lignes = Compositeur.Composer(
             content, fragments, commun, ecarts, text.Paragraph,
             box.Width, box.Height, text.Colonnage, text.LineHeight, metriques);
@@ -642,14 +658,15 @@ public static class PdfExporter
     /// <summary>
     /// Les fragments qui s'appliquent au contenu dessiné : ceux du bloc s'il montre son
     /// texte saisi, aucun s'il montre un champ résolu. Une seule règle pour le dessin et
-    /// pour la passe des polices, qui doivent parler du même texte.
+    /// pour la passe des polices, qui doivent parler du même texte. Ils arrivent résolus
+    /// par la charte (poste C5b) : une référence au jeu y est déjà la police et la couleur
+    /// qu'elle désigne.
     /// </summary>
-    private static IReadOnlyList<StyleSpan> Fragments(TextFrame text, string content) =>
-        content == text.Text ? text.Spans : [];
+    private static IReadOnlyList<StyleSpan> Fragments(TextFrame text, string content, Charte charte) =>
+        content == text.Text ? charte.Fragments(text.Spans) : [];
 
-    /// <summary>Le style du bloc, celui dont les fragments s'écartent.</summary>
-    private static StyleEffectif Commun(TextFrame text) =>
-        new(text.FontFamily, text.FontSize, text.Bold, text.Italic, text.Foreground, 0);
+    /// <summary>Le style du bloc, celui dont les fragments s'écartent, résolu par la charte.</summary>
+    private static StyleEffectif Commun(TextFrame text, Charte charte) => charte.StyleCommun(text);
 
     private static XFont Police(StyleEffectif style)
     {
@@ -757,18 +774,19 @@ public static class PdfExporter
     /// PDFsharp écrit un ombrage axial, dont l'alpha est celui de la page. Un dégradé
     /// semi-transparent sort donc opaque — écart assumé, consigné plutôt que tu.
     /// </remarks>
-    private static XBrush? Pinceau(FillBrush? fill, XRect rect) => fill switch
+    private static XBrush? Pinceau(FillBrush? fill, XRect rect, Charte charte) => fill switch
     {
-        GradientFill degrade => Degrade(degrade, rect),
-        // Une teinte est un aplat : c'est le modèle qui a fait le mélange.
-        { Uniforme: { } couleur } => ParseBrush(couleur),
+        GradientFill degrade => Degrade(degrade, rect, charte),
+        // Une teinte est un aplat : c'est le modèle qui a fait le mélange, sur la couleur
+        // du jeu quand sa base y fait référence.
+        not null when fill.UniformeSelon(charte) is { } couleur => ParseBrush(couleur),
         _ => null,
     };
 
-    private static XBrush? Degrade(GradientFill fill, XRect rect)
+    private static XBrush? Degrade(GradientFill fill, XRect rect, Charte charte)
     {
-        var depart = ParseColor(fill.From);
-        var arrivee = ParseColor(fill.To);
+        var depart = ParseColor(charte.Couleur(fill.From));
+        var arrivee = ParseColor(charte.Couleur(fill.To));
         if (depart is null && arrivee is null) return null;
 
         var (x0, y0, x1, y1) = fill.Extremites(rect.Width, rect.Height);

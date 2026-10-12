@@ -44,6 +44,9 @@ public sealed class FondBloc : Control
     {
         AffectsRender<FondBloc>(FondProperty, ArrondiProperty, EllipseProperty);
         FondProperty.Changed.AddClassHandler<FondBloc>((c, e) => c.Suivre(e));
+        // Changer de jeu ne touche aucun remplissage : c'est la charte héritée de la page
+        // qui change, et un fond qui y fait référence doit se redessiner (poste C5b).
+        JeuAffiche.CharteProperty.Changed.AddClassHandler<FondBloc>((c, _) => c.InvalidateVisual());
     }
 
     /// <summary>
@@ -128,7 +131,7 @@ public sealed class FondBloc : Control
             return;
         }
 
-        var pinceau = Pinceau(fond, largeur, hauteur);
+        var pinceau = Pinceau(fond, largeur, hauteur, JeuAffiche.De(this));
         if (pinceau is null) return;
 
         var rect = new Rect(0, 0, largeur, hauteur);
@@ -142,12 +145,16 @@ public sealed class FondBloc : Control
     /// ce qui est exactement la même chose ici — une unité vaut un point sous la mise à
     /// l'échelle du zoom.
     /// </summary>
-    private static IBrush? Pinceau(FillBrush fond, double largeur, double hauteur)
+    /// <remarks>
+    /// Une couleur prise dans le jeu se résout par la charte du document, la même que
+    /// l'export consulte : aplat, base d'une teinte et extrémités d'un dégradé.
+    /// </remarks>
+    private static IBrush? Pinceau(FillBrush fond, double largeur, double hauteur, Charte charte)
     {
-        if (fond is not GradientFill degrade) return Conv.ToBrush(fond.Uniforme);
+        if (fond is not GradientFill degrade) return Conv.ToBrush(fond.UniformeSelon(charte));
 
-        var depart = Conv.ToColor(degrade.From);
-        var arrivee = Conv.ToColor(degrade.To);
+        var depart = Conv.ToColor(charte.Couleur(degrade.From));
+        var arrivee = Conv.ToColor(charte.Couleur(degrade.To));
         if (depart is null && arrivee is null) return null;
 
         var (x0, y0, x1, y1) = degrade.Extremites(largeur, hauteur);

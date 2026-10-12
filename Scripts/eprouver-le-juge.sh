@@ -391,6 +391,96 @@ saboter "un collage qui porte du texte est poussé à gauche comme un saut" \
     '' \
     'Q1-styles-frappe|RecalageTests|FrappeTests'
 
+# C5b — les jeux de couleurs et de polices. La référence se résout en un seul endroit
+# du noyau, que les deux rendus appellent : un sabotage du noyau tombe des deux côtés à
+# la fois, et c'est la recette — qui calcule les couleurs attendues depuis les valeurs
+# des jeux — ou les tests du noyau qui le voient, jamais la comparaison écran ↔ PDF.
+saboter "l'export ne résout plus le départ d'un dégradé du jeu" \
+    MyPublisher.Core/Services/PdfExporter.cs \
+    'var depart = ParseColor(charte.Couleur(fill.From));' \
+    'var depart = ParseColor(fill.From);' \
+    'C5b-jeux'
+
+saboter "l'écran peint un fond du jeu sans le résoudre" \
+    MyPublisher/Views/FondBloc.cs \
+    'if (fond is not GradientFill degrade) return Conv.ToBrush(fond.UniformeSelon(charte));' \
+    'if (fond is not GradientFill degrade) return Conv.ToBrush(fond.Uniforme);' \
+    'C5b-jeux|JeuxTests'
+
+saboter "un fragment de style du jeu garde sa référence" \
+    MyPublisher.Core/Models/Jeux.cs \
+    'if (copie.Foreground is { } couleur) copie.Foreground = Couleur(couleur) ?? couleur;' \
+    '' \
+    'C5b-jeux|JeuxTests'
+
+saboter "une teinte du jeu mélange sa référence et non la couleur du jeu" \
+    MyPublisher.Core/Models/FillBrush.cs \
+    'var baseResolue = charte is null ? Color : charte.Couleur(Color);' \
+    'var baseResolue = Color;' \
+    'C5b-jeux|JeuxTests'
+
+saboter "la police du jeu ne se résout plus" \
+    MyPublisher.Core/Models/Jeux.cs \
+    'FontFamily = Police(style.FontFamily),' \
+    'FontFamily = style.FontFamily,' \
+    'C5b-jeux|JeuxTests'
+
+saboter "la migration laisse une valeur de la version 4 devenir une référence" \
+    MyPublisher.Core/Services/FormatMigrations.cs \
+    'objet[nom] = ReferenceDuJeu.Liberer(chaine);' \
+    'objet[nom] = chaine;' \
+    'JeuxTests'
+
+# Le piège du sélecteur, troisième du nom après C1 et C5c : il renvoie ce qu'il lit.
+saboter "le sélecteur renvoie au bloc la couleur du jeu qu'il vient d'afficher" \
+    MyPublisher/Views/SelecteurDeCouleur.cs \
+    'if (_posee == couleur) return;' \
+    '' \
+    'JeuxTests|C5b-jeux'
+
+# Le banc rend la page de force : seul un test qui lit la fenêtre composée voit qu'elle
+# ne s'est pas repeinte.
+saboter "changer de jeu ne repeint plus un fond du jeu à l'écran" \
+    MyPublisher/Views/FondBloc.cs \
+    'JeuAffiche.CharteProperty.Changed.AddClassHandler<FondBloc>((c, _) => c.InvalidateVisual());' \
+    '' \
+    'JeuxTests'
+
+saboter "changer de jeu ne repeint plus un texte du jeu à l'écran" \
+    MyPublisher/Views/ControleDeBloc.cs \
+    'JeuAffiche.CharteProperty.Changed.AddClassHandler<ControleDeBloc>((c, _) => c.InvalidateVisual());' \
+    '' \
+    'JeuxTests'
+
+# Trouvés par la relecture de C5b : deux trous que les neuf sabotages ci-dessus ne
+# couvraient pas.
+saboter "la migration ne surveille plus la seconde couleur d'un dégradé" \
+    MyPublisher.Core/Services/FormatMigrations.cs \
+    '["Color", "From", "To", "Stroke", "Foreground", "FontFamily"];' \
+    '["Color", "From", "Stroke", "Foreground", "FontFamily"];' \
+    'JeuxTests'
+
+saboter "une pastille du jeu perd l'opacité propre du fond" \
+    MyPublisher/Views/SelecteurDeCouleur.cs \
+    'Valeur = ReferenceDuJeu.Couleur(emplacement, alpha is { } a && a != 0xFF ? a : null);' \
+    'Valeur = ReferenceDuJeu.Couleur(emplacement);' \
+    'JeuxTests'
+
+# Q20 : une police absente de la machine survit à la sélection. Deux garde-fous, et
+# chacun a son test : la liste qui propose la police du bloc, et la liaison qui ne
+# renvoie jamais null au bloc — seule à tenir pour un bloc venu après la liste.
+saboter "la liste des polices ne propose plus les polices absentes du document" \
+    MyPublisher/ViewModels/MainWindowViewModel.cs \
+    '            .. absentes,' \
+    '' \
+    'PolicesAbsentesTests|Q20-police-absente'
+
+saboter "la liste des polices renvoie null au bloc qu'elle ne sait pas montrer" \
+    MyPublisher/Converters/JeuConverters.cs \
+    'value ?? BindingOperations.DoNothing;' \
+    'value;' \
+    'PolicesAbsentesTests|Q20-police-absente'
+
 # Salve 2, lot « noyau » : Q8, Q15 et Q17. Chaque sabotage a été joué à la main contre
 # la recette de son poste avant d'être écrit ici.
 
@@ -399,16 +489,16 @@ saboter "un collage qui porte du texte est poussé à gauche comme un saut" \
 # la recette, sur le document du plan.
 saboter "la passe des polices relit l'héritage des fragments au lieu des styles composés" \
     MyPublisher.Core/Services/PdfExporter.cs \
-    'foreach (var style in StylesDessines(bloc, content))' \
-    'foreach (var style in bloc.Spans.Select(f => Commun(bloc) with { FontFamily = f.FontFamily ?? bloc.FontFamily, Bold = f.Bold ?? bloc.Bold, Italic = f.Italic ?? bloc.Italic }).Prepend(Commun(bloc)))' \
+    'foreach (var style in StylesDessines(bloc, content, charte))' \
+    'foreach (var style in bloc.Spans.Select(f => Commun(bloc, charte) with { FontFamily = charte.Police(f.FontFamily ?? bloc.FontFamily), Bold = f.Bold ?? bloc.Bold, Italic = f.Italic ?? bloc.Italic }).Prepend(Commun(bloc, charte)))' \
     'Q8-polices|PolicesTests'
 
 # Q8 : la passe lit les fragments d'un bloc qui montre un champ, que le dessin ignore.
 # Seul le test du folio le voit.
 saboter "la passe des polices lit les fragments d'un champ, que le dessin ignore" \
     MyPublisher.Core/Services/PdfExporter.cs \
-    'StyleEffectif.Decouper(content, Fragments(text, content), Commun(text))' \
-    'StyleEffectif.Decouper(content, text.Spans, Commun(text))' \
+    'content, Fragments(text, content, charte), Commun(text, charte)))' \
+    'content, charte.Fragments(text.Spans), Commun(text, charte)))' \
     'Q8-polices|PolicesTests'
 
 # Q8 : la passe ne descend plus dans les cases d'un tableau. Trouvé par la relecture :
@@ -596,6 +686,21 @@ saboter "la vignette garde les filets du premier document qu'on lui pose" \
     MyPublisher/Views/TemplatePreview.cs \
     'if (!ReferenceEquals(document, _filetsDe) || box != _filetsA)' \
     'if (_filetsDe is null)' \
+    'Q9-vignette|VignetteTests'
+
+# La fusion de C5b et de Q9 : la vignette compose et peint ses filets par la charte du
+# modèle, comme la page. Les modèles prennent leurs couleurs et leurs polices dans leur
+# jeu : sans la charte, un filet n'a plus la couleur du texte, ni ses lignes.
+saboter "la vignette peint ses filets sans résoudre la couleur du jeu" \
+    MyPublisher/Views/TemplatePreview.cs \
+    'var brush = Conv.ToBrush(charte.Couleur(text.Foreground)) ?? Brushes.Black;' \
+    'var brush = Conv.ToBrush(text.Foreground) ?? Brushes.Black;' \
+    'Q9-vignette|VignetteTests'
+
+saboter "la vignette compose ses filets sans résoudre la police du jeu" \
+    MyPublisher/Views/TemplatePreview.cs \
+    '        var commun = charte.StyleCommun(text);' \
+    '        var commun = new StyleEffectif(text.FontFamily, text.FontSize, text.Bold, text.Italic, text.Foreground, 0);' \
     'Q9-vignette|VignetteTests'
 
 # Le poste B2. Le décodage peut être juste et le branchement faux : deux sabotages

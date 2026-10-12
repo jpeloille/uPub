@@ -67,11 +67,18 @@
              trait dans ses limites, on l'élargit donc d'une demi-épaisseur (poste Q4).
              Sans arrondi de mise en page : sous la mise à l'échelle, Avalonia arrondirait
              cette marge au point entier, en arrondi bancaire — un filet de 1 pt resterait
-             décalé d'un demi-point, un de 3 pt aussi (relecture du 12 octobre 2026). -->
+             décalé d'un demi-point, un de 3 pt aussi (relecture du 12 octobre 2026).
+             Sa couleur passe par la charte héritée de la page : un contour pris dans le
+             jeu de couleurs suit le jeu (poste C5b). -->
         <Style Selector="Rectangle.frameStroke" x:DataType="models:Frame">
             <Setter Property="Margin" Value="{Binding StrokeThickness, Converter={x:Static conv:Conv.FiletCentre}}"/>
             <Setter Property="UseLayoutRounding" Value="False"/>
-            <Setter Property="Stroke" Value="{Binding Stroke, Converter={x:Static conv:Conv.Brush}}"/>
+            <Setter Property="Stroke">
+                <MultiBinding Converter="{x:Static conv:CouleurDuJeu.Pinceau}">
+                    <Binding Path="Stroke"/>
+                    <Binding Path="$self.(views:JeuAffiche.Charte)"/>
+                </MultiBinding>
+            </Setter>
             <Setter Property="StrokeThickness" Value="{Binding StrokeThickness}"/>
             <Setter Property="StrokeDashArray" Value="{Binding StrokeStyle, Converter={x:Static conv:Conv.Dash}}"/>
             <Setter Property="RadiusX" Value="{Binding CornerRadius}"/>
@@ -99,17 +106,29 @@
                 <Rectangle IsVisible="{Binding IsRectangle}"
                            Margin="{Binding StrokeThickness, Converter={x:Static conv:Conv.FiletCentre}}"
                            UseLayoutRounding="False"
-                           Stroke="{Binding Stroke, Converter={x:Static conv:Conv.Brush}}"
                            StrokeThickness="{Binding StrokeThickness}"
                            StrokeDashArray="{Binding StrokeStyle, Converter={x:Static conv:Conv.Dash}}"
                            RadiusX="{Binding CornerRadius}"
-                           RadiusY="{Binding CornerRadius}"/>
+                           RadiusY="{Binding CornerRadius}">
+                    <Rectangle.Stroke>
+                        <MultiBinding Converter="{x:Static conv:CouleurDuJeu.Pinceau}">
+                            <Binding Path="Stroke"/>
+                            <Binding Path="$self.(views:JeuAffiche.Charte)"/>
+                        </MultiBinding>
+                    </Rectangle.Stroke>
+                </Rectangle>
                 <Ellipse IsVisible="{Binding IsEllipse}"
                          Margin="{Binding StrokeThickness, Converter={x:Static conv:Conv.FiletCentre}}"
                          UseLayoutRounding="False"
-                         Stroke="{Binding Stroke, Converter={x:Static conv:Conv.Brush}}"
                          StrokeThickness="{Binding StrokeThickness}"
-                         StrokeDashArray="{Binding StrokeStyle, Converter={x:Static conv:Conv.Dash}}"/>
+                         StrokeDashArray="{Binding StrokeStyle, Converter={x:Static conv:Conv.Dash}}">
+                    <Ellipse.Stroke>
+                        <MultiBinding Converter="{x:Static conv:CouleurDuJeu.Pinceau}">
+                            <Binding Path="Stroke"/>
+                            <Binding Path="$self.(views:JeuAffiche.Charte)"/>
+                        </MultiBinding>
+                    </Ellipse.Stroke>
+                </Ellipse>
             </Panel>
         </DataTemplate>
 
@@ -181,19 +200,32 @@
                          les fragments de style et les écarts de paragraphe sur le texte
                          tapé (poste Q1). Liée à « Text », la frappe ferait glisser les
                          gras d'un bloc importé sans que rien ne le dise. -->
+                    <!-- Police et couleur passent par la charte héritée de la page : un texte
+                         pris dans le jeu se saisit dans la police du jeu (poste C5b). -->
                     <TextBox IsVisible="{Binding IsEditing}"
                              Text="{Binding Saisie, Mode=TwoWay}"
-                             FontFamily="{Binding FontFamily, Converter={x:Static conv:Conv.Font}}"
                              FontSize="{Binding FontSize}"
                              FontWeight="{Binding Bold, Converter={x:Static conv:Conv.Weight}}"
                              FontStyle="{Binding Italic, Converter={x:Static conv:Conv.Slant}}"
-                             Foreground="{Binding Foreground, Converter={x:Static conv:Conv.Brush}}"
                              TextAlignment="{Binding Align, Converter={x:Static conv:Conv.Align}}"
                              Padding="{Binding Padding, Converter={x:Static conv:Conv.Pad}}"
                              AcceptsReturn="True" TextWrapping="Wrap"
                              Classes="frameEditor"
                              Background="Transparent" BorderThickness="0"
-                             VerticalContentAlignment="Top"/>
+                             VerticalContentAlignment="Top">
+                        <TextBox.FontFamily>
+                            <MultiBinding Converter="{x:Static conv:PoliceDuJeu.Instance}">
+                                <Binding Path="FontFamily"/>
+                                <Binding Path="$self.(views:JeuAffiche.Charte)"/>
+                            </MultiBinding>
+                        </TextBox.FontFamily>
+                        <TextBox.Foreground>
+                            <MultiBinding Converter="{x:Static conv:CouleurDuJeu.Pinceau}">
+                                <Binding Path="Foreground"/>
+                                <Binding Path="$self.(views:JeuAffiche.Charte)"/>
+                            </MultiBinding>
+                        </TextBox.Foreground>
+                    </TextBox>
                 </Panel>
                 <!-- Le marqueur de débordement est HORS du panneau découpé : il doit
                      mordre le bord du bloc, ce que le découpage lui interdirait. Il ne
@@ -314,7 +346,11 @@
                                             LayoutTransform="{Binding RenderScale, Converter={x:Static conv:Conv.Scale}}">
                         <!-- À l'intérieur de cette mise à l'échelle, une unité = un point typographique.
                              Aucune conversion n'est donc nécessaire sur les liaisons ci-dessous. -->
+                        <!-- La charte du document — jeu de couleurs et jeu de polices — posée
+                             ici et héritée par tout ce que la page dessine : changer de jeu
+                             recolore d'un coup les blocs qui y font référence (poste C5b). -->
                         <Panel Name="PageRoot"
+                               views:JeuAffiche.Charte="{Binding Document.Charte}"
                                Width="{Binding Document.PageWidth}"
                                Height="{Binding Document.PageHeight}"
                                Background="White"

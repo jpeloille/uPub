@@ -52,7 +52,7 @@ public partial class Document : ObservableObject
     /// migré à la lecture (<see cref="Services.FormatMigrations"/>) ; un fichier plus
     /// récent est refusé, plutôt que lu de travers.
     /// </summary>
-    public const int CurrentFormatVersion = 4;
+    public const int CurrentFormatVersion = 5;
 
     /// <summary>Version du format de fichier, telle que lue puis migrée.</summary>
     [JsonPropertyOrder(10)]
@@ -196,6 +196,49 @@ public partial class Document : ObservableObject
         OnPropertyChanged(nameof(BackgroundColor));
         OnPropertyChanged(nameof(BackgroundIsSolid));
     }
+
+    // ------------------------------------------------------------------ jeux
+
+    /// <summary>
+    /// Le jeu de couleurs du document — le « Color scheme » de Publisher (fiche 01). Un
+    /// bloc qui prend une couleur du jeu y fait <b>référence</b> (<see cref="ReferenceDuJeu"/>) :
+    /// changer de jeu recolore tous ceux-là, et seulement eux. Une couleur saisie en
+    /// hexadécimal reste libre.
+    ///
+    /// Porté par le document et non par la page, comme le fond : Publisher le règle pour
+    /// la publication entière, et le laisse modifiable après la création.
+    ///
+    /// Jamais nul : un fichier qui en écrirait un recevrait le jeu par défaut plutôt que
+    /// de laisser chaque référence sans couleur.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Charte))]
+    [property: JsonPropertyOrder(86)]
+    private JeuDeCouleurs _colorScheme = JeuxPredefinis.CouleursParDefaut;
+
+    /// <summary>Le jeu de polices du document, paire titre/corps ; même règle que les couleurs.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Charte))]
+    [property: JsonPropertyOrder(87)]
+    private JeuDePolices _fontScheme = JeuxPredefinis.PolicesParDefaut;
+
+    partial void OnColorSchemeChanged(JeuDeCouleurs value)
+    {
+        // Le sérialiseur passe par le setter, et un « null » écrit à la main y arriverait.
+        if (value is null) ColorScheme = JeuxPredefinis.CouleursParDefaut;
+    }
+
+    partial void OnFontSchemeChanged(JeuDePolices value)
+    {
+        if (value is null) FontScheme = JeuxPredefinis.PolicesParDefaut;
+    }
+
+    /// <summary>
+    /// Les deux jeux d'un seul tenant : ce que l'écran et l'export consultent pour
+    /// résoudre une référence. Une instance neuve à chaque changement de jeu, ce qui
+    /// suffit à faire suivre la page.
+    /// </summary>
+    [JsonIgnore] public Charte Charte => new(ColorScheme, FontScheme);
 
     [JsonPropertyOrder(100)]
     // ------------------------------------------------------------------ grille

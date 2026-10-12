@@ -258,11 +258,13 @@ public class DebordementTests
             {
                 var largeur = Math.Max(1, bloc.Width - bloc.PaddingLeft - bloc.PaddingRight);
                 var hauteur = Math.Max(1, bloc.Height - bloc.PaddingTop - bloc.PaddingBottom);
-                var commun = new StyleEffectif(
-                    bloc.FontFamily, bloc.FontSize, bloc.Bold, bloc.Italic, bloc.Foreground, 0);
+                // Résolu par la charte du document, comme les deux rendus le font depuis
+                // C5b : un modèle qui prend ses polices dans le jeu se mesure dans la
+                // police du jeu, pas dans « scheme:body ».
+                var commun = document.Charte.StyleCommun(bloc);
 
                 var lignes = Compositeur.Composer(
-                    bloc.Text, bloc.Spans, commun, bloc.Paragraphs, bloc.Paragraph,
+                    bloc.Text, document.Charte.Fragments(bloc.Spans), commun, bloc.Paragraphs, bloc.Paragraph,
                     largeur, hauteur, bloc.Colonnage, bloc.LineHeight, metriques);
 
                 var trop = Compositeur.Debordement(

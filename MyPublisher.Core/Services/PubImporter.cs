@@ -392,7 +392,10 @@ public static class PubImporter
             {
                 Start = _debutFragment,
                 Length = longueur,
-                FontFamily = style.GetValueOrDefault("style:font-name"),
+                // Un .pub ne connaît pas le jeu de MyPublisher : ses polices restent libres,
+                // même celle dont le nom aurait la forme d'une référence (poste C5b). Ses
+                // couleurs le sont par construction, « Couleur » ne rendant que de l'hexa.
+                FontFamily = ReferenceDuJeu.Liberer(style.GetValueOrDefault("style:font-name")),
                 FontSize = style.TryGetValue("fo:font-size", out var corps) ? Points(corps) : null,
                 Bold = style.GetValueOrDefault("fo:font-weight") == "bold",
                 Italic = style.GetValueOrDefault("fo:font-style") == "italic",
