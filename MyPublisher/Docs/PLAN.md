@@ -2066,11 +2066,16 @@ portant la couleur qu'Ardoise lui donnait, inchangés. Au PDF, Liberation Serif 
 Liberation Sans n'apparaissent qu'après ; l'encre du titre et du corps change
 (6 532 et 2 148 pixels au PDF, 6 275 et 2 170 à l'écran), celle de la ligne en police
 libre de 3 pixels, du lissage. Écran contre PDF : 1,63 % avant, 1,57 % après. Vingt-deux
-tests du noyau et douze d'interface, trait `poste=C5b`. Neuf sabotages, chacun éprouvé à la
+tests du noyau et treize d'interface, trait `poste=C5b`. Onze sabotages, chacun éprouvé à la
 main : l'export qui ne résout plus le départ d'un dégradé, l'écran qui peint un fond sans
 le résoudre, un fragment qui garde sa référence, une teinte qui mélange sa référence, une
 police non résolue, la migration qui laisse une valeur v4 devenir référence, le sélecteur
-qui renvoie ce qu'il affiche, et l'écran qui ne se repeint plus — fond, puis texte.
+qui renvoie ce qu'il affiche, l'écran qui ne se repeint plus — fond, puis texte —, et,
+après la relecture, la migration qui ne surveille plus l'arrivée d'un dégradé et la
+pastille qui perd l'opacité propre du fond. Le test de migration porte chacun des six noms
+de propriété que la migration surveille — `Color`, `From`, `To`, `Stroke`, `Foreground`,
+`FontFamily` — et en retirer un, quel qu'il soit, le fait tomber : les six ont été
+essayés. Le test de la pastille part d'un fond `#80123456` et attend `scheme:accent3/80`.
 
 **Le piège du sélecteur, pour la troisième fois.** Il est réel ici aussi : sans la garde
 qui ignore l'écho de la couleur que le contrôle vient de poser, quatre tests d'interface
@@ -2086,9 +2091,14 @@ désormais le pixel affiché au point même, et tombe sans l'invalidation du fon
 celle du texte.
 
 **Choisi sans certitude.** La référence dans la chaîne plutôt qu'un type de couleur : rien
-dans le modèle n'empêche d'écrire `scheme:accent9`, que la résolution rend illisible et
-qui se traite comme une couleur illisible : un fond ou un contour ne se dessine pas, un
-texte retombe au noir. Cinq emplacements, la principale et
+dans le modèle n'empêche d'écrire `scheme:accent9` ou `scheme:accent1/zz`, que la
+résolution rend illisibles et qui se traitent exactement comme une couleur libre
+illisible. Mesuré à l'écran et au PDF, identiques, côte à côte avec « pas une couleur » :
+un aplat, une teinte ou un contour ne se dessinent pas ; un dégradé dont une extrémité est
+illisible se peint uni de l'autre, et ne se dessine pas si les deux le sont ; un texte
+retombe au noir. Une police en `scheme:` illisible, `scheme:titre`, est un nom de police
+comme un autre, que la machine n'a pas : l'export la substitue et le dit (B5). Cinq
+emplacements, la principale et
 quatre accents, comme le demandait le plan ; Publisher 2007 en a huit, liens compris.
 L'échappement par `!` des valeurs v4 en forme de référence : aucun document connu n'en
 porte, et le préfixe ne change ni une couleur illisible ni une police introuvable. Une
