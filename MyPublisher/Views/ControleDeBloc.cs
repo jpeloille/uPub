@@ -135,7 +135,7 @@ public abstract class ControleDeBloc : Control
         InvalidateVisual();
 
     /// <summary>
-    /// Compose le bloc pour la place dont ce contrôle dispose. Les deux contrôles
+    /// Compose le bloc pour la place que le bloc se donne. Les deux contrôles
     /// passent par ici : le texte tracé et le marqueur qui dit qu'il déborde doivent
     /// parler de la même composition, sinon l'un signalerait ce que l'autre ne montre
     /// pas.
@@ -144,8 +144,13 @@ public abstract class ControleDeBloc : Control
     {
         if (Bloc is not { } bloc || string.IsNullOrEmpty(Contenu)) return null;
 
-        var largeur = Math.Max(1, Bounds.Width - bloc.PaddingLeft - bloc.PaddingRight);
-        var hauteur = Math.Max(1, Bounds.Height - bloc.PaddingTop - bloc.PaddingBottom);
+        // La place est celle du MODÈLE, comme à l'export, et non celle du contrôle : la
+        // mise en page arrondit la taille d'un contrôle au pixel, et un bloc de 150,4 pt
+        // y composait sur 150 — dix-neuf lignes coupées autrement que le PDF sur les 48
+        // blocs aux largeurs en demi-points de la relecture de Q13. Le contrôle a la
+        // taille du bloc à l'arrondi près ; le texte ne doit pas dépendre de cet arrondi.
+        var largeur = Math.Max(1, bloc.Width - bloc.PaddingLeft - bloc.PaddingRight);
+        var hauteur = Math.Max(1, bloc.Height - bloc.PaddingTop - bloc.PaddingBottom);
 
         // Le style et les fragments arrivent résolus par la charte du document, la même
         // fonction que l'export appelle : une police du jeu se mesure dans la police du
