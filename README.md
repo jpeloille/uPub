@@ -32,6 +32,7 @@ Scripts/verifier.sh                 # tests, contrôle, recettes — c'est lui q
 Scripts/controle.sh                 # le seul contrôle de la chaîne d'écriture
 Scripts/controle.sh --enregistrer   # remplace le relevé de référence, après examen
 Scripts/eprouver-le-juge.sh         # sabote le code et vérifie qu'on s'en aperçoit
+Scripts/eprouver-le-juge.sh --cibles   # chaque texte visé est là, une seule fois
 Scripts/comparer-rendus.sh doc.mypub 1   # l'écran contre le PDF, à deux pixels par point
 Scripts/bilan.sh                    # poste par poste : clos ou non, recette ou non
 Scripts/verifier-dependances.sh     # aucune dépendance vulnérable (réseau ; à part)
@@ -67,7 +68,9 @@ chose en ligne de commande, pour les scripts.
 `Scripts/eprouver-le-juge.sh` est le contrôle du contrôle : il casse le code une chose à
 la fois — l'aimantation, une propriété perdue à la copie, une étape de migration, la
 mise à l'échelle d'un groupe — et exige que chaque sabotage soit attrapé. Un contrôle
-qu'on n'a jamais vu échouer ne prouve rien.
+qu'on n'a jamais vu échouer ne prouve rien. Chaque sabotage vise un texte présent une seule fois
+dans son fichier ; `--cibles` le contrôle en quelques secondes, sans rien saboter, et
+se lance avant d'ajouter un sabotage ou après une fusion.
 
 Quatre vérifications : `Samples/exemple-bulletin.mypub` se relit, se réécrit au
 caractère près, et son export PDF donne le même nombre de pages et les mêmes

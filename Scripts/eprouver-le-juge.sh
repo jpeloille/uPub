@@ -14,6 +14,8 @@
 #
 #   Scripts/eprouver-le-juge.sh            # tous les sabotages
 #   Scripts/eprouver-le-juge.sh 'motif'    # ceux dont l'intitulé répond au motif (grep -E)
+#   Scripts/eprouver-le-juge.sh --cibles   # sans rien saboter : chaque texte visé est-il
+#                                          # présent, et une seule fois ? (quelques secondes)
 #
 # L'arbre de travail doit être propre : le script écrit dans les sources et les
 # restaure par « git checkout ». Il refuse de tourner autrement, pour ne pas
@@ -25,7 +27,14 @@ export LC_ALL=C
 racine="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$racine"
 
-if [ -n "$(git status --porcelain)" ]; then
+# --cibles ne lit que les sources : ni arbre propre exigé, ni verrou, ni restauration.
+cibles=0
+if [ "${1:-}" = "--cibles" ]; then
+    cibles=1
+    shift
+fi
+
+if [ "$cibles" = 0 ] && [ -n "$(git status --porcelain)" ]; then
     echo "ÉCHEC : l'arbre de travail n'est pas propre." >&2
     echo "Ce script sabote les sources et les restaure par « git checkout » :" >&2
     echo "il emporterait le travail en cours." >&2
@@ -37,16 +46,19 @@ fi
 # emporté sans un mot. C'est arrivé une fois, le 6 septembre 2026, à deux fichiers
 # de documentation — et rien ne l'avait signalé.
 verrou="$racine/.juge-en-cours"
-if [ -e "$verrou" ]; then
+if [ "$cibles" = 1 ]; then
+    :
+elif [ -e "$verrou" ]; then
     echo "ÉCHEC : une épreuve du juge est déjà en cours ($verrou)." >&2
     echo "Ce script restaure l'arbre en sortant : deux instances se marcheraient dessus." >&2
     exit 2
 fi
-touch "$verrou"
-
-restaurer() { git checkout -- . 2>/dev/null || true; }
-nettoyer() { restaurer; rm -f "$verrou"; }
-trap nettoyer EXIT
+if [ "$cibles" = 0 ]; then
+    touch "$verrou"
+    restaurer() { git checkout -- . 2>/dev/null || true; }
+    nettoyer() { restaurer; rm -f "$verrou"; }
+    trap nettoyer EXIT
+fi
 
 trous=0
 sabotages=0
@@ -61,12 +73,23 @@ saboter() {
     if [ -n "$filtre" ] && ! grep -qE "$filtre" <<< "$intitule"; then return; fi
     sabotages=$((sabotages + 1))
 
-    if ! grep -qF "$avant" "$fichier"; then
+    # Le texte visé doit y être une fois et une seule : présent plusieurs fois, le
+    # sabotage frapperait la première occurrence, qui n'est peut-être pas celle que
+    # l'intitulé décrit.
+    local occurrences
+    occurrences="$(python3 -c 'import sys, pathlib; print(pathlib.Path(sys.argv[1]).read_text().count(sys.argv[2]))' "$fichier" "$avant")"
+    if [ "$occurrences" = 0 ]; then
         echo "  ?  $intitule — le code visé a changé, sabotage impossible" >&2
         echo "     ($fichier ne contient plus « ${avant:0:60}… »)" >&2
         trous=$((trous + 1))
         return
+    elif [ "$occurrences" != 1 ]; then
+        echo "  ?  $intitule — le texte visé est ambigu, sabotage refusé" >&2
+        echo "     ($fichier contient $occurrences fois « ${avant:0:60}… »)" >&2
+        trous=$((trous + 1))
+        return
     fi
+    if [ "$cibles" = 1 ]; then return; fi
 
     python3 - "$fichier" "$avant" "$apres" <<'PY'
 import sys, pathlib
@@ -122,8 +145,8 @@ saboter "l'aimantation ne s'accroche plus" \
 
 saboter "une copie de bloc perd son interligne" \
     MyPublisher.Core/Models/Frame.cs \
-    'LineHeight = LineHeight,' \
-    ''
+    'LineHeight = LineHeight, PaddingLeft = PaddingLeft,' \
+    'PaddingLeft = PaddingLeft,'
 
 saboter "la migration de la version 1 ne fait plus rien" \
     MyPublisher.Core/Services/FormatMigrations.cs \
@@ -163,8 +186,10 @@ saboter "l interligne redevient un multiple du corps" \
 # contour dans PageCanvas.axaml, qui est celle du gabarit d'image.
 saboter "à l'écran, le filet d'une image passe sous elle" \
     MyPublisher/Views/PageCanvas.axaml \
-    '<Rectangle Classes="frameStroke"/>' \
-    '<Rectangle Classes="frameStroke" ZIndex="-1"/>' \
+    '</Image>
+                <Rectangle Classes="frameStroke"/>' \
+    '</Image>
+                <Rectangle Classes="frameStroke" ZIndex="-1"/>' \
     'C1-fond-et-filet'
 
 # C2b : un repère libre qui sort de la table d'aimantation ne casse aucun calcul — il
@@ -230,8 +255,8 @@ saboter "un document parti d un modèle en garde le chemin" \
 # Le folio de l'écran resterait juste : seul le PDF, relu page par page, le voit.
 saboter "le folio du PDF reste à 1 sur toutes les pages" \
     MyPublisher.Core/Services/PdfExporter.cs \
-    'new FieldContext(index + 1, document.Pages.Count' \
-    'new FieldContext(1, document.Pages.Count' \
+    'new FieldContext(index + 1, document.Pages.Count, now' \
+    'new FieldContext(1, document.Pages.Count, now' \
     'C4-champs'
 
 # Une marge unique appliquée des deux côtés : le fer gauche reste juste, et seul un
@@ -794,6 +819,14 @@ saboter "un fichier fermé en lecture fait tomber l'import au lieu d'être refus
     'B2-import-texte|ImportTexteTests'
 
 echo
+if [ "$cibles" = 1 ]; then
+    if [ "$trous" = 0 ]; then
+        echo "Les $sabotages textes visés sont présents, chacun une seule fois."
+        exit 0
+    fi
+    echo "CIBLES À REPRENDRE : $trous sur $sabotages." >&2
+    exit 1
+fi
 if [ "$trous" = 0 ]; then
     echo "Le juge sait échouer : $sabotages sabotages, $sabotages attrapés."
 else
