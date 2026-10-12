@@ -3778,8 +3778,8 @@ dans l'application est acceptée).
   colonnes, de 58,05 à 58,65 pt de haut, tirés du document du relecteur, dont on a
   retiré les deux blocs de hauteur entière. Leur texte s'arrête après « puis du PDF. »
   (35 mots) : entier, il débordait de 42 à 51 pt, et un document livré ne déborde pas
-  (recette A2-A7, `DebordementTests`). Raccourci, il tient sur 10 ou 11 lignes, la 7e
-  toujours à la charnière des colonnes. Sain, `comparer-mots.sh` y relève 0 ligne
+  (recette A2-A7, `DebordementTests`). Raccourci, il compose 238 lignes sur les 22
+  blocs, et le sabotage de la hauteur y fait encore tomber la recette. Sain, `comparer-mots.sh` y relève 0 ligne
   coupée autrement (638 lignes, 3 794 mots, 74 blocs sur les quatre pages). L'étape 4
   de la recette exige désormais 74 blocs. Un septième sabotage vise la hauteur, éprouvé
   à la main : la recette tombe à l'étape 4, sur 106 lignes coupées autrement et 90 mots
