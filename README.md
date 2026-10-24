@@ -202,7 +202,8 @@ la barre du haut regroupe les commandes du document : fichier, annulation, zoom.
   les groupe. Le cadre de sélection passe à 4 px du bloc et tourne avec lui ; pendant
   qu'on trace un bloc ou qu'on le redimensionne, une bulle sous lui dit sa largeur et
   sa hauteur — les mêmes que la barre d'état. Un clic sur le gris de la planche libère
-  la sélection, et une poignée qui sort de la page s'y saisit encore.
+  la sélection, même là où passe la part rognée d'un bloc qui déborde, et une poignée
+  qui sort de la page s'y saisit encore ; un outil armé n'y trace rien et reste armé.
 - Grille de composition : colonnes et lignes avec leur gouttière, grille de ligne de
   base réglée en points. L'aimantation s'y accroche comme aux marges, aux bords et à
   l'axe médian de la page.

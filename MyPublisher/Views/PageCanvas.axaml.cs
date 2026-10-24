@@ -152,6 +152,13 @@ public partial class PageCanvas : UserControl
     private RulerGuide? _draggedGuide;
     private bool _draggedGuideIsVertical;
 
+    /// <summary>
+    /// Où le pointeur mène le repère, avant l'aimantation : c'est sur cette cible que se
+    /// décide le retrait au relâché. Aimantée, la position d'un repère lâché sur le gris à
+    /// moins de six pixels de la page revenait sur le bord, et le repère restait.
+    /// </summary>
+    private double _cibleDuRepere;
+
     public PageCanvas()
     {
         InitializeComponent();
@@ -451,6 +458,17 @@ public partial class PageCanvas : UserControl
     private Point ToPageCoordinates(Point surfacePoint) =>
         new(surfacePoint.X / Scale, surfacePoint.Y / Scale);
 
+    /// <summary>
+    /// Le point, en points de page, tombe-t-il sur la page, bords compris ? La couche de
+    /// saisie couvre toute la planche depuis le poste I4, pour les poignées et les repères
+    /// qui en sortent ; les blocs et les outils, eux, s'arrêtent au bord de la page,
+    /// comme avant. Ce que PageRoot rogne ne se voit pas : ni un bloc qui déborde ne se
+    /// prend sur le gris, ni un outil armé n'y pose un bloc.
+    /// </summary>
+    private bool DansLaPage(Point page) =>
+        _vm is { } vm && page.X >= 0 && page.Y >= 0 &&
+        page.X <= vm.Document.PageWidth && page.Y <= vm.Document.PageHeight;
+
     private void OnPointerPressed(object? sender, PointerPressedEventArgs e)
     {
         if (_vm?.CurrentPage is null) return;
@@ -461,14 +479,18 @@ public partial class PageCanvas : UserControl
         var surfacePoint = e.GetPosition(Surface);
         var page = ToPageCoordinates(surfacePoint);
 
-        // Un outil armé prend la main : on crée au lieu de sélectionner.
+        // Un outil armé prend la main : on crée au lieu de sélectionner. Sur le gris, il ne
+        // se passe rien, et l'outil reste armé : le bloc tomberait hors de la page, où
+        // PageRoot le rognerait tout entier.
         if (_vm.IsDrawing)
         {
+            e.Handled = true;
+            if (!DansLaPage(page)) return;
+
             _mode = DragMode.Create;
             _startPointer = page;
             UpdatePreview(page, page);
             e.Pointer.Capture(InputLayer);
-            e.Handled = true;
             return;
         }
 
@@ -499,8 +521,10 @@ public partial class PageCanvas : UserControl
             return;
         }
 
-        // Ordre de superposition : le dernier bloc dessiné est le premier candidat.
-        var hit = _vm.CurrentPage.Frames.LastOrDefault(f => f.HitTest(page.X, page.Y));
+        // Ordre de superposition : le dernier bloc dessiné est le premier candidat. Sur la
+        // page seulement : le gris libère la sélection, même là où passe, rognée, la part
+        // d'un bloc qui déborde.
+        var hit = DansLaPage(page) ? _vm.CurrentPage.Frames.LastOrDefault(f => f.HitTest(page.X, page.Y)) : null;
         var additive = e.KeyModifiers.HasFlag(KeyModifiers.Control) ||
                        e.KeyModifiers.HasFlag(KeyModifiers.Shift);
 
@@ -681,7 +705,7 @@ public partial class PageCanvas : UserControl
     {
         if (_vm?.IsDrawing == true)
         {
-            InputLayer.Cursor = DrawCursor;
+            InputLayer.Cursor = DansLaPage(page) ? DrawCursor : ArrowCursor;
             return;
         }
 
@@ -709,7 +733,7 @@ public partial class PageCanvas : UserControl
             return;
         }
 
-        var over = _vm?.CurrentPage?.Frames.LastOrDefault(f => f.HitTest(page.X, page.Y));
+        var over = DansLaPage(page) ? _vm?.CurrentPage?.Frames.LastOrDefault(f => f.HitTest(page.X, page.Y)) : null;
         InputLayer.Cursor = over is null ? ArrowCursor : MoveCursor;
     }
 
@@ -773,6 +797,7 @@ public partial class PageCanvas : UserControl
         _mode = DragMode.Guide;
         _draggedGuide = guide;
         _draggedGuideIsVertical = vertical;
+        _cibleDuRepere = guide.Position;
         _vm?.BeginEdit();
     }
 
@@ -780,22 +805,26 @@ public partial class PageCanvas : UserControl
     /// Suit le pointeur, en s'aimantant sur les autres repères — marges, grille,
     /// colonnes — pour qu'on puisse poser un repère exactement sur un bord de colonne.
     /// Le repère traîné est écarté des candidats, sans quoi il s'accrocherait à
-    /// lui-même et ne bougerait plus.
+    /// lui-même et ne bougerait plus : lui seul, une occurrence de sa position. Écarter
+    /// cette valeur partout écartait avec lui le bord ou la marge où il venait de
+    /// s'aimanter, et le repère, au mouvement suivant, s'en décrochait — un mouvement
+    /// sur deux, le long d'un bord.
     /// </summary>
     private void ApplyGuideMove(Point page, KeyModifiers modifiers)
     {
         if (_draggedGuide is null || _vm is null) return;
 
         var target = _draggedGuideIsVertical ? page.X : page.Y;
+        _cibleDuRepere = target;
 
         if (!modifiers.HasFlag(KeyModifiers.Alt))
         {
-            var current = _draggedGuide.Position;
             var candidates = (_draggedGuideIsVertical
                     ? _vm.Document.VerticalGuides
                     : _vm.Document.HorizontalGuides)
-                .Where(value => Math.Abs(value - current) > 1e-9)
                 .ToList();
+            var lui = candidates.LastIndexOf(_draggedGuide.Position);
+            if (lui >= 0) candidates.RemoveAt(lui);
 
             target = SnapEdge(target, 0, SnapPixels / Scale, candidates);
         }
@@ -805,14 +834,15 @@ public partial class PageCanvas : UserControl
 
     /// <summary>
     /// Ferme le geste. Un repère lâché hors de la page est retiré : c'est le moyen de
-    /// s'en débarrasser, en le ramenant d'où il vient.
+    /// s'en débarrasser, en le ramenant d'où il vient. Hors de la page, c'est là où le
+    /// pointeur l'a mené, et non là où l'aimantation l'a mis.
     /// </summary>
     private void FinishGuideDrag()
     {
         if (_draggedGuide is not null && _vm is not null)
         {
             var limit = _draggedGuideIsVertical ? _vm.Document.PageWidth : _vm.Document.PageHeight;
-            if (_draggedGuide.Position < 0 || _draggedGuide.Position > limit)
+            if (_cibleDuRepere < 0 || _cibleDuRepere > limit)
             {
                 (_draggedGuideIsVertical
                     ? _vm.Document.VerticalRulerGuides

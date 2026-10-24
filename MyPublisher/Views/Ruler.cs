@@ -2,6 +2,7 @@ using System;
 using System.Globalization;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Documents;
 using Avalonia.Layout;
 using Avalonia.Media;
 using MyPublisher.Models;
@@ -83,7 +84,8 @@ public class Ruler : Control
         AffectsMeasure<Ruler>(OrientationProperty);
         AffectsRender<Ruler>(ScaleProperty, OrientationProperty, OrigineProperty,
             DebutProjeteProperty, FinProjeteeProperty, FondProperty, BordProperty,
-            GraduationProperty, GraduationFineProperty, ChiffresProperty, ProjectionProperty);
+            GraduationProperty, GraduationFineProperty, ChiffresProperty, ProjectionProperty,
+            TextElement.FontFamilyProperty);
     }
 
     /// <summary>Facteur points → pixels écran, zoom compris.</summary>
@@ -167,6 +169,21 @@ public class Ruler : Control
     protected override Size MeasureOverride(Size availableSize) =>
         Horizontal ? new Size(0, Breadth) : new Size(Breadth, 0);
 
+    /// <summary>
+    /// La police des nombres : celle que la règle hérite de la fenêtre, Inter, comme la
+    /// maquette et comme la bulle. Et non <c>Typeface.Default</c>, qui désigne la police par
+    /// défaut du système — Noto Sans ici, Segoe UI sous Windows : la règle dessine son
+    /// texte elle-même, sans contrôle de texte pour hériter à sa place.
+    /// </summary>
+    public Typeface Police => new(TextElement.GetFontFamily(this));
+
+    /// <summary>
+    /// Le nombre écrit sous une graduation : des millimètres ronds, dans la culture
+    /// courante, négatifs à gauche de la page et au-dessus d'elle.
+    /// </summary>
+    public static string Libelle(double millimetres) =>
+        Math.Round(millimetres).ToString(CultureInfo.CurrentCulture);
+
     /// <summary>Convertit une position de page, en points, vers un pixel de la règle.</summary>
     public double ToScreen(double points) => Origine + points * Scale;
 
@@ -227,7 +244,9 @@ public class Ruler : Control
         {
             var mm = k * fin;
             // Au milieu du pixel : un trait d'un pixel reste net au lieu de s'étaler sur deux.
-            var at = Math.Floor(ToScreen(Units.MmToPoints(mm))) + 0.5;
+            // Le millième rattrape un produit tombé juste sous l'entier, comme pour les
+            // repères : le trait du zéro reste dans la colonne où commence la page.
+            var at = Math.Floor(ToScreen(Units.MmToPoints(mm)) + 1e-3) + 0.5;
             if (at < 0 || at > longueur) continue;
 
             var estPrincipale = k % divisions == 0;
@@ -246,8 +265,8 @@ public class Ruler : Control
             if (!estPrincipale || Chiffres is not { } encre || (k / divisions) % 2 != 0) continue;
 
             var texte = new FormattedText(
-                Math.Round(mm).ToString(CultureInfo.CurrentCulture), CultureInfo.CurrentCulture,
-                FlowDirection.LeftToRight, Typeface.Default, 9, encre);
+                Libelle(mm), CultureInfo.CurrentCulture,
+                FlowDirection.LeftToRight, Police, 9, encre);
 
             if (Horizontal)
             {

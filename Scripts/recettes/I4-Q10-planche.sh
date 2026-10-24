@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 #
-# Recette du poste I4 — la planche de la maquette.
+# Recette du poste I4 — la planche de la maquette —, et de Q10, qu'il absorbe : la couche
+# de saisie couvre la planche, et une poignée hors de la page s'y saisit.
 #
 # Le poste rhabille ce qui entoure la page, et rien de la page elle-même : fond gris
 # clair et ombre double de la feuille, règles FIXES au bord de la zone visible, graduées
@@ -9,28 +10,40 @@
 # 4 px du bloc, poignées blanches bordées d'accent, bulle de dimensions. Deux temps.
 #
 # 1. L'ÉCRAN, joué par « MyPublisher.Tests.Interface » sur la vraie fenêtre, à l'échelle 1
-#    où un point de page vaut un pixel, au pointeur synthétisé (« PlancheTests », trait
-#    « poste=I4 ») et mesuré sur l'image que la fenêtre compose réellement :
+#    où un point de page vaut un pixel — et, pour ce qui dépend de l'échelle, à l'échelle 2
+#    et à deux zooms où la page ne tombe pas sur un pixel entier —, au pointeur synthétisé
+#    (« PlancheTests », trait « poste=I4 ») et mesuré sur l'image que la fenêtre compose
+#    réellement :
 #
 #      · la planche au gris de la maquette, la page au blanc du papier, sous une ombre
 #        portée vers le bas qui s'éteint à 40 px ;
 #      · les règles restent où elles sont quand la page défile, leur zéro la suit, et
-#        elles se graduent des deux côtés du zéro ;
+#        elles se graduent des deux côtés du zéro — au double à l'échelle 2 —, en nombres
+#        négatifs avant la page, dans la police de l'interface et non celle du système ;
 #      · la projection d'un bloc tourné de 30° couvre EXACTEMENT son emprise sur chaque
 #        règle, au pixel près — l'emprise, et non le cadre, qu'une projection lisant X et
-#        la largeur aurait suivi —, dans l'accent à 14 % ; elle suit le bloc pendant le
-#        geste, et le cadre d'un tracé ;
+#        la largeur aurait suivi —, dans l'accent à 14 %, à l'échelle 1 comme à l'échelle 2 ;
+#        elle suit le bloc pendant le geste, couvre toute une sélection de deux blocs, et
+#        le cadre d'un tracé ;
 #      · un repère tiré de la règle du haut se voit à gauche de la page, sur la planche ;
-#        lâché là, hors de la page, il disparaît ;
-#      · un repère posé traverse la planche de bord à bord, et la page rendue seule —
-#        PageRoot, que l'écran compare au PDF — est la même au pixel avec ou sans lui ;
-#      · les marges en pointillé rose d'un pixel ; le cadre de sélection à 4 px du bloc,
-#        d'un trait et demi d'accent, qui tourne avec lui ; les poignées blanches bordées
-#        d'accent, la rotation en disque au bout de sa tige ;
-#      · pendant un redimensionnement, la bulle et la barre d'état disent la même taille ;
-#        pendant un tracé, la bulle dit celle du cadre ;
-#      · la couche de saisie couvre la planche : une poignée hors de la page s'y saisit,
-#        sans faire sauter le bord qu'elle tire, et un clic sur le gris libère la sélection.
+#        lâché là, hors de la page, il disparaît — même à 3 pt de la page, où le bord
+#        l'aimante ;
+#      · un repère posé traverse la planche de bord à bord, des deux côtés de la page, et
+#        la page rendue seule — PageRoot, que l'écran compare au PDF — est la même au
+#        pixel avec ou sans lui ; à 30 %, 41 %, 64 % et « 100 % » atteint par les pas du
+#        zoom, il marque la colonne où commence le bord du bloc posé sur lui, et le zéro
+#        des règles est l'origine de PageRoot ;
+#      · les marges en pointillé rose d'un pixel, à l'échelle 2 aussi ; le cadre de
+#        sélection à 4 px du bloc, d'un trait et demi d'accent, qui tourne avec lui ; les
+#        poignées blanches bordées d'accent, la rotation en disque au bout de sa tige ;
+#      · pendant un redimensionnement, la bulle et la barre d'état disent la même taille,
+#        en français comme la maquette, et sur un bloc tourné la taille du bloc et non de
+#        son emprise ; centrée sous le bloc dès la prise ; pendant un tracé, la bulle dit
+#        celle du cadre, centrée dès le premier mouvement ;
+#      · la couche de saisie couvre la planche (Q10) : une poignée hors de la page s'y
+#        saisit, sans faire sauter le bord qu'elle tire, et un clic sur le gris libère la
+#        sélection — sans prendre la part rognée d'un bloc qui déborde ; un outil armé n'y
+#        pose rien et reste armé.
 #
 #    Le compte des tests joués est vérifié : un filtre qui ne désigne plus rien sort en 0.
 #
@@ -78,7 +91,7 @@ fi
 
 # ------------------------------------------------------------------------- 1. l'écran
 
-attendus=16
+attendus=29
 if ! dotnet test MyPublisher.Tests.Interface/MyPublisher.Tests.Interface.csproj ${MYPUBLISHER_DEJA_COMPILE:+--no-build} \
         --nologo -v q --filter "poste=I4" > "$travail/tests.txt" 2>&1; then
     sed 's/^/    /' "$travail/tests.txt" >&2
@@ -91,7 +104,7 @@ if [ "${joues:-0}" -lt "$attendus" ]; then
     echo "Un filtre qui ne désigne plus rien sort en 0 : la recette ne s'en contente pas." >&2
     exit 1
 fi
-echo "  1. la planche, mesurée sur l'image composée : $joues tests (fond, ombre, règles, projection, repères, marges, cadre, poignées, bulle, saisie)"
+echo "  1. la planche, mesurée sur l'image composée : $joues tests (fond, ombre, règles, projection, repères, marges, cadre, poignées, bulle, saisie, échelles)"
 
 # ------------------------------------------------------------ 2. rien n'a bougé dans PageRoot
 
@@ -128,4 +141,4 @@ for ligne in "${releve[@]}"; do
 done
 echo "  2. PageRoot : les mêmes mots que le PDF, et pas plus d'écart qu'avant le poste"
 
-echo "I4 : la planche porte les règles fixes, la projection, les repères, les marques et la bulle de la maquette, sans rien changer à la page."
+echo "I4 et Q10 : la planche porte les règles fixes, la projection, les repères, les marques et la bulle de la maquette, sans rien changer à la page."

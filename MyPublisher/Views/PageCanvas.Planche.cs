@@ -33,6 +33,15 @@ public partial class PageCanvas
     /// </summary>
     private const double EcartDeLaBulle = 17;
 
+    /// <summary>
+    /// Ce qu'une position en pixels, passée par la mise à l'échelle, peut perdre sous
+    /// l'entier qu'elle vaut : 127,9999995 pour 128 à 64 %, 199,99999… pour 200 à « 100 % »
+    /// atteint par les pas du zoom, 625,99999936 pour 626 à 244 %. Ajouté avant l'arrondi
+    /// au pixel, il garde le trait dans la colonne qui commence à sa position ; un millième
+    /// de pixel ne se voit pas, de l'autre côté.
+    /// </summary>
+    private const double Rattrapage = 1e-3;
+
     /// <summary>Un trait par repère libre, chacun avec le sens qu'il barre.</summary>
     private readonly Dictionary<RulerGuide, (Rectangle Trait, bool Vertical)> _traitsDesReperes = [];
 
@@ -68,11 +77,20 @@ public partial class PageCanvas
     /// Redit aux règles où tombe le zéro de la page, et prolonge les repères jusqu'aux
     /// bords de la planche. Idempotente : relancée sans que rien ait bougé, elle n'écrit
     /// rien — c'est ce qui lui permet d'écouter chaque mise en page sans en provoquer une.
+    ///
+    /// Le zéro est celui de PageRoot, et non de Surface qui le porte : sous la mise à
+    /// l'échelle, dès que la largeur de la page en pixels n'est pas entière, l'arrondi de
+    /// mise en page décale PageRoot d'un pixel dans Surface — mesuré à 30 %, 33 %, 41 % et
+    /// 244 %. Lu sur Surface, le zéro tombait un pixel avant la page. Le coin de PageRoot
+    /// est lu dans Surface, puis porté sur la règle : de PageRoot droit à la règle, qui
+    /// n'est pas son ancêtre, Avalonia se trompe à travers la mise à l'échelle — 293,6 px
+    /// au lieu de 281 à 30 %, 11 au lieu de 32 à l'échelle 2.
     /// </summary>
     private void CalerLaPlanche()
     {
-        if (Surface.TranslatePoint(default, TopRuler) is { } haut) TopRuler.Origine = haut.X;
-        if (Surface.TranslatePoint(default, LeftRuler) is { } gauche) LeftRuler.Origine = gauche.Y;
+        var page = PageRoot.TranslatePoint(default, Surface) ?? default;
+        if (Surface.TranslatePoint(page, TopRuler) is { } haut) TopRuler.Origine = haut.X;
+        if (Surface.TranslatePoint(page, LeftRuler) is { } gauche) LeftRuler.Origine = gauche.Y;
         PlacerLesReperes();
     }
 
@@ -104,10 +122,15 @@ public partial class PageCanvas
             "L {0:0.0} mm · H {1:0.0} mm", Units.PointsToMm(largeur), Units.PointsToMm(hauteur));
 
         // Mesurée tout de suite, pour la centrer : la mise en page ne passera qu'après.
+        // Visible d'abord — Avalonia mesure à zéro un contrôle caché, et la bulle, à sa
+        // première apparition, se posait toute à droite du bloc. Puis remesurée de force :
+        // le texte changé n'invalide que lui-même, et la bulle déjà mesurée sous la même
+        // contrainte rendait la largeur du texte d'avant.
+        _bulle.IsVisible = true;
+        _bulle.InvalidateMeasure();
         _bulle.Measure(Size.Infinity);
         Canvas.SetLeft(_bulle, emprise.CenterX * Scale - _bulle.DesiredSize.Width / 2);
         Canvas.SetTop(_bulle, emprise.Bottom * Scale + EcartDeLaBulle);
-        _bulle.IsVisible = true;
     }
 
     private void CacherLaBulle() => _bulle.IsVisible = false;
@@ -175,6 +198,12 @@ public partial class PageCanvas
     /// Pose chaque trait : un pixel d'écran, celui qui contient la position du repère, et
     /// d'un bord à l'autre de la planche — la couche est à l'origine de la page, la planche
     /// commence donc avant elle.
+    ///
+    /// La place du trait est lue sur PageRoot, comme le zéro des règles, et non calculée
+    /// d'après l'échelle : PageRoot peut être décalé d'un pixel dans Surface. Et la
+    /// position lue tombe parfois juste sous l'entier, d'où le <see cref="Rattrapage"/>
+    /// ajouté avant l'arrondi. Sans l'un ni l'autre, le repère tombait un pixel avant le
+    /// bord du bloc aimanté sur lui.
     /// </summary>
     private void PlacerLesReperes()
     {
@@ -185,10 +214,10 @@ public partial class PageCanvas
 
         foreach (var (repere, (trait, vertical)) in _traitsDesReperes)
         {
-            var position = Math.Floor(repere.Position * Scale);
+            var place = PageRoot.TranslatePoint(new Point(repere.Position, repere.Position), Surface) ?? default;
             if (vertical)
             {
-                Canvas.SetLeft(trait, position);
+                Canvas.SetLeft(trait, Math.Floor(place.X + Rattrapage));
                 Canvas.SetTop(trait, coin.Y);
                 trait.Width = 1;
                 trait.Height = etendue.Height;
@@ -196,7 +225,7 @@ public partial class PageCanvas
             else
             {
                 Canvas.SetLeft(trait, coin.X);
-                Canvas.SetTop(trait, position);
+                Canvas.SetTop(trait, Math.Floor(place.Y + Rattrapage));
                 trait.Width = etendue.Width;
                 trait.Height = 1;
             }
