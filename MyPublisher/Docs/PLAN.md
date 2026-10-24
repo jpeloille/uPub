@@ -24,7 +24,7 @@ Où en est chaque poste. Une seule règle pour la colonne d'avancement : un post
 on écrit ce qui est fait plutôt qu'un pourcentage inventé — un poste à moitié écrit n'est
 pas un poste à moitié livré. La colonne se met à jour dans le commit qui clôt le poste.
 
-*Dernière mise à jour : 24 octobre 2026 (phase I spécifiée, lots 1 et 2 avant la salve 3).*
+*Dernière mise à jour : 24 octobre 2026 (I1 livré : la charte de l'interface).*
 
 | Poste | Intitulé | Avancement | Où ça en est |
 |---|---|:---:|---|
@@ -93,7 +93,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **Q21** | Un tremblement ne déplace pas le bloc | 0 % | Trouvé par la relecture de Q14 : un pixel de mouvement pendant le clic, près d'une marge, fait sauter le bloc de 3 pt par l'aimantation |
 | **Q22** | Un clic sur une poignée ne redimensionne pas | 0 % | Trouvé par la relecture de Q14 : une pression sans mouvement près d'un coin fait passer le bloc de 100 à 96 pt et empile un pas d'annulation |
 | **Q23** | Sélectionner un bloc ne fige pas la fenêtre | 0 % | Trouvé à la fusion de Q14 : une pression sur un bloc non sélectionné rend la main après 170 à 470 ms, le temps de recomposer le panneau ; les tests du double-clic s'en écartent en sélectionnant d'abord. Repris en fin de lot 1 |
-| **I1** | Charte de l'interface | 0 % | Spécifié le 24 octobre 2026, d'après la maquette ; lot 1 |
+| **I1** | Apparence de l'interface | **100 %** | `Views/Apparence.axaml` — pas « charte », qui nomme le jeu du document —, chargée par `App.axaml` : les 26 couleurs de l'interface de la maquette, une fois chacune et sous leur nom ; cinq classes aux tailles et aux couleurs de la feuille de style de la maquette, dont le bouton-icône de 30 × 30 plein d'accent quand il est actif ; 35 icônes au tracé de la maquette, à la couleur courante, une par emploi. L'écran d'aujourd'hui ne change pas d'un pixel. La recette tient la liste des vues de la phase et le poste de chaque icône, que les postes suivants complètent ; une vue qui cite l'apparence ou écrit en dur une de ses couleurs sans être dans la liste la fait échouer. Recette dans `Scripts/recettes/` |
 | **I2** | Disposition de la fenêtre | 0 % | Spécifié le 24 octobre 2026 ; lot 1, avec B7 |
 | **I3** | Barre contextuelle | 0 % | Spécifié le 24 octobre 2026 ; lot 1 |
 | **I4** | Planche : règles fixes, projection, bulle de dimensions | 0 % | Spécifié le 24 octobre 2026 ; lot 1 |
@@ -105,9 +105,9 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **D** | Moteur de composition | — | Décision non ouverte ; à rouvrir quand A, B et C sont livrées |
 
 **Par phase** — P : 4 sur 4 · A : 7 sur 15 · B : 3 sur 7 · C : 7 sur 9 · R : 5 sur 7 ·
-Q : 16 sur 23 · I : 0 sur 9 · D : non planifié.
+Q : 16 sur 23 · I : 1 sur 9 · D : non planifié.
 
-Soit **42 postes sur 74**. Le 24 octobre 2026, la phase I en a ajouté neuf, tirés de la
+Soit **43 postes sur 74**. Le 24 octobre 2026, la phase I en a ajouté neuf, tirés de la
 maquette de la nouvelle interface. Le compte avait doublé le 11 octobre 2026 sans que rien ne
 recule : il porte désormais les onze postes de l'audit des fiches (A8 à A15, B6, B7,
 C8), deux postes que les documents réels demandaient (R6, R7), et la phase Q, qui
@@ -4345,7 +4345,7 @@ puis I2 avec B7, en même temps que I4 ; puis I3, I5 et I6 ensemble, chacun dans
 propre contrôle ou sa propre couche, aux points d'accroche que I2 a posés ; puis Q23, sur
 l'interface finie.
 
-#### I1 — La charte de l'interface
+#### I1 — L'apparence de l'interface
 
 Une seule source pour la palette, les tailles et les icônes de la maquette : un
 dictionnaire de ressources et ses styles, chargés par `App.axaml`.
@@ -4361,18 +4361,204 @@ dictionnaire de ressources et ses styles, chargés par `App.axaml`.
   trait (1,7 à 2,2). Un tracé à trait s'écrit en `Path` à `Stroke`, et non en `PathIcon`,
   qui ne sait que remplir.
 
-Inter est déjà la police de l'interface. Le poste ne déplace rien : il pose la charte, et
-les postes suivants la lisent.
+Inter est déjà la police de l'interface. Le poste ne déplace rien : il pose l'apparence,
+et les postes suivants la lisent.
 
-*Recette* :
-- chaque couleur de la maquette est déclarée une fois dans la charte, et aucune vue
-  écrite ou réécrite par la phase ne l'écrit en dur (script sur les sources) ;
-- chaque icône nommée par une vue existe dans la charte, et chaque icône de la charte
-  sert ;
-- au banc, un bouton-icône rend 30 × 30 px à l'échelle 1, et son état actif est plein
-  d'accent.
+*Recette* — reprise à la livraison, puis après relecture, voir plus bas :
+- chaque couleur de l'interface de la maquette — sa page, qui est le document, et l'orange
+  du port de chaînage exceptés — est déclarée une fois dans l'apparence, en `Color`, sous
+  le nom que la recette lui donne, et l'apparence n'en écrit aucune autre, ni aucune en
+  dur ailleurs que là — en chiffres sous aucune forme, ni par son nom ; aucune vue de la
+  phase n'en écrit une en dur, et une vue qui cite l'apparence, ou qui écrit en dur une
+  couleur de la maquette que le relevé d'avant la phase n'a pas, est une vue de la phase
+  qui doit le dire (script sur les sources) ;
+- chaque style de l'apparence est porté par une classe qu'aucune vue hors de la phase
+  n'emploie ; chaque classe de la feuille de style de la maquette y a ses tailles et ses
+  couleurs, chacune sous une clé qui la porte ; et la fenêtre d'aujourd'hui, ouverte sur
+  l'exemple avec un bloc sélectionné, rend la même image au pixel avec ou sans
+  l'apparence ;
+- chaque icône de l'apparence est le tracé de la maquette, élément par élément ; chaque
+  icône employée par une vue existe dans l'apparence, et chaque icône de l'apparence sert
+  dans une vue dès que le poste qui l'emploie, d'après la table de la recette, est clos au
+  tableau de suivi ;
+- au banc, un bouton-icône rend 30 × 30 px à l'échelle 1, à rayon 6 ; actif, il est plein
+  d'accent ; survolé ou pressé, il prend le gris de la maquette ; grisé, il s'efface sans
+  fond.
 
 Effort : faible.
+
+*Repris le 24 octobre 2026, à la livraison.* Deux clauses de la recette d'origine ne
+pouvaient pas se jouer en I1 : aucune vue de la phase n'existe encore, et aucune icône ne
+sert. Écrites telles quelles, la première passait sur une liste vide et la seconde
+échouait jusqu'à I9. La recette tient donc deux listes, que les postes suivants
+complètent :
+- `vues_de_la_phase`, **vide en I1** : chaque poste de la phase qui écrit ou réécrit une
+  vue l'y ajoute, dans le commit qui la pose — I2 `MainWindow.axaml`, I3 le fichier de sa
+  barre, I4 `PageCanvas.axaml`, I5 celui des vignettes. Une vue de la liste n'écrit
+  aucune couleur de la maquette en dur, ni en chiffres sous aucune forme (`#2557C7`,
+  `#FF2557C7`, `#FFF`) ni par son nom (`White`, `Brushes.White`) : elle cite l'apparence ;
+- la table des icônes, chacune avec le poste qui l'emploie : I2 pour vingt-six, I3 pour
+  les quatre alignements du texte, I6 pour la main et la loupe, A10 pour la ligne, I8
+  pour l'œil, I9 pour l'alerte. La clause « chaque icône sert » s'éveille icône par
+  icône, quand son poste passe à 100 % : I2 ne se clôt pas sans avoir posé ses vingt-six
+  icônes. Une icône ajoutée à l'apparence sans entrer dans la table, ou l'inverse, fait
+  échouer la recette.
+
+Pour qu'une clause qui dort ne soit pas une clause morte, chaque contrôle se rejoue à
+chaque passage sur un **témoin fautif**, qu'il doit refuser : une vue de la phase qui écrit
+en dur l'accent, un filet et le blanc sous six formes — et ni une ombre noire, ni le
+transparent ; une vue hors de la liste qui cite un filet de l'apparence ; une autre qui
+prend en chiffres le gris de la planche, refusée sans relevé et admise avec ; une vue qui
+emploie une icône absente ; une icône d'un poste clos que seul un commentaire nomme ; un
+sélecteur nu ; une classe déjà prise ; un tracé dont un chiffre a bougé ; un reflet faux.
+
+Deux clauses sont ajoutées, parce que le poste ne vaut que par elles. La **fidélité des
+tracés**, que la recette d'origine supposait : la recette relit la maquette elle-même,
+retrouve chaque svg par le libellé de son bouton, et compare élément par élément
+géométrie, épaisseur, extrémités, jointures, pointillé, couleur et taille. Et l'**écran
+inchangé**, que le texte du poste promettait (« le poste ne déplace rien ») sans le
+mesurer.
+
+*Repris le 24 octobre 2026, après relecture.* La relecture a trouvé quatre trous, que
+chacun un sabotage a montrés ; ils sont refermés.
+- **La liste des vues de la phase se tenait de mémoire.** Une planche réécrite qui
+  écrivait `#DCDFE4` en oubliant de s'y inscrire passait. La liste reste, mais l'oubli ne
+  passe plus. Une vue qui cite l'apparence — une couleur, un pinceau, une icône, une
+  classe — sans être dans la liste est refusée. Et hors de la liste, les couleurs de la
+  maquette écrites en dur sont exactement celles d'un **relevé d'avant la phase** que
+  tient la recette : le gris `#FAFAFB` des panneaux de la fenêtre, le blanc de la
+  fenêtre, de la page, du marqueur de débordement et des vignettes de modèle — huit
+  écritures dans cinq fichiers. Une couleur de plus, c'est une vue de la phase qui ne le
+  dit pas ; une de moins, un relevé périmé qui laisserait la place reprise en silence :
+  l'une et l'autre échouent, et une vue qui entre dans la liste quitte le relevé.
+- **Deux couleurs échangées passaient** : l'accent et son survol restaient chacun déclarés
+  une fois, et les tests, qui lisent l'accent dans l'apparence, le retrouvaient sur le
+  bouton actif. La recette tient maintenant le nom de chaque couleur, et relit la feuille
+  de style de la maquette — `.ib`, `.ib:hover`, `.ib.on`, `.fld`, `.lbl`, `.sep`, `.sec` :
+  chaque style qui les porte cite une clé de la couleur que la cascade de la maquette
+  donne, et a ses tailles, soixante-deux valeurs en tout, le rayon de 6 compris. La
+  projection est comparée au `rgba` de la maquette, opacité comprise ; les ombres, du
+  noir hors de la palette, restent à I4 et I5.
+- **`#FFF` et `White` échappaient au contrôle des couleurs en dur**, qui ne lisait que six
+  ou huit chiffres. Il lit les quatre formes en chiffres, les noms d'Avalonia — relevés
+  par réflexion sur `Colors`, sans égard à la casse, comme les lit le XAML — et les
+  composantes en C# (`Color.FromRgb`) ; dans l'apparence, hors des déclarations, seul
+  `Transparent` passe.
+- **Le rayon, le survol et le grisé n'étaient pas mesurés** : un rayon de 5, un survol
+  peint d'accent, une opacité oubliée passaient. Le test du bouton-icône lit son rayon ; un
+  sixième test le survole, le presse et le grise.
+
+Et trois corrections de moindre portée : une icône ne « sert » que par un emploi —
+`{StaticResource IconeX}`, sa clé passée à une recherche de ressource —, et non plus par
+un commentaire qui la nomme ; le miroir de « texte à droite » est calculé sur le svg de
+« à gauche », et non recopié ; le bilan d'une clause ne se dit plus satisfait quand elle a
+refusé quelque chose.
+
+**Le nom.** Le poste s'appelait « la charte de l'interface », et son fichier
+`Charte.axaml`. Or `Charte` est déjà, dans le noyau, le jeu de couleurs et de polices du
+document (`Jeux.cs`, C5b), que `JeuAffiche.Charte` pose sur la page, dans le même dossier
+`Views` : l'homonymie que la phase interdit pour « gabarit ». Le fichier devient
+`Apparence.axaml`, ses tests `ApparenceTests`, sa recette `I1-apparence.sh`. Ses classes
+d'icône `trait` et `plein` deviennent `iconeTrait` et `iconePlein` : « trait » nomme déjà
+le motif du contour d'un bloc et l'objet trait de A10, et un `Path` de la planche classé
+ainsi, dans une vue de la phase que le contrôle des classes prises exempte, aurait été
+repeint sans un mot.
+
+**Une conséquence pour I4.** `PageCanvas.axaml` peint la page en `White` — `PageRoot` et
+la feuille qui le porte —, ce que le relevé admet. Inscrite à la liste, la planche ne
+peut plus écrire ce blanc en dur, bien qu'il soit celui du document et non de
+l'interface : I4 dit d'où il le tire, sans changer un pixel de `PageRoot` (règle 4).
+
+*Fait le 24 octobre 2026.* `MyPublisher/Views/Apparence.axaml`, un jeu de styles et ses
+ressources, inclus par `App.axaml` après le thème Fluent.
+- **Palette** : vingt-six couleurs, chacune un `Color` (`CouleurAccent`…) et un pinceau
+  du même nom sans « Couleur » (`Accent`…), plus `Projection`, l'accent à 14 % de I4. Ce
+  sont les couleurs de la liste ci-dessus, et celles que la maquette montre ailleurs dans
+  son chrome : le survol d'un bouton-icône `#E6E9EE`, la barre d'état `#4A525D`, les
+  graduations `#9AA2AD` et `#C3C8D0`, l'initiale du type `#3A424D` sur `#EEF0F3`, la
+  diagonale de « Aucun » `#D23B3B`, et la planche que I4 lira — `#DCDFE4`, `#12A4C4`,
+  `#E3A6D6`. Hors de l'apparence : la page de la maquette (`#1F2A44`, `#C9D6EE`,
+  `#F1F4FA`, `#C9D3EA`, `#3A4E7A`, et `#B5BCC6` des vignettes) et l'orange du port de
+  chaînage (`#C2410C`). Les ombres en `rgba` sont laissées à I4 et I5.
+- **Classes** : `ib`, `champ` (sur `TextBox`, `ComboBox` et `NumericUpDown`), `libelle`,
+  `separateur` (sur un `Border`), `titreSection` (sur un `ToggleButton`, coché quand la
+  section est ouverte) — les `.ib`, `.fld`, `.lbl`, `.sep` et `.sec` de la maquette,
+  écrites en français, quand la plupart des classes d'avant la phase sont en anglais
+  (`field`, `sidebar`, `icon`, `section`, `tool`…) ; trois noms étaient pris, `sep`,
+  `section` et `field`. Et deux classes pour les tracés d'icône, `iconeTrait` et
+  `iconePlein`. Le bouton-icône actif est un `ToggleButton.ib` coché.
+- **Icônes** : trente-cinq, `IconeNouveau` à `IconeOeil`, chacune un `Viewbox` à la taille
+  où la maquette l'affiche (12 à 18 px) sur une grille de 24 rognée, un `Path` par
+  élément du svg. Elle s'emploie en contenu : `<Button Classes="ib" Content="{StaticResource
+  IconeNouveau}"/>`. L'alignement à droite, que la maquette omet, est le miroir de
+  l'alignement à gauche. Pas de pipette.
+
+*Ce que l'implémentation a appris.*
+- **Une icône est un contrôle, qui n'a qu'un parent.** Déclarée `x:Shared="False"`, chaque
+  `{StaticResource}` en crée un exemplaire ; partagée, elle quitterait sans un mot sa
+  première place à la seconde.
+- **Le « currentColor » de la maquette** s'écrit, dans les classes `iconeTrait` et
+  `iconePlein`, `{Binding $self.(TextElement.Foreground)}` : l'icône prend la couleur du
+  texte de son hôte — sombre au repos, blanche sur l'accent, brique dans l'alerte — sans
+  un style par icône ni par état. L'œil et la rotation, que la maquette peint elle-même
+  en gris, citent `Libelle`.
+- **Fluent peint les états d'un bouton sur le `ContentPresenter` de son modèle**, et non
+  sur le bouton : chaque état du bouton-icône y est repris, sinon son gris de survol et
+  le bleu de son bouton coché — qui n'est pas l'accent — passeraient. Même chose pour le
+  bord des champs au survol et au focus. Un style de l'application l'emporte sur ceux du
+  thème de contrôle de Fluent : retirée, la variante `:pressed` du survol ne change rien
+  à l'écran, le bouton pressé étant aussi survolé. Elle reste, pour que la recette y lise
+  l'état pressé de la maquette.
+- **Le pointillé** se compte en épaisseurs de trait chez Avalonia, en unités chez le svg :
+  « 2 2 » sous un trait de 1,7 s'écrit `1.17647,1.17647`.
+- **Fluent donne aux champs 32 px de haut**, et 64 de large à la zone de texte ;
+  l'apparence les lève. Les deux flèches du `NumericUpDown`, de la largeur d'un bouton
+  chacune, ne tiennent pas dans un champ de 26 : `.champ` les retire, et la molette comme
+  les flèches du clavier font encore le pas.
+- **Le compilateur XAML remplace l'inclusion d'un fichier du projet** par son jeu de
+  styles : `Application.Styles` ne contient plus de `StyleInclude`, et un test reconnaît
+  l'apparence à sa première couleur. L'image composée du banc sans tête est en RGBA, quand
+  `Rendu.Encre` rend en BGRA : les tests de l'apparence lisent le format au lieu de le
+  supposer.
+- **Le banc sans tête rend au tic de son horloge**, que `CaptureRenderedFrame` n'avance que
+  d'un pas, et ce pas ne suffit pas toujours : relâché puis quitté, le bouton pressé
+  restait gris sur l'image quand son fond était déjà transparent. Le test des états fait
+  passer un tic de plus avant chaque image ; sans lui, la mesure de l'état pressé pouvait
+  lire l'image du survol d'avant.
+
+*Mesuré.* Rendues à 96 px, les trente-cinq icônes de l'apparence et les svg de la maquette
+sous Chrome sans tête ne diffèrent d'aucun pixel de plus d'un quart de l'échelle des
+gris — comparaison faite une fois, à la main : Chrome n'est pas une dépendance du dépôt,
+et la recette compare les sources. Six tests d'interface sous `poste=I1` : un bouton-icône
+de 30 × 30 pixels à l'échelle 1, à rayon 6, dont l'accent couvre exactement cette boîte
+une fois actif, coins arrondis exceptés ; survolé puis pressé, le gris `#E6E9EE` d'un bord
+à l'autre, actif et survolé toujours l'accent, grisé ni fond ni gris de Fluent et l'icône
+au gris des commandes à 40 % ; chaque icône neuve à chaque emploi, dans sa boîte, à la
+couleur courante ; champs de 26, séparateur, libellé et titre de section ; aucune clé de
+l'apparence qui masque une ressource de Fluent ou du sélecteur de couleur ; et la fenêtre
+de l'exemple, un bloc sélectionné, identique au pixel avec ou sans l'apparence — un seul
+style sans classe y change 131 982 pixels.
+
+*Choisi sans certitude.*
+- `#1B439C` est le survol du bouton principal, comme dans la maquette celui d'un lien
+  (`a:hover`) ; le bouton-icône a son propre survol, `#E6E9EE`, et actif il reste plein
+  d'accent même survolé — ce que dit la cascade de la maquette (`.ib.on` vient après
+  `.ib:hover`), que la recette lit et que le test mesure.
+- Le grisé, que la maquette ne dessine pas et que I2 demande pour Annuler et Rétablir, est
+  une opacité de 0,4, sans couleur de plus ; le focus d'un champ le borde d'accent.
+- Le bouton principal, la pastille, l'alerte et la barre contextuelle n'ont pas de classe :
+  le poste n'en nommait que cinq. Leurs couleurs sont déclarées ; le poste qui les dessine
+  en fait une classe de l'apparence s'il en a l'emploi, et l'ajoute à ses tests.
+
+Quatorze sabotages au juge, tous sur l'apparence sauf un, chacun attendu par sa recette ou
+ses tests, et que `eprouver-le-juge.sh apparence` joue seuls : le bouton-icône actif peint
+du gris de survol ; un sélecteur sans classe ; un tracé qui ne se ferme plus ; une icône
+partagée ; une couleur écrite en chiffres dans un style ; le blanc écrit `#FFF` ; l'accent
+et son survol échangés ; la projection à 60 % ; le trait figé au gris des commandes ; le
+champ rendu à 32 px ; un rayon de 5 ; le survol peint d'accent ; le grisé qui garde son
+encre ; et, hors de l'apparence, une vue d'avant la phase qui prend en chiffres le gris des
+libellés de la maquette sans entrer dans la liste. Les textes visés portent leur
+sélecteur, pour qu'un style ajouté plus tard ne les rende pas ambigus (règle 7).
 
 #### I2 — La disposition de la fenêtre *(avec B7)*
 
@@ -4511,6 +4697,12 @@ La planche de la maquette, à mécanique existante.
 *Piège* : `RotationTests` prend pour poignée de rotation la première `Ellipse` visible de
 l'`Overlay`. Rien de rond ne s'y ajoute avant elle : la bulle est un rectangle arrondi,
 et la projection vit dans les règles.
+
+*Piège* : inscrite à la liste des vues de la phase de la recette I1, la planche n'y écrit
+plus aucune couleur de la maquette en dur, `White` compris. Or elle peint aujourd'hui la
+page en `White` — `PageRoot` et la feuille qui le porte —, qui est le blanc du document
+et non celui de l'interface. Le poste dit d'où il le tire, sans changer un pixel de
+`PageRoot` (règle 4), et retire `PageCanvas.axaml` du relevé d'avant la phase.
 
 *Recette* :
 - `comparer-rendus.sh` et `comparer-mots.sh` passent sur l'exemple et sur ATA 21 sans
@@ -4758,7 +4950,7 @@ finissent toujours par se contredire.
 | **C** | C1 remplissage · C2 repères · C3 sélection multiple · C4 champs · C5 couleurs · C6 marges · C7 bibliothèque · C8 miroir · C9 tableau | structure | P1, P2 |
 | **R** | R1 texte riche · R2 retraits · R3 colonnes · R4 interligne · R5 import `.pub` · R6 paragraphe au panneau · R7 texte riche à la souris | documents réels | R6 et R7 : Q1 |
 | **Q** | Q1 à Q23 | dettes consignées | — |
-| **I** | I1 charte · I2 fenêtre · I3 barre contextuelle · I4 planche · I5 vignettes · I6 navigation et proportions · I7 souligné · I8 masquer un bloc · I9 lignes en excédent | nouvelle interface | I2 : I1 · I3, I5, I6 : I2 · lot 2 : lot 1 |
+| **I** | I1 apparence · I2 fenêtre · I3 barre contextuelle · I4 planche · I5 vignettes · I6 navigation et proportions · I7 souligné · I8 masquer un bloc · I9 lignes en excédent | nouvelle interface | I2 : I1 · I3, I5, I6 : I2 · lot 2 : lot 1 |
 | **D** | moteur de composition | décision | Q13, puis A, B, C |
 
 Trois postes à faire en premier si l'on ne devait en retenir que trois, au

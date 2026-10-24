@@ -20,5 +20,9 @@
         <FluentTheme />
         <!-- Le sélecteur de couleur vit dans un paquet séparé : son thème doit être inclus explicitement. -->
         <StyleInclude Source="avares://Avalonia.Controls.ColorPicker/Themes/Fluent/Fluent.xaml"/>
+        <!-- L'apparence de la nouvelle interface (phase I) : palette, tailles et icônes de la
+             maquette. Après le thème, pour que ses classes l'emportent sur lui ; elle ne
+             porte que des classes, si bien que l'écran d'avant la phase n'en voit rien. -->
+        <StyleInclude Source="/Views/Apparence.axaml"/>
     </Application.Styles>
 </Application>
