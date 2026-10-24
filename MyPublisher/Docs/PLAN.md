@@ -4610,7 +4610,7 @@ courte. Relevé par l'étude de Publisher 98, où ce complément portait le code
   trait sous les blancs, à l'écran comme au PDF ;
 - un `.pub` dont libmspub rend `style:text-underline-type: double` s'importe en double.
 
-Effort : moyen.
+Effort : moyen à fort.
 
 #### I8 — Masquer un bloc
 
