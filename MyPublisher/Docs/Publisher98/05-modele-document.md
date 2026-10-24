@@ -303,7 +303,7 @@ Codes du tableau unique de [`00-index.md`](00-index.md#postes-proposés).
   décalage fixé ; un groupe ombré n'ombre pas chaque enfant ; écran et PDF concordent.
 - **G1 — Le document retient son jeu de coordonnées** : révision d'un choix écrit, voir
   [`07-assistants-ressources.md`](07-assistants-ressources.md).
-- **I4 — Le vérificateur de conception**, avec le rapport remis avec le PDF, voir
+- **S4 — Le vérificateur de conception**, avec le rapport remis avec le PDF, voir
   [`08-impression-pdf.md`](08-impression-pdf.md). Ses corrections sont des pas d'annulation
   libellés (F4).
 - **D3 — La story séparée du bloc** (dossier D, [`01-moteur-texte.md`](01-moteur-texte.md)).

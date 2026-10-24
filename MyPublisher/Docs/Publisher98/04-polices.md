@@ -265,7 +265,7 @@ Codes du tableau unique de [`00-index.md`](00-index.md#postes-proposés).
   métriquement compatibles ; l'export d'un texte en Arial sur une machine qui n'a que Liberation
   Sans dit « chasses identiques » ; Wingdings garde l'alerte actuelle ; test sauté si le
   substitut manque ; sabotage : vider la table.
-- **I2 — Respecter les droits d'incorporation à l'export.** Recette : test pur
+- **S2 — Respecter les droits d'incorporation à l'export.** Recette : test pur
   `Incorporation(fsType, versionOS2)` sur 0, 2, 4, 6, 8, 14, 0x100, 0x102 et 0x200, avec la règle
   du moins restrictif ; une police libre réécrite à `fsType` = 2 n'est pas incorporée, et le
   rapport le dit ; le poste tranche le sort du texte refusé (refuser l'export, vectoriser,

@@ -260,33 +260,33 @@ soit réserver la comparaison écran ↔ PDF à l'export RVB.
 ## Postes proposés
 
 Codes du tableau unique de [`00-index.md`](00-index.md#postes-proposés). L'ordre suit les documents
-réels, qui sont des A4 bureautiques : I1 à I4 servent dès maintenant, I5 à I9 attendent la réponse à
+réels, qui sont des A4 bureautiques : S1 à S4 servent dès maintenant, S5 à S9 attendent la réponse à
 la question 1.
 
-- **I1 — Un PDF identique octet pour octet.** Recette : deux exports à la même `--date` sont
+- **S1 — Un PDF identique octet pour octet.** Recette : deux exports à la même `--date` sont
   identiques (`cmp`) ; une autre date diffère ; sabotages : `/ID` laissé au hasard, `CreationDate`
   reprise à l'horloge. À éprouver d'abord : fixer l'étiquette de sous-ensemble et le XMP sans
   réécrire le fichier après coup.
-- **I3 — Imprimer par CUPS** (complète B3). Recette : sur une file CUPS qui écrit dans un fichier,
+- **S3 — Imprimer par CUPS** (complète B3). Recette : sur une file CUPS qui écrit dans un fichier,
   Ctrl+P produit un PDF dont `pdftoppm` rend les mêmes pages que l'export ; la plage « 2-3 » n'en
   produit que deux. Le poste dit ce que CUPS couvre du livret et du tuilage.
-- **I4 — Contrôle avant envoi, et rapport** (avec le vérificateur de
+- **S4 — Contrôle avant envoi, et rapport** (avec le vérificateur de
   [`05-modele-document.md`](05-modele-document.md)). Recette : un document de recette (image de
   72 ppp posée à 10 cm, police absente, bloc qui déborde, bloc vide, objet hors page, double espace)
   sort un constat nommé par règle, désignant le bloc par son identifiant ; le rapport donne la
   résolution effective de l'image à 1 ppp ; un document propre n'en sort aucun ; chaque correction
   est un pas d'annulation ; chaque sabotage d'une règle fait tomber la recette.
-- **I2 — Respecter les droits d'incorporation** ([`04-polices.md`](04-polices.md)).
-- **I5 — Format fini, fonds perdus, traits de coupe.** Recette : `pdfinfo -box` donne une TrimBox
+- **S2 — Respecter les droits d'incorporation** ([`04-polices.md`](04-polices.md)).
+- **S5 — Format fini, fonds perdus, traits de coupe.** Recette : `pdfinfo -box` donne une TrimBox
   égale au format du document et une BleedBox plus grande de 3 mm par côté pour 3 mm de fond perdu ;
   un aplat débordant se voit dans la BleedBox et pas au-delà, à l'écran (zone de fond perdu montrée)
   comme au PDF ; aucun trait de coupe dans la BleedBox ; les traits sortent sur chaque plaque
   (`tiffsep`) ; un document de version 5 s'exporte comme avant (contrôle P2).
-- **I6 — Couleurs d'impression dans le modèle** : CMJN et ton direct nommé comme base possible de
+- **S6 — Couleurs d'impression dans le modèle** : CMJN et ton direct nommé comme base possible de
   toute couleur, et de la teinte. Recette : aller-retour JSON au caractère près ; migration testée
   propriété par propriété ; une teinte à 60 % d'un ton direct s'écrit `0.6 scn` sur son espace
   `Separation`, lu dans le flux.
-- **I7 — PDF/X-4 en CMJN par profil**, écrit par la couche basse de PDFsharp, couleurs converties
+- **S7 — PDF/X-4 en CMJN par profil**, écrit par la couche basse de PDFsharp, couleurs converties
   avant par LittleCMS. Le poste dit pourquoi il convertit tôt alors que PDF/X-4 admet le RVB géré,
   règle l'espace de fusion du groupe de transparence, l'en-tête de version et la clé
   `GTS_PDFXVersion` du XMP, et garde le noir sur la seule plaque noire (intention qui préserve K).
@@ -294,17 +294,17 @@ la question 1.
   ni image DeviceRGB, `pdffonts` tout en `emb yes` ; rendu `bitcmyk` d'un aplat #1F3B57 à 1 % près
   de `transicc`, et non de la formule de PS-01 ; un texte noir #000000 ne sort que sur la plaque K ;
   un ton direct a sa plaque nommée sous `tiffsep`.
-- **I8 — Surimpression du noir.** Recette : rendu `bitcmyk`, sous un texte noir de 10 pt sur un
+- **S8 — Surimpression du noir.** Recette : rendu `bitcmyk`, sous un texte noir de 10 pt sur un
   aplat cyan, la plaque cyan n'est pas trouée ; sous un titre de 36 pt avec un seuil de 12 pt, elle
   l'est ; sabotage : surimpression retirée.
-- **I9 — Épreuve des plaques** (complète B6). Recette : celle de B6 (`PLAN.md:1746-1748`), plus une
-  vue par plaque dont les valeurs coïncident avec le rendu Ghostscript de la recette I8.
+- **S9 — Épreuve des plaques** (complète B6). Recette : celle de B6 (`PLAN.md:1746-1748`), plus une
+  vue par plaque dont les valeurs coïncident avec le rendu Ghostscript de la recette S8.
 
 ## Questions ouvertes
 
 1. Un imprimeur doit-il recevoir ces documents ? Si oui, quel PDF demande-t-il (PDF/X-4, X-1a,
    simple PDF haute définition), avec quel profil, et applique-t-il lui-même la surimpression du
-   noir ? La réponse décide si I5 à I9 sont à planifier.
+   noir ? La réponse décide si S5 à S9 sont à planifier.
 2. Quelle valeur par défaut Publisher 98 donnait-il au seuil de surimpression du texte noir ? Un
    `.pub` préparé en ton direct, lu par libmspub, pourrait la contenir ; la question ne justifie pas
    de désassembler quoi que ce soit.

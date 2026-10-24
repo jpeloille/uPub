@@ -306,12 +306,6 @@ Codes du tableau unique de [`00-index.md`](00-index.md#postes-proposés).
   `doNotExpandShiftReturn`), apprend U+2028 à `Recalage` (Q1), à la zone de saisie et au PDF, et
   passe le format en version 6 pour qu'une version antérieure ne rende pas ce caractère sans le
   dire. Sabotage : rendre U+2028 comme `\n` fait tomber la recette.
-- **T6 — Le souligné.** Le modèle porte style, simple ou double, épaisseur et « mots seuls »,
-  comme OpenDocument, ce qui relit seize des dix-sept sortes que libmspub transmet par
-  `fillUnderline` (`MSPUBCollector.cpp:254-330`). Recette : une ligne par sorte, dont une
-  justifiée ; trait de l'épaisseur indiquée par la table `post` ; « mots seuls » ne laisse aucun
-  trait sous les blancs ; écran et PDF à la même ordonnée à 0,1 pt ; un `.pub` à
-  `style:text-underline-type: double` s'importe en double.
 - **T9 — L'interligne par paragraphe, relatif ou exact.** Recette :
   `Samples/recette-interligne-exact.mypub`, trois paragraphes à 1 sp, à 18 pt exact avec un mot
   en 24 pt, et à 2 sp ; au PDF, 18,00 pt ± 0,05 entre deux lignes de base pour le deuxième, deux
@@ -337,12 +331,19 @@ Codes du tableau unique de [`00-index.md`](00-index.md#postes-proposés).
 
 Compléments aux postes ouverts du plan, à verser dans leurs recettes quand ils seront repris :
 
+- **I7** (le souligné, spécifié au plan le 24 octobre 2026 ; ce dossier l'appelait T6 ; versé
+  à sa spécification et à sa recette le même jour) : le
+  modèle porte, en plus du drapeau, le style, simple ou double, l'épaisseur et « mots seuls »,
+  comme OpenDocument, ce qui relit seize des dix-sept sortes que libmspub transmet par
+  `fillUnderline` (`MSPUBCollector.cpp:254-330`). À la recette : une ligne par sorte, dont une
+  justifiée ; trait de l'épaisseur indiquée par la table `post` ; « mots seuls » ne laisse aucun
+  trait sous les blancs ; un `.pub` à `style:text-underline-type: double` s'importe en double.
 - **R6** : les raccourcis Ctrl+L, E, R, J et Ctrl+Q (retirer l'écart du paragraphe) ; dans un
   bloc d'ATA 21 qui contient le saut forcé, centrer le paragraphe qui suit le saut et vérifier
   que c'est lui qui se centre. Dépend de T1.
 - **R7** : sans sélection, la mise en forme s'applique au mot courant (option 421 du dialogue
   568) ; Ctrl+Espace retire la mise en forme de caractère ; le corps change par pas de 1 et de
-  0,5 pt. Dépend de T6.
+  0,5 pt. Dépend de I7.
 
 ## Questions ouvertes
 
