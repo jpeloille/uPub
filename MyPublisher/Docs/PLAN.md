@@ -24,7 +24,7 @@ Où en est chaque poste. Une seule règle pour la colonne d'avancement : un post
 on écrit ce qui est fait plutôt qu'un pourcentage inventé — un poste à moitié écrit n'est
 pas un poste à moitié livré. La colonne se met à jour dans le commit qui clôt le poste.
 
-*Dernière mise à jour : 25 octobre 2026 (I2 livré avec B7 : la disposition de la fenêtre, reprise après relecture).*
+*Dernière mise à jour : 25 octobre 2026 (I5 livré : les vignettes de pages ; relecture et juge après fusion).*
 
 | Poste | Intitulé | Avancement | Où ça en est |
 |---|---|:---:|---|
@@ -97,7 +97,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **I2** | Disposition de la fenêtre | **100 %** | La fenêtre de la maquette, de haut en bas. Barre de menus : la marque, le titre du document centré, deux menus neufs — Texte (gras `Ctrl+G`, italique `Ctrl+I`, les quatre alignements, « Importer un te_xte… ») et Fenêtre (les deux panneaux, et B7). Barre principale à icônes : Annuler et Rétablir grisés sur un historique vide, mais pas pendant une saisie qui a déjà changé le bloc ; « Page entière » posé pour I6. La place de la barre contextuelle, de hauteur constante, et sa pastille, dans son propre fichier pour I3. Rail d'outils, sans Main, Zoom ni Ligne avant leur geste. Panneau Pages, dont l'entrée est un contrôle à part pour I5. Dock à quatre onglets, sections repliables retenues le temps de la session, longueurs en millimètres, vignettes de Fond et contour, « Blocs de la page » l'avant en tête. Barre d'état : la page, le format, le zoom en échelle logarithmique. Chaque champ, chaque onglet et chaque geste de la fenêtre fait un seul pas d'annulation ; les vingt-six icônes du poste servent. Repris après relecture : quatorze défauts, tous refermés. Recette dans `Scripts/recettes/` |
 | **I3** | Barre contextuelle | 0 % | Spécifié le 24 octobre 2026 ; lot 1 |
 | **I4** | Planche : règles fixes, projection, bulle de dimensions | 0 % | Spécifié le 24 octobre 2026 ; lot 1 |
-| **I5** | Vignettes de pages | 0 % | Spécifié le 24 octobre 2026 ; lot 1 |
+| **I5** | Vignettes de pages | **100 %** | Chaque page du panneau Pages en vignette de 96 px au rapport de la page, son numéro dessous, la page courante bordée de 2 px d'accent ; un clic y mène, sans rien mettre à l'historique. `Views/VignetteDePage.cs` dérive de la vignette des modèles : un schéma tiré de la composition, sans contrôle de bloc, qui dessine sa page — et non la première — avec le fond de page. Elle suit le document qui se modifie en place : elle écoute sa page bloc par bloc, comme la planche, et ne recompose que les filets du bloc retouché ; une annulation rend ses pixels. Sur ATA 21, redessiner les vignettes prend 14 ms après une retouche du plus long texte, 43 ms quand le jeu de polices fait tout recomposer. Les sept cibles du juge dans `TemplatePreview.cs` restent, `DetachementTests` et `VignetteTests` passent inchangés. Neuf tests ; recette dans `Scripts/recettes/`. Relecture et juge après fusion |
 | **I6** | Main, zoom, page entière, proportions | 0 % | Spécifié le 24 octobre 2026 ; lot 1 |
 | **I7** | Souligné | 0 % | Spécifié le 24 octobre 2026 ; lot 2 |
 | **I8** | Masquer un bloc | 0 % | Spécifié le 24 octobre 2026 ; lot 2 |
@@ -105,9 +105,9 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **D** | Moteur de composition | — | Décision non ouverte ; à rouvrir quand A, B et C sont livrées |
 
 **Par phase** — P : 4 sur 4 · A : 7 sur 15 · B : 4 sur 7 · C : 7 sur 9 · R : 5 sur 7 ·
-Q : 16 sur 23 · I : 2 sur 9 · D : non planifié.
+Q : 16 sur 23 · I : 3 sur 9 · D : non planifié.
 
-Soit **45 postes sur 74**. Le 24 octobre 2026, la phase I en a ajouté neuf, tirés de la
+Soit **46 postes sur 74**. Le 24 octobre 2026, la phase I en a ajouté neuf, tirés de la
 maquette de la nouvelle interface. Le compte avait doublé le 11 octobre 2026 sans que rien ne
 recule : il porte désormais les onze postes de l'audit des fiches (A8 à A15, B6, B7,
 C8), deux postes que les documents réels demandaient (R6, R7), et la phase Q, qui
@@ -4792,6 +4792,74 @@ dessine que la première page. Si le poste le réutilise, les sept cibles du jug
   50 ms (médiane de trois passes).
 
 Effort : moyen.
+
+*Fait le 25 octobre 2026* — relecture adversariale et juge après la fusion, selon la règle
+du propriétaire : on fusionne dès que `verifier.sh` passe.
+
+- **L'entrée du panneau** (`EntreeDePage.axaml`, le point d'accroche de I2) porte la
+  vignette dans un cadre de 96 px, cadre compris, haut de 96 × hauteur ÷ largeur de la page
+  (136 pour un A4, 68 à l'italienne) : un filet de 1 px au bord des champs et l'ombre de la
+  maquette, 2 px d'accent pour la page courante. Le cadre de la page courante se prend sur
+  le dedans : choisir une page ne déplace aucune vignette. Le numéro reste dessous, à 5 px.
+  La hauteur suit le format, qui change en place, par un convertisseur à part
+  (`Converters/VignetteConverters.cs`).
+- **La vignette** (`Views/VignetteDePage.cs`) dérive de `TemplatePreview`, qui gagne ce
+  qu'il lui fallait : la page dessinée (`Page`, la première quand elle est nulle — le
+  catalogue ne change pas), l'oubli de ses filets, en entier ou pour un seul bloc posé sur
+  la page, et trois réglages que seule la vignette d'une page change — pas de cadre gris,
+  le fond de page du document, la feuille sur toute la boîte. Elle écoute ce que la
+  planche écoute — chaque bloc, ses fragments et ses écarts de paragraphe, les enfants
+  d'un groupe — et le document. Un bloc retouché fait recomposer ses filets seuls, ceux du
+  groupe qui le porte s'il en a un ; un bloc posé ou retiré, un tableau retouché — ses
+  cases peuvent changer de nombre —, le jeu de polices et le format font tout recomposer ;
+  le fond de page et le jeu de couleurs, relus à chaque rendu, ne demandent qu'un dessin.
+  Les abonnements se prennent à l'entrée dans l'arbre et se rendent à la sortie, comme
+  ceux de `ControleDeBloc` (Q2).
+- Le modèle de vue ne gagne rien : le clic sur une vignette est la sélection de la liste,
+  liée à `CurrentPage` depuis I2. Pas de fichier partiel, donc (règle 10).
+- `VignetteDePage.cs` entre à la liste des vues de la phase de la recette I1 ;
+  `TemplatePreview.cs` non : son blanc est celui de la feuille, le document, que le relevé
+  d'avant la phase garde — la même question que `PageRoot` pose à I4.
+
+*Ce que l'implémentation a appris.*
+- **La classe `vignette` était prise** : la fenêtre la donne aux vignettes de couleur de
+  Fond et contour (I2), et son style — 22 × 22, une marge de 8 à droite — descendait
+  jusqu'à l'entrée, qu'il décentrait de 4 px. La classe s'appelle `vignetteDePage`.
+- **Une feuille centrée laissait un filet blanc** entre le cadre et un bandeau à fond
+  perdu : la boîte est au rapport de la page à l'arrondi du pixel et au cadre près, pas
+  exactement. La vignette d'une page étire sa feuille sur toute la boîte — moins de 1,5 %
+  d'écart entre les deux échelles.
+- **Tout recomposer coûte ce que coûte la composition elle-même** : 40 ms environ pour
+  les dix-neuf blocs d'ATA 21 en Debug, dont 14 pour le seul « Ventilation » (1 099
+  caractères), mesurés hors de la vignette, à l'appel de `Compositeur.Composer` que fait
+  aussi la planche. Partager la règle à mesurer entre les blocs n'y change rien. D'où
+  l'oubli bloc par bloc : la frappe dans un bloc ne recompose pas, à chaque lettre, les
+  autres blocs de sa page.
+
+*Mesuré.* Fidélité : la maquette rendue par Chrome sans tête en 1440 × 900 et la fenêtre
+capturée dans le même état — l'exemple, un bloc de texte sélectionné — ont le cadre de la
+première vignette aux mêmes pixels (x = 83, y = 167 à 302) et aux mêmes couleurs ; la
+seconde vignette commence 1 px plus haut que dans la maquette, où le numéro, dans une
+autre police faute d'Inter, prend 15 px de haut contre 14. L'ombre est un peu plus pâle
+au pied (243 contre 237). Neuf tests sous `poste=I5`. Sur ATA 21 — deux pages, deux
+vignettes —, médianes de trois passes après un tour à blanc, rendu à la demande de chaque
+vignette : 14,1 à 14,4 ms après une retouche du plus long texte ; 42,6 à 43,2 ms après un
+changement du jeu de polices.
+
+*Choisi sans certitude.*
+- **« Une modification »** est lue comme la retouche d'un bloc — la plus longue d'ATA 21 —,
+  que le test tient sous 50 ms. Le changement du jeu de polices, qui recompose tout, passe
+  aussi sous 50 ms seul (42,6 à 43,2), mais trop près pour un seuil joué à chaque passage
+  de `verifier.sh` sous charge : le test le tient sous 100 ms, ce qui garde d'une
+  composition faite deux fois ou à chaque rendu. Une lecture plus stricte de la recette
+  — toute modification sous 50 ms — demanderait une composition plus rapide, que ce
+  poste ne touche pas : la décision revient au propriétaire.
+- La vignette montre le fond de page, que le catalogue ne montrait pas : sur une page
+  colorée, une vignette blanche aurait menti. Un dégradé s'y donne par sa première couleur,
+  une image par un gris, comme pour les blocs.
+- Comme la planche, la vignette écoute les collections d'écarts d'un bloc de texte, et
+  non chaque écart : un écart retouché en place, sans passer par sa collection, ne se
+  verrait ni sur la page ni dans la vignette.
 
 #### I6 — Naviguer dans la planche, et garder les proportions
 

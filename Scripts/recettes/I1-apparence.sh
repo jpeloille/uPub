@@ -76,6 +76,7 @@ vues_de_la_phase=(
     MyPublisher/Views/MainWindow.axaml
     MyPublisher/Views/BarreContextuelle.axaml
     MyPublisher/Views/EntreeDePage.axaml
+    MyPublisher/Views/VignetteDePage.cs
 )
 
 # Le relevé d'avant la phase : les couleurs de la maquette que des fichiers hors de la

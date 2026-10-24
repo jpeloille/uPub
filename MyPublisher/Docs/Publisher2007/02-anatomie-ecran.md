@@ -33,8 +33,11 @@ icônes, barre contextuelle, puis, de gauche à droite, le rail d'outils, le pan
 la planche et le dock à quatre onglets ; la barre d'état au pied.
 
 - Panneau Pages (`Views/MainWindow.axaml`, `PanneauPages`) — équivalent plus lisible de
-  l'indicateur de page ; chaque entrée est un contrôle à part (`EntreeDePage.axaml`), qui
-  deviendra une vignette (poste I5).
+  l'indicateur de page ; chaque entrée est un contrôle à part (`EntreeDePage.axaml`) : la
+  vignette de la page, de 96 px de large au rapport de la page, la page courante bordée de
+  2 px d'accent, et son numéro dessous (poste I5). La vignette est un schéma tiré de la
+  composition (`VignetteDePage`, dérivée de la vignette des modèles), et suit les
+  retouches en place, bloc par bloc.
 - « Blocs de la page », au pied de l'onglet Propriétés du dock, **l'avant en tête** —
   Publisher n'a pas cet équivalent, c'est un avantage net.
 - Barre d'état : message, position du curseur en mm (`CursorLabel`), position et taille du

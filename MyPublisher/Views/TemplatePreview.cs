@@ -9,7 +9,9 @@ using MyPublisher.Models;
 namespace MyPublisher.Views;
 
 /// <summary>
-/// Vignette d'un modèle : la première page, dessinée en réduction.
+/// Vignette d'un modèle : la première page, dessinée en réduction. Le panneau Pages en
+/// dérive la vignette de chaque page du document ouvert (<see cref="VignetteDePage"/>,
+/// poste I5), qui choisit sa page, suit les retouches et ne se borde pas elle-même.
 ///
 /// C'est un schéma et non un rendu fidèle, à dessein. À cent cinquante pixels de large,
 /// un A4 réduit son corps de onze points à deux pixels : un rendu exact ne montrerait
@@ -27,12 +29,81 @@ public class TemplatePreview : Control
     public static readonly StyledProperty<Document?> DocumentProperty =
         AvaloniaProperty.Register<TemplatePreview, Document?>(nameof(Document));
 
-    static TemplatePreview() => AffectsRender<TemplatePreview>(DocumentProperty);
+    /// <summary>
+    /// La page dessinée : nulle, la première, celle qu'un catalogue de modèles montre ;
+    /// une autre pour la vignette d'une page du panneau Pages (poste I5).
+    /// </summary>
+    public static readonly StyledProperty<Page?> PageProperty =
+        AvaloniaProperty.Register<TemplatePreview, Page?>(nameof(Page));
+
+    static TemplatePreview() => AffectsRender<TemplatePreview>(DocumentProperty, PageProperty);
 
     public Document? Document
     {
         get => GetValue(DocumentProperty);
         set => SetValue(DocumentProperty, value);
+    }
+
+    public Page? Page
+    {
+        get => GetValue(PageProperty);
+        set => SetValue(PageProperty, value);
+    }
+
+    /// <summary>
+    /// Le cadre gris autour de la feuille. Le panneau Pages borde ses vignettes lui-même,
+    /// de l'accent pour la page courante : un second cadre doublerait le sien.
+    /// </summary>
+    protected virtual bool Encadree => true;
+
+    /// <summary>
+    /// Le fond de page du document, sous les blocs. Le catalogue ne le montre pas,
+    /// comme avant I5 ; une page du document ouvert se montre avec le sien.
+    /// </summary>
+    protected virtual bool AvecLeFondDePage => false;
+
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+
+        // Les filets sont rangés par rang de bloc dans la page : ceux d'une autre page
+        // ne vaudraient rien pour celle-ci.
+        if (change.Property == PageProperty) Oublier();
+    }
+
+    /// <summary>
+    /// Oublie les filets retenus : le prochain rendu recompose. Pour un appelant qui
+    /// modifie en place le document qu'il montre — ce que le catalogue ne fait jamais, et
+    /// ce que fait chaque retouche du document ouvert (poste I5).
+    /// </summary>
+    protected void Oublier()
+    {
+        _filetsDe = null;
+        InvalidateVisual();
+    }
+
+    /// <summary>
+    /// Oublie les filets d'un bloc posé sur la page dessinée, et de lui seul : un groupe
+    /// avec tous ses enfants, un bloc de texte avec les siens. Les autres restent, et le
+    /// prochain rendu ne recompose que lui. Un bloc que le dernier rendu n'a pas
+    /// rencontré fait tout oublier.
+    ///
+    /// L'appelant garantit que la retouche ne change pas le NOMBRE de blocs de texte que
+    /// le parcours rencontre sous ce bloc — sans quoi les rangs suivants glisseraient :
+    /// un enfant ajouté à un groupe, une ligne ajoutée à un tableau font tout oublier
+    /// (<see cref="Oublier()"/>).
+    /// </summary>
+    protected void Oublier(Frame bloc)
+    {
+        if (_filetsDe is not null && _rangsDe.TryGetValue(bloc, out var rangs))
+        {
+            for (var rang = rangs.Debut; rang < rangs.Fin && rang < _filets.Count; rang++) _filets[rang] = null;
+            InvalidateVisual();
+        }
+        else
+        {
+            Oublier();
+        }
     }
 
     private static readonly IBrush Paper = Brushes.White;
@@ -60,13 +131,21 @@ public class TemplatePreview : Control
     /// de contrôle — l'épaisseur des filets dépend de l'échelle. Ce qui ne l'invalide
     /// PAS : une modification du document en place. Le catalogue n'en fait aucune — ses
     /// documents sont lus sur le disque pour la vignette, et le modèle choisi est relu
-    /// depuis son fichier —, mais un appelant qui éditerait le document affiché devrait
-    /// en poser un autre.
+    /// depuis son fichier —, mais un appelant qui éditerait le document affiché appelle
+    /// <see cref="Oublier()"/>, comme le fait la vignette d'une page (poste I5). Changer de
+    /// <see cref="Page"/> oublie de même. Un rang laissé vide (<see cref="Oublier(Frame)"/>)
+    /// se recompose seul au rendu suivant.
     /// </summary>
-    private readonly List<Rect[]> _filets = [];
+    private readonly List<Rect[]?> _filets = [];
     private Document? _filetsDe;
     private Size _filetsA;
     private int _rang;
+
+    /// <summary>
+    /// Les rangs de filets de chaque bloc posé sur la page, du premier au suivant du
+    /// dernier, tels que le dernier rendu les a parcourus : de quoi n'oublier qu'un bloc.
+    /// </summary>
+    private readonly Dictionary<Frame, (int Debut, int Fin)> _rangsDe = [];
 
     public override void Render(DrawingContext context)
     {
@@ -82,11 +161,20 @@ public class TemplatePreview : Control
             return;
         }
 
-        var page = Fit(box, document.PageWidth, document.PageHeight);
+        var page = Feuille(box, document);
         context.FillRectangle(Paper, page);
-        context.DrawRectangle(null, Edge, page);
+        if (AvecLeFondDePage && Conv.ToBrush(Aplat(document.Background, document.Charte)) is { } fond)
+        {
+            context.FillRectangle(fond, page);
+        }
+
+        if (Encadree) context.DrawRectangle(null, Edge, page);
 
         var scale = page.Width / document.PageWidth;
+        // L'échelle verticale ne diffère de l'autre que pour une feuille étirée, et de
+        // moins d'un pixel sur sa hauteur (voir Feuille).
+        var scaleY = page.Height / document.PageHeight;
+        var dessinee = Page ?? document.Pages[0];
 
         if (!ReferenceEquals(document, _filetsDe) || box != _filetsA)
         {
@@ -96,16 +184,30 @@ public class TemplatePreview : Control
         }
 
         _rang = 0;
+        _rangsDe.Clear();
 
         using (context.PushClip(page))
-        using (context.PushTransform(Matrix.CreateScale(scale, scale) * Matrix.CreateTranslation(page.X, page.Y)))
+        using (context.PushTransform(Matrix.CreateScale(scale, scaleY) * Matrix.CreateTranslation(page.X, page.Y)))
         {
             // Les couleurs prises dans le jeu se résolvent par la charte du modèle : sa
             // vignette montre ses couleurs à lui (poste C5b).
             var charte = document.Charte;
-            foreach (var frame in document.Pages[0].Frames) Draw(context, frame, scale, charte);
+            foreach (var frame in dessinee.Frames)
+            {
+                var debut = _rang;
+                Draw(context, frame, scale, charte);
+                _rangsDe[frame] = (debut, _rang);
+            }
         }
     }
+
+    /// <summary>
+    /// Où se dessine la feuille dans la boîte : le plus grand rectangle aux proportions de
+    /// la page qui y tienne. La vignette d'une page prend la boîte entière : celle-ci est
+    /// déjà au rapport de la page, à l'arrondi du pixel et au cadre près, et la feuille
+    /// centrée y laisserait un filet blanc entre le cadre et un bandeau à fond perdu.
+    /// </summary>
+    protected virtual Rect Feuille(Size box, Document document) => Fit(box, document.PageWidth, document.PageHeight);
 
     /// <summary>Le plus grand rectangle aux proportions de la page qui tienne dans la boîte.</summary>
     private static Rect Fit(Size box, double width, double height)
@@ -216,9 +318,9 @@ public class TemplatePreview : Control
     private void DrawTextBars(DrawingContext context, TextFrame text, double scale, Charte charte)
     {
         var rang = _rang++;
-        if (rang == _filets.Count) _filets.Add(Filets(text, scale, charte));
+        if (rang == _filets.Count) _filets.Add(null);
 
-        var filets = _filets[rang];
+        var filets = _filets[rang] ??= Filets(text, scale, charte);
         if (filets.Length == 0) return;
 
         var brush = Conv.ToBrush(charte.Couleur(text.Foreground)) ?? Brushes.Black;
