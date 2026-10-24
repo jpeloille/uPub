@@ -331,7 +331,8 @@ Codes du tableau unique de [`00-index.md`](00-index.md#postes-proposés).
 
 Compléments aux postes ouverts du plan, à verser dans leurs recettes quand ils seront repris :
 
-- **I7** (le souligné, spécifié au plan le 24 octobre 2026 ; ce dossier l'appelait T6) : le
+- **I7** (le souligné, spécifié au plan le 24 octobre 2026 ; ce dossier l'appelait T6 ; versé
+  à sa spécification et à sa recette le même jour) : le
   modèle porte, en plus du drapeau, le style, simple ou double, l'épaisseur et « mots seuls »,
   comme OpenDocument, ce qui relit seize des dix-sept sortes que libmspub transmet par
   `fillUnderline` (`MSPUBCollector.cpp:254-330`). À la recette : une ligne par sorte, dont une

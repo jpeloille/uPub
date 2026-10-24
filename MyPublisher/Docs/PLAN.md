@@ -4590,13 +4590,25 @@ effectif. Il se dessine à l'écran et au PDF à la position et à l'épaisseur 
 police. Il a le bouton S de la barre contextuelle et `Ctrl+U`. L'import `.pub` le lit si
 libmspub le donne : à vérifier sur les deux documents ATR.
 
+Au-delà du drapeau, le souligné porte sa sorte, comme dans OpenDocument : le style du trait,
+simple ou double, son épaisseur, et « mots seuls ». C'est ce qui permet de relire seize des
+dix-sept sortes que libmspub transmet par `fillUnderline` (`MSPUBCollector.cpp:254-330`),
+au lieu de les ramener toutes à un trait simple. Le poste tranche la forme dans le fichier :
+un drapeau accompagné de ses réglages, ou une valeur unique dont `true` reste la forme
+courte. Relevé par l'étude de Publisher 98, où ce complément portait le code T6
+([`Publisher98/02-typographie.md`](Publisher98/02-typographie.md)).
+
 *Recette* :
 - `"Underline": true` fait l'aller-retour JSON, au bloc et au fragment ; un document sans
   souligné se réécrit au caractère près, une fois les Samples réenregistrés ;
 - sur un document de recette souligné, le trait est à la même ordonnée à l'écran et au
   PDF à 0,25 pt près, et `comparer-rendus.sh` passe sous la tolérance ;
 - le souligné suit la frappe comme le gras (Q1), et une recopie du bloc le garde
-  (`Clone`).
+  (`Clone`) ;
+- un document de recette porte une ligne par sorte, dont une justifiée : chaque trait a
+  l'épaisseur que donne la table `post` de la police, et « mots seuls » ne laisse aucun
+  trait sous les blancs, à l'écran comme au PDF ;
+- un `.pub` dont libmspub rend `style:text-underline-type: double` s'importe en double.
 
 Effort : moyen.
 

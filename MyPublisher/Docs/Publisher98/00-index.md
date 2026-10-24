@@ -292,8 +292,8 @@ B4, S9 pour B6, G6 pour C7 ; il reste donc 59 postes nouveaux. Trois touchent de
 les doubler : G1 révise un choix écrit de C4, F13 déplace les repères de C2 sans changer sa recette,
 et S1 étend au fichier le « reproductible » de P3, qui ne portait que sur le contenu
 (`PLAN.md:459-461`). Le souligné, qui portait ici le code T6, est versé au poste I7 du plan,
-spécifié le 24 octobre 2026 ; ce qu'il ajoute à sa recette est dans la fiche 02, avec les
-compléments à R6 et R7.
+spécifié le 24 octobre 2026, et ce qu'il ajoutait y est versé ; la fiche 02 garde le détail,
+avec les compléments à R6 et R7.
 
 ### Rouvrir le poste D
 
