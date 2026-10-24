@@ -399,9 +399,49 @@ public static class PubImporter
                 FontSize = style.TryGetValue("fo:font-size", out var corps) ? Points(corps) : null,
                 Bold = style.GetValueOrDefault("fo:font-weight") == "bold",
                 Italic = style.GetValueOrDefault("fo:font-style") == "italic",
+                Underline = LireSouligne(style),
                 Foreground = Couleur(style.GetValueOrDefault("fo:color")),
                 BaselineShift = Decalage(position),
             });
+        }
+
+        /// <summary>
+        /// Le souligné d'un fragment, dans les quatre réglages d'OpenDocument où libmspub
+        /// range les dix-sept sortes de Publisher (<c>fillUnderline</c>,
+        /// <c>MSPUBCollector.cpp:254-330</c>) : le dessin du trait, simple ou double,
+        /// l'épaisseur, et « mots seuls » (poste I7).
+        ///
+        /// libmspub écrit toujours les quatre ensemble ; un relevé qui n'en donnerait
+        /// qu'une partie — le type sans le dessin, d'un autre générateur — est lu au plus
+        /// près : un type sans dessin est un trait plein. Un fragment qui n'en dit rien
+        /// n'est pas souligné, et le dit : comme le gras, l'absence est une valeur, sinon
+        /// le fragment prendrait le souligné du bloc, qui est celui des autres. Une
+        /// épaisseur autre que « bold » — les longueurs et les pourcentages
+        /// d'OpenDocument, que libmspub n'écrit pas — est celle de la police.
+        /// </summary>
+        private static Souligne LireSouligne(Dictionary<string, string> style)
+        {
+            var type = style.GetValueOrDefault("style:text-underline-type");
+            var dessin = style.GetValueOrDefault("style:text-underline-style");
+            if (type is null && dessin is null) return Souligne.Aucun;
+            if (type == "none" || dessin == "none") return Souligne.Aucun;
+
+            var trait = dessin switch
+            {
+                "dotted" => TraitDeSouligne.Dotted,
+                "dash" => TraitDeSouligne.Dash,
+                "long-dash" => TraitDeSouligne.LongDash,
+                "dot-dash" => TraitDeSouligne.DotDash,
+                "dot-dot-dash" => TraitDeSouligne.DotDotDash,
+                "wave" => TraitDeSouligne.Wave,
+                _ => TraitDeSouligne.Solid,
+            };
+
+            return new Souligne(
+                trait,
+                @double: type == "double",
+                thick: style.GetValueOrDefault("style:text-underline-width") is "bold" or "thick",
+                wordsOnly: style.GetValueOrDefault("style:text-underline-mode") == "skip-white-space");
         }
 
         /// <summary>
@@ -474,7 +514,7 @@ public static class PubImporter
             if (_fragments.Count == 0) return;
 
             var dominant = _fragments
-                .GroupBy(f => (f.FontFamily, f.FontSize, f.Bold, f.Italic, f.Foreground))
+                .GroupBy(f => (f.FontFamily, f.FontSize, f.Bold, f.Italic, f.Underline, f.Foreground))
                 .OrderByDescending(g => g.Sum(f => f.Length))
                 .First().Key;
 
@@ -482,14 +522,26 @@ public static class PubImporter
             if (dominant.FontSize is { } corps and > 0) bloc.FontSize = corps;
             bloc.Bold = dominant.Bold ?? false;
             bloc.Italic = dominant.Italic ?? false;
+            bloc.Underline = dominant.Underline ?? Souligne.Aucun;
             if (dominant.Foreground is { Length: > 0 } couleur) bloc.Foreground = couleur;
+
+            // Un fragment qui répète le souligné du bloc le lui laisse (poste I7). Le gras,
+            // lui, reste écrit sur chaque fragment gardé ; le souligné non, parce que celui
+            // du bloc est ce que la commande « Souligné » change : un fragment qui l'aurait
+            // figé — le cas de tous ceux d'un document qui ne souligne rien — garderait son
+            // texte nu sous un bloc qu'on vient de souligner.
+            foreach (var fragment in _fragments)
+            {
+                if (fragment.Underline == dominant.Underline) fragment.Underline = null;
+            }
 
             // Un fragment qui répète le style du bloc n'apprend plus rien ; le garder
             // alourdirait le fichier et ferait croire à une exception là où il n'y en a
             // pas. Le décalage de ligne de base, lui, n'est jamais celui du bloc.
             _fragments.RemoveAll(f =>
-                f.BaselineShift == 0 &&
-                (f.FontFamily, f.FontSize, f.Bold, f.Italic, f.Foreground) == dominant);
+                f.BaselineShift == 0 && f.Underline is null &&
+                (f.FontFamily, f.FontSize, f.Bold, f.Italic, f.Foreground) ==
+                (dominant.FontFamily, dominant.FontSize, dominant.Bold, dominant.Italic, dominant.Foreground));
         }
 
         /// <summary>Un nom lisible dans la liste des blocs : les premiers mots du texte.</summary>

@@ -52,6 +52,14 @@ public partial class StyleSpan : ObservableObject
     [property: JsonPropertyOrder(60)]
     private bool? _italic;
 
+    /// <summary>
+    /// Le souligné de la portion (poste I7). Nul, comme le bloc ; <c>false</c> dans le
+    /// fichier, explicitement aucun — un mot qu'on retire du souligné de son bloc.
+    /// </summary>
+    [ObservableProperty]
+    [property: JsonPropertyOrder(65)]
+    private Souligne? _underline;
+
     [ObservableProperty]
     [property: JsonPropertyOrder(70)]
     private string? _foreground;
@@ -67,7 +75,8 @@ public partial class StyleSpan : ObservableObject
     public StyleSpan Clone() => new()
     {
         Start = Start, Length = Length, FontFamily = FontFamily, FontSize = FontSize,
-        Bold = Bold, Italic = Italic, Foreground = Foreground, BaselineShift = BaselineShift,
+        Bold = Bold, Italic = Italic, Underline = Underline, Foreground = Foreground,
+        BaselineShift = BaselineShift,
     };
 }
 
@@ -75,9 +84,13 @@ public partial class StyleSpan : ObservableObject
 /// Le style effectif d'une portion de texte : ce que le bloc dit, corrigé par le
 /// fragment qui la recouvre. C'est ce que la composition mesure et ce que les deux
 /// rendus dessinent — jamais le bloc ni le fragment pris séparément.
+///
+/// Le souligné y entre comme le gras (poste I7) : il ne change aucune mesure, mais deux
+/// portions qui ne se soulignent pas pareil sont deux morceaux, et chaque rendu trace le
+/// trait de chacun (<see cref="Compositeur.Soulignes"/>).
 /// </summary>
 public readonly record struct StyleEffectif(
-    string FontFamily, double FontSize, bool Bold, bool Italic,
+    string FontFamily, double FontSize, bool Bold, bool Italic, Souligne Underline,
     string Foreground, double BaselineShift)
 {
     /// <summary>
@@ -110,6 +123,7 @@ public readonly record struct StyleEffectif(
                     fragment.FontSize ?? styles[i].FontSize,
                     fragment.Bold ?? styles[i].Bold,
                     fragment.Italic ?? styles[i].Italic,
+                    fragment.Underline ?? styles[i].Underline,
                     fragment.Foreground ?? styles[i].Foreground,
                     fragment.BaselineShift != 0 ? fragment.BaselineShift : styles[i].BaselineShift);
             }

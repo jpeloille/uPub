@@ -22,10 +22,10 @@ public class MetriquesPdfTests
 
     private static readonly StyleEffectif[] Styles =
     [
-        new("DejaVu Sans", 10.5, false, false, "#FF000000", 0),
-        new("DejaVu Sans", 10.5, true, false, "#FF000000", 0),
-        new("DejaVu Sans", 14, false, true, "#FF000000", 0),
-        new("Noto Sans", 9, false, false, "#FF000000", 0),
+        new("DejaVu Sans", 10.5, false, false, Souligne.Aucun, "#FF000000", 0),
+        new("DejaVu Sans", 10.5, true, false, Souligne.Aucun, "#FF000000", 0),
+        new("DejaVu Sans", 14, false, true, Souligne.Aucun, "#FF000000", 0),
+        new("Noto Sans", 9, false, false, Souligne.Aucun, "#FF000000", 0),
     ];
 
     [Fact]

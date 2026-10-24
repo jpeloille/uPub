@@ -51,6 +51,7 @@
           "FontSize": 16,
           "Bold": true,
           "Italic": false,
+          "Underline": false,
           "Foreground": "#FF1A1A1A",
           "Spans": [],
           "Align": "Left",
@@ -551,6 +552,7 @@
                   "FontSize": null,
                   "Bold": true,
                   "Italic": null,
+                  "Underline": null,
                   "Foreground": null,
                   "BaselineShift": 0
                 }

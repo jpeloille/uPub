@@ -205,7 +205,7 @@ public class CoupureTests
         // contrôle du chrome.
         const string Famille = "DejaVu Serif";
         const string Texte = "Les formes acceptent remplissage, contour, ";
-        StyleEffectif Style(bool gras, bool italique) => new(Famille, 10.5, gras, italique, "#FF000000", 0);
+        StyleEffectif Style(bool gras, bool italique) => new(Famille, 10.5, gras, italique, Souligne.Aucun, "#FF000000", 0);
 
         var systeme = new Typeface(new FontFamily(Famille), FontStyle.Normal, FontWeight.Bold).GlyphTypeface;
         Assert.Equal(FontWeight.Bold, systeme.Weight);
