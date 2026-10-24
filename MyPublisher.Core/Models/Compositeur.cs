@@ -8,6 +8,13 @@ namespace MyPublisher.Models;
 public readonly record struct Morceau(string Texte, StyleEffectif Style, double X, double Largeur);
 
 /// <summary>
+/// Une portion soulignée d'une ligne : de <paramref name="Debut"/> à <paramref name="Fin"/>,
+/// depuis l'origine de la ligne, sous le style <paramref name="Style"/> (poste I7). Voir
+/// <see cref="Compositeur.Soulignes"/>.
+/// </summary>
+public readonly record struct EtendueSoulignee(double Debut, double Fin, StyleEffectif Style);
+
+/// <summary>
 /// Une ligne composée : ses morceaux, la largeur qu'elle occupe, la hauteur naturelle
 /// qu'elle réclame, si elle termine son paragraphe, et le cadre que son paragraphe lui
 /// donne.
@@ -498,6 +505,80 @@ public static class Compositeur
         }
 
         return decalages;
+    }
+
+    /// <summary>
+    /// Les étendues soulignées d'une ligne posée : où chaque trait commence et finit,
+    /// depuis l'origine de la ligne — l'abscisse où le rendu pose son premier morceau —,
+    /// et le style qui le porte, dont le rendu tire la couleur, la police, donc la place
+    /// et l'épaisseur du trait (<see cref="Souligne.Traits"/>). Poste I7.
+    ///
+    /// Le calcul est ici pour la raison qui y a mis <see cref="Decalages"/> : il est facile
+    /// de le faire faussement, et deux rendus qui le feraient chacun se tromperaient
+    /// ensemble, sans qu'une comparaison de l'écran au PDF le voie. Trois pièges :
+    ///
+    /// **Une ligne justifiée élargit ses blancs**, et un souligné continu passe dessous :
+    /// un trait ne s'arrête pas au bout de son morceau mais au début du suivant, là où le
+    /// blanc élargi finit. Sinon chaque mot d'une ligne justifiée aurait son trait, avec un
+    /// trou de la largeur du blanc ajouté — et c'est exactement le dessin de « mots
+    /// seuls », que rien ne distinguerait plus.
+    ///
+    /// **« Mots seuls » ne passe sous aucun blanc** : le trait couvre le mot sans les
+    /// espaces qui le suivent, et ni un morceau blanc ni une tabulation n'en reçoivent.
+    /// Le mot se mesure à la règle du rendu, celle qui l'a posé.
+    ///
+    /// **Deux morceaux voisins du même style ne font qu'un trait.** Un trait par mot
+    /// ferait repartir à chaque mot le motif d'un pointillé, et doublerait le lissage à
+    /// chaque raccord. Un changement de style coupe le trait : la police — donc la place et
+    /// l'épaisseur — ou la couleur changent avec lui.
+    ///
+    /// <paramref name="decalages"/> est ce que <see cref="Decalages"/> rend pour une ligne
+    /// justifiée, et des zéros sinon : le rendu le passe tel qu'il l'a employé pour poser
+    /// ses morceaux.
+    /// </summary>
+    public static IReadOnlyList<EtendueSoulignee> Soulignes(
+        LigneComposee ligne, IReadOnlyList<double> decalages, IMetriques metriques)
+    {
+        var etendues = new List<EtendueSoulignee>();
+
+        for (var m = 0; m < ligne.Morceaux.Count; m++)
+        {
+            var morceau = ligne.Morceaux[m];
+            var souligne = morceau.Style.Underline;
+            if (!souligne.Actif) continue;
+
+            var debut = morceau.X + decalages[m];
+            double fin;
+
+            if (souligne.WordsOnly)
+            {
+                // Un morceau est un mot suivi de ses espaces (voir « Mots ») : le mot
+                // seul, c'est le morceau sans ce qui le suit.
+                var mot = morceau.Texte.TrimEnd();
+                if (mot.Trim().Length == 0) continue;
+                fin = debut + (mot.Length == morceau.Texte.Length
+                    ? morceau.Largeur
+                    : metriques.Largeur(mot, morceau.Style));
+            }
+            else
+            {
+                fin = m + 1 < ligne.Morceaux.Count
+                    ? ligne.Morceaux[m + 1].X + decalages[m + 1]
+                    : debut + morceau.Largeur;
+            }
+
+            if (!souligne.WordsOnly && etendues.Count > 0
+                && etendues[^1].Style == morceau.Style && etendues[^1].Fin == debut)
+            {
+                etendues[^1] = etendues[^1] with { Fin = fin };
+            }
+            else
+            {
+                etendues.Add(new EtendueSoulignee(debut, fin, morceau.Style));
+            }
+        }
+
+        return etendues;
     }
 
     /// <summary>

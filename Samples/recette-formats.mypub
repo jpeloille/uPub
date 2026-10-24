@@ -69,6 +69,7 @@
           "FontSize": 14,
           "Bold": false,
           "Italic": false,
+          "Underline": false,
           "Foreground": "#FF000000",
           "Spans": [],
           "Align": "Left",

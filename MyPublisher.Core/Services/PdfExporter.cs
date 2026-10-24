@@ -662,7 +662,64 @@ public static class PdfExporter
                     gfx.DrawString(morceau.Texte, police, pinceau,
                         new XPoint(origine + morceau.X + decalages[m], y));
                 }
+
+                // Le souligné, sur les étendues que le noyau calcule pour l'écran aussi :
+                // continu sous les blancs élargis d'une ligne justifiée, absent sous les
+                // blancs pour « mots seuls » (poste I7).
+                foreach (var etendue in Compositeur.Soulignes(ligne, decalages, metriques))
+                {
+                    Souligner(gfx, etendue, origine,
+                        ligneDeBase - etendue.Style.BaselineShift * etendue.Style.FontSize);
+                }
             }
+        }
+    }
+
+    /// <summary>
+    /// Trace le souligné d'une étendue sous sa ligne de base, à la place et à l'épaisseur
+    /// que la table <c>post</c> de sa police donne. PDFsharp rend la position avec le signe
+    /// du fichier — négative sous la ligne de base — et l'écran, par Avalonia, la rend
+    /// comptée vers le bas : chacun la ramène à la distance du haut du trait, positive vers
+    /// le bas, avant d'appeler la même géométrie (<see cref="Souligne.Traits"/>).
+    ///
+    /// Le stylo est celui de l'écran : bouts plats, jointures rondes, motif en multiples de
+    /// l'épaisseur. La vague se trace par les points mêmes que l'écran relie.
+    /// </summary>
+    private static void Souligner(XGraphics gfx, EtendueSoulignee etendue, double origine, double ligneDeBase)
+    {
+        var style = etendue.Style;
+        var metriques = Police(style).Metrics;
+        var em = (double)metriques.UnitsPerEm;
+        var (haut, epaisseur) = em > 0
+            ? Souligne.Mesure(
+                -metriques.UnderlinePosition * style.FontSize / em,
+                metriques.UnderlineThickness * style.FontSize / em,
+                style.FontSize)
+            : Souligne.Mesure(0, 0, style.FontSize);
+
+        var couleur = ParseColor(style.Foreground) ?? XColors.Black;
+        var debut = origine + etendue.Debut;
+        var fin = origine + etendue.Fin;
+
+        foreach (var trace in style.Underline.Traits(haut, epaisseur))
+        {
+            var stylo = new XPen(couleur, trace.Epaisseur)
+            {
+                LineCap = XLineCap.Flat,
+                LineJoin = XLineJoin.Round,
+            };
+            if (style.Underline.Motif is { } motif) stylo.DashPattern = motif;
+
+            var axe = ligneDeBase + trace.Axe;
+            if (!style.Underline.Ondule)
+            {
+                gfx.DrawLine(stylo, debut, axe, fin, axe);
+                continue;
+            }
+
+            var points = Souligne.Vague(debut, fin, axe, trace.Epaisseur);
+            if (points.Count < 2) continue;
+            gfx.DrawLines(stylo, points.Select(p => new XPoint(p.X, p.Y)).ToArray());
         }
     }
 

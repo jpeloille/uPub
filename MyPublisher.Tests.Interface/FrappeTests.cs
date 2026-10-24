@@ -42,7 +42,7 @@ public class FrappeTests
     // ------------------------------------------------------------------ ce qu'on relève
 
     private static StyleEffectif Commun(TextFrame bloc) =>
-        new(bloc.FontFamily, bloc.FontSize, bloc.Bold, bloc.Italic, bloc.Foreground, 0);
+        new(bloc.FontFamily, bloc.FontSize, bloc.Bold, bloc.Italic, bloc.Underline, bloc.Foreground, 0);
 
     /// <summary>Le style de chaque caractère du texte, tel que les fragments le donnent.</summary>
     private static List<StyleEffectif> StyleParCaractere(TextFrame bloc) =>

@@ -526,6 +526,16 @@ public partial class TextFrame : Frame
     [property: JsonPropertyOrder(140)]
     private bool _italic;
 
+    /// <summary>
+    /// Le souligné du bloc (poste I7), que ses fragments peuvent changer. Aucun par
+    /// défaut, le cas de tous les documents écrits jusqu'ici : ils se dessinent comme
+    /// avant, et l'addition ne demande aucune migration — <c>FormatVersion</c> reste à 5,
+    /// au précédent de <see cref="Columns"/>.
+    /// </summary>
+    [ObservableProperty]
+    [property: JsonPropertyOrder(145)]
+    private Souligne _underline;
+
     [ObservableProperty]
     [property: JsonPropertyOrder(150)]
     private string _foreground = "#FF1A1A1A";
@@ -709,7 +719,7 @@ public partial class TextFrame : Frame
         var c = new TextFrame
         {
             Text = Text, FontFamily = FontFamily, FontSize = FontSize, Bold = Bold,
-            Italic = Italic, Foreground = Foreground, Align = Align,
+            Italic = Italic, Underline = Underline, Foreground = Foreground, Align = Align,
             LineHeight = LineHeight, PaddingLeft = PaddingLeft, PaddingTop = PaddingTop,
             PaddingRight = PaddingRight, PaddingBottom = PaddingBottom, Field = Field,
             IndentLeft = IndentLeft, IndentRight = IndentRight,

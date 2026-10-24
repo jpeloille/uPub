@@ -210,7 +210,7 @@ public class DebordementTests
             sommets[fer] = SommetDeLEncre(Rendu.Encre(fenetre));
 
             var naturelle = new MetriquesAvalonia().Naturelle(
-                new StyleEffectif(bloc.FontFamily, bloc.FontSize, false, false, bloc.Foreground, 0));
+                new StyleEffectif(bloc.FontFamily, bloc.FontSize, false, false, Souligne.Aucun, bloc.Foreground, 0));
             reste = bloc.Height - 2 * Compositeur.Avance(naturelle, bloc.LineHeight);
         }
 

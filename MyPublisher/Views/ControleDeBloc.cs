@@ -208,6 +208,25 @@ public sealed class MetriquesAvalonia : Compositeur.IMetriques
         return em > 0 ? -metriques.Ascent * style.FontSize / em : style.FontSize;
     }
 
+    /// <summary>
+    /// La place du souligné dans ce style : la distance de la ligne de base au haut du
+    /// trait, et son épaisseur, en points, lues dans la table <c>post</c> de la police
+    /// (poste I7). Avalonia rend la position comptée vers le bas — <c>40</c> pour DejaVu
+    /// Sans, dont la table écrit <c>-40</c> — : elle se prend telle quelle. L'export lit la
+    /// même table par PDFsharp, qui la rend avec le signe du fichier.
+    /// </summary>
+    public (double Haut, double Epaisseur) Souligne(StyleEffectif style)
+    {
+        var metriques = Police(style).GlyphTypeface.Metrics;
+        var em = (double)metriques.DesignEmHeight;
+        if (em <= 0) return Models.Souligne.Mesure(0, 0, style.FontSize);
+
+        return Models.Souligne.Mesure(
+            metriques.UnderlinePosition * style.FontSize / em,
+            metriques.UnderlineThickness * style.FontSize / em,
+            style.FontSize);
+    }
+
     public FormattedText Composer(string texte, StyleEffectif style) =>
         new(texte, CultureInfo.CurrentCulture, FlowDirection.LeftToRight,
             Police(style), style.FontSize,

@@ -51,6 +51,7 @@
           "FontSize": 11,
           "Bold": false,
           "Italic": false,
+          "Underline": false,
           "Foreground": "#FF1A1A1A",
           "Spans": [
             {
@@ -60,6 +61,7 @@
               "FontSize": null,
               "Bold": true,
               "Italic": null,
+              "Underline": null,
               "Foreground": null,
               "BaselineShift": 0
             },
@@ -70,6 +72,7 @@
               "FontSize": null,
               "Bold": null,
               "Italic": true,
+              "Underline": null,
               "Foreground": null,
               "BaselineShift": 0
             },
@@ -80,6 +83,7 @@
               "FontSize": null,
               "Bold": null,
               "Italic": null,
+              "Underline": null,
               "Foreground": "#FFCC0000",
               "BaselineShift": 0
             },
@@ -90,6 +94,7 @@
               "FontSize": 17,
               "Bold": null,
               "Italic": null,
+              "Underline": null,
               "Foreground": null,
               "BaselineShift": 0
             }
@@ -129,6 +134,7 @@
           "FontSize": 11,
           "Bold": false,
           "Italic": false,
+          "Underline": false,
           "Foreground": "#FF1A1A1A",
           "Spans": [
             {
@@ -138,6 +144,7 @@
               "FontSize": 8,
               "Bold": null,
               "Italic": null,
+              "Underline": null,
               "Foreground": null,
               "BaselineShift": -0.25
             },
@@ -148,6 +155,7 @@
               "FontSize": 8,
               "Bold": null,
               "Italic": null,
+              "Underline": null,
               "Foreground": null,
               "BaselineShift": 0.35
             }
@@ -187,6 +195,7 @@
           "FontSize": 11,
           "Bold": false,
           "Italic": false,
+          "Underline": false,
           "Foreground": "#FF1A1A1A",
           "Spans": [
             {
@@ -196,6 +205,7 @@
               "FontSize": null,
               "Bold": null,
               "Italic": null,
+              "Underline": null,
               "Foreground": null,
               "BaselineShift": 0
             }

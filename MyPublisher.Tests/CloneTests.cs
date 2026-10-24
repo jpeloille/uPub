@@ -63,7 +63,7 @@ public class CloneTests
         // demandent donc leur propre test — celui-ci aurait attrapé un oubli sur
         // « Spans » depuis R1 comme il attrape aujourd'hui « Paragraphs ».
         var bloc = new TextFrame { Name = "Riche", Text = "un deux\ntrois quatre" };
-        bloc.Spans.Add(new StyleSpan { Start = 3, Length = 4, Bold = true });
+        bloc.Spans.Add(new StyleSpan { Start = 3, Length = 4, Bold = true, Underline = Souligne.Simple });
         bloc.Paragraphs.Add(new ParagraphSpan { Start = 1, Length = 1, IndentLeft = 18, IndentFirstLine = -18 });
 
         var copie = (TextFrame)bloc.Clone();
@@ -154,6 +154,10 @@ public class CloneTests
         // aurait cessé d'être éprouvée sans qu'aucun test ne change de couleur. C'est
         // exactement le trou que les collections avaient laissé depuis R1.
         _ when type == typeof(FillBrush) => new GradientFill($"#FF00{index:X2}00", "#FF102030", index),
+        // Le souligné non plus n'est ni un nombre ni une chaîne : sans cette ligne, il
+        // serait resté à sa valeur par défaut des deux côtés, et une copie qui l'oublie
+        // aurait passé (poste I7).
+        _ when type == typeof(Souligne) => new Souligne(TraitDeSouligne.Wave, @double: true, thick: true),
         // Les collections d'enfants sont éprouvées séparément, et les types qu'on ne
         // sait pas distinguer sont laissés tels quels plutôt que mal remplis.
         _ => null,
