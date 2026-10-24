@@ -24,7 +24,7 @@ Où en est chaque poste. Une seule règle pour la colonne d'avancement : un post
 on écrit ce qui est fait plutôt qu'un pourcentage inventé — un poste à moitié écrit n'est
 pas un poste à moitié livré. La colonne se met à jour dans le commit qui clôt le poste.
 
-*Dernière mise à jour : 25 octobre 2026 (I2 livré avec B7 : la disposition de la fenêtre, reprise après relecture).*
+*Dernière mise à jour : 25 octobre 2026 (I2 livré avec B7 : la disposition de la fenêtre, reprise après relecture ; I7 livré : le souligné et ses sortes, le modèle seul).*
 
 | Poste | Intitulé | Avancement | Où ça en est |
 |---|---|:---:|---|
@@ -99,15 +99,15 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **I4** | Planche : règles fixes, projection, bulle de dimensions | 0 % | Spécifié le 24 octobre 2026 ; lot 1 |
 | **I5** | Vignettes de pages | 0 % | Spécifié le 24 octobre 2026 ; lot 1 |
 | **I6** | Main, zoom, page entière, proportions | 0 % | Spécifié le 24 octobre 2026 ; lot 1 |
-| **I7** | Souligné | 0 % | Spécifié le 24 octobre 2026 ; lot 2 |
+| **I7** | Souligné | **100 %** | Le souligné porte sa sorte — plein, pointillé, tiret, tiret long, tiret-point, tiret-point-point ou vague ; simple ou double, épais ou non, « mots seuls » — au bloc, au fragment, où `null` laisse celui du bloc, et dans le style effectif. Il s'écrit `false`, `true` pour le trait simple, ou en objet `{ Line, Double, Thick, WordsOnly }` ; `FormatVersion` ne change pas, Samples et Templates sont réenregistrés. Il se trace à l'écran et au PDF à la place et à l'épaisseur de la table `post`, sous la ligne de base de son morceau, exposant compris, et à la couleur de son texte ; seize des dix-sept sortes de libmspub s'importent, le double en double. La commande `SoulignerCommand` est dans `MainWindowViewModel.Souligne.cs`, sans bouton : le bouton S, `Ctrl+U` et le menu viennent de I3. Recette dans `Scripts/recettes/`, vingt-six sabotages au juge |
 | **I8** | Masquer un bloc | 0 % | Spécifié le 24 octobre 2026 ; lot 2 |
 | **I9** | Compter les lignes en excédent | 0 % | Spécifié le 24 octobre 2026 ; lot 2 |
 | **D** | Moteur de composition | — | Décision non ouverte ; à rouvrir quand A, B et C sont livrées |
 
 **Par phase** — P : 4 sur 4 · A : 7 sur 15 · B : 4 sur 7 · C : 7 sur 9 · R : 5 sur 7 ·
-Q : 16 sur 23 · I : 2 sur 9 · D : non planifié.
+Q : 16 sur 23 · I : 3 sur 9 · D : non planifié.
 
-Soit **45 postes sur 74**. Le 24 octobre 2026, la phase I en a ajouté neuf, tirés de la
+Soit **46 postes sur 74**. Le 24 octobre 2026, la phase I en a ajouté neuf, tirés de la
 maquette de la nouvelle interface. Le compte avait doublé le 11 octobre 2026 sans que rien ne
 recule : il porte désormais les onze postes de l'audit des fiches (A8 à A15, B6, B7,
 C8), deux postes que les documents réels demandaient (R6, R7), et la phase Q, qui
@@ -4840,14 +4840,20 @@ police. Il a le bouton S de la barre contextuelle et `Ctrl+U`, que pose I3. *Rep
 octobre 2026* : I7 part en même temps que I2 et I4, qui réécrivent la fenêtre et la planche ;
 il n'y touche pas, et livre le modèle, l'écran, le PDF, l'import et la commande du modèle de
 vue, dans son fichier partiel. L'import `.pub` le lit si
-libmspub le donne : à vérifier sur les deux documents ATR.
+libmspub le donne. *Vérifié à la livraison* : aucun des deux documents ATR ne souligne —
+`pub2raw` n'en rend aucun `style:text-underline-*` —, ni aucun des cinq documents du CD de
+Publisher 98. La recette éprouve donc l'import sur un ATA 21 dont elle souligne dix-sept
+styles de caractère, un par sorte.
 
 Au-delà du drapeau, le souligné porte sa sorte, comme dans OpenDocument : le style du trait,
 simple ou double, son épaisseur, et « mots seuls ». C'est ce qui permet de relire seize des
 dix-sept sortes que libmspub transmet par `fillUnderline` (`MSPUBCollector.cpp:254-330`),
-au lieu de les ramener toutes à un trait simple. Le poste tranche la forme dans le fichier :
-un drapeau accompagné de ses réglages, ou une valeur unique dont `true` reste la forme
-courte. Relevé par l'étude de Publisher 98, où ce complément portait le code T6
+au lieu de les ramener toutes à un trait simple. *Tranché à la livraison* : la forme dans le
+fichier est une valeur unique — `false`, `true` pour le trait simple, celui de `Ctrl+U`, ou
+un objet `{ "Line", "Double", "Thick", "WordsOnly" }` pour toute autre sorte ; au fragment,
+`null` laisse le souligné du bloc. Un drapeau suivi de trois réglages aurait écrit quatre
+clés de plus sur chaque bloc et chaque fragment de tous les documents, et laissé écrire des
+réglages sans trait. Relevé par l'étude de Publisher 98, où ce complément portait le code T6
 ([`Publisher98/02-typographie.md`](Publisher98/02-typographie.md)).
 
 *Recette* :
@@ -4863,6 +4869,40 @@ courte. Relevé par l'étude de Publisher 98, où ce complément portait le code
 - un `.pub` dont libmspub rend `style:text-underline-type: double` s'importe en double.
 
 Effort : moyen à fort.
+
+*Repris le 25 octobre 2026, après relecture.* La relecture a trouvé huit défauts. Sept
+sont refermés dans le code ou dans le filet ; le huitième était ce plan, resté à 0 % et
+muet sur les deux points que la section laissait ouverts.
+- **Un sabotage du juge ne compilait plus.** Celui de la vignette (Q9) appelait encore
+  `StyleEffectif` à six paramètres : il échouait à la compilation, et le juge comptait un
+  trou. Il passe maintenant le souligné du bloc, et Q9 l'attrape de nouveau.
+- **Deux motifs voisins s'échangeaient sans rien faire échouer.** La recette ne mesurait
+  que la part de la ligne couverte : 67 et 73 % pour le tiret et le tiret long, 56 et 50 %
+  pour le tiret-point et le tiret-point-point. À 0,1 près, elle ne les séparait pas, et le
+  test ne vérifiait que cinq motifs distincts. La recette lit maintenant le dessin le long
+  de la ligne — la longueur des tirets en épaisseurs, le nombre de points par tiret —, et
+  le test tient la valeur de chaque motif.
+- **Le souligné d'un exposant n'était éprouvé nulle part.** Le document de recette porte
+  « Voir la note 12 », « 12 » au corps 12, monté d'un tiers de corps. La recette mesure
+  son trait sous sa ligne de base décalée, à l'épaisseur de son corps, à l'écran et au
+  PDF.
+- **La couleur du trait ne l'était pas non plus.** Un PDF qui soulignait en noir un texte
+  de couleur passait : la recette ne lisait que des niveaux de gris. La même ligne est en
+  rouge, et la recette mesure la teinte des pixels pleins du trait sur l'image en couleur.
+- **« Mots seuls » soulignait une insécable au milieu d'un morceau**, et la laissait nue
+  au bout d'un fragment, selon une frontière que rien ne montre. Une insécable est un
+  blanc : le trait est coupé autour de chaque blanc du morceau.
+- **Une police sans place de souligné posait le trait sur la ligne de base.** Elle le
+  reçoit à un dixième de corps dessous, comme elle recevait déjà une épaisseur d'un
+  vingtième de corps. Aucune police de la recette n'est dans ce cas : un test le tient.
+- **Le juge prenait pour un succès un motif qui ne retenait rien.** « I7 » n'en retenait
+  aucun : les intitulés ne portent pas le code du poste. Le motif porte maintenant aussi
+  sur le garde-fou attendu, qui le porte (`I7-souligne`), et un motif qui ne retient rien
+  fait échouer le juge.
+
+Huit sabotages de plus, vingt-six en tout. Les six que la recette doit voir ont été joués
+contre elle seule avant d'être écrits : les deux échanges de motifs, l'exposant et la
+couleur de chaque côté.
 
 #### I8 — Masquer un bloc
 
