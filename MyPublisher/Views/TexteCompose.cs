@@ -40,13 +40,60 @@ public sealed class TexteCompose : ControleDeBloc
         string Texte, FormattedText Rendu, Point Ancre, int Ligne,
         double HautDeLigne, double Avance, double Gauche, double Disponible);
 
+    /// <summary>
+    /// Un trait de souligné posé (poste I7) : de <paramref name="Debut"/> à
+    /// <paramref name="Fin"/> sur son axe <paramref name="Axe"/>, d'un stylo
+    /// <paramref name="Epaisseur"/>, dans le repère du contrôle ; avec la sorte qui en
+    /// donne le motif ou la vague, et la couleur du texte qu'il souligne.
+    /// </summary>
+    public readonly record struct TraitPose(
+        double Debut, double Fin, double Axe, double Epaisseur, Souligne Sorte, string Couleur, int Ligne);
+
     public override void Render(DrawingContext contexte)
     {
         var metriques = new MetriquesAvalonia();
-        foreach (var morceau in Poser(metriques, metriques))
+        var (poses, traits) = Disposer(metriques, metriques);
+        foreach (var morceau in poses)
         {
             contexte.DrawText(morceau.Rendu, morceau.Ancre);
         }
+
+        // Le souligné après le texte, comme à l'export : il passe sur les jambages, comme
+        // dans Publisher, qui ne l'interrompt pas sous un « p ».
+        foreach (var trait in traits) Tracer(contexte, trait);
+    }
+
+    /// <summary>
+    /// Trace un trait de souligné : droit, pointillé ou en vague, d'un stylo à bouts
+    /// plats et à jointures rondes, le même qu'à l'export. Le motif et les points de la
+    /// vague viennent du noyau (<see cref="Souligne.Motif"/>, <see cref="Souligne.Vague"/>),
+    /// et non d'ici : l'écran et le PDF tracent ainsi la même chose.
+    /// </summary>
+    private static void Tracer(DrawingContext contexte, TraitPose trait)
+    {
+        var pinceau = Converters.Conv.ToBrush(trait.Couleur) ?? Brushes.Black;
+        var motif = trait.Sorte.Motif;
+        var stylo = new Pen(pinceau, trait.Epaisseur,
+            motif is null ? null : new DashStyle(motif, 0), PenLineCap.Flat, PenLineJoin.Round);
+
+        if (!trait.Sorte.Ondule)
+        {
+            contexte.DrawLine(stylo, new Point(trait.Debut, trait.Axe), new Point(trait.Fin, trait.Axe));
+            return;
+        }
+
+        var points = Souligne.Vague(trait.Debut, trait.Fin, trait.Axe, trait.Epaisseur);
+        if (points.Count < 2) return;
+
+        var vague = new StreamGeometry();
+        using (var trace = vague.Open())
+        {
+            trace.BeginFigure(new Point(points[0].X, points[0].Y), isFilled: false);
+            for (var i = 1; i < points.Count; i++) trace.LineTo(new Point(points[i].X, points[i].Y));
+            trace.EndFigure(isClosed: false);
+        }
+
+        contexte.DrawGeometry(null, stylo, vague);
     }
 
     /// <summary>
@@ -58,11 +105,28 @@ public sealed class TexteCompose : ControleDeBloc
     /// <paramref name="metriques"/> au dessin. Le banc peut en passer une autre — une
     /// règle qui coupe à sa seule mesure — pour la contre-épreuve de la recette Q13.
     /// </summary>
-    public IReadOnlyList<MorceauPose> Poser(MetriquesAvalonia metriques, Compositeur.IMetriques composition)
+    public IReadOnlyList<MorceauPose> Poser(MetriquesAvalonia metriques, Compositeur.IMetriques composition) =>
+        Disposer(metriques, composition).Poses;
+
+    /// <summary>
+    /// Les traits de souligné que <see cref="Render"/> trace, dans le repère du
+    /// contrôle : ce que les tests mesurent, comme le banc lit <see cref="Poser"/>.
+    /// </summary>
+    public IReadOnlyList<TraitPose> Souligner(MetriquesAvalonia metriques) =>
+        Disposer(metriques, metriques).Traits;
+
+    /// <summary>
+    /// Les morceaux et les traits de souligné, d'une seule composition : le souligné se
+    /// pose sur les lignes mêmes que le texte, et composer deux fois coûterait deux fois
+    /// à chaque redessin pour le risque de ne pas tomber pareil.
+    /// </summary>
+    private (List<MorceauPose> Poses, List<TraitPose> Traits) Disposer(
+        MetriquesAvalonia metriques, Compositeur.IMetriques composition)
     {
         var poses = new List<MorceauPose>();
-        if (Bloc is not { } bloc) return poses;
-        if (Mesurer(composition) is not { } mesure) return poses;
+        var traits = new List<TraitPose>();
+        if (Bloc is not { } bloc) return (poses, traits);
+        if (Mesurer(composition) is not { } mesure) return (poses, traits);
 
         // Le calage vertical vient du noyau, comme la découpe en lignes : l'export lit
         // la même fonction. Il est borné à zéro là-bas comme ici, si bien qu'un texte
@@ -126,8 +190,24 @@ public sealed class TexteCompose : ControleDeBloc
                     morceau.Texte, rendu, new Point(origine + morceau.X + decalages[m], y), rang,
                     haut, ligne.Avance, gauche, ligne.Disponible));
             }
+
+            // Le souligné se pose sous la ligne de base de chaque morceau — décalée pour un
+            // exposant, comme son texte —, à la place et à l'épaisseur que la police donne.
+            // Les étendues viennent du noyau, que l'export appelle de même.
+            foreach (var etendue in Compositeur.Soulignes(ligne, decalages, metriques))
+            {
+                var style = etendue.Style;
+                var (position, epaisseur) = metriques.Souligne(style);
+                var baseDuMorceau = ligneDeBase - style.BaselineShift * style.FontSize;
+                foreach (var trace in style.Underline.Traits(position, epaisseur))
+                {
+                    traits.Add(new TraitPose(
+                        origine + etendue.Debut, origine + etendue.Fin, baseDuMorceau + trace.Axe, trace.Epaisseur,
+                        style.Underline, style.Foreground, rang));
+                }
+            }
         }
 
-        return poses;
+        return (poses, traits);
     }
 }

@@ -213,7 +213,8 @@ public sealed record Charte(JeuDeCouleurs Couleurs, JeuDePolices Polices)
 
     /// <summary>Le style commun d'un bloc de texte, résolu : ce dont ses fragments s'écartent.</summary>
     public StyleEffectif StyleCommun(TextFrame bloc) =>
-        Resoudre(new StyleEffectif(bloc.FontFamily, bloc.FontSize, bloc.Bold, bloc.Italic, bloc.Foreground, 0));
+        Resoudre(new StyleEffectif(
+            bloc.FontFamily, bloc.FontSize, bloc.Bold, bloc.Italic, bloc.Underline, bloc.Foreground, 0));
 
     /// <summary>
     /// Les fragments d'un bloc, leurs références résolues.

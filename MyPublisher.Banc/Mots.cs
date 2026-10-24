@@ -205,7 +205,7 @@ internal static class Mots
                 _ = new Typeface(new FontFamily(famille),
                     italique ? FontStyle.Italic : FontStyle.Normal,
                     gras ? FontWeight.Bold : FontWeight.Normal).GlyphTypeface;
-                regle.Largeur("Hamburgefonstiv", new StyleEffectif(famille, 10, gras, italique, "#FF000000", 0));
+                regle.Largeur("Hamburgefonstiv", new StyleEffectif(famille, 10, gras, italique, Souligne.Aucun, "#FF000000", 0));
             }
         }
     }

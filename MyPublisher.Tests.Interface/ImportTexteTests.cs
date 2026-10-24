@@ -98,7 +98,7 @@ public class ImportTexteTests : IDisposable
     }
 
     private static StyleEffectif Commun(TextFrame bloc) =>
-        new(bloc.FontFamily, bloc.FontSize, bloc.Bold, bloc.Italic, bloc.Foreground, 0);
+        new(bloc.FontFamily, bloc.FontSize, bloc.Bold, bloc.Italic, bloc.Underline, bloc.Foreground, 0);
 
     /// <summary>De combien le texte composé dépasse le bloc, à la règle de l'écran.</summary>
     private static double Debordement(TextFrame bloc)

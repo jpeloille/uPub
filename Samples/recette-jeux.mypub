@@ -167,6 +167,7 @@
           "FontSize": 60,
           "Bold": true,
           "Italic": false,
+          "Underline": false,
           "Foreground": "scheme:accent1",
           "Spans": [
             {
@@ -176,6 +177,7 @@
               "FontSize": null,
               "Bold": null,
               "Italic": null,
+              "Underline": null,
               "Foreground": "scheme:accent3",
               "BaselineShift": 0
             },
@@ -186,6 +188,7 @@
               "FontSize": null,
               "Bold": null,
               "Italic": null,
+              "Underline": null,
               "Foreground": "#FF2E5C8A",
               "BaselineShift": 0
             }
@@ -287,6 +290,7 @@
           "FontSize": 36,
           "Bold": false,
           "Italic": false,
+          "Underline": false,
           "Foreground": "#FF000000",
           "Spans": [],
           "Align": "Left",
@@ -324,6 +328,7 @@
           "FontSize": 20,
           "Bold": false,
           "Italic": false,
+          "Underline": false,
           "Foreground": "#FF000000",
           "Spans": [],
           "Align": "Left",
@@ -361,6 +366,7 @@
           "FontSize": 20,
           "Bold": false,
           "Italic": false,
+          "Underline": false,
           "Foreground": "#FF000000",
           "Spans": [],
           "Align": "Left",

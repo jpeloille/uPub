@@ -22,7 +22,7 @@ public class CompositeurTests
     }
 
     private static readonly StyleEffectif Commun =
-        new("Police", 1, Bold: false, Italic: false, "#FF000000", 0);
+        new("Police", 1, Bold: false, Italic: false, Souligne.Aucun, "#FF000000", 0);
 
     /// <summary>
     /// Un bloc d'une seule colonne et assez haut pour tout prendre : le cas de tous les

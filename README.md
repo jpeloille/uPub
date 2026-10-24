@@ -162,7 +162,8 @@ Fenêtre masque aussi l'un ou l'autre.
   même aune. Une case se remplit dans la section Tableau du dock, où elle est nommée par
   son rang — « L1 · C2 ».
 - **Plusieurs styles dans un même bloc** : une portion de texte porte sa propre police,
-  son corps, son gras, son italique, sa couleur, et se pose en indice ou en exposant.
+  son corps, son gras, son italique, son souligné, sa couleur, et se pose en indice ou en
+  exposant.
   Ces styles suivent la frappe : un mot tapé dans un bloc importé laisse ses gras sur
   leurs mots, et un saut de ligne laisse chaque retrait à son paragraphe. Le texte tapé
   prend le style du caractère qui le précède ; en tête de texte ou de paragraphe, celui
@@ -172,6 +173,15 @@ Fenêtre masque aussi l'un ou l'autre.
   L'interligne s'exprime en multiple de la hauteur **naturelle** de la police — « 1,25 »
   veut dire une fois et quart ce que la police demande, jamais une fois et quart le
   corps.
+- **Le souligné** a les dix-sept sortes de Publisher, rangées en quatre réglages comme
+  dans OpenDocument : le trait — plein, pointillé, tirets, tirets longs, tiret-point,
+  tiret-point-point, vague —, simple ou double, de l'épaisseur de la police ou deux fois
+  plus épais, et « mots seuls », qui ne passe pas sous les blancs. Il se pose au bloc ou
+  à une portion, se dessine à la place et à l'épaisseur que la police donne (sa table
+  `post`), à l'écran comme au PDF, et passe sous les blancs qu'une ligne justifiée
+  élargit. Un `.pub` importé garde le sien. La commande « Souligné » bascule le trait
+  simple du bloc sélectionné ; son bouton et son raccourci viennent avec la barre
+  contextuelle.
 - **Retraits et espacement de paragraphe** : retrait à gauche, à droite, et retrait de
   première ligne — négatif, il fait pendre cette ligne à gauche des suivantes, ce qui
   est la façon d'aligner une liste à puces. Plus un espace avant et un espace après le
@@ -428,6 +438,12 @@ Un bloc de texte porte deux collections d'écarts à ce qu'il dit pour tout le m
 des retraits repérés **par indice de paragraphe**. Le repérage diffère à dessein — un
 retrait appartient au paragraphe entier, et un indice de paragraphe ne bouge pas quand on
 tape un mot. Vides, les deux collections ne changent rien.
+
+Le souligné, `Underline`, s'écrit sur le bloc et sur chaque portion : `false` pour aucun,
+`true` pour le trait simple, et pour toute autre sorte un objet qui porte ses quatre
+réglages — `{ "Line": "Dotted", "Double": false, "Thick": true, "WordsOnly": false }`, le
+trait étant l'un de `Solid`, `Dotted`, `Dash`, `LongDash`, `DotDash`, `DotDotDash`,
+`Wave`. Sur une portion, `null` laisse celui du bloc.
 
 Chaque bloc porte un discriminant `$kind` (`text`, `image`, `shape`, `group`, `table`)
 et, pour

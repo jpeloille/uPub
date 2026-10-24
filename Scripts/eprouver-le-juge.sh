@@ -15,8 +15,10 @@
 #   Scripts/eprouver-le-juge.sh            # tous les sabotages
 #   Scripts/eprouver-le-juge.sh 'motif'    # ceux dont l'intitulé, ou le garde-fou attendu,
 #                                          # répond au motif (grep -E) : « I2|B7 » joue ceux
-#                                          # que la recette I2-B7 doit attraper. Un motif
-#                                          # qui ne retient rien est un échec, pas un succès
+#                                          # que la recette I2-B7 doit attraper, « I7 » ceux du
+#                                          # poste I7, dont le garde-fou porte le code
+#                                          # (« I7-souligne »). Un motif qui ne retient rien
+#                                          # est un échec, pas un succès
 #   Scripts/eprouver-le-juge.sh --cibles   # sans rien saboter : chaque texte visé est-il
 #                                          # présent, et une seule fois ? (quelques secondes)
 #   Scripts/eprouver-le-juge.sh --tranche 2/4 [motif]
@@ -442,6 +444,185 @@ saboter "un collage qui porte du texte est poussé à gauche comme un saut" \
     '' \
     'Q1-styles-frappe|RecalageTests|FrappeTests'
 
+# I7 — le souligné. Vingt-six sabotages : le style effectif, les étendues que la
+# composition souligne, la géométrie et le motif des traits, chacun des deux rendus —
+# l'exposant et la couleur compris —, le fichier, l'import, la copie et la commande. Les rendus partagent le noyau ; un sabotage du
+# noyau tombe des deux côtés à la fois, et c'est la mesure contre la table « post » de la
+# recette, jamais la comparaison de l'écran au PDF, qui le voit. Placés après Q1 et non
+# en fin de liste, où les autres postes de la phase I ajoutent les leurs en même temps.
+saboter "un fragment ne dit plus son souligné au style effectif" \
+    MyPublisher.Core/Models/StyleSpan.cs \
+    'fragment.Underline ?? styles[i].Underline,' \
+    'styles[i].Underline,' \
+    'I7-souligne|Souligne(Ecran)?Tests'
+
+saboter "le style commun d'un bloc perd son souligné" \
+    MyPublisher.Core/Models/Jeux.cs \
+    'bloc.FontFamily, bloc.FontSize, bloc.Bold, bloc.Italic, bloc.Underline, bloc.Foreground, 0));' \
+    'bloc.FontFamily, bloc.FontSize, bloc.Bold, bloc.Italic, Souligne.Aucun, bloc.Foreground, 0));' \
+    'I7-souligne|Souligne(Ecran)?Tests'
+
+saboter "un souligné continu s'arrête au bout de son morceau, avant le blanc élargi" \
+    MyPublisher.Core/Models/Compositeur.cs \
+    '? ligne.Morceaux[m + 1].X + decalages[m + 1]' \
+    '? debut + morceau.Largeur' \
+    'I7-souligne|Souligne(Ecran)?Tests'
+
+saboter "un souligné « mots seuls » passe sous les blancs qui suivent un mot" \
+    MyPublisher.Core/Models/Compositeur.cs \
+    'while (j < texte.Length && !char.IsWhiteSpace(texte[j])) j++;' \
+    'j = texte.Length;' \
+    'I7-souligne|Souligne(Ecran)?Tests'
+
+# Repris après relecture : « Mots » ne coupe pas à l'insécable, qui n'était nue qu'au
+# bout d'un fragment.
+saboter "un souligné « mots seuls » passe sous une insécable au milieu d'un morceau" \
+    MyPublisher.Core/Models/Compositeur.cs \
+    '&& !char.IsWhiteSpace(texte[j])) j++;' \
+    "&& texte[j] != ' ') j++;" \
+    'I7-souligne|Souligne(Ecran)?Tests'
+
+saboter "le haut du souligné que donne la police est pris pour son axe" \
+    MyPublisher.Core/Models/Souligne.cs \
+    'var premier = haut + amplitude + trait / 2;' \
+    'var premier = haut + amplitude;' \
+    'I7-souligne|Souligne(Ecran)?Tests'
+
+saboter "un souligné épais garde l'épaisseur de la police" \
+    MyPublisher.Core/Models/Souligne.cs \
+    'var trait = Thick ? 2 * epaisseur : epaisseur;' \
+    'var trait = epaisseur;' \
+    'I7-souligne|Souligne(Ecran)?Tests'
+
+saboter "le second trait d'un souligné double touche le premier" \
+    MyPublisher.Core/Models/Souligne.cs \
+    'premier + 2 * amplitude + 2 * trait' \
+    'premier + 2 * amplitude + trait' \
+    'I7-souligne|Souligne(Ecran)?Tests'
+
+# Repris après relecture : la part couverte ne sépare pas deux motifs voisins, et deux
+# motifs échangés restent cinq dessins distincts. La recette lit le dessin — la longueur
+# des tirets, les points entre eux —, le test la valeur.
+saboter "le tiret-point et le tiret-point-point échangent leurs motifs" \
+    MyPublisher.Core/Models/Souligne.cs \
+    '        TraitDeSouligne.DotDash => [4, 2, 1, 2],
+        TraitDeSouligne.DotDotDash => [4, 2, 1, 2, 1, 2],' \
+    '        TraitDeSouligne.DotDash => [4, 2, 1, 2, 1, 2],
+        TraitDeSouligne.DotDotDash => [4, 2, 1, 2],' \
+    'I7-souligne|Souligne(Ecran)?Tests'
+
+saboter "le tiret et le tiret long échangent leurs motifs" \
+    MyPublisher.Core/Models/Souligne.cs \
+    '        TraitDeSouligne.Dash => [4, 2],
+        TraitDeSouligne.LongDash => [8, 3],' \
+    '        TraitDeSouligne.Dash => [8, 3],
+        TraitDeSouligne.LongDash => [4, 2],' \
+    'I7-souligne|Souligne(Ecran)?Tests'
+
+# Repris après relecture : une police qui ne donne pas la place du trait le posait sur
+# la ligne de base. Aucune police de la recette ne le fait : le test seul le voit.
+saboter "une police sans place de souligné pose le trait sur la ligne de base" \
+    MyPublisher.Core/Models/Souligne.cs \
+    '(haut > 0 ? haut : corps / 10, ' \
+    '(haut, ' \
+    'I7-souligne|Souligne(Ecran)?Tests'
+
+saboter "le souligné en vague se trace droit" \
+    MyPublisher.Core/Models/Souligne.cs \
+    'public bool Ondule => Line == TraitDeSouligne.Wave;' \
+    'public bool Ondule => false;' \
+    'I7-souligne|Souligne(Ecran)?Tests'
+
+saboter "le souligné simple s'écrit en objet et non « true »" \
+    MyPublisher.Core/Models/Souligne.cs \
+    'if (valeur == Souligne.Simple) { ecrivain.WriteBooleanValue(true); return; }' \
+    '' \
+    'I7-souligne|Souligne(Ecran)?Tests'
+
+# Les deux bibliothèques ne rendent pas la position avec le même signe : Avalonia la
+# compte vers le bas, PDFsharp avec le signe du fichier. Chacun des deux rendus a donc
+# son sabotage, et c'est la table « post » lue par la recette qui les attrape.
+saboter "l'écran lit la position du souligné avec le signe du fichier" \
+    MyPublisher/Views/ControleDeBloc.cs \
+    'metriques.UnderlinePosition * style.FontSize / em,' \
+    '-metriques.UnderlinePosition * style.FontSize / em,' \
+    'I7-souligne|Souligne(Ecran)?Tests'
+
+saboter "l'export lit la position du souligné comme l'écran la reçoit" \
+    MyPublisher.Core/Services/PdfExporter.cs \
+    '-metriques.UnderlinePosition * style.FontSize / em,' \
+    'metriques.UnderlinePosition * style.FontSize / em,' \
+    'I7-souligne'
+
+saboter "l'export ne trace plus le souligné" \
+    MyPublisher.Core/Services/PdfExporter.cs \
+    'foreach (var trace in style.Underline.Traits(haut, epaisseur))' \
+    'foreach (var trace in Souligne.Aucun.Traits(haut, epaisseur))' \
+    'I7-souligne'
+
+# Repris après relecture : rien ne soulignait un exposant, ni un texte de couleur hors
+# des lignes justifiées. La recette mesure le trait de « 12 » sous sa ligne de base
+# décalée, et la teinte des deux traits sur l'image en couleur.
+saboter "l'export pose le souligné d'un exposant sous la ligne de base du texte" \
+    MyPublisher.Core/Services/PdfExporter.cs \
+    '                        ligneDeBase - etendue.Style.BaselineShift * etendue.Style.FontSize);' \
+    '                        ligneDeBase);' \
+    'I7-souligne'
+
+saboter "l'écran pose le souligné d'un exposant sous la ligne de base du texte" \
+    MyPublisher/Views/TexteCompose.cs \
+    'var baseDuMorceau = ligneDeBase - style.BaselineShift * style.FontSize;' \
+    'var baseDuMorceau = ligneDeBase;' \
+    'I7-souligne'
+
+saboter "l'export trace le souligné en noir sous un texte de couleur" \
+    MyPublisher.Core/Services/PdfExporter.cs \
+    'var couleur = ParseColor(style.Foreground) ?? XColors.Black;' \
+    'var couleur = XColors.Black;' \
+    'I7-souligne'
+
+saboter "l'écran trace le souligné en noir sous un texte de couleur" \
+    MyPublisher/Views/TexteCompose.cs \
+    'var pinceau = Converters.Conv.ToBrush(trait.Couleur) ?? Brushes.Black;' \
+    'var pinceau = Brushes.Black;' \
+    'I7-souligne'
+
+saboter "l'écran ne trace plus le souligné" \
+    MyPublisher/Views/TexteCompose.cs \
+    'foreach (var trait in traits) Tracer(contexte, trait);' \
+    '' \
+    'I7-souligne|Souligne(Ecran)?Tests'
+
+saboter "l'écran trace plein un souligné pointillé" \
+    MyPublisher/Views/TexteCompose.cs \
+    'motif is null ? null : new DashStyle(motif, 0)' \
+    'null' \
+    'I7-souligne'
+
+saboter "l'import lit le souligné double en simple" \
+    MyPublisher.Core/Services/PubImporter.cs \
+    '@double: type == "double",' \
+    '@double: false,' \
+    'I7-souligne|Souligne(Ecran)?Tests'
+
+saboter "l'import fige le souligné du bloc dans les fragments qui le partagent" \
+    MyPublisher.Core/Services/PubImporter.cs \
+    'if (fragment.Underline == dominant.Underline) fragment.Underline = null;' \
+    '' \
+    'I7-souligne|Souligne(Ecran)?Tests'
+
+saboter "une copie de bloc perd son souligné" \
+    MyPublisher.Core/Models/Frame.cs \
+    'Italic = Italic, Underline = Underline, Foreground = Foreground, Align = Align,' \
+    'Italic = Italic, Foreground = Foreground, Align = Align,' \
+    'CloneTests|I7-souligne|Souligne(Ecran)?Tests'
+
+saboter "« Souligné » s'emboîte dans la saisie ouverte, sans pas à lui" \
+    MyPublisher/ViewModels/MainWindowViewModel.Souligne.cs \
+    'EndPendingEdit();' \
+    '' \
+    'I7-souligne|Souligne(Ecran)?Tests'
+
 # C5b — les jeux de couleurs et de polices. La référence se résout en un seul endroit
 # du noyau, que les deux rendus appellent : un sabotage du noyau tombe des deux côtés à
 # la fois, et c'est la recette — qui calcule les couleurs attendues depuis les valeurs
@@ -751,7 +932,7 @@ saboter "la vignette peint ses filets sans résoudre la couleur du jeu" \
 saboter "la vignette compose ses filets sans résoudre la police du jeu" \
     MyPublisher/Views/TemplatePreview.cs \
     '        var commun = charte.StyleCommun(text);' \
-    '        var commun = new StyleEffectif(text.FontFamily, text.FontSize, text.Bold, text.Italic, text.Foreground, 0);' \
+    '        var commun = new StyleEffectif(text.FontFamily, text.FontSize, text.Bold, text.Italic, text.Underline, text.Foreground, 0);' \
     'Q9-vignette|VignetteTests'
 
 # Le poste B2. Le décodage peut être juste et le branchement faux : deux sabotages

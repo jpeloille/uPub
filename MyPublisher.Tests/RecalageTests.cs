@@ -535,7 +535,7 @@ public class RecalageTests
 
         var bloc = (TextFrame)document.Pages[0].Frames.Single();
         var gras = StyleEffectif.Decouper(bloc.Text, bloc.Spans,
-                new StyleEffectif(bloc.FontFamily, bloc.FontSize, bloc.Bold, bloc.Italic, bloc.Foreground, 0))
+                new StyleEffectif(bloc.FontFamily, bloc.FontSize, bloc.Bold, bloc.Italic, bloc.Underline, bloc.Foreground, 0))
             .Where(m => m.Style.Bold).Select(m => m.Texte);
 
         Assert.Equal(["gras"], gras);
