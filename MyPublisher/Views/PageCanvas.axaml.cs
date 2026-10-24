@@ -9,7 +9,6 @@ using Avalonia.Controls;
 using Avalonia.Controls.Shapes;
 using Avalonia.Input;
 using Avalonia.Interactivity;
-using Avalonia.Media;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using MyPublisher.Models;
@@ -38,17 +37,35 @@ public partial class PageCanvas : UserControl
 
     private enum DragMode { None, Move, Resize, Rotate, Create, Guide }
 
-    private const double HandleSize = 9;      // pixels écran
+    /// <summary>
+    /// Côté d'une poignée carrée, en pixels écran : les 7 px de blanc de la maquette dans
+    /// un filet de 1,5 px, qu'un Rectangle d'Avalonia rentre dans ses limites (poste I4).
+    /// </summary>
+    private const double HandleSize = 10;
     private const double HandleGrab = 7;      // rayon de préhension, pixels écran
     private const double GuideGrab = 4;       // un repère est un trait : on le saisit de près
     private const double SnapPixels = 6;      // tolérance d'aimantation, pixels écran
 
     /// <summary>
-    /// Distance du bord haut à la poignée de rotation, en pixels écran. Hors de la
-    /// zone de préhension des poignées d'angle (7 px de part et d'autre du bord) :
-    /// deux poignées qui se recouvrent, c'est un geste qui part au hasard.
+    /// Diamètre de la poignée de rotation : un disque de 9 px de blanc dans le même filet
+    /// de 1,5 px que les poignées carrées.
     /// </summary>
-    private const double RotateHandleGap = 22;
+    private const double RotateHandleSize = 12;
+
+    /// <summary>
+    /// Où passe le cadre de sélection, en pixels écran hors du bloc : son bord extérieur
+    /// est à 4 px, comme la maquette le pose, et son trait de 1,5 px est centré sur cette
+    /// ligne-ci. Les poignées s'y posent, à cheval sur le cadre et non sur le bloc.
+    /// </summary>
+    private const double SelectionGap = 3.25;
+
+    /// <summary>
+    /// Distance du bord haut du bloc à la poignée de rotation, en pixels écran — celle de
+    /// la maquette, 22 px au-dessus du cadre. Hors de la zone de préhension des poignées
+    /// d'angle (7 px de part et d'autre du cadre) : deux poignées qui se recouvrent,
+    /// c'est un geste qui part au hasard.
+    /// </summary>
+    private const double RotateHandleGap = 26;
 
     /// <summary>
     /// Pas d'aimantation angulaire sous Maj — celui de Publisher. Douze positions par
@@ -135,33 +152,36 @@ public partial class PageCanvas : UserControl
     private RulerGuide? _draggedGuide;
     private bool _draggedGuideIsVertical;
 
+    /// <summary>
+    /// Où le pointeur mène le repère, avant l'aimantation : c'est sur cette cible que se
+    /// décide le retrait au relâché. Aimantée, la position d'un repère lâché sur le gris à
+    /// moins de six pixels de la page revenait sur le bord, et le repère restait.
+    /// </summary>
+    private double _cibleDuRepere;
+
     public PageCanvas()
     {
         InitializeComponent();
 
+        // Les marques sont habillées par leur classe, dans PageCanvas.axaml : les couleurs
+        // de l'apparence ne s'écrivent pas ici (poste I4).
+        //
         // La tige d'abord : posée avant les poignées, elle passe dessous, et le disque
         // reste saisissable sur toute sa surface.
-        _rotateStem = new Polyline
-        {
-            Stroke = new SolidColorBrush(Color.Parse("#FF2D7DD2")),
-            StrokeThickness = 1,
-            IsVisible = false
-        };
+        _rotateStem = new Polyline { Classes = { "tigeDeRotation" }, IsVisible = false };
         Overlay.Children.Add(_rotateStem);
 
         for (var i = 0; i < _handles.Length; i++)
         {
-            // La neuvième ne redimensionne pas : elle tourne. Un disque vert plutôt
-            // qu'un carré blanc — un neuvième carré au-dessus du bloc se lirait comme
-            // un bord à tirer, et c'est le vert que Publisher emploie pour ce geste.
-            _handles[i] = (Anchor)i == Anchor.Rotate
-                ? new Ellipse { Fill = new SolidColorBrush(Color.Parse("#FF2F9E5E")) }
-                : new Rectangle { Fill = Brushes.White };
-
-            _handles[i].Width = HandleSize;
-            _handles[i].Height = HandleSize;
-            _handles[i].Stroke = new SolidColorBrush(Color.Parse("#FF2D7DD2"));
-            _handles[i].StrokeThickness = 1;
+            // La neuvième ne redimensionne pas : elle tourne. Un disque plutôt qu'un
+            // carré — un neuvième carré au-dessus du bloc se lirait comme un bord à tirer.
+            // Blanc bordé d'accent comme les huit autres, au bout de sa tige : c'est la
+            // forme, et non plus le vert, qui dit le geste, comme dans la maquette.
+            var rotation = (Anchor)i == Anchor.Rotate;
+            _handles[i] = rotation ? new Ellipse() : new Rectangle();
+            _handles[i].Classes.Add("poignee");
+            _handles[i].Width = rotation ? RotateHandleSize : HandleSize;
+            _handles[i].Height = rotation ? RotateHandleSize : HandleSize;
             _handles[i].IsVisible = false;
 
             Overlay.Children.Add(_handles[i]);
@@ -169,13 +189,13 @@ public partial class PageCanvas : UserControl
 
         _preview = new Rectangle
         {
-            Stroke = new SolidColorBrush(Color.Parse("#FF2D7DD2")),
-            StrokeThickness = 1,
+            Classes = { "traceEnCours" },
             StrokeDashArray = new AvaloniaList<double> { 4, 3 },
-            Fill = new SolidColorBrush(Color.Parse("#242D7DD2")),
             IsVisible = false
         };
         Overlay.Children.Add(_preview);
+
+        PoserLaPlanche();
 
         // Les règles reçoivent les mêmes gestes que la planche : glisser depuis l'une
         // d'elles pose un repère, et la capture du pointeur fait que la suite du geste
@@ -233,6 +253,7 @@ public partial class PageCanvas : UserControl
         }
 
         TrackFrames();
+        SuivreLesReperes();
         RefreshOverlay();
     }
 
@@ -250,9 +271,17 @@ public partial class PageCanvas : UserControl
             case nameof(MainWindowViewModel.Selected):
                 RefreshOverlay();
                 break;
-            case nameof(MainWindowViewModel.RenderScale):
-            case nameof(MainWindowViewModel.CurrentPage):
             case nameof(MainWindowViewModel.Document):
+                // Un autre document, d'autres repères : les traits de la planche suivent
+                // les listes du nouveau.
+                SuivreLesReperes();
+                RefreshOverlay();
+                break;
+            case nameof(MainWindowViewModel.RenderScale):
+                PlacerLesReperes();
+                RefreshOverlay();
+                break;
+            case nameof(MainWindowViewModel.CurrentPage):
                 RefreshOverlay();
                 break;
             case nameof(MainWindowViewModel.ActiveTool):
@@ -306,6 +335,10 @@ public partial class PageCanvas : UserControl
 
         for (var i = frames.Count; i < _outlines.Count; i++) _outlines[i].IsVisible = false;
 
+        // La projection sur les règles suit la sélection, et le geste avec elle : chaque
+        // mouvement d'un bloc pris repasse par ici. Un tracé en cours projette son cadre.
+        if (_mode != DragMode.Create) Projeter(Extent.Union(frames.Select(frame => frame.Extent)));
+
         // Les poignées ne servent qu'à un bloc seul, celle de rotation comprise :
         // redimensionner — ou tourner — un ensemble demanderait de reprendre chacun de
         // ses blocs autour d'un pivot commun, ce que le groupe fait proprement. On
@@ -313,14 +346,20 @@ public partial class PageCanvas : UserControl
         var single = frames.Count == 1 ? frames[0] : null;
         foreach (var handle in _handles) handle.IsVisible = single is not null;
         _rotateStem.IsVisible = single is not null;
+
+        // La bulle de dimensions ne parle que pendant un redimensionnement — et pendant un
+        // tracé, que UpdatePreview sert. Elle dit la taille du bloc, comme la barre d'état.
+        if (single is not null && _mode == DragMode.Resize) MontrerLaBulle(single.Extent, single.Width, single.Height);
+        else if (_mode != DragMode.Create) CacherLaBulle();
+
         if (single is null) return;
 
         for (var i = 0; i < _handles.Length; i++)
         {
             var (lx, ly) = LocalAnchor(single, (Anchor)i);
             var point = SurfacePoint(single, lx, ly);
-            Canvas.SetLeft(_handles[i], point.X - HandleSize / 2);
-            Canvas.SetTop(_handles[i], point.Y - HandleSize / 2);
+            Canvas.SetLeft(_handles[i], point.X - _handles[i].Width / 2);
+            Canvas.SetTop(_handles[i], point.Y - _handles[i].Height / 2);
         }
 
         var (nx, ny) = LocalAnchor(single, Anchor.North);
@@ -328,13 +367,21 @@ public partial class PageCanvas : UserControl
         _rotateStem.Points = [SurfacePoint(single, nx, ny), SurfacePoint(single, rx, ry)];
     }
 
-    private List<Point> Corners(Frame frame) =>
-    [
-        SurfacePoint(frame, 0, 0),
-        SurfacePoint(frame, frame.Width, 0),
-        SurfacePoint(frame, frame.Width, frame.Height),
-        SurfacePoint(frame, 0, frame.Height)
-    ];
+    /// <summary>
+    /// Les quatre coins du cadre de sélection : ceux du bloc, écartés de
+    /// <see cref="SelectionGap"/> pixels dans son propre repère — le cadre tourne avec lui.
+    /// </summary>
+    private List<Point> Corners(Frame frame)
+    {
+        var ecart = SelectionGap / Scale;
+        return
+        [
+            SurfacePoint(frame, -ecart, -ecart),
+            SurfacePoint(frame, frame.Width + ecart, -ecart),
+            SurfacePoint(frame, frame.Width + ecart, frame.Height + ecart),
+            SurfacePoint(frame, -ecart, frame.Height + ecart)
+        ];
+    }
 
     /// <summary>
     /// Contour de rang donné, créé au besoin. Les contours s'insèrent en tête de la
@@ -346,8 +393,7 @@ public partial class PageCanvas : UserControl
         {
             var outline = new Polygon
             {
-                Stroke = new SolidColorBrush(Color.Parse("#FF2D7DD2")),
-                StrokeThickness = 1,
+                Classes = { "cadreDeSelection" },
                 Fill = null,
                 IsVisible = false
             };
@@ -371,20 +417,25 @@ public partial class PageCanvas : UserControl
     /// au-dessus du bord haut, à distance constante à l'ÉCRAN et non sur la page : elle
     /// reste ainsi à la même portée de main quel que soit le zoom, comme les huit autres
     /// gardent leur taille. C'est ce qui oblige la méthode à connaître l'échelle, donc à
-    /// ne plus être statique.
+    /// ne plus être statique. Les huit autres se posent sur le cadre de sélection, écarté
+    /// du bloc d'une distance d'écran elle aussi (poste I4).
     /// </summary>
-    private (double X, double Y) LocalAnchor(Frame frame, Anchor anchor) => anchor switch
+    private (double X, double Y) LocalAnchor(Frame frame, Anchor anchor)
     {
-        Anchor.NorthWest => (0, 0),
-        Anchor.North => (frame.Width / 2, 0),
-        Anchor.NorthEast => (frame.Width, 0),
-        Anchor.East => (frame.Width, frame.Height / 2),
-        Anchor.SouthEast => (frame.Width, frame.Height),
-        Anchor.South => (frame.Width / 2, frame.Height),
-        Anchor.SouthWest => (0, frame.Height),
-        Anchor.Rotate => (frame.Width / 2, -RotateHandleGap / Scale),
-        _ => (0, frame.Height / 2)
-    };
+        var e = SelectionGap / Scale;
+        return anchor switch
+        {
+            Anchor.NorthWest => (-e, -e),
+            Anchor.North => (frame.Width / 2, -e),
+            Anchor.NorthEast => (frame.Width + e, -e),
+            Anchor.East => (frame.Width + e, frame.Height / 2),
+            Anchor.SouthEast => (frame.Width + e, frame.Height + e),
+            Anchor.South => (frame.Width / 2, frame.Height + e),
+            Anchor.SouthWest => (-e, frame.Height + e),
+            Anchor.Rotate => (frame.Width / 2, -RotateHandleGap / Scale),
+            _ => (-e, frame.Height / 2)
+        };
+    }
 
     private Anchor? HitHandle(Frame frame, Point surfacePoint)
     {
@@ -407,6 +458,17 @@ public partial class PageCanvas : UserControl
     private Point ToPageCoordinates(Point surfacePoint) =>
         new(surfacePoint.X / Scale, surfacePoint.Y / Scale);
 
+    /// <summary>
+    /// Le point, en points de page, tombe-t-il sur la page, bords compris ? La couche de
+    /// saisie couvre toute la planche depuis le poste I4, pour les poignées et les repères
+    /// qui en sortent ; les blocs et les outils, eux, s'arrêtent au bord de la page,
+    /// comme avant. Ce que PageRoot rogne ne se voit pas : ni un bloc qui déborde ne se
+    /// prend sur le gris, ni un outil armé n'y pose un bloc.
+    /// </summary>
+    private bool DansLaPage(Point page) =>
+        _vm is { } vm && page.X >= 0 && page.Y >= 0 &&
+        page.X <= vm.Document.PageWidth && page.Y <= vm.Document.PageHeight;
+
     private void OnPointerPressed(object? sender, PointerPressedEventArgs e)
     {
         if (_vm?.CurrentPage is null) return;
@@ -417,14 +479,18 @@ public partial class PageCanvas : UserControl
         var surfacePoint = e.GetPosition(Surface);
         var page = ToPageCoordinates(surfacePoint);
 
-        // Un outil armé prend la main : on crée au lieu de sélectionner.
+        // Un outil armé prend la main : on crée au lieu de sélectionner. Sur le gris, il ne
+        // se passe rien, et l'outil reste armé : le bloc tomberait hors de la page, où
+        // PageRoot le rognerait tout entier.
         if (_vm.IsDrawing)
         {
+            e.Handled = true;
+            if (!DansLaPage(page)) return;
+
             _mode = DragMode.Create;
             _startPointer = page;
             UpdatePreview(page, page);
             e.Pointer.Capture(InputLayer);
-            e.Handled = true;
             return;
         }
 
@@ -439,6 +505,9 @@ public partial class PageCanvas : UserControl
             _vm.BeginEdit();
             e.Pointer.Capture(InputLayer);
             e.Handled = true;
+
+            // La bulle de dimensions paraît dès la prise, pas au premier mouvement.
+            RefreshOverlay();
             return;
         }
 
@@ -452,8 +521,10 @@ public partial class PageCanvas : UserControl
             return;
         }
 
-        // Ordre de superposition : le dernier bloc dessiné est le premier candidat.
-        var hit = _vm.CurrentPage.Frames.LastOrDefault(f => f.HitTest(page.X, page.Y));
+        // Ordre de superposition : le dernier bloc dessiné est le premier candidat. Sur la
+        // page seulement : le gris libère la sélection, même là où passe, rognée, la part
+        // d'un bloc qui déborde.
+        var hit = DansLaPage(page) ? _vm.CurrentPage.Frames.LastOrDefault(f => f.HitTest(page.X, page.Y)) : null;
         var additive = e.KeyModifiers.HasFlag(KeyModifiers.Control) ||
                        e.KeyModifiers.HasFlag(KeyModifiers.Shift);
 
@@ -573,6 +644,9 @@ public partial class PageCanvas : UserControl
         }
 
         _vm?.CommitEdit();
+
+        // Le geste fini, la bulle se retire ; la projection, elle, reste sur la sélection.
+        RefreshOverlay();
     }
 
     /// <summary>Abandonne un tracé en cours et efface son aperçu.</summary>
@@ -582,6 +656,7 @@ public partial class PageCanvas : UserControl
 
         _mode = DragMode.None;
         _preview.IsVisible = false;
+        RefreshOverlay();
     }
 
     /// <summary>Met à jour le cadre d'aperçu, exprimé en pixels écran.</summary>
@@ -596,11 +671,20 @@ public partial class PageCanvas : UserControl
         _preview.Width = Math.Abs(current.X - origin.X) * scale;
         _preview.Height = Math.Abs(current.Y - origin.Y) * scale;
         _preview.IsVisible = true;
+
+        // Le cadre qu'on trace se projette sur les règles et dit sa taille dans la bulle,
+        // comme un bloc qu'on redimensionne : c'en sera un au relâché.
+        var cadre = new Extent(
+            Math.Min(origin.X, current.X), Math.Min(origin.Y, current.Y),
+            Math.Max(origin.X, current.X), Math.Max(origin.Y, current.Y));
+        Projeter(cadre);
+        MontrerLaBulle(cadre, cadre.Width, cadre.Height);
     }
 
     private void FinishCreate(Point surfacePoint)
     {
         _preview.IsVisible = false;
+        CacherLaBulle();
 
         if (_vm is null) return;
 
@@ -621,7 +705,7 @@ public partial class PageCanvas : UserControl
     {
         if (_vm?.IsDrawing == true)
         {
-            InputLayer.Cursor = DrawCursor;
+            InputLayer.Cursor = DansLaPage(page) ? DrawCursor : ArrowCursor;
             return;
         }
 
@@ -649,7 +733,7 @@ public partial class PageCanvas : UserControl
             return;
         }
 
-        var over = _vm?.CurrentPage?.Frames.LastOrDefault(f => f.HitTest(page.X, page.Y));
+        var over = DansLaPage(page) ? _vm?.CurrentPage?.Frames.LastOrDefault(f => f.HitTest(page.X, page.Y)) : null;
         InputLayer.Cursor = over is null ? ArrowCursor : MoveCursor;
     }
 
@@ -686,24 +770,14 @@ public partial class PageCanvas : UserControl
 
         Focus();
 
-        // La poignée de rotation est la seule qui se pose DEHORS, au-dessus du bloc :
-        // un bloc collé au haut de la page la met donc sur la règle, où elle se voit
-        // sans se laisser prendre. Le geste y poserait un repère au lieu de tourner —
-        // il ne ferait pas rien, il ferait autre chose. On la sert donc d'abord ; la
-        // capture revient à la règle, qui renvoie déjà la suite du geste aux mêmes
-        // gestionnaires.
+        // La règle ne sert plus la poignée de rotation avant de poser un repère, comme
+        // A1 le lui avait appris. Elle bordait alors la page, et la poignée d'un bloc
+        // collé au haut s'y dessinait, visible et imprenable. Depuis I4, la règle est fixe
+        // hors de la zone qui défile : une poignée ne s'y dessine plus jamais — elle tombe
+        // sur la planche, que la couche de saisie couvre, ou elle est rognée avec ce qui a
+        // défilé. Servie d'ici, elle ferait tourner un bloc qu'on ne voit pas sous un clic
+        // qui voulait un repère.
         var surfacePoint = e.GetPosition(Surface);
-        if (_vm.SingleSelected is { } single && HitHandle(single, surfacePoint) == Anchor.Rotate)
-        {
-            _mode = DragMode.Rotate;
-            _anchor = Anchor.Rotate;
-            RememberResize(single, ToPageCoordinates(surfacePoint));
-            _vm.BeginEdit();
-            e.Pointer.Capture(ruler);
-            e.Handled = true;
-            return;
-        }
-
         var vertical = ruler.Orientation == Avalonia.Layout.Orientation.Horizontal;
         var page = ToPageCoordinates(surfacePoint);
         var guide = new RulerGuide(vertical ? page.X : page.Y);
@@ -723,6 +797,7 @@ public partial class PageCanvas : UserControl
         _mode = DragMode.Guide;
         _draggedGuide = guide;
         _draggedGuideIsVertical = vertical;
+        _cibleDuRepere = guide.Position;
         _vm?.BeginEdit();
     }
 
@@ -730,22 +805,26 @@ public partial class PageCanvas : UserControl
     /// Suit le pointeur, en s'aimantant sur les autres repères — marges, grille,
     /// colonnes — pour qu'on puisse poser un repère exactement sur un bord de colonne.
     /// Le repère traîné est écarté des candidats, sans quoi il s'accrocherait à
-    /// lui-même et ne bougerait plus.
+    /// lui-même et ne bougerait plus : lui seul, une occurrence de sa position. Écarter
+    /// cette valeur partout écartait avec lui le bord ou la marge où il venait de
+    /// s'aimanter, et le repère, au mouvement suivant, s'en décrochait — un mouvement
+    /// sur deux, le long d'un bord.
     /// </summary>
     private void ApplyGuideMove(Point page, KeyModifiers modifiers)
     {
         if (_draggedGuide is null || _vm is null) return;
 
         var target = _draggedGuideIsVertical ? page.X : page.Y;
+        _cibleDuRepere = target;
 
         if (!modifiers.HasFlag(KeyModifiers.Alt))
         {
-            var current = _draggedGuide.Position;
             var candidates = (_draggedGuideIsVertical
                     ? _vm.Document.VerticalGuides
                     : _vm.Document.HorizontalGuides)
-                .Where(value => Math.Abs(value - current) > 1e-9)
                 .ToList();
+            var lui = candidates.LastIndexOf(_draggedGuide.Position);
+            if (lui >= 0) candidates.RemoveAt(lui);
 
             target = SnapEdge(target, 0, SnapPixels / Scale, candidates);
         }
@@ -755,14 +834,15 @@ public partial class PageCanvas : UserControl
 
     /// <summary>
     /// Ferme le geste. Un repère lâché hors de la page est retiré : c'est le moyen de
-    /// s'en débarrasser, en le ramenant d'où il vient.
+    /// s'en débarrasser, en le ramenant d'où il vient. Hors de la page, c'est là où le
+    /// pointeur l'a mené, et non là où l'aimantation l'a mis.
     /// </summary>
     private void FinishGuideDrag()
     {
         if (_draggedGuide is not null && _vm is not null)
         {
             var limit = _draggedGuideIsVertical ? _vm.Document.PageWidth : _vm.Document.PageHeight;
-            if (_draggedGuide.Position < 0 || _draggedGuide.Position > limit)
+            if (_cibleDuRepere < 0 || _cibleDuRepere > limit)
             {
                 (_draggedGuideIsVertical
                     ? _vm.Document.VerticalRulerGuides
@@ -839,12 +919,17 @@ public partial class PageCanvas : UserControl
         var cos = Math.Cos(radians);
         var sin = Math.Sin(radians);
 
-        // Position du pointeur dans le repère local du bloc tel qu'il était au
-        // début du geste : on raisonne ensuite sur un rectangle non tourné.
-        var dx = page.X - (_startX + _startWidth / 2);
-        var dy = page.Y - (_startY + _startHeight / 2);
-        var localX = dx * cos + dy * sin + _startWidth / 2;
-        var localY = -dx * sin + dy * cos + _startHeight / 2;
+        // Le chemin du pointeur depuis la prise, dans le repère local du bloc tel qu'il
+        // était au début du geste : on raisonne ensuite sur un rectangle non tourné.
+        //
+        // Le chemin, et non la position : la poignée est posée sur le cadre de sélection,
+        // quelques pixels hors du bloc (poste I4). Le bord qui suivrait le pointeur
+        // sauterait jusqu'à lui au premier pixel du geste. Pris exactement sur le coin du
+        // bloc, les deux calculs donnent le même bord.
+        var dx = page.X - _startPointer.X;
+        var dy = page.Y - _startPointer.Y;
+        var localX = dx * cos + dy * sin;
+        var localY = -dx * sin + dy * cos;
 
         var movesLeft = _anchor is Anchor.NorthWest or Anchor.West or Anchor.SouthWest;
         var movesRight = _anchor is Anchor.NorthEast or Anchor.East or Anchor.SouthEast;
@@ -853,9 +938,9 @@ public partial class PageCanvas : UserControl
 
         double left = 0, top = 0, right = _startWidth, bottom = _startHeight;
         if (movesLeft) left = Math.Min(localX, right - MinFrameSize);
-        if (movesRight) right = Math.Max(localX, left + MinFrameSize);
+        if (movesRight) right = Math.Max(_startWidth + localX, left + MinFrameSize);
         if (movesTop) top = Math.Min(localY, bottom - MinFrameSize);
-        if (movesBottom) bottom = Math.Max(localY, top + MinFrameSize);
+        if (movesBottom) bottom = Math.Max(_startHeight + localY, top + MinFrameSize);
 
         var width = right - left;
         var height = bottom - top;

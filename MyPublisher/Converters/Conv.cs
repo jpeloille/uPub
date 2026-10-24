@@ -126,6 +126,22 @@ public static class Conv
     public static readonly FuncValueConverter<string?, Bitmap?> Image =
         new(path => string.IsNullOrWhiteSpace(path) ? null : BitmapCache.Get(path));
 
+    /// <summary>
+    /// Le papier : le blanc d'une page sans fond, tel que le document le nomme
+    /// (<see cref="Document.Papier"/>). La planche en peint la page et la feuille qui la
+    /// porte. Ce n'est pas le blanc de l'apparence, qui habille l'interface : la page est
+    /// le document, et ne changerait pas de teinte avec le chrome (poste I4).
+    /// </summary>
+    public static readonly IBrush Papier = ToBrush(Document.Papier)!;
+
+    /// <summary>
+    /// Un pixel d'écran, exprimé en points de page à l'échelle donnée : l'épaisseur d'une
+    /// marque posée sous la mise à l'échelle et qui doit rester fine à tous les zooms —
+    /// le pointillé des marges.
+    /// </summary>
+    public static readonly FuncValueConverter<double, double> UnPixel =
+        new(echelle => echelle > 0 ? 1 / echelle : 1);
+
     /// <summary>Points -> millimètres, pour l'affichage dans la barre d'état.</summary>
     public static readonly FuncValueConverter<double, string> Millimetres =
         new(points => Units.PointsToMm(points).ToString("0.0", CultureInfo.CurrentCulture) + " mm");

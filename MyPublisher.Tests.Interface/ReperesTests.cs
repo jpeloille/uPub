@@ -8,6 +8,7 @@ using Avalonia.Input;
 using Avalonia.VisualTree;
 using MyPublisher.Models;
 using MyPublisher.ViewModels;
+using MyPublisher.Views;
 using Xunit;
 
 namespace MyPublisher.Tests.Interface;
@@ -75,18 +76,19 @@ public class ReperesTests
 
     /// <summary>
     /// Un point de la règle du haut, à l'abscisse de page donnée, à mi-hauteur de la
-    /// règle. La règle borde la page et défile avec elle : son origine est celle de la
+    /// règle. La règle est fixe au bord de la planche depuis le poste I4, et se gradue de
+    /// part et d'autre de la page : son zéro — et non plus son bord — est l'origine de la
     /// page, ce que le test vérifie au passage plutôt que de le supposer.
     /// </summary>
     private static Point SurLaRegleDuHaut(Window fenetre, double x)
     {
-        var regle = fenetre.GetVisualDescendants().OfType<Control>().First(c => c.Name == "TopRuler");
+        var regle = fenetre.GetVisualDescendants().OfType<Ruler>().First(c => c.Name == "TopRuler");
         Assert.True(regle.IsVisible, "la règle du haut est cachée : on ne peut pas en tirer un repère");
 
-        var origine = regle.TranslatePoint(new Point(0, regle.Bounds.Height / 2), fenetre)
-                      ?? throw new InvalidOperationException("la règle n'est pas dans la fenêtre");
-        Assert.Equal(SurLaPage(fenetre, 0, 0).X, origine.X, precision: 6);
-        return new Point(origine.X + x, origine.Y);
+        var zero = regle.TranslatePoint(new Point(regle.Origine, regle.Bounds.Height / 2), fenetre)
+                   ?? throw new InvalidOperationException("la règle n'est pas dans la fenêtre");
+        Assert.Equal(SurLaPage(fenetre, 0, 0).X, zero.X, precision: 6);
+        return new Point(zero.X + x, zero.Y);
     }
 
     /// <summary>
@@ -96,13 +98,13 @@ public class ReperesTests
     /// </summary>
     private static Point SurLaRegleDeGauche(Window fenetre, double y)
     {
-        var regle = fenetre.GetVisualDescendants().OfType<Control>().First(c => c.Name == "LeftRuler");
+        var regle = fenetre.GetVisualDescendants().OfType<Ruler>().First(c => c.Name == "LeftRuler");
         Assert.True(regle.IsVisible, "la règle de gauche est cachée : on ne peut pas en tirer un repère");
 
-        var origine = regle.TranslatePoint(new Point(regle.Bounds.Width / 2, 0), fenetre)
-                      ?? throw new InvalidOperationException("la règle n'est pas dans la fenêtre");
-        Assert.Equal(SurLaPage(fenetre, 0, 0).Y, origine.Y, precision: 6);
-        return new Point(origine.X, origine.Y + y);
+        var zero = regle.TranslatePoint(new Point(regle.Bounds.Width / 2, regle.Origine), fenetre)
+                   ?? throw new InvalidOperationException("la règle n'est pas dans la fenêtre");
+        Assert.Equal(SurLaPage(fenetre, 0, 0).Y, zero.Y, precision: 6);
+        return new Point(zero.X, zero.Y + y);
     }
 
     /// <summary>Saisit en <paramref name="de"/>, mène en <paramref name="vers"/>, lâche.</summary>
