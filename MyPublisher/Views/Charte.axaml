@@ -1,0 +1,545 @@
+<!--
+    La charte de l'interface (phase I, poste I1) : la palette, les tailles et les icônes de
+    la maquette « Fenêtre principale — bloc de texte sélectionné », à un seul endroit.
+
+    App.axaml l'inclut après le thème Fluent, pour toute l'application. Elle ne change
+    rien à l'écran d'aujourd'hui, et c'est voulu : le poste pose la charte, les postes
+    suivants la lisent. Trois règles la tiennent, que la recette I1 vérifie sur ce fichier.
+
+    1. Chaque style est porté par une CLASSE. Aucun sélecteur nu — « Button », « TextBox » —
+       ne s'y écrit : il rhabillerait d'un coup tous les boutons de la fenêtre actuelle, qui
+       n'en demande pas tant. Les classes de la charte ne servent encore nulle part ; elles
+       ne recouvrent aucune de celles des vues d'avant la phase (« tool », « sidebar »,
+       « icon », « sep », « section », « field », « pastille »…).
+    2. Chaque couleur de l'interface de la maquette est déclarée UNE fois, en « Color » ;
+       les pinceaux et les styles la citent par sa clé. Aucune autre couleur n'y entre. La
+       page dessinée dans la maquette n'en fait pas partie — bandeau, images et lignes de
+       texte sont le document, pas l'interface —, ni l'orange du port de chaînage, que la
+       phase ne fait pas (seuil D).
+    3. Chaque icône est le tracé de la maquette, élément par élément, sur sa grille de 24,
+       avec l'épaisseur, les extrémités et les jointures de son trait, à la taille où la
+       maquette l'affiche. Un tracé à trait est un « Path » à « Stroke » : « PathIcon » ne
+       sait que remplir.
+
+    Les classes, et leur nom dans la maquette :
+      ib            .ib    bouton-icône de 30 × 30, rayon 6 ; « ToggleButton.ib » coché est
+                           plein d'accent, l'icône en blanc
+      champ         .fld   TextBox, ComboBox ou NumericUpDown de 26 px, rayon 5, corps 12
+      libelle       .lbl   libellé de corps 11
+      separateur    .sep   filet vertical de 1 × 20, sur un Border
+      titreSection  .sec   titre de section repliable (ToggleButton), corps 12 demi-gras
+
+    Une icône s'emploie comme contenu : `<Button Classes="ib" Content="{StaticResource
+    IconeNouveau}"/>`. Elle est déclarée « x:Shared="False" », si bien que chaque emploi
+    reçoit son propre exemplaire — un contrôle n'a qu'un parent, et une icône partagée
+    disparaîtrait de sa première place à la seconde. Son trait prend la couleur courante
+    (« currentColor » de la maquette), c'est-à-dire « TextElement.Foreground », que le
+    bouton porte : sombre au repos, blanc sur l'accent, sans un style par icône.
+
+    La liste des icônes et du poste qui emploiera chacune est dans la recette
+    (Scripts/recettes/I1-charte.sh), avec la liste des vues écrites par la phase : elle
+    vérifie que chaque icône nommée par une vue existe ici, et que chaque icône d'ici
+    sert, dès que le poste qui l'attend est clos.
+-->
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Styles.Resources>
+
+        <!-- La palette. Une couleur, une ligne ; ses emplois dans la maquette à côté. -->
+        <Color x:Key="CouleurAccent">#2557C7</Color>                <!-- bouton actif, bouton principal, sélection, onglet choisi -->
+        <Color x:Key="CouleurAccentSurvol">#1B439C</Color>          <!-- survol du bouton principal ; texte de la pastille et de la page choisie -->
+        <Color x:Key="CouleurTexte">#1F2329</Color>                 <!-- texte courant, champs, titres de section ; fond de la bulle de dimensions -->
+        <Color x:Key="CouleurCommande">#2B323B</Color>              <!-- icônes, menus, lignes de liste -->
+        <Color x:Key="CouleurLibelle">#5B6470</Color>               <!-- libellés, onglets non choisis, œil, rotation -->
+        <Color x:Key="CouleurEtat">#4A525D</Color>                  <!-- barre d'état, chiffres des règles, numéros des pages -->
+        <Color x:Key="CouleurBlanc">#FFFFFF</Color>                 <!-- barres, rail, dock, champs ; icône sur l'accent -->
+        <Color x:Key="CouleurFondFenetre">#F4F5F7</Color>           <!-- fond de la fenêtre et des règles -->
+        <Color x:Key="CouleurFondPanneau">#FAFAFB</Color>           <!-- panneau Pages, blocs de la page -->
+        <Color x:Key="CouleurFilet">#E2E5EA</Color>                 <!-- filets des barres et des panneaux, séparateurs du rail -->
+        <Color x:Key="CouleurFiletFort">#D5D9DF</Color>             <!-- séparateurs, bord des règles, rail du curseur de zoom -->
+        <Color x:Key="CouleurBordChamp">#CDD2D9</Color>             <!-- bord des champs et des vignettes -->
+        <Color x:Key="CouleurSurvol">#E6E9EE</Color>                <!-- survol d'un bouton-icône ou d'un menu -->
+        <Color x:Key="CouleurFondBarreContextuelle">#EEF2FB</Color> <!-- barre contextuelle -->
+        <Color x:Key="CouleurFiletBarreContextuelle">#D6DEEE</Color><!-- son filet -->
+        <Color x:Key="CouleurPastille">#DCE5F8</Color>              <!-- pastille du type ; ligne choisie de « Blocs de la page » -->
+        <Color x:Key="CouleurFondAlerte">#FDF1E8</Color>            <!-- alerte du dock -->
+        <Color x:Key="CouleurTexteAlerte">#8A2E07</Color>           <!-- son texte et son icône -->
+        <Color x:Key="CouleurFondInitiale">#EEF0F3</Color>          <!-- initiale du type dans « Blocs de la page » -->
+        <Color x:Key="CouleurTexteInitiale">#3A424D</Color>         <!-- sa lettre -->
+        <Color x:Key="CouleurGraduation">#9AA2AD</Color>            <!-- graduations principales des règles -->
+        <Color x:Key="CouleurGraduationFine">#C3C8D0</Color>        <!-- graduations fines -->
+        <Color x:Key="CouleurFondPlanche">#DCDFE4</Color>           <!-- planche (I4) -->
+        <Color x:Key="CouleurRepere">#12A4C4</Color>                <!-- repères (I4) -->
+        <Color x:Key="CouleurMargeDePage">#E3A6D6</Color>           <!-- marges de la page, en pointillé (I4) -->
+        <Color x:Key="CouleurAucun">#D23B3B</Color>                 <!-- diagonale de « Aucun » dans un sélecteur de couleur -->
+
+        <!-- Les pinceaux, un par couleur, du même nom sans « Couleur ». -->
+        <SolidColorBrush x:Key="Accent" Color="{StaticResource CouleurAccent}"/>
+        <SolidColorBrush x:Key="AccentSurvol" Color="{StaticResource CouleurAccentSurvol}"/>
+        <SolidColorBrush x:Key="Texte" Color="{StaticResource CouleurTexte}"/>
+        <SolidColorBrush x:Key="Commande" Color="{StaticResource CouleurCommande}"/>
+        <SolidColorBrush x:Key="Libelle" Color="{StaticResource CouleurLibelle}"/>
+        <SolidColorBrush x:Key="Etat" Color="{StaticResource CouleurEtat}"/>
+        <SolidColorBrush x:Key="Blanc" Color="{StaticResource CouleurBlanc}"/>
+        <SolidColorBrush x:Key="FondFenetre" Color="{StaticResource CouleurFondFenetre}"/>
+        <SolidColorBrush x:Key="FondPanneau" Color="{StaticResource CouleurFondPanneau}"/>
+        <SolidColorBrush x:Key="Filet" Color="{StaticResource CouleurFilet}"/>
+        <SolidColorBrush x:Key="FiletFort" Color="{StaticResource CouleurFiletFort}"/>
+        <SolidColorBrush x:Key="BordChamp" Color="{StaticResource CouleurBordChamp}"/>
+        <SolidColorBrush x:Key="Survol" Color="{StaticResource CouleurSurvol}"/>
+        <SolidColorBrush x:Key="FondBarreContextuelle" Color="{StaticResource CouleurFondBarreContextuelle}"/>
+        <SolidColorBrush x:Key="FiletBarreContextuelle" Color="{StaticResource CouleurFiletBarreContextuelle}"/>
+        <SolidColorBrush x:Key="Pastille" Color="{StaticResource CouleurPastille}"/>
+        <SolidColorBrush x:Key="FondAlerte" Color="{StaticResource CouleurFondAlerte}"/>
+        <SolidColorBrush x:Key="TexteAlerte" Color="{StaticResource CouleurTexteAlerte}"/>
+        <SolidColorBrush x:Key="FondInitiale" Color="{StaticResource CouleurFondInitiale}"/>
+        <SolidColorBrush x:Key="TexteInitiale" Color="{StaticResource CouleurTexteInitiale}"/>
+        <SolidColorBrush x:Key="Graduation" Color="{StaticResource CouleurGraduation}"/>
+        <SolidColorBrush x:Key="GraduationFine" Color="{StaticResource CouleurGraduationFine}"/>
+        <SolidColorBrush x:Key="FondPlanche" Color="{StaticResource CouleurFondPlanche}"/>
+        <SolidColorBrush x:Key="Repere" Color="{StaticResource CouleurRepere}"/>
+        <SolidColorBrush x:Key="MargeDePage" Color="{StaticResource CouleurMargeDePage}"/>
+        <SolidColorBrush x:Key="Aucun" Color="{StaticResource CouleurAucun}"/>
+        <!-- La projection de la sélection sur les règles : l'accent à 14 %, comme la maquette
+             l'écrit (« rgba(37,87,199,0.14) ») — une opacité, pas une couleur de plus. -->
+        <SolidColorBrush x:Key="Projection" Color="{StaticResource CouleurAccent}" Opacity="0.14"/>
+
+        <!-- Les icônes. Chaque « Path » est un élément du svg de la maquette, dans son ordre :
+             « path » recopié tel quel, « rect » et « circle » écrits en tracé — un rectangle
+             arrondi part du haut à gauche après l'arrondi et tourne dans le sens horaire,
+             comme le svg, ce qui cale le pointillé de « Grouper » au même endroit. Classes :
+             « trait » pour un trait à la couleur courante, « plein » pour un remplissage à
+             la couleur courante ; une couleur fixe de la maquette (le blanc d'« Arrière-
+             plan », le gris de l'œil et de la rotation) est citée par sa clé.
+
+             Deux traductions, que le svg et Avalonia n'écrivent pas pareil :
+             - le pointillé : le svg le mesure en unités de la grille, Avalonia en épaisseurs
+               de trait. « 2 2 » sous un trait de 1,7 s'écrit donc 2 / 1,7 ;
+             - le cadre : le svg rogne à sa boîte de 24, d'où « ClipToBounds » — la crosse
+               d'« Annuler » et de « Rétablir » en sort par le bas. -->
+
+        <!-- Barre principale — lues par I2. -->
+        <Viewbox x:Key="IconeNouveau" x:Shared="False" Width="18" Height="18">
+            <Canvas Width="24" Height="24" ClipToBounds="True">
+                <Path Classes="trait" StrokeThickness="1.7" StrokeLineCap="Round" StrokeJoin="Round"
+                      Data="M14 3H6v18h12V7z"/>
+                <Path Classes="trait" StrokeThickness="1.7" StrokeLineCap="Round" StrokeJoin="Round"
+                      Data="M14 3v4h4"/>
+                <Path Classes="trait" StrokeThickness="1.7" StrokeLineCap="Round" StrokeJoin="Round"
+                      Data="M12 11v6M9 14h6"/>
+            </Canvas>
+        </Viewbox>
+        <Viewbox x:Key="IconeOuvrir" x:Shared="False" Width="18" Height="18">
+            <Canvas Width="24" Height="24" ClipToBounds="True">
+                <Path Classes="trait" StrokeThickness="1.7" StrokeLineCap="Round" StrokeJoin="Round"
+                      Data="M3 7h6l2 2h10v10H3z"/>
+            </Canvas>
+        </Viewbox>
+        <Viewbox x:Key="IconeEnregistrer" x:Shared="False" Width="18" Height="18">
+            <Canvas Width="24" Height="24" ClipToBounds="True">
+                <Path Classes="trait" StrokeThickness="1.7" StrokeLineCap="Round" StrokeJoin="Round"
+                      Data="M5 4h11l3 3v13H5z"/>
+                <Path Classes="trait" StrokeThickness="1.7" StrokeLineCap="Round" StrokeJoin="Round"
+                      Data="M8 4v5h7V4M8 20v-6h8v6"/>
+            </Canvas>
+        </Viewbox>
+        <Viewbox x:Key="IconeAnnuler" x:Shared="False" Width="18" Height="18">
+            <Canvas Width="24" Height="24" ClipToBounds="True">
+                <Path Classes="trait" StrokeThickness="1.7" StrokeLineCap="Round" StrokeJoin="Round"
+                      Data="M9 7L4 12l5 5"/>
+                <Path Classes="trait" StrokeThickness="1.7" StrokeLineCap="Round" StrokeJoin="Round"
+                      Data="M4 12h10a6 6 0 0 1 0 12"/>
+            </Canvas>
+        </Viewbox>
+        <Viewbox x:Key="IconeRetablir" x:Shared="False" Width="18" Height="18">
+            <Canvas Width="24" Height="24" ClipToBounds="True">
+                <Path Classes="trait" StrokeThickness="1.7" StrokeLineCap="Round" StrokeJoin="Round"
+                      Data="M15 7l5 5-5 5"/>
+                <Path Classes="trait" StrokeThickness="1.7" StrokeLineCap="Round" StrokeJoin="Round"
+                      Data="M20 12H10a6 6 0 0 0 0 12"/>
+            </Canvas>
+        </Viewbox>
+        <Viewbox x:Key="IconeAlignerAGauche" x:Shared="False" Width="18" Height="18">
+            <Canvas Width="24" Height="24" ClipToBounds="True">
+                <Path Classes="trait" StrokeThickness="1.7" StrokeLineCap="Round"
+                      Data="M4 3v18"/>
+                <Path Classes="trait" StrokeThickness="1.7" StrokeLineCap="Round"
+                      Data="M8,6 H18 A1,1 0 0 1 19,7 V9 A1,1 0 0 1 18,10 H8 A1,1 0 0 1 7,9 V7 A1,1 0 0 1 8,6 Z"/>
+                <Path Classes="trait" StrokeThickness="1.7" StrokeLineCap="Round"
+                      Data="M8,14 H13 A1,1 0 0 1 14,15 V17 A1,1 0 0 1 13,18 H8 A1,1 0 0 1 7,17 V15 A1,1 0 0 1 8,14 Z"/>
+            </Canvas>
+        </Viewbox>
+        <Viewbox x:Key="IconeCentrerHorizontalement" x:Shared="False" Width="18" Height="18">
+            <Canvas Width="24" Height="24" ClipToBounds="True">
+                <Path Classes="trait" StrokeThickness="1.7" StrokeLineCap="Round"
+                      Data="M12 3v18"/>
+                <Path Classes="trait" StrokeThickness="1.7" StrokeLineCap="Round"
+                      Data="M6,6 H18 A1,1 0 0 1 19,7 V9 A1,1 0 0 1 18,10 H6 A1,1 0 0 1 5,9 V7 A1,1 0 0 1 6,6 Z"/>
+                <Path Classes="trait" StrokeThickness="1.7" StrokeLineCap="Round"
+                      Data="M9,14 H15 A1,1 0 0 1 16,15 V17 A1,1 0 0 1 15,18 H9 A1,1 0 0 1 8,17 V15 A1,1 0 0 1 9,14 Z"/>
+            </Canvas>
+        </Viewbox>
+        <Viewbox x:Key="IconeCentrerVerticalement" x:Shared="False" Width="18" Height="18">
+            <Canvas Width="24" Height="24" ClipToBounds="True">
+                <Path Classes="trait" StrokeThickness="1.7" StrokeLineCap="Round"
+                      Data="M3 12h18"/>
+                <Path Classes="trait" StrokeThickness="1.7" StrokeLineCap="Round"
+                      Data="M7,5 H9 A1,1 0 0 1 10,6 V18 A1,1 0 0 1 9,19 H7 A1,1 0 0 1 6,18 V6 A1,1 0 0 1 7,5 Z"/>
+                <Path Classes="trait" StrokeThickness="1.7" StrokeLineCap="Round"
+                      Data="M15,8 H17 A1,1 0 0 1 18,9 V15 A1,1 0 0 1 17,16 H15 A1,1 0 0 1 14,15 V9 A1,1 0 0 1 15,8 Z"/>
+            </Canvas>
+        </Viewbox>
+        <Viewbox x:Key="IconeAjusterAuxMarges" x:Shared="False" Width="18" Height="18">
+            <Canvas Width="24" Height="24" ClipToBounds="True">
+                <Path Classes="trait" StrokeThickness="1.7" StrokeLineCap="Round"
+                      Data="M4,4 H20 A1,1 0 0 1 21,5 V19 A1,1 0 0 1 20,20 H4 A1,1 0 0 1 3,19 V5 A1,1 0 0 1 4,4 Z"/>
+                <Path Classes="trait" StrokeThickness="1.7" StrokeLineCap="Round"
+                      Data="M8,8 H16 A1,1 0 0 1 17,9 V15 A1,1 0 0 1 16,16 H8 A1,1 0 0 1 7,15 V9 A1,1 0 0 1 8,8 Z"/>
+            </Canvas>
+        </Viewbox>
+        <Viewbox x:Key="IconePremierPlan" x:Shared="False" Width="18" Height="18">
+            <Canvas Width="24" Height="24" ClipToBounds="True">
+                <Path Classes="trait plein" StrokeThickness="1.7" StrokeJoin="Round"
+                      Data="M10,9 H19 A1,1 0 0 1 20,10 V19 A1,1 0 0 1 19,20 H10 A1,1 0 0 1 9,19 V10 A1,1 0 0 1 10,9 Z"/>
+                <Path Classes="trait" StrokeThickness="1.7" StrokeJoin="Round"
+                      Data="M5,4 H14 A1,1 0 0 1 15,5 V14 A1,1 0 0 1 14,15 H5 A1,1 0 0 1 4,14 V5 A1,1 0 0 1 5,4 Z"/>
+            </Canvas>
+        </Viewbox>
+        <Viewbox x:Key="IconeArrierePlan" x:Shared="False" Width="18" Height="18">
+            <Canvas Width="24" Height="24" ClipToBounds="True">
+                <Path Classes="trait plein" StrokeThickness="1.7" StrokeJoin="Round"
+                      Data="M5,4 H14 A1,1 0 0 1 15,5 V14 A1,1 0 0 1 14,15 H5 A1,1 0 0 1 4,14 V5 A1,1 0 0 1 5,4 Z"/>
+                <Path Classes="trait" StrokeThickness="1.7" StrokeJoin="Round" Fill="{StaticResource Blanc}"
+                      Data="M10,9 H19 A1,1 0 0 1 20,10 V19 A1,1 0 0 1 19,20 H10 A1,1 0 0 1 9,19 V10 A1,1 0 0 1 10,9 Z"/>
+            </Canvas>
+        </Viewbox>
+        <Viewbox x:Key="IconeGrouper" x:Shared="False" Width="18" Height="18">
+            <Canvas Width="24" Height="24" ClipToBounds="True">
+                <Path Classes="trait" StrokeThickness="1.7" StrokeDashArray="1.17647,1.17647"
+                      Data="M5,3 H19 A2,2 0 0 1 21,5 V19 A2,2 0 0 1 19,21 H5 A2,2 0 0 1 3,19 V5 A2,2 0 0 1 5,3 Z"/>
+                <Path Classes="trait" StrokeThickness="1.7"
+                      Data="M7,7 H12 V12 H7 Z"/>
+                <Path Classes="trait" StrokeThickness="1.7"
+                      Data="M12,12 H17 V17 H12 Z"/>
+            </Canvas>
+        </Viewbox>
+        <Viewbox x:Key="IconeZoomArriere" x:Shared="False" Width="16" Height="16">
+            <Canvas Width="24" Height="24" ClipToBounds="True">
+                <Path Classes="trait" StrokeThickness="2" StrokeLineCap="Round"
+                      Data="M5 12h14"/>
+            </Canvas>
+        </Viewbox>
+        <Viewbox x:Key="IconeZoomAvant" x:Shared="False" Width="16" Height="16">
+            <Canvas Width="24" Height="24" ClipToBounds="True">
+                <Path Classes="trait" StrokeThickness="2" StrokeLineCap="Round"
+                      Data="M5 12h14M12 5v14"/>
+            </Canvas>
+        </Viewbox>
+        <Viewbox x:Key="IconeExporter" x:Shared="False" Width="15" Height="15">
+            <Canvas Width="24" Height="24" ClipToBounds="True">
+                <Path Classes="trait" StrokeThickness="2" StrokeLineCap="Round" StrokeJoin="Round"
+                      Data="M12 4v11M7 10l5 5 5-5M5 20h14"/>
+            </Canvas>
+        </Viewbox>
+
+        <!-- Barre contextuelle — lues par I3. -->
+        <Viewbox x:Key="IconeTexteAGauche" x:Shared="False" Width="17" Height="17">
+            <Canvas Width="24" Height="24" ClipToBounds="True">
+                <Path Classes="trait" StrokeThickness="1.8" StrokeLineCap="Round"
+                      Data="M4 6h16M4 10h10M4 14h16M4 18h10"/>
+            </Canvas>
+        </Viewbox>
+        <Viewbox x:Key="IconeTexteCentre" x:Shared="False" Width="17" Height="17">
+            <Canvas Width="24" Height="24" ClipToBounds="True">
+                <Path Classes="trait" StrokeThickness="1.8" StrokeLineCap="Round"
+                      Data="M4 6h16M7 10h10M4 14h16M7 18h10"/>
+            </Canvas>
+        </Viewbox>
+        <Viewbox x:Key="IconeTexteJustifie" x:Shared="False" Width="17" Height="17">
+            <Canvas Width="24" Height="24" ClipToBounds="True">
+                <Path Classes="trait" StrokeThickness="1.8" StrokeLineCap="Round"
+                      Data="M4 6h16M4 10h16M4 14h16M4 18h11"/>
+            </Canvas>
+        </Viewbox>
+        <!-- La maquette omet l'alignement à droite, que le modèle a et que I3 pose : il est
+             dessiné dans le même langage, miroir exact de « à gauche » (x → 24 − x). -->
+        <Viewbox x:Key="IconeTexteADroite" x:Shared="False" Width="17" Height="17">
+            <Canvas Width="24" Height="24" ClipToBounds="True">
+                <Path Classes="trait" StrokeThickness="1.8" StrokeLineCap="Round"
+                      Data="M4 6h16M10 10h10M4 14h16M10 18h10"/>
+            </Canvas>
+        </Viewbox>
+
+        <!-- Rail d'outils — lues par I2, sauf la main et la loupe (I6) et la ligne (A10), dont les boutons
+             n'apparaissent qu'avec leur geste. -->
+        <Viewbox x:Key="IconeSelection" x:Shared="False" Width="18" Height="18">
+            <Canvas Width="24" Height="24" ClipToBounds="True">
+                <Path Classes="plein"
+                      Data="M6 3v17l4.2-4.1 2.7 5.6 2.4-1.2-2.6-5.4 5.8-.3z"/>
+            </Canvas>
+        </Viewbox>
+        <Viewbox x:Key="IconeMain" x:Shared="False" Width="18" Height="18">
+            <Canvas Width="24" Height="24" ClipToBounds="True">
+                <Path Classes="trait" StrokeThickness="1.7" StrokeLineCap="Round" StrokeJoin="Round"
+                      Data="M8 12V6a1.5 1.5 0 0 1 3 0v5M11 11V4.5a1.5 1.5 0 0 1 3 0V11M14 11V6a1.5 1.5 0 0 1 3 0v8a7 7 0 0 1-7 7c-2.5 0-4-1.5-5.5-4L3 14a1.5 1.5 0 0 1 2.5-1.6L8 15"/>
+            </Canvas>
+        </Viewbox>
+        <Viewbox x:Key="IconeBlocDeTexte" x:Shared="False" Width="18" Height="18">
+            <Canvas Width="24" Height="24" ClipToBounds="True">
+                <Path Classes="plein"
+                      Data="M4 4h16v4.2h-5.9V20H9.9V8.2H4z"/>
+            </Canvas>
+        </Viewbox>
+        <Viewbox x:Key="IconeTitre" x:Shared="False" Width="18" Height="18">
+            <Canvas Width="24" Height="24" ClipToBounds="True">
+                <Path Classes="plein"
+                      Data="M4 4h4v6.4h8V4h4v16h-4v-6.4H8V20H4z"/>
+            </Canvas>
+        </Viewbox>
+        <Viewbox x:Key="IconeImage" x:Shared="False" Width="18" Height="18">
+            <Canvas Width="24" Height="24" ClipToBounds="True">
+                <Path Classes="trait" StrokeThickness="1.7" StrokeJoin="Round"
+                      Data="M4,5 H20 A1,1 0 0 1 21,6 V18 A1,1 0 0 1 20,19 H4 A1,1 0 0 1 3,18 V6 A1,1 0 0 1 4,5 Z"/>
+                <Path Classes="trait" StrokeThickness="1.7" StrokeJoin="Round"
+                      Data="M6 16l4-5 3 3.5 2.5-3L19 16"/>
+                <Path Classes="trait" StrokeThickness="1.7" StrokeJoin="Round"
+                      Data="M10.3,9 A1.3,1.3 0 1 1 7.7,9 A1.3,1.3 0 1 1 10.3,9 Z"/>
+            </Canvas>
+        </Viewbox>
+        <Viewbox x:Key="IconeTableau" x:Shared="False" Width="18" Height="18">
+            <Canvas Width="24" Height="24" ClipToBounds="True">
+                <Path Classes="trait" StrokeThickness="1.7"
+                      Data="M4,5 H20 A1,1 0 0 1 21,6 V18 A1,1 0 0 1 20,19 H4 A1,1 0 0 1 3,18 V6 A1,1 0 0 1 4,5 Z"/>
+                <Path Classes="trait" StrokeThickness="1.7"
+                      Data="M3 10h18M9.5 5v14M14.5 5v14"/>
+            </Canvas>
+        </Viewbox>
+        <Viewbox x:Key="IconeRectangle" x:Shared="False" Width="18" Height="18">
+            <Canvas Width="24" Height="24" ClipToBounds="True">
+                <Path Classes="trait" StrokeThickness="1.8"
+                      Data="M4.5,5.5 H19.5 A1,1 0 0 1 20.5,6.5 V17.5 A1,1 0 0 1 19.5,18.5 H4.5 A1,1 0 0 1 3.5,17.5 V6.5 A1,1 0 0 1 4.5,5.5 Z"/>
+            </Canvas>
+        </Viewbox>
+        <Viewbox x:Key="IconeEllipse" x:Shared="False" Width="18" Height="18">
+            <Canvas Width="24" Height="24" ClipToBounds="True">
+                <Path Classes="trait" StrokeThickness="1.8"
+                      Data="M20.5,12 A8.5,6.5 0 1 1 3.5,12 A8.5,6.5 0 1 1 20.5,12 Z"/>
+            </Canvas>
+        </Viewbox>
+        <Viewbox x:Key="IconeLigne" x:Shared="False" Width="18" Height="18">
+            <Canvas Width="24" Height="24" ClipToBounds="True">
+                <Path Classes="trait" StrokeThickness="1.8" StrokeLineCap="Round"
+                      Data="M5 19L19 5"/>
+            </Canvas>
+        </Viewbox>
+        <Viewbox x:Key="IconeLoupe" x:Shared="False" Width="18" Height="18">
+            <Canvas Width="24" Height="24" ClipToBounds="True">
+                <Path Classes="trait" StrokeThickness="1.8" StrokeLineCap="Round"
+                      Data="M16.5,10.5 A6,6 0 1 1 4.5,10.5 A6,6 0 1 1 16.5,10.5 Z"/>
+                <Path Classes="trait" StrokeThickness="1.8" StrokeLineCap="Round"
+                      Data="M15 15l5 5"/>
+            </Canvas>
+        </Viewbox>
+
+        <!-- Panneau Pages, sections du dock, rotation — lues par I2 ; l'alerte par I9, l'œil par I8. -->
+        <Viewbox x:Key="IconeAjouterPage" x:Shared="False" Width="14" Height="14">
+            <Canvas Width="24" Height="24" ClipToBounds="True">
+                <Path Classes="trait" StrokeThickness="2.2" StrokeLineCap="Round"
+                      Data="M12 5v14M5 12h14"/>
+            </Canvas>
+        </Viewbox>
+        <Viewbox x:Key="IconeSectionOuverte" x:Shared="False" Width="12" Height="12">
+            <Canvas Width="24" Height="24" ClipToBounds="True">
+                <Path Classes="trait" StrokeThickness="2.4" StrokeLineCap="Round"
+                      Data="M6 9l6 6 6-6"/>
+            </Canvas>
+        </Viewbox>
+        <Viewbox x:Key="IconeSectionFermee" x:Shared="False" Width="12" Height="12">
+            <Canvas Width="24" Height="24" ClipToBounds="True">
+                <Path Classes="trait" StrokeThickness="2.4" StrokeLineCap="Round"
+                      Data="M9 6l6 6-6 6"/>
+            </Canvas>
+        </Viewbox>
+        <Viewbox x:Key="IconeRotation" x:Shared="False" Width="12" Height="12">
+            <Canvas Width="24" Height="24" ClipToBounds="True">
+                <Path StrokeThickness="2.2" StrokeLineCap="Round" Stroke="{StaticResource Libelle}"
+                      Data="M20 12a8 8 0 1 1-3-6.2M20 4v5h-5"/>
+            </Canvas>
+        </Viewbox>
+        <Viewbox x:Key="IconeAlerte" x:Shared="False" Width="14" Height="14">
+            <Canvas Width="24" Height="24" ClipToBounds="True">
+                <Path Classes="trait" StrokeThickness="2" StrokeLineCap="Round"
+                      Data="M12 8v5M12 16.5v.5"/>
+                <Path Classes="trait" StrokeThickness="2" StrokeLineCap="Round"
+                      Data="M21,12 A9,9 0 1 1 3,12 A9,9 0 1 1 21,12 Z"/>
+            </Canvas>
+        </Viewbox>
+        <Viewbox x:Key="IconeOeil" x:Shared="False" Width="14" Height="14">
+            <Canvas Width="24" Height="24" ClipToBounds="True">
+                <Path StrokeThickness="1.8" Stroke="{StaticResource Libelle}"
+                      Data="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z"/>
+                <Path StrokeThickness="1.8" Stroke="{StaticResource Libelle}"
+                      Data="M14.5,12 A2.5,2.5 0 1 1 9.5,12 A2.5,2.5 0 1 1 14.5,12 Z"/>
+            </Canvas>
+        </Viewbox>
+
+    </Styles.Resources>
+
+    <!-- L'icône prend la couleur courante : celle que le texte prendrait au même endroit.
+         C'est le « currentColor » de la maquette ; le bouton, la section ou l'alerte qui la
+         porte n'a qu'à régler sa couleur de texte. -->
+    <Style Selector="Path.trait">
+        <Setter Property="Stroke" Value="{Binding $self.(TextElement.Foreground)}"/>
+    </Style>
+    <Style Selector="Path.plein">
+        <Setter Property="Fill" Value="{Binding $self.(TextElement.Foreground)}"/>
+    </Style>
+
+    <!-- Bouton-icône. Le thème Fluent peint le fond et la couleur des états sur le
+         « ContentPresenter » du modèle, pas sur le bouton : chaque état y est donc repris,
+         pour que ni son gris de survol ni son bleu de bouton coché — qui n'est pas l'accent
+         de la maquette — ne passent. La couleur de texte est posée des deux côtés, bouton et
+         présentateur, pour que l'icône la trouve quel que soit le chemin de l'héritage. -->
+    <Style Selector="Button.ib, ToggleButton.ib">
+        <Setter Property="Width" Value="30"/>
+        <Setter Property="Height" Value="30"/>
+        <Setter Property="MinWidth" Value="0"/>
+        <Setter Property="MinHeight" Value="0"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="CornerRadius" Value="6"/>
+        <Setter Property="BorderThickness" Value="0"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="{StaticResource Commande}"/>
+        <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+    </Style>
+    <Style Selector="Button.ib:pointerover /template/ ContentPresenter#PART_ContentPresenter,
+                     Button.ib:pressed /template/ ContentPresenter#PART_ContentPresenter,
+                     ToggleButton.ib:pointerover /template/ ContentPresenter#PART_ContentPresenter,
+                     ToggleButton.ib:pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{StaticResource Survol}"/>
+        <Setter Property="Foreground" Value="{StaticResource Commande}"/>
+    </Style>
+    <!-- Grisé : la maquette ne dessine pas cet état (I2 grise Annuler et Rétablir). Une
+         opacité plutôt qu'une couleur de plus, et pas le fond gris de Fluent. -->
+    <Style Selector="Button.ib:disabled /template/ ContentPresenter#PART_ContentPresenter,
+                     ToggleButton.ib:disabled /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="Foreground" Value="{StaticResource Commande}"/>
+    </Style>
+    <Style Selector="Button.ib:disabled, ToggleButton.ib:disabled">
+        <Setter Property="Opacity" Value="0.4"/>
+    </Style>
+    <!-- Actif : plein d'accent, icône blanche, survolé ou non — dans la maquette, « .ib.on »
+         vient après « .ib:hover » et l'emporte. Ce style vient donc après celui du survol. -->
+    <Style Selector="ToggleButton.ib:checked">
+        <Setter Property="Foreground" Value="{StaticResource Blanc}"/>
+    </Style>
+    <Style Selector="ToggleButton.ib:checked /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{StaticResource Accent}"/>
+        <Setter Property="Foreground" Value="{StaticResource Blanc}"/>
+    </Style>
+
+    <!-- Champ : 26 px, rayon 5, corps 12, bord gris clair ; au focus, le bord passe à
+         l'accent plutôt qu'au bleu de Fluent. Le thème donne aux trois contrôles une hauteur
+         minimale de 32 — et à la zone de texte une largeur minimale de 64 —, qu'il faut
+         lever, et un remplissage intérieur taillé pour elles. -->
+    <Style Selector="TextBox.champ, ComboBox.champ, NumericUpDown.champ">
+        <Setter Property="Height" Value="26"/>
+        <Setter Property="MinHeight" Value="26"/>
+        <Setter Property="MinWidth" Value="0"/>
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="CornerRadius" Value="5"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="BorderBrush" Value="{StaticResource BordChamp}"/>
+        <Setter Property="Background" Value="{StaticResource Blanc}"/>
+        <Setter Property="Foreground" Value="{StaticResource Texte}"/>
+        <Setter Property="Padding" Value="8,0"/>
+    </Style>
+    <!-- Le texte au milieu des 26 px : une propriété que chacun des trois déclare pour son
+         compte, d'où trois styles et non un. -->
+    <Style Selector="TextBox.champ">
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+    </Style>
+    <Style Selector="ComboBox.champ">
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+    </Style>
+    <Style Selector="TextBox.champ:pointerover /template/ Border#PART_BorderElement,
+                     TextBox.champ:focus /template/ Border#PART_BorderElement">
+        <Setter Property="Background" Value="{StaticResource Blanc}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource BordChamp}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+    </Style>
+    <Style Selector="TextBox.champ:focus /template/ Border#PART_BorderElement">
+        <Setter Property="BorderBrush" Value="{StaticResource Accent}"/>
+    </Style>
+    <Style Selector="TextBox.champ:pointerover, TextBox.champ:focus">
+        <Setter Property="Foreground" Value="{StaticResource Texte}"/>
+    </Style>
+    <Style Selector="ComboBox.champ:pointerover /template/ Border#Background,
+                     ComboBox.champ:pressed /template/ Border#Background">
+        <Setter Property="Background" Value="{StaticResource Blanc}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource BordChamp}"/>
+    </Style>
+    <Style Selector="ComboBox.champ:focus-visible /template/ Border#Background">
+        <Setter Property="BorderBrush" Value="{StaticResource Accent}"/>
+    </Style>
+    <!-- Le champ numérique est une zone de texte dans un « ButtonSpinner » : ce sont eux
+         qui portent la hauteur minimale du thème, pas le contrôle. Ses deux flèches, de la
+         largeur d'un bouton chacune, ne tiennent pas dans les 58 px que la maquette donne
+         au corps : elle n'en dessine pas, et la molette comme les flèches du clavier font
+         encore le pas. -->
+    <Style Selector="NumericUpDown.champ">
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="ShowButtonSpinner" Value="False"/>
+    </Style>
+    <Style Selector="NumericUpDown.champ /template/ ButtonSpinner#PART_Spinner">
+        <Setter Property="MinHeight" Value="0"/>
+    </Style>
+    <Style Selector="NumericUpDown.champ /template/ TextBox#PART_TextBox">
+        <Setter Property="MinHeight" Value="0"/>
+        <Setter Property="Padding" Value="8,0"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+    </Style>
+
+    <!-- Libellé : corps 11, gris. -->
+    <Style Selector="TextBlock.libelle">
+        <Setter Property="FontSize" Value="11"/>
+        <Setter Property="Foreground" Value="{StaticResource Libelle}"/>
+    </Style>
+
+    <!-- Séparateur : un filet vertical de 1 × 20, écarté de 6 de chaque côté. -->
+    <Style Selector="Border.separateur">
+        <Setter Property="Width" Value="1"/>
+        <Setter Property="Height" Value="20"/>
+        <Setter Property="Margin" Value="6,0"/>
+        <Setter Property="VerticalAlignment" Value="Center"/>
+        <Setter Property="Background" Value="{StaticResource FiletFort}"/>
+    </Style>
+
+    <!-- Titre de section repliable : toute la largeur du dock, filet au-dessus, corps 12
+         demi-gras. Coché, la section est ouverte ; ni le survol ni l'état coché ne
+         changent son fond, que Fluent peindrait d'accent. -->
+    <Style Selector="ToggleButton.titreSection">
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="HorizontalContentAlignment" Value="Left"/>
+        <Setter Property="VerticalContentAlignment" Value="Center"/>
+        <Setter Property="Padding" Value="12,10"/>
+        <Setter Property="CornerRadius" Value="0"/>
+        <Setter Property="FontSize" Value="12"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Foreground" Value="{StaticResource Texte}"/>
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderBrush" Value="{StaticResource Filet}"/>
+        <Setter Property="BorderThickness" Value="0,1,0,0"/>
+    </Style>
+    <Style Selector="ToggleButton.titreSection:pointerover /template/ ContentPresenter#PART_ContentPresenter,
+                     ToggleButton.titreSection:pressed /template/ ContentPresenter#PART_ContentPresenter,
+                     ToggleButton.titreSection:checked /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderBrush" Value="{StaticResource Filet}"/>
+        <Setter Property="Foreground" Value="{StaticResource Texte}"/>
+    </Style>
+
+</Styles>

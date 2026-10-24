@@ -986,6 +986,66 @@ saboter "sans la porte, l'écran adresse une collection qui n'existe pas" \
     'return new FontFamily($"{Cle}#{nom}");' \
     'Q13-coupure|CoupureTests'
 
+# I1 : la charte. Aucune vue ne s'en sert encore — seule sa recette et ses tests la
+# voient, et chaque sabotage doit tomber sous eux.
+
+# Le bouton-icône actif peint du gris de survol : il garde sa taille, son icône, et la
+# charte ses couleurs déclarées ; seule la mesure à l'écran voit qu'il n'est plus plein
+# d'accent.
+saboter "le bouton-icône actif n'est plus plein d'accent" \
+    MyPublisher/Views/Charte.axaml \
+    '    <Style Selector="ToggleButton.ib:checked /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{StaticResource Accent}"/>' \
+    '    <Style Selector="ToggleButton.ib:checked /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{StaticResource Survol}"/>' \
+    'I1-charte|CharteTests'
+
+# Un sélecteur nu : tous les boutons de la fenêtre d'aujourd'hui passent à 30 × 30 et
+# transparents. La recette le lit dans la source, le test le voit à l'écran.
+saboter "un style de la charte rhabille tous les boutons de la fenêtre" \
+    MyPublisher/Views/Charte.axaml \
+    '<Style Selector="Button.ib, ToggleButton.ib">' \
+    '<Style Selector="Button, ToggleButton.ib">' \
+    'I1-charte|CharteTests'
+
+# Un tracé qui ne se ferme plus : l'icône se dessine encore, presque pareille — l'angle
+# en haut à gauche d'« Enregistrer » s'ouvre. Seule la comparaison à la maquette le voit.
+saboter "une icône de la charte s'écarte du tracé de la maquette" \
+    MyPublisher/Views/Charte.axaml \
+    'Data="M5 4h11l3 3v13H5z"' \
+    'Data="M5 4h11l3 3v13H5"' \
+    'I1-charte'
+
+# Une icône partagée : son premier emploi la perdrait au second, sans erreur.
+saboter "une icône de la charte n'existe qu'en un exemplaire" \
+    MyPublisher/Views/Charte.axaml \
+    '<Viewbox x:Key="IconeSelection" x:Shared="False"' \
+    '<Viewbox x:Key="IconeSelection"' \
+    'I1-charte|CharteTests'
+
+# La même couleur, mais écrite en chiffres dans un style : l'écran ne change pas, la
+# charte a deux sources pour un gris.
+saboter "un style de la charte écrit sa couleur en chiffres" \
+    MyPublisher/Views/Charte.axaml \
+    '<Setter Property="Foreground" Value="{StaticResource Libelle}"/>' \
+    '<Setter Property="Foreground" Value="#5B6470"/>' \
+    'I1-charte'
+
+# Le trait des icônes figé au gris des commandes : au repos rien ne change, mais sur
+# l'accent l'icône ne passe plus au blanc — ni à aucune couleur courante.
+saboter "le trait d'une icône ne suit plus la couleur courante" \
+    MyPublisher/Views/Charte.axaml \
+    '<Setter Property="Stroke" Value="{Binding $self.(TextElement.Foreground)}"/>' \
+    '<Setter Property="Stroke" Value="{StaticResource Commande}"/>' \
+    'I1-charte|CharteTests'
+
+# Le champ reprend la hauteur de Fluent.
+saboter "un champ de la charte rend 32 px au lieu de 26" \
+    MyPublisher/Views/Charte.axaml \
+    '<Setter Property="Height" Value="26"/>' \
+    '<Setter Property="Height" Value="32"/>' \
+    'I1-charte|CharteTests'
+
 echo
 if [ "$cibles" = 1 ]; then
     if [ "$trous" = 0 ]; then
