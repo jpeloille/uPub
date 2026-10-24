@@ -4647,7 +4647,9 @@ portait :
   le modèle l'a, et Publisher aussi ;
 - l'interligne, en multiple.
 
-Ces contrôles quittent le dock (règle 1). Le souligné attend I7 ; la graisse et le style
+Ces contrôles quittent le dock (règle 1). Le souligné y entre aussi — le bouton S, `Ctrl+U`
+et « Souligné » au menu Texte —, si I7 est fusionné quand I3 part : *repris le 24 octobre
+2026*, I7 part avant I3 et ne pose que le modèle (voir I7). La graisse et le style
 nommé ne sont pas faits. Les colonnes restent au dock seul, où la maquette les met aussi.
 
 Pour une image, une forme, un groupe ou une sélection multiple, la barre ne porte que la
@@ -4779,8 +4781,19 @@ lot, pour l'outil Ligne du rail ; I2 pose alors son bouton, et le menu Insertion
 
 Le souligné se porte sur le bloc de texte, sur le fragment de style (R1) et dans le style
 effectif. Il se dessine à l'écran et au PDF à la position et à l'épaisseur que donne la
-police. Il a le bouton S de la barre contextuelle et `Ctrl+U`. L'import `.pub` le lit si
+police. Il a le bouton S de la barre contextuelle et `Ctrl+U`, que pose I3. *Repris le 24
+octobre 2026* : I7 part en même temps que I2 et I4, qui réécrivent la fenêtre et la planche ;
+il n'y touche pas, et livre le modèle, l'écran, le PDF, l'import et la commande du modèle de
+vue, dans son fichier partiel. L'import `.pub` le lit si
 libmspub le donne : à vérifier sur les deux documents ATR.
+
+Au-delà du drapeau, le souligné porte sa sorte, comme dans OpenDocument : le style du trait,
+simple ou double, son épaisseur, et « mots seuls ». C'est ce qui permet de relire seize des
+dix-sept sortes que libmspub transmet par `fillUnderline` (`MSPUBCollector.cpp:254-330`),
+au lieu de les ramener toutes à un trait simple. Le poste tranche la forme dans le fichier :
+un drapeau accompagné de ses réglages, ou une valeur unique dont `true` reste la forme
+courte. Relevé par l'étude de Publisher 98, où ce complément portait le code T6
+([`Publisher98/02-typographie.md`](Publisher98/02-typographie.md)).
 
 *Recette* :
 - `"Underline": true` fait l'aller-retour JSON, au bloc et au fragment ; un document sans
@@ -4788,9 +4801,13 @@ libmspub le donne : à vérifier sur les deux documents ATR.
 - sur un document de recette souligné, le trait est à la même ordonnée à l'écran et au
   PDF à 0,25 pt près, et `comparer-rendus.sh` passe sous la tolérance ;
 - le souligné suit la frappe comme le gras (Q1), et une recopie du bloc le garde
-  (`Clone`).
+  (`Clone`) ;
+- un document de recette porte une ligne par sorte, dont une justifiée : chaque trait a
+  l'épaisseur que donne la table `post` de la police, et « mots seuls » ne laisse aucun
+  trait sous les blancs, à l'écran comme au PDF ;
+- un `.pub` dont libmspub rend `style:text-underline-type: double` s'importe en double.
 
-Effort : moyen.
+Effort : moyen à fort.
 
 #### I8 — Masquer un bloc
 
@@ -4842,7 +4859,7 @@ touchent, le second attend la salve suivante.
 | **1** | Q1 · les sept recettes de P3 · Q2 · Q3 · Q12 | La dette qui abîme des données, le banc complet, et trois réparations courtes. **Fusionnée le 11 octobre 2026** |
 | **2** | Q4 à Q9 · Q13 à Q17 · B2 · C5b · Q20 | Les écarts écran ↔ PDF, et les deux postes d'usage qui ne demandent rien. **Fusionnée le 13 octobre 2026** (juge 107/107) |
 | **Lot 1** | I1 · puis I2 + B7 ∥ I4 · puis I3 ∥ I5 ∥ I6 · puis Q23 | La nouvelle interface, vue seule, en quatre vagues : la fenêtre et la planche sont chacune un seul fichier. Décidé le 24 octobre 2026 |
-| **Lot 2** | I7 · I8 · A10 · I9, en série | Ce que le modèle doit apprendre pour la maquette ; tous touchent `Frame.cs` |
+| **Lot 2** | I7 · I8 · A10 · I9, en série | Ce que le modèle doit apprendre pour la maquette ; tous touchent `Frame.cs`. *Repris le 24 octobre 2026* : chaque poste part dès que ce qu'il touche est fusionné, sans attendre la fin du lot 1. I7, le modèle seul, part avec I2 et I4 ; I3 part après I2 et I7 et pose le bouton S ; I8 après I7 et I6 ; A10 après I8 ; I9 après A10 |
 | **3** | R6 · A8 · A9 · A15 · B4 | Le paragraphe — dans la barre contextuelle de I3 —, et des postes courts, indépendants les uns des autres. B7 et Q23 sont passés au lot 1 |
 | **4** | R7 · A12 · C7 · B3 + B6 | Le texte riche à la souris, et ce qui reprend les commandes des salves précédentes |
 | **5** | A11 · A13 · Q10 · Q11 · Q21 · Q22 | La géométrie et la couche de saisie. A10 est passé au lot 2 |

@@ -181,9 +181,9 @@ technique qui oublie les images.
 BleedBox, et deux exports identiques diffèrent de 137 octets. PDFsharp 6.2.1 sait le CMJN (par une
 formule sans profil), la surimpression et les boîtes ; il n'écrit ni profil de sortie PDF/X, ni ton
 direct, mais sa couche basse est publique, et LittleCMS fera la conversion. Ghostscript sert d'outil
-de recette pour les plaques. Les documents réels sont des A4 bureautiques : un PDF reproductible (I1),
-le respect des droits d'incorporation (I2), l'impression (I3) et un contrôle avant envoi (I4) servent
-tout de suite ; le format fini, les couleurs d'impression et le PDF/X-4 (I5 à I9) attendent de savoir
+de recette pour les plaques. Les documents réels sont des A4 bureautiques : un PDF reproductible (S1),
+le respect des droits d'incorporation (S2), l'impression (S3) et un contrôle avant envoi (S4) servent
+tout de suite ; le format fini, les couleurs d'impression et le PDF/X-4 (S5 à S9) attendent de savoir
 si un imprimeur doit recevoir ces documents, et ce qu'il demande.
 
 ### 5. L'import et l'export `.pub`
@@ -211,7 +211,7 @@ dont la recette est de rendre ce que rend l'ODT du même document. Le format des
 ## Postes proposés
 
 Un tableau unique, dédoublonné entre les fiches. Les codes sont proposés, préfixés par domaine, sans
-recouvrir ceux du plan : **T** texte et polices, **F** format et modèle de document, **I** impression
+recouvrir ceux du plan : **T** texte et polices, **F** format et modèle de document, **S** sortie : impression
 et export PDF, **E** échanges de contenu, **G** gabarits et ressources de conception, **D** dossier de
 décision du moteur de composition. La colonne *Vague* donne l'ordre des dépendances : un poste ne
 dépend que de postes des vagues précédentes, de postes livrés du plan, ou de postes ouverts du plan
@@ -227,7 +227,6 @@ fiche citée.
 | 1 | **T3** | La hauteur et la montée d'une ligne viennent d'une seule mesure | — | Test pur sur valeurs `hhea`/`OS/2` écrites en dur, `sTypo*` nuls compris ; DejaVu Sans réécrite à `usWinAscent` + 20 % : lignes de base écran et PDF à 0,05 pt | 04 |
 | 1 | **T4** | Les caractères absents de la police | — | Repli commun aux deux rendus (U+202F, U+2009, U+2011, € et le reste) ; même largeur à l'écran et au PDF ; `ActualText` dans le flux | 04 |
 | 1 | **T5** | Essai : l'écran forme-t-il des ligatures que le PDF n'a pas ? | — | « fi » en DejaVu Sans : nombre de glyphes relevé des deux côtés et consigné ; versé au dossier D | 01, 04 |
-| 1 | **T6** | Le souligné | — | Une ligne par sorte ; style, double, épaisseur et « mots seuls » ; écran et PDF à 0,1 pt ; un double importé reste double | 02 |
 | 1 | **T7** | Dire si le substitut garde les coupures | B5 | Table de paires métriquement compatibles ; Arial rendu en Liberation Sans annoncé « chasses identiques » ; table vidée, la recette tombe | 04 |
 | 1 | **F2** | La langue du texte, et une langue de document | — | ATA 21 : 73 fragments fr-FR et l'avertissement « une seule langue déclarée » ; Fiches 298 en-US et 31 fr-FR ; aller-retour à l'identique ; la langue d'un document neuf ne vient jamais de la machine | 02, 03 |
 | 1 | **F3** | Un identifiant stable par bloc et par page | — | Format 6 ; identifiants déterministes à la migration ; copie à identifiant neuf ; pas de réemploi ; la suite « créer, annuler, créer » est testée selon la règle retenue pour le compteur | 05, 06 |
@@ -237,9 +236,9 @@ fiche citée.
 | 1 | **F7** | Ne pas écrire de `.pub` | Décision | Inscrite au plan, parmi « ce que ce plan ne fait pas » | 06 |
 | 1 | **F14** | Champs dans le texte | — ; même montée de format que F3 et F10 si elles coïncident | « Page # sur ## » rend « Page 3 sur 8 » ; ancien bloc à champ de folio au même PDF | 05 |
 | 1 | **F15** | Ombre d'objet | — | Le flux PDF porte le contour deux fois au décalage fixé ; un groupe ombré n'ombre pas chaque enfant | 05 |
-| 1 | **I1** | Un PDF identique octet pour octet | — | Deux exports à la même `--date` identiques par `cmp` ; une autre date diffère ; `/ID` au hasard ou date à l'horloge font tomber la recette | 08 |
-| 1 | **I2** | Respecter les droits d'incorporation | B5 | Test pur sur neuf valeurs de `fsType` ; une police libre réécrite à 2 n'est pas incorporée, et le rapport le dit | 04 |
-| 1 | **I3** | Imprimer par CUPS (complète B3) | — | Sur une file qui écrit dans un fichier, Ctrl+P rend les mêmes pages que l'export ; la plage « 2-3 » en donne deux | 08 |
+| 1 | **S1** | Un PDF identique octet pour octet | — | Deux exports à la même `--date` identiques par `cmp` ; une autre date diffère ; `/ID` au hasard ou date à l'horloge font tomber la recette | 08 |
+| 1 | **S2** | Respecter les droits d'incorporation | B5 | Test pur sur neuf valeurs de `fsType` ; une police libre réécrite à 2 n'est pas incorporée, et le rapport le dit | 04 |
+| 1 | **S3** | Imprimer par CUPS (complète B3) | — | Sur une file qui écrit dans un fichier, Ctrl+P rend les mêmes pages que l'export ; la plage « 2-3 » en donne deux | 08 |
 | 1 | **E1** | Le récit importé, et les unités d'OpenDocument | — | Les `.pub` ATR importés donnent un `.mypub` identique octet pour octet ; « 12pt », « 1.27cm », « 150% », « 700 » sont lus | 09 |
 | 1 | **E5** | Une page en PNG et en SVG, tirée du PDF | — | ATA 21 à 150 ppp : 1240 × 1754 px ; `viewBox` de 595,3 × 841,9 ; comparaison au PDF source, non à l'écran | 09 |
 | 1 | **E6** | Le PDF comme image vectorielle | — | Dans le PDF exporté, le trait posé reste un chemin et le mot se relit par `pdftotext` | 09 |
@@ -257,9 +256,9 @@ fiche citée.
 | 2 | **F9** | Pages maîtresses | F3 | Folio sur la maîtresse : 1 à 8 au PDF, un seul bloc dans le JSON ; page qui ignore la maîtresse sans folio ; folio à deux chiffres identique à l'écran et au PDF | 05 |
 | 2 | **F10** | Styles de paragraphe nommés | F4 | Migration sans un pixel de différence ; « Titre » 18 → 20 pt sauf le 14 pt direct ; Normal indélébile ; cycle « basé sur » refusé | 05 |
 | 2 | **F11** | Préciser B4 : l'archive `.mypubz` | B4 | Image partagée stockée une fois ; archive tronquée : message ; membres identiques d'un enregistrement à l'autre, vignette exceptée | 06 |
-| 2 | **I4** | Vérificateur de conception et rapport de contrôle | F3 | Un constat par règle, désigné par identifiant ; résolution effective d'une image à 1 ppp ; document propre sans constat ; corrections annulables | 05, 08 |
-| 2 | **I5** | Format fini, fonds perdus, traits de coupe | I1 | TrimBox au format, BleedBox à +3 mm ; aplat visible jusqu'à la BleedBox, à l'écran comme au PDF ; traits sur chaque plaque | 08 |
-| 2 | **I6** | Couleurs d'impression dans le modèle | I1 | Aller-retour CMJN et ton direct ; teinte à 60 % d'un ton écrite `0.6 scn` sur son `Separation` | 08 |
+| 2 | **S4** | Vérificateur de conception et rapport de contrôle | F3 | Un constat par règle, désigné par identifiant ; résolution effective d'une image à 1 ppp ; document propre sans constat ; corrections annulables | 05, 08 |
+| 2 | **S5** | Format fini, fonds perdus, traits de coupe | S1 | TrimBox au format, BleedBox à +3 mm ; aplat visible jusqu'à la BleedBox, à l'écran comme au PDF ; traits sur chaque plaque | 08 |
+| 2 | **S6** | Couleurs d'impression dans le modèle | S1 | Aller-retour CMJN et ton direct ; teinte à 60 % d'un ton écrite `0.6 scn` sur son `Separation` | 08 |
 | 2 | **E2** | Importer un ODT | E1 | Fixture `.odt` écrite à la main : texte, fragments, écarts, tableau, avertissements attendus ; annulation à l'identique | 09 |
 | 2 | **E4** | Coller et copier du texte mis en forme | E1 | Fragments HTML fixés, dont un de LibreOffice, rendus en fragments et écarts ; script et image réduits au texte, avec avertissement | 09 |
 | 2 | **E8** | Works et WordPerfect, à la demande | E1 | Un `.wps` de Works 4 rendu par E1, avertissements comptés | 09 |
@@ -270,12 +269,12 @@ fiche citée.
 | 3 | **F12** | Pages en vis-à-vis, par une maîtresse double | F9 | Marges intérieure et extérieure en miroir ; folio extérieur à gauche des paires, à droite des impaires | 05 |
 | 3 | **F13** | Repères de règle par page | F9 | Repère de la page 2 sans effet en page 3 ; repère de la maîtresse partout ; recette C2 inchangée | 05 |
 | 3 | **E3** | Importer un DOCX | E2 | Le DOCX de la fixture d'E2 donne un bloc identique à celui de l'ODT ; un DOCX réel s'importe sans exception | 09 |
-| 3 | **I7** | PDF/X-4 en CMJN par profil | I5, I6 | `OutputIntents` `GTS_PDFX`, aucun `rg` ; aplat à 1 % de `transicc` ; texte noir sur la seule plaque K ; ton direct sur sa plaque nommée | 08 |
+| 3 | **S7** | PDF/X-4 en CMJN par profil | S5, S6 | `OutputIntents` `GTS_PDFX`, aucun `rg` ; aplat à 1 % de `transicc` ; texte noir sur la seule plaque K ; ton direct sur sa plaque nommée | 08 |
 | 3 | **G6** | Bibliothèque de blocs fidèle au jeu | C7 | Bloc rangé depuis Marine, posé dans Océan : prend l'accent et la police du second ; couleur libre inchangée | 07 |
 | 3 | **G7** | Bordure à motif, à rediscuter | Révision de l'exclusion du plan | Seulement si un document réel le demande ; motifs propres au projet, deux modes de remplissage éprouvés | 07 |
 | 4 | **T15** | Le PDF se lit malgré la césure | T13 | `ActualText` contrôlé dans le flux de contenu pour chaque mot coupé ; sabotage du marquage attrapé | 03 |
-| 4 | **I8** | Surimpression du noir | I7 | Plaque cyan intacte sous un texte noir de 10 pt, trouée sous un titre de 36 pt avec un seuil de 12 pt | 08 |
-| 4 | **I9** | Épreuve des plaques (complète B6) | B6, I7 | Vue par plaque égale au rendu Ghostscript de la recette d'I8 | 08 |
+| 4 | **S8** | Surimpression du noir | S7 | Plaque cyan intacte sous un texte noir de 10 pt, trouée sous un titre de 36 pt avec un seuil de 12 pt | 08 |
+| 4 | **S9** | Épreuve des plaques (complète B6) | B6, S7 | Vue par plaque égale au rendu Ghostscript de la recette d'S8 | 08 |
 | D | **D1** | Un façonneur unique (HarfBuzz) dans le noyau | T5 ; décision D | Avances identiques au bit près sur trois processus et trois ordres de chargement, même fichier et même version ; « AV » et « To » crénés ; « fi » en une grappe avec `liga` ; noyau sans Avalonia ni Skia | 01 |
 | D | **D2** | L'écran et le PDF dessinent les glyphes du noyau ; crénage et ligatures partagés, seuil de crénage du document | D1 | `LargeurDeCoupure` retirée ; même mot à moins de 0,01 pt sur l'exemple, ATA 21, les fiches ATR ; abscisses fractionnaires gardées à l'écran ; voie PDF choisie par essai, mots extraits intacts | 01, 02, 04 |
 | D | **D3** | La story, séparée du bloc | F3 ; décision D | Migration une story par bloc, cases de tableau tranchées d'abord ; recettes du plan inchangées ; deux cadres d'un même texte importé donnent une seule story | 01, 05, 06 |
@@ -286,13 +285,15 @@ fiche citée.
 | D | **D8** | Le bidi réservé dans l'architecture | D1, D2 | Cas retenus de `BidiCharacterTest.txt` : coupure en ordre logique, dessin dans l'ordre visuel, mêmes glyphes des deux côtés | 01 |
 | D | **T16** | Approche et échelle horizontale | D2 | Tc et Tz relevés dans le flux ; un mot à 80 % mesure 80 % de sa chasse à 0,05 pt ; écran et PDF concordent | 02 |
 
-Soit 64 lignes, dont neuf forment le dossier D. Trois sont des décisions plutôt que des développements
+Soit 63 lignes, dont neuf forment le dossier D. Trois sont des décisions plutôt que des développements
 (F7, G1, G7). Quatre ne sont pas des postes nouveaux mais des précisions de postes ouverts du plan,
-à verser dans leur recette quand ils seront repris plutôt qu'à ouvrir à part : I3 pour B3, F11 pour
-B4, I9 pour B6, G6 pour C7 ; il reste donc 60 postes nouveaux. Trois touchent des postes livrés sans
+à verser dans leur recette quand ils seront repris plutôt qu'à ouvrir à part : S3 pour B3, F11 pour
+B4, S9 pour B6, G6 pour C7 ; il reste donc 59 postes nouveaux. Trois touchent des postes livrés sans
 les doubler : G1 révise un choix écrit de C4, F13 déplace les repères de C2 sans changer sa recette,
-et I1 étend au fichier le « reproductible » de P3, qui ne portait que sur le contenu
-(`PLAN.md:459-461`). Les compléments aux postes ouverts R6 et R7 sont dans la fiche 02.
+et S1 étend au fichier le « reproductible » de P3, qui ne portait que sur le contenu
+(`PLAN.md:459-461`). Le souligné, qui portait ici le code T6, est versé au poste I7 du plan,
+spécifié le 24 octobre 2026, et ce qu'il ajoutait y est versé ; la fiche 02 garde le détail,
+avec les compléments à R6 et R7.
 
 ### Rouvrir le poste D
 
