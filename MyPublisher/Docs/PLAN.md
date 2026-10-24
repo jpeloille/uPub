@@ -24,7 +24,7 @@ Où en est chaque poste. Une seule règle pour la colonne d'avancement : un post
 on écrit ce qui est fait plutôt qu'un pourcentage inventé — un poste à moitié écrit n'est
 pas un poste à moitié livré. La colonne se met à jour dans le commit qui clôt le poste.
 
-*Dernière mise à jour : 24 octobre 2026 (I1 livré : la charte de l'interface).*
+*Dernière mise à jour : 25 octobre 2026 (I2 livré avec B7 : la disposition de la fenêtre, reprise après relecture).*
 
 | Poste | Intitulé | Avancement | Où ça en est |
 |---|---|:---:|---|
@@ -53,7 +53,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **B4** | Archive `.mypubz` | 0 % | — |
 | **B5** | Avertir sur les substitutions de polices | **100 %** | L'export nomme la police demandée et celle employée ; recette dans `Scripts/recettes/` |
 | **B6** | Aperçu avant impression | 0 % | Spécifié le 11 octobre 2026 |
-| **B7** | Replier les panneaux | 0 % | Spécifié le 11 octobre 2026 ; livré avec I2 (lot 1), au menu Fenêtre |
+| **B7** | Replier les panneaux | **100 %** | Livré avec I2 : `Ctrl+F1`, ou *Fenêtre ▸ Replier les panneaux*, masque le panneau Pages et le dock, et le second les rend tels qu'ils étaient ; le menu Fenêtre masque l'un ou l'autre, et ce geste périme l'état d'avant le repli. Le rail reste. Recette `I2-B7-disposition` dans `Scripts/recettes/` |
 | **C1** | Fond et bordure au niveau de `Frame` | **100 %** | Fond, contour, trait, arrondi et opacité sur tout bloc ; `FormatVersion` 2, migration à l'ouverture ; recette dans `Scripts/recettes/` |
 | **C2** | Repères | **100 %** | C2a grille de composition · C2b règles graduées et repères libres ; recette dans `Scripts/recettes/` |
 | **C3** | Sélection multiple, puis groupement | **100 %** | C3a sélection · C3b alignement et répartition · C3c groupe persistant ; recette dans `Scripts/recettes/` |
@@ -94,7 +94,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **Q22** | Un clic sur une poignée ne redimensionne pas | 0 % | Trouvé par la relecture de Q14 : une pression sans mouvement près d'un coin fait passer le bloc de 100 à 96 pt et empile un pas d'annulation |
 | **Q23** | Sélectionner un bloc ne fige pas la fenêtre | 0 % | Trouvé à la fusion de Q14 : une pression sur un bloc non sélectionné rend la main après 170 à 470 ms, le temps de recomposer le panneau ; les tests du double-clic s'en écartent en sélectionnant d'abord. Repris en fin de lot 1 |
 | **I1** | Apparence de l'interface | **100 %** | `Views/Apparence.axaml` — pas « charte », qui nomme le jeu du document —, chargée par `App.axaml` : les 26 couleurs de l'interface de la maquette, une fois chacune et sous leur nom ; cinq classes aux tailles et aux couleurs de la feuille de style de la maquette, dont le bouton-icône de 30 × 30 plein d'accent quand il est actif ; 35 icônes au tracé de la maquette, à la couleur courante, une par emploi. L'écran d'aujourd'hui ne change pas d'un pixel. La recette tient la liste des vues de la phase et le poste de chaque icône, que les postes suivants complètent ; une vue qui cite l'apparence ou écrit en dur une de ses couleurs sans être dans la liste la fait échouer. Recette dans `Scripts/recettes/` |
-| **I2** | Disposition de la fenêtre | 0 % | Spécifié le 24 octobre 2026 ; lot 1, avec B7 |
+| **I2** | Disposition de la fenêtre | **100 %** | La fenêtre de la maquette, de haut en bas. Barre de menus : la marque, le titre du document centré, deux menus neufs — Texte (gras `Ctrl+G`, italique `Ctrl+I`, les quatre alignements, « Importer un te_xte… ») et Fenêtre (les deux panneaux, et B7). Barre principale à icônes : Annuler et Rétablir grisés sur un historique vide, mais pas pendant une saisie qui a déjà changé le bloc ; « Page entière » posé pour I6. La place de la barre contextuelle, de hauteur constante, et sa pastille, dans son propre fichier pour I3. Rail d'outils, sans Main, Zoom ni Ligne avant leur geste. Panneau Pages, dont l'entrée est un contrôle à part pour I5. Dock à quatre onglets, sections repliables retenues le temps de la session, longueurs en millimètres, vignettes de Fond et contour, « Blocs de la page » l'avant en tête. Barre d'état : la page, le format, le zoom en échelle logarithmique. Chaque champ, chaque onglet et chaque geste de la fenêtre fait un seul pas d'annulation ; les vingt-six icônes du poste servent. Repris après relecture : quatorze défauts, tous refermés. Recette dans `Scripts/recettes/` |
 | **I3** | Barre contextuelle | 0 % | Spécifié le 24 octobre 2026 ; lot 1 |
 | **I4** | Planche : règles fixes, projection, bulle de dimensions | 0 % | Spécifié le 24 octobre 2026 ; lot 1 |
 | **I5** | Vignettes de pages | 0 % | Spécifié le 24 octobre 2026 ; lot 1 |
@@ -104,10 +104,10 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **I9** | Compter les lignes en excédent | 0 % | Spécifié le 24 octobre 2026 ; lot 2 |
 | **D** | Moteur de composition | — | Décision non ouverte ; à rouvrir quand A, B et C sont livrées |
 
-**Par phase** — P : 4 sur 4 · A : 7 sur 15 · B : 3 sur 7 · C : 7 sur 9 · R : 5 sur 7 ·
-Q : 16 sur 23 · I : 1 sur 9 · D : non planifié.
+**Par phase** — P : 4 sur 4 · A : 7 sur 15 · B : 4 sur 7 · C : 7 sur 9 · R : 5 sur 7 ·
+Q : 16 sur 23 · I : 2 sur 9 · D : non planifié.
 
-Soit **43 postes sur 74**. Le 24 octobre 2026, la phase I en a ajouté neuf, tirés de la
+Soit **45 postes sur 74**. Le 24 octobre 2026, la phase I en a ajouté neuf, tirés de la
 maquette de la nouvelle interface. Le compte avait doublé le 11 octobre 2026 sans que rien ne
 recule : il porte désormais les onze postes de l'audit des fiches (A8 à A15, B6, B7,
 C8), deux postes que les documents réels demandaient (R6, R7), et la phase Q, qui
@@ -1772,6 +1772,9 @@ qu'aucun poste ne portait : masquer les deux colonnes latérales pour rendre leu
 
 À vérifier d'abord : que le bureau ne capte pas `Ctrl+F1`, comme il captait `Alt+F6`
 en A4. Effort : faible.
+
+*Fait le 25 octobre 2026, avec I2*, au menu Fenêtre que la maquette lui donne ; sa recette
+est celle de I2 (`I2-B7-disposition`). Ni GNOME ni KDE ne prennent `Ctrl+F1` par défaut.
 
 ---
 
@@ -4634,6 +4637,58 @@ raccourcis) et les fiches 02, 03, 04 et 15 se réécrivent sur la nouvelle dispo
   seulement là où ce poste le dit.
 
 Effort : lourd — c'est la moitié de la phase.
+
+*Repris le 25 octobre 2026, après relecture.* La relecture adversariale a confirmé
+quatorze défauts ; tous sont refermés, chacun avec son test ou sa clause de recette et un
+sabotage au juge — douze de plus, vingt-cinq pour le poste.
+- **Les cases du menu Fenêtre ne masquaient rien.** `MenuItem.IsChecked` se lie dans un
+  seul sens par défaut, à la différence de `ToggleButton.IsChecked` : le clic inversait la
+  coche, et le panneau restait. Elles se lient dans les deux sens, comme les trois cases
+  d'avant la phase qui avaient le même défaut — Repères, Règles, « Par rapport aux
+  marges ». La recette refuse toute case de menu liée autrement, et un test clique chaque
+  entrée du menu Fenêtre au pointeur.
+- **Annuler restait grisé pendant une saisie qui avait changé le bloc.** Le pas n'entre
+  dans l'historique qu'à la perte du focus, et un bouton grisé ne prend ni le pointeur ni
+  le focus : son clic ne refermait même pas la saisie. Le bouton suit l'historique *ou*
+  une transaction ouverte qui a déjà changé le document (`PeutAnnuler`), relevée à la
+  première retouche du document ou d'un bloc choisi ; son clic referme la saisie puis
+  l'annule, et le titre dit « modifié » dès cet instant. Rétablir se grise pendant ce
+  temps : le pas qui vient videra sa pile.
+- **Ctrl+G pendant une saisie du dock se fondait dans le pas du champ** (règle 2) : le
+  raccourci joue sans retirer le focus. Le gras, l'italique et les alignements du menu
+  Texte referment d'abord la saisie en cours, puis la rouvrent à la même profondeur : un
+  nom tapé, le gras, la suite du nom font trois pas.
+- **Le second Ctrl+F1 pouvait rendre un état périmé** : l'état d'avant le repli s'oublie
+  dès qu'un panneau change au menu.
+- **Trois sabotages passaient les tests** : un `Ctrl+F1` qui inverse chaque panneau, dont
+  l'état intermédiaire n'était pas regardé ; une pastille masquée sans sélection, dont
+  seul le texte l'était ; « A_juster le texte » dans un menu, la touche d'accès coupant le
+  mot que la recette cherchait. La recette lit désormais un libellé comme il s'affiche.
+- **Quatre écarts à la maquette.** Le survol d'un menu de la barre faisait 32 px au lieu
+  de 23 : Fluent tient le menu à sa hauteur. Un champ grisé prenait le gris de Fluent,
+  `#CCCCCC` bordé de `#94979D` ; l'apparence lui donne le fond et le bord de la maquette à
+  40 %, comme au bouton-icône, et le champ numérique ne peint plus qu'un bord. La vignette
+  de 22 manquait en tête des lignes Fond et Contour ; elle montre la couleur, ou la
+  diagonale de « Aucun », et ne règle rien. Enfin, le bouton Italique, en Inter penché par
+  simulation, se lisait comme une barre oblique ; il prend Georgia, à défaut une serif qui
+  a une vraie face italique — la serif générique de fontconfig tombe ici sur Noto Sans.
+- **Le juge sortait en vert sur un motif qui ne retenait rien** : « I2|B7 » ne désignait
+  aucun sabotage, leurs intitulés commençant tous par « la fenêtre ». Le motif lit aussi
+  le garde-fou attendu, et une épreuve qui n'a rien saboté échoue.
+- Les fiches 02 et 15 avaient gardé leurs écarts d'avant la refonte ; ils sont réécrits.
+  Le suivi porte I2 et B7 à 100 %, ce qui éveille, dans la recette de I1, la clause
+  « chaque icône sert » pour les vingt-six icônes du poste.
+
+*Choisi sans certitude.* La vignette montre et ne règle pas : la liste et le sélecteur de
+couleur, au-dessous, restent le seul contrôle de chaque propriété (règle 1). Un sélecteur
+ouvert depuis la vignette, dans un menu volant, serait plus près de la maquette, mais il
+quitterait l'arbre visuel tant qu'il est fermé, et les tests qui prennent le sélecteur par
+`.Single()` ne le trouveraient plus.
+
+*Relevé, non corrigé.* Selon la relecture, les autres raccourcis de la fenêtre — `Ctrl+D`,
+`Ctrl+Maj+G`, `Ctrl+Maj+H`, `Ctrl+Maj+F`, `Ctrl+Maj+B` — se fondent de même dans la saisie
+du dock en cours. C'était le cas avant la phase ; un correctif commun, dans la fenêtre,
+toucherait tous les raccourcis, et sa décision revient au propriétaire.
 
 #### I3 — La barre contextuelle
 

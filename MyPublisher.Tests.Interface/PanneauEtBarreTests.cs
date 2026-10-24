@@ -48,6 +48,14 @@ public class PanneauEtBarreTests
     private static string[] Pile(MainWindowViewModel vm) =>
         vm.CurrentPage!.Frames.Select(bloc => bloc.Name).ToArray();
 
+    /// <summary>
+    /// Ce que montre « Blocs de la page » : la pile lue de l'avant vers le fond, depuis le
+    /// poste I2. Les tests du glissé y lisent ce qu'ils lisaient dans la pile avant la
+    /// refonte, avec les mêmes garanties : la pile elle-même se lit à l'envers.
+    /// </summary>
+    private static string[] Liste(Window fenetre) =>
+        Trouver<ListBox>(fenetre, "ListeDesBlocs").Items.OfType<Frame>().Select(bloc => bloc.Name).ToArray();
+
     // ------------------------------------------------------------------ A4 · clavier
 
     [AvaloniaFact]
@@ -138,10 +146,14 @@ public class PanneauEtBarreTests
     [Trait("poste", "A4")]
     public void Tirer_un_bloc_dans_la_liste_le_reordonne_et_sannule()
     {
+        // La liste montre l'avant en tête depuis le poste I2 : la page posée de C à A se
+        // lit A, B, C dans la liste, comme la pile d'avant la refonte se lisait. Le même
+        // glissé du premier rang au troisième donne donc la même liste qu'avant — B, C,
+        // A —, et la pile, qui se lit à l'envers, A, C, B.
         var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(
-            Carre("A", 20, 20), Carre("B", 40, 40), Carre("C", 60, 60)));
+            Carre("C", 60, 60), Carre("B", 40, 40), Carre("A", 20, 20)));
 
-        Assert.Equal(new[] { "A", "B", "C" }, Pile(vm));
+        Assert.Equal(new[] { "A", "B", "C" }, Liste(fenetre));
 
         var liste = Trouver<ListBox>(fenetre, "ListeDesBlocs");
         var trait = Trouver<Rectangle>(fenetre, "TraitDInsertion");
@@ -176,7 +188,8 @@ public class PanneauEtBarreTests
         // qui n'a plus lieu.
         Assert.False(trait.IsVisible);
 
-        Assert.Equal(new[] { "B", "C", "A" }, Pile(vm));
+        Assert.Equal(new[] { "B", "C", "A" }, Liste(fenetre));
+        Assert.Equal(new[] { "A", "C", "B" }, Pile(vm));
         // Le bloc déplacé reste celui qu'on regarde, comme dans n'importe quelle liste
         // qu'on réordonne.
         Assert.Equal("A", vm.Selected?.Name);
@@ -187,7 +200,8 @@ public class PanneauEtBarreTests
         vm.UndoCommand.Execute(null);
         Rendu.Battre();
 
-        Assert.Equal(new[] { "A", "B", "C" }, Pile(vm));
+        Assert.Equal(new[] { "C", "B", "A" }, Pile(vm));
+        Assert.Equal(new[] { "A", "B", "C" }, Liste(fenetre));
     }
 
     [AvaloniaFact]
@@ -206,8 +220,9 @@ public class PanneauEtBarreTests
         // Ce que le seuil tient, c'est le geste : sans lui, le moindre frémissement
         // capture le pointeur et allume le trait d'insertion sous le doigt de quelqu'un
         // qui ne fait que cliquer. C'est cela qu'on vérifie, pendant le geste.
+        // Posée de C à A, la page se lit A, B, C dans la liste, l'avant en tête (poste I2).
         var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(
-            Carre("A", 20, 20), Carre("B", 40, 40), Carre("C", 60, 60)));
+            Carre("C", 60, 60), Carre("B", 40, 40), Carre("A", 20, 20)));
 
         var trait = Trouver<Rectangle>(fenetre, "TraitDInsertion");
         var point = DansLaListe(fenetre, 0, 0.5);
@@ -221,7 +236,7 @@ public class PanneauEtBarreTests
         fenetre.MouseUp(new Point(point.X, point.Y + 2), MouseButton.Left);
         Rendu.Battre();
 
-        Assert.Equal(new[] { "A", "B", "C" }, Pile(vm));
+        Assert.Equal(new[] { "C", "B", "A" }, Pile(vm));
         Assert.Equal("A", vm.Selected?.Name);
         Assert.False(vm.CanUndo);
         Assert.False(trait.IsVisible);
@@ -234,6 +249,7 @@ public class PanneauEtBarreTests
     public void Une_dimension_libre_vide_le_selecteur_sans_effacer_la_page()
     {
         var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(Carre("A", 20, 20)));
+        Rendu.Onglet(fenetre, "Document");
         Assert.Same(PageSize.A4, vm.SelectedPageSize);
 
         vm.Document.PageWidth = Units.MmToPoints(100);
@@ -266,6 +282,7 @@ public class PanneauEtBarreTests
         // ré-accord du sélecteur rejouerait le geste qui vient de l'appeler. Un pas
         // d'annulation par geste est ce qui dit que la boucle est fermée.
         var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(Carre("A", 20, 20)));
+        Rendu.Onglet(fenetre, "Document");
 
         vm.Document.PageWidth = Units.MmToPoints(100);
         vm.Document.PageHeight = Units.MmToPoints(200);
@@ -297,6 +314,7 @@ public class PanneauEtBarreTests
     public void Le_selecteur_offre_les_neuf_formats_du_catalogue()
     {
         var (fenetre, _) = Rendu.Ouvrir(Rendu.Feuille());
+        Rendu.Onglet(fenetre, "Document");
         var formats = Trouver<ComboBox>(fenetre, "FormatDePage").ItemsSource!
             .Cast<PageSize>().Select(format => format.Name).ToArray();
 

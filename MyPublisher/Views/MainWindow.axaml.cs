@@ -8,6 +8,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
+using Avalonia.Threading;
 using Avalonia.VisualTree;
 using MyPublisher.Models;
 using MyPublisher.Services;
@@ -37,8 +38,11 @@ public partial class MainWindow : Window
         new("Tous les fichiers") { Patterns = ["*"] };
 
     /// <summary>
-    /// Le panneau de propriétés modifie le modèle par liaison directe : on encadre
-    /// la saisie d'un champ par une transaction, ce qui rend chaque édition annulable.
+    /// Le dock modifie le modèle par liaison directe : on encadre la saisie d'un champ
+    /// par une transaction, ce qui rend chaque édition annulable. Chaque onglet du dock
+    /// et la barre contextuelle l'ouvrent et la ferment de la même façon (règle 2 de la
+    /// phase I) ; « Blocs de la page », au pied du dock, en est exclu : son glissé ouvre
+    /// son propre pas.
     /// </summary>
     private bool _propertyEditOpen;
 
@@ -55,6 +59,16 @@ public partial class MainWindow : Window
         ListeDesBlocs.PointerMoved += OnBlockListMoved;
         ListeDesBlocs.PointerReleased += OnBlockListReleased;
         ListeDesBlocs.PointerCaptureLost += (_, _) => EndBlockDrag();
+
+        // Changer d'onglet retire du dock le champ qui avait le focus, sans qu'il émette
+        // toujours LostFocus : la transaction qu'il avait ouverte se referme ici. Seul le
+        // changement d'onglet compte — l'événement monte aussi des listes du dock, et
+        // refermer la transaction au choix d'une entrée laisserait les suivantes hors de
+        // tout pas d'annulation.
+        OngletsDuDock.SelectionChanged += (_, e) =>
+        {
+            if (ReferenceEquals(e.Source, OngletsDuDock)) ClosePropertyEdit();
+        };
 
         DataContextChanged += (_, _) => AttachViewModel();
         AttachViewModel();
@@ -82,8 +96,22 @@ public partial class MainWindow : Window
         // Changer de sélection reconstruit les champs du panneau : le contrôle qui
         // avait le focus quitte l'arbre visuel sans émettre LostFocus. Sans cette
         // remise à zéro, le verrou resterait fermé et plus aucune édition ne serait
-        // annulable pour le reste de la session.
-        if (e.PropertyName == nameof(MainWindowViewModel.Selected)) ClosePropertyEdit();
+        // annulable pour le reste de la session. Replier le dock fait de même.
+        if (e.PropertyName is nameof(MainWindowViewModel.Selected) or nameof(MainWindowViewModel.DockVisible))
+        {
+            ClosePropertyEdit();
+        }
+
+        // Le bloc choisi sur la planche se montre dans « Blocs de la page », qui n'en
+        // montre que six : la liste ne le fait pas d'elle-même quand la sélection lui
+        // arrive avant qu'elle ait construit ses lignes. Après la mise en page, donc.
+        if (e.PropertyName == nameof(MainWindowViewModel.Selected) && _vm?.Selected is { } bloc)
+        {
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (ReferenceEquals(_vm?.Selected, bloc)) ListeDesBlocs.ScrollIntoView(bloc);
+            }, DispatcherPriority.Loaded);
+        }
     }
 
     // ---------------------------------------------------------------- fichiers
@@ -402,14 +430,18 @@ public partial class MainWindow : Window
         EndBlockDrag();
 
         if (!dragging || frame is null || Vm is not { } vm) return;
-        if (vm.CurrentPage?.Frames.IndexOf(frame) is not { } from || from < 0) return;
+        if (vm.CurrentPage is not { } page) return;
+        var pile = PileInversee.De(page.Frames);
+        if (pile.IndexOf(frame) is var depart && depart < 0) return;
 
-        // Le rang visé est un point d'insertion, entre deux blocs. Retirer le bloc de
-        // sa place fait remonter d'un cran tout ce qui le suit, ce point compris : un
-        // dépôt vers l'avant vaut donc un rang de moins qu'il n'y paraît.
-        if (index > from) index--;
+        // Le rang visé est un point d'insertion, entre deux lignes de la liste. Retirer le
+        // bloc de sa ligne fait remonter d'un cran toutes celles qui la suivent, ce point
+        // compris : un dépôt plus bas dans la liste vaut donc une ligne de moins qu'il n'y
+        // paraît. La liste montre la pile de l'avant vers le fond (poste I2) : la ligne
+        // d'arrivée se lit ensuite au rang miroir de la page.
+        if (index > depart) index--;
 
-        if (vm.ReorderFrame(frame, index)) e.Handled = true;
+        if (vm.ReorderFrame(frame, pile.Miroir(index))) e.Handled = true;
     }
 
     private void EndBlockDrag()
@@ -422,9 +454,9 @@ public partial class MainWindow : Window
 
     /// <summary>
     /// Les éléments réellement construits, avec leur rang et leur bande verticale dans
-    /// la liste. Le rang est celui du modèle et non la position dans cette liste-ci :
-    /// la liste ne construit que ce qu'elle affiche, et compter les éléments présents
-    /// désignerait le mauvais bloc dès qu'elle défile.
+    /// la liste. Le rang est celui de la liste, et non la position parmi les éléments
+    /// construits : la liste ne construit que ce qu'elle affiche, et compter les éléments
+    /// présents désignerait le mauvais bloc dès qu'elle défile.
     /// </summary>
     private List<(int Index, double Top, double Height)> RealisedItems()
     {

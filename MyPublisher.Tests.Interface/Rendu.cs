@@ -59,6 +59,23 @@ public static class Rendu
         for (var i = 0; i < tours; i++) Dispatcher.UIThread.RunJobs();
     }
 
+    /// <summary>
+    /// Ouvre un onglet du dock — « Propriétés », « Styles », « Couleurs » ou « Document » —,
+    /// comme un clic sur son titre. Depuis le poste I2, le dock a quatre onglets, et un
+    /// contrôle d'un onglet non choisi n'est pas dans l'arbre visuel : un test qui cherche
+    /// le format de page, un jeu ou le fond de page ouvre d'abord son onglet. Une aide
+    /// commune, pour que tous l'ouvrent de la même façon et qu'un onglet renommé fasse
+    /// échouer la recherche ici, en le disant, et non plus loin sur un contrôle introuvable.
+    /// </summary>
+    public static void Onglet(Window fenetre, string titre)
+    {
+        var onglets = fenetre.GetVisualDescendants().OfType<TabControl>().Single(t => t.Name == "OngletsDuDock");
+        var onglet = onglets.Items.OfType<TabItem>().SingleOrDefault(t => Equals(t.Header, titre))
+                     ?? throw new InvalidOperationException($"le dock n'a pas d'onglet « {titre} »");
+        onglets.SelectedItem = onglet;
+        Battre();
+    }
+
     /// <summary>Une page seule, posée dans un document par ailleurs vierge.</summary>
     public static Document Feuille(params Frame[] blocs)
     {

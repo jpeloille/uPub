@@ -46,9 +46,10 @@
 #      survolé ou pressé, il prend le gris de la maquette, actif il reste plein d'accent,
 #      grisé il s'efface sans fond ; chaque icône se crée à chaque emploi et se dessine dans
 #      sa boîte ; champ, libellé, séparateur et titre de section ont les mesures de la
-#      maquette ; aucune clé de l'apparence ne masque une ressource du thème ; et la
-#      fenêtre d'aujourd'hui, ouverte sur l'exemple avec un bloc sélectionné, rend la même
-#      image au pixel près, avec ou sans l'apparence.
+#      maquette ; aucune clé de l'apparence ne masque une ressource du thème ; et les vues
+#      d'avant la phase — la planche ouverte sur l'exemple avec un bloc sélectionné, et les
+#      deux dialogues — rendent la même image au pixel près, avec ou sans l'apparence. La
+#      fenêtre principale en était jusqu'au poste I2, qui la refait sur l'apparence.
 #
 set -euo pipefail
 export LC_ALL=C
@@ -72,6 +73,9 @@ fi
 # ne passe pas : une vue qui cite l'apparence, ou qui s'écarte du relevé ci-dessous, sans
 # être ici, fait échouer la recette.
 vues_de_la_phase=(
+    MyPublisher/Views/MainWindow.axaml
+    MyPublisher/Views/BarreContextuelle.axaml
+    MyPublisher/Views/EntreeDePage.axaml
 )
 
 # Le relevé d'avant la phase : les couleurs de la maquette que des fichiers hors de la
@@ -83,8 +87,6 @@ vues_de_la_phase=(
 # pas —, ni une de moins, qu'un relevé périmé laisserait reprendre en silence. Une vue qui
 # entre dans la liste en sort.
 releve=(
-    "MyPublisher/Views/MainWindow.axaml          #FAFAFB  2"
-    "MyPublisher/Views/MainWindow.axaml          #FFFFFF  1"
     "MyPublisher/Views/MarqueurDebordement.cs    #FFFFFF  1"
     "MyPublisher/Views/PageCanvas.axaml          #FFFFFF  2"
     "MyPublisher/Views/PageCanvas.axaml.cs       #FFFFFF  1"
@@ -943,6 +945,6 @@ if [ "${joues:-0}" -lt "$attendus" ]; then
     echo "Un filtre qui ne désigne plus rien sort en 0 : la recette ne s'en contente pas." >&2
     exit 1
 fi
-echo "  2. la fenêtre : bouton-icône de 30 × 30 à rayon 6, plein d'accent, survolé et grisé comme la maquette ; icônes, champs, thème intact, écran d'avant inchangé ($joues tests)"
+echo "  2. la fenêtre : bouton-icône de 30 × 30 à rayon 6, plein d'accent, survolé et grisé comme la maquette ; icônes, champs, thème intact, vues d'avant la phase inchangées ($joues tests)"
 
-echo "I1 : l'apparence porte la palette, les classes et les icônes de la maquette, sans rien changer à l'écran d'aujourd'hui."
+echo "I1 : l'apparence porte la palette, les classes et les icônes de la maquette, sans rien changer aux vues d'avant la phase."

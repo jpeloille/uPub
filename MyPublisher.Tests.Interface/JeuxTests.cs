@@ -321,6 +321,7 @@ public class JeuxTests
     {
         var forme = Forme(40, 40, new SolidFill("scheme:accent1"));
         var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(forme));
+        Rendu.Onglet(fenetre, "Couleurs");
 
         var liste = fenetre.GetVisualDescendants().OfType<ComboBox>().Single(c => c.Name == "JeuDeCouleurs");
         Assert.Equal(JeuxPredefinis.Couleurs.Count, liste.ItemCount);

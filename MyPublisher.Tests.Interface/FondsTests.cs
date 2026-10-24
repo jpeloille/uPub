@@ -150,7 +150,7 @@ public class FondsTests
         document.Background = fond;
         var (fenetre, _) = Rendu.Ouvrir(document);
 
-        Rendu.Battre();
+        Rendu.Onglet(fenetre, "Document");
 
         Assert.Contains(
             fenetre.GetVisualDescendants().OfType<Control>(),
