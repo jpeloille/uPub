@@ -663,12 +663,14 @@ public class DispositionTests
         var entrees = menu.Items.OfType<MenuItem>().ToList();
         Assert.Equal(new[]
         {
-            "_Gras", "_Italique", "Aligner le texte à _gauche", "_Centrer le texte", "Aligner le texte à _droite",
+            "_Gras", "_Italique", "_Souligné", "Aligner le texte à _gauche", "_Centrer le texte", "Aligner le texte à _droite",
             "_Justifier", "Importer un te_xte…",
         }, entrees.Select(e => e.Header as string));
         Assert.Equal("MenuImporterTexte", entrees[^1].Name);
         Assert.Equal(KeyGesture.Parse("Ctrl+G"), entrees[0].InputGesture);
         Assert.Equal(KeyGesture.Parse("Ctrl+I"), entrees[1].InputGesture);
+        // Le souligné y entre avec la barre contextuelle (I3) : sa recette l'éprouve.
+        Assert.Equal(KeyGesture.Parse("Ctrl+U"), entrees[2].InputGesture);
 
         // Sans bloc de texte, rien n'est offert.
         vm.SelectOnly(forme);
@@ -695,8 +697,8 @@ public class DispositionTests
 
         foreach (var (entree, alignement) in new[]
                  {
-                     (entrees[3], TextAlign.Center), (entrees[4], TextAlign.Right),
-                     (entrees[5], TextAlign.Justify), (entrees[2], TextAlign.Left),
+                     (entrees[4], TextAlign.Center), (entrees[5], TextAlign.Right),
+                     (entrees[6], TextAlign.Justify), (entrees[3], TextAlign.Left),
                  })
         {
             entree.Command!.Execute(entree.CommandParameter);

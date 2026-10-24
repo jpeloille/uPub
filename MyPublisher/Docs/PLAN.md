@@ -24,7 +24,7 @@ Où en est chaque poste. Une seule règle pour la colonne d'avancement : un post
 on écrit ce qui est fait plutôt qu'un pourcentage inventé — un poste à moitié écrit n'est
 pas un poste à moitié livré. La colonne se met à jour dans le commit qui clôt le poste.
 
-*Dernière mise à jour : 25 octobre 2026 (I2 livré avec B7 : la disposition de la fenêtre, reprise après relecture ; I7 livré : le souligné et ses sortes, le modèle seul).*
+*Dernière mise à jour : 25 octobre 2026 (I3 livré : la barre contextuelle ; relecture et juge après fusion).*
 
 | Poste | Intitulé | Avancement | Où ça en est |
 |---|---|:---:|---|
@@ -95,7 +95,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **Q23** | Sélectionner un bloc ne fige pas la fenêtre | 0 % | Trouvé à la fusion de Q14 : une pression sur un bloc non sélectionné rend la main après 170 à 470 ms, le temps de recomposer le panneau ; les tests du double-clic s'en écartent en sélectionnant d'abord. Repris en fin de lot 1 |
 | **I1** | Apparence de l'interface | **100 %** | `Views/Apparence.axaml` — pas « charte », qui nomme le jeu du document —, chargée par `App.axaml` : les 26 couleurs de l'interface de la maquette, une fois chacune et sous leur nom ; cinq classes aux tailles et aux couleurs de la feuille de style de la maquette, dont le bouton-icône de 30 × 30 plein d'accent quand il est actif ; 35 icônes au tracé de la maquette, à la couleur courante, une par emploi. L'écran d'aujourd'hui ne change pas d'un pixel. La recette tient la liste des vues de la phase et le poste de chaque icône, que les postes suivants complètent ; une vue qui cite l'apparence ou écrit en dur une de ses couleurs sans être dans la liste la fait échouer. Recette dans `Scripts/recettes/` |
 | **I2** | Disposition de la fenêtre | **100 %** | La fenêtre de la maquette, de haut en bas. Barre de menus : la marque, le titre du document centré, deux menus neufs — Texte (gras `Ctrl+G`, italique `Ctrl+I`, les quatre alignements, « Importer un te_xte… ») et Fenêtre (les deux panneaux, et B7). Barre principale à icônes : Annuler et Rétablir grisés sur un historique vide, mais pas pendant une saisie qui a déjà changé le bloc ; « Page entière » posé pour I6. La place de la barre contextuelle, de hauteur constante, et sa pastille, dans son propre fichier pour I3. Rail d'outils, sans Main, Zoom ni Ligne avant leur geste. Panneau Pages, dont l'entrée est un contrôle à part pour I5. Dock à quatre onglets, sections repliables retenues le temps de la session, longueurs en millimètres, vignettes de Fond et contour, « Blocs de la page » l'avant en tête. Barre d'état : la page, le format, le zoom en échelle logarithmique. Chaque champ, chaque onglet et chaque geste de la fenêtre fait un seul pas d'annulation ; les vingt-six icônes du poste servent. Repris après relecture : quatorze défauts, tous refermés. Recette dans `Scripts/recettes/` |
-| **I3** | Barre contextuelle | 0 % | Spécifié le 24 octobre 2026 ; lot 1 |
+| **I3** | Barre contextuelle | **100 %** | La barre suit la sélection, à la suite de la pastille de I2. Pour un bloc de texte : la police avec la garde de Q20, le corps, le gras, l'italique, le souligné — bouton S, `Ctrl+U` et « Souligné » au menu Texte sur la commande de I7, qui retire le souligné quelle qu'en soit la sorte ou pose le trait simple, et un chevron qui propose le double, l'épais et « mots seuls » —, les quatre alignements, la droite comprise, l'interligne en multiple, et la couleur du texte, dont la vignette ouvre le sélecteur du jeu ; un tableau a la même mise en forme, sans l'alignement ni le souligné ; un groupe se dissocie, plusieurs blocs s'alignent et se répartissent ; une image, une forme ou la page n'ont que la pastille. Ce que la barre porte a quitté le dock : la section Caractère, l'alignement et l'interligne de Paragraphe, la mise en forme du tableau. Chaque bouton joue la commande du menu Texte sans prendre le focus et ne se coche que par le bloc, si bien que chaque clic fait son pas, même pendant une saisie ; le sélecteur de couleur, ouvert hors de la barre, tient sa propre transaction ; `Échap` quitte un champ de la barre et rend les lettres seules aux outils. Un clic sur « Centrer le texte » centre le bloc à l'écran et au PDF en un pas. Onze tests ; relecture et juge après fusion. Recette dans `Scripts/recettes/` |
 | **I4** | Planche : règles fixes, projection, bulle de dimensions | 0 % | Spécifié le 24 octobre 2026 ; lot 1 |
 | **I5** | Vignettes de pages | 0 % | Spécifié le 24 octobre 2026 ; lot 1 |
 | **I6** | Main, zoom, page entière, proportions | 0 % | Spécifié le 24 octobre 2026 ; lot 1 |
@@ -105,9 +105,9 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **D** | Moteur de composition | — | Décision non ouverte ; à rouvrir quand A, B et C sont livrées |
 
 **Par phase** — P : 4 sur 4 · A : 7 sur 15 · B : 4 sur 7 · C : 7 sur 9 · R : 5 sur 7 ·
-Q : 16 sur 23 · I : 3 sur 9 · D : non planifié.
+Q : 16 sur 23 · I : 4 sur 9 · D : non planifié.
 
-Soit **46 postes sur 74**. Le 24 octobre 2026, la phase I en a ajouté neuf, tirés de la
+Soit **47 postes sur 74**. Le 24 octobre 2026, la phase I en a ajouté neuf, tirés de la
 maquette de la nouvelle interface. Le compte avait doublé le 11 octobre 2026 sans que rien ne
 recule : il porte désormais les onze postes de l'audit des fiches (A8 à A15, B6, B7,
 C8), deux postes que les documents réels demandaient (R6, R7), et la phase Q, qui

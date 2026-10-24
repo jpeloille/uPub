@@ -75,6 +75,7 @@ fi
 vues_de_la_phase=(
     MyPublisher/Views/MainWindow.axaml
     MyPublisher/Views/BarreContextuelle.axaml
+    MyPublisher/Views/BoutonDEtat.cs
     MyPublisher/Views/EntreeDePage.axaml
 )
 

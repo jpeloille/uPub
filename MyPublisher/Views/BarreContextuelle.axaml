@@ -1,23 +1,105 @@
 <!--
     La barre contextuelle, sous la barre principale (phase I). Un contrôle à part, dans son
     propre fichier, à la place que la fenêtre lui fait : c'est ce qui laisse le poste I3 la
-    remplir sans toucher à MainWindow.axaml, en même temps que I5 et I6.
+    remplir sans toucher à la planche, en même temps que I5 et I6.
 
-    Le poste I2 n'y pose que la PASTILLE — la nature du bloc sélectionné, « Page » sans
+    Le poste I2 y a posé la PASTILLE — la nature du bloc sélectionné, « Page » sans
     sélection — et sa hauteur. Cette hauteur ne dépend de rien : la barre garde ses 40 px
     (et son filet) sans sélection comme avec, si bien que la planche ne descend pas entre la
     pression du pointeur sur un bloc et son relâchement (règle 3 de la phase).
 
-    I3 y ajoute la mise en forme du texte que le dock porte encore, à la suite de la
-    pastille, et prend dans son fichier les contrôles qui quittent le dock (règle 1). La
-    transaction d'édition y est déjà ouverte et fermée au focus, par la fenêtre, comme dans
-    chaque onglet du dock (règle 2).
+    Le poste I3 la remplit, à la suite de la pastille, de ce que le bloc sélectionné porte :
+    - un bloc qui porte du texte — texte, titre — y reçoit sa mise en forme, que le dock
+      portait et qu'il n'a plus (règle 1 : un contrôle par propriété) : la police, le corps,
+      le gras, l'italique, le souligné et ses sortes, les quatre alignements, l'interligne
+      en multiple, la couleur du texte. Les colonnes restent au dock, où la maquette les met
+      aussi ; ni la graisse, ni le style de paragraphe nommé, ni « Ajuster le texte » ne
+      sont faits par la phase, et rien n'en est dessiné ;
+    - un tableau, la même mise en forme moins l'alignement, qui est celui de chaque case, et
+      le souligné, qu'un tableau ne porte pas ;
+    - un groupe, « Dissocier » ; plusieurs blocs, les alignements et la répartition ; une
+      image, une forme, la page : la pastille seule. Le dock garde tout le reste.
+
+    Les champs sont liés au bloc comme ceux du dock l'étaient : leur contexte de données est
+    le bloc lui-même, si bien que les tests qui cherchent la liste des polices par son bloc
+    (Q20, C5b) la trouvent ici, seule. La transaction d'édition s'ouvre et se ferme au focus
+    de la barre, par la fenêtre, comme dans chaque onglet du dock (règle 2). Les boutons ne
+    prennent pas le focus : ils jouent la commande du menu Texte, qui fait son propre pas
+    d'annulation où que soit le focus (BoutonDEtat.cs).
 -->
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:MyPublisher.ViewModels"
+             xmlns:models="using:MyPublisher.Models"
+             xmlns:views="using:MyPublisher.Views"
+             xmlns:conv="using:MyPublisher.Converters"
              x:Class="MyPublisher.Views.BarreContextuelle"
              x:DataType="vm:MainWindowViewModel">
+
+    <UserControl.Styles>
+        <!-- Une commande à libellé de la barre — « Dissocier », « Gauche », « Répartir » :
+             le « .menu » de la maquette, celui de son « Ajuster le texte » : corps 12,5,
+             rayon 4, sans bord, gris au survol. -->
+        <Style Selector="Button.menu">
+            <Setter Property="MinHeight" Value="0"/>
+            <Setter Property="Padding" Value="8,4"/>
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource Commande}"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="Button.menu:pointerover /template/ ContentPresenter#PART_ContentPresenter,
+                         Button.menu:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{StaticResource Survol}"/>
+            <Setter Property="Foreground" Value="{StaticResource Commande}"/>
+        </Style>
+        <Style Selector="Button.menu:disabled /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource Commande}"/>
+        </Style>
+        <Style Selector="Button.menu:disabled">
+            <Setter Property="Opacity" Value="0.4"/>
+        </Style>
+
+        <!-- Le chevron des sortes du souligné, collé au bouton S : un bouton-icône étroit,
+             qui garde les états de l'apparence. -->
+        <Style Selector="Button.ib.sortes">
+            <Setter Property="Width" Value="14"/>
+            <Setter Property="Margin" Value="-6,0,0,0"/>
+        </Style>
+
+        <!-- La couleur du texte : un champ de 34 × 26 (« .fld » de la maquette) qui montre la
+             couleur, bordé, rayon 5, et la vignette dedans à 3 px du bord, rayon 3. -->
+        <Style Selector="Button.couleur">
+            <Setter Property="Width" Value="34"/>
+            <Setter Property="Height" Value="26"/>
+            <Setter Property="MinHeight" Value="0"/>
+            <Setter Property="Padding" Value="3"/>
+            <Setter Property="CornerRadius" Value="5"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BordChamp}"/>
+            <Setter Property="Background" Value="{StaticResource Blanc}"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="VerticalContentAlignment" Value="Stretch"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="Button.couleur:pointerover /template/ ContentPresenter#PART_ContentPresenter,
+                         Button.couleur:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{StaticResource Blanc}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BordChamp}"/>
+        </Style>
+
+        <!-- Les libellés, au milieu de la barre ; celui qu'un champ précède s'en écarte de 6
+             de plus, comme le « Couleur » de la maquette. -->
+        <Style Selector="TextBlock.libelle">
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="TextBlock.libelle.apresUnChamp">
+            <Setter Property="Margin" Value="6,0,0,0"/>
+        </Style>
+    </UserControl.Styles>
 
     <!-- 40 px de barre et un filet dessous : 41 en tout, comme la maquette les compte. -->
     <Border Height="41" Background="{StaticResource FondBarreContextuelle}"
@@ -30,6 +112,223 @@
                 <TextBlock Text="{Binding Pastille}" FontSize="11.5" FontWeight="SemiBold"
                            Foreground="{StaticResource AccentSurvol}"/>
             </Border>
+
+            <!-- Ce que porte le bloc seul : chaque gabarit se lie au bloc, comme le dock. -->
+            <ContentControl x:Name="ReglagesDuBloc" Content="{Binding SingleSelected}" VerticalAlignment="Center">
+                <ContentControl.DataTemplates>
+
+                    <DataTemplate DataType="models:TextFrame">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <!-- La police, avec la garde de Q20 : la police du bloc est toujours
+                                 dans la liste, même absente de la machine, et la liste ne lui
+                                 renvoie jamais null ; les deux premières entrées sont le titre et
+                                 le corps du jeu de polices, et le libellé dit la police qu'elles
+                                 désignent aujourd'hui. -->
+                            <ComboBox x:Name="PoliceDuBloc" Classes="champ" Width="150" MaxDropDownHeight="320"
+                                      ToolTip.Tip="Police"
+                                      ItemsSource="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).FontFamilies}"
+                                      SelectedItem="{Binding FontFamily, Converter={x:Static conv:JamaisNul.Instance}}">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate DataType="x:String">
+                                        <TextBlock>
+                                            <TextBlock.Text>
+                                                <MultiBinding Converter="{x:Static conv:LibelleDePolice.Instance}">
+                                                    <Binding/>
+                                                    <Binding Path="$parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).Document.FontScheme"/>
+                                                    <Binding Path="$parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).PolicesDeLaMachine"/>
+                                                </MultiBinding>
+                                            </TextBlock.Text>
+                                        </TextBlock>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                            <!-- Le corps : « 10,5 pt ». -->
+                            <NumericUpDown x:Name="CorpsDuBloc" Classes="champ" Width="58" ToolTip.Tip="Corps"
+                                           TextConverter="{x:Static conv:Unite.Points}" Increment="0.5" Minimum="1"
+                                           Value="{Binding FontSize, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
+                            <views:BoutonDEtat Classes="ib" Content="G" FontWeight="Bold" FontSize="14" Focusable="False"
+                                               ToolTip.Tip="Gras (Ctrl+G)" IsChecked="{Binding Bold, Mode=OneWay}"
+                                               Command="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).BasculerGrasCommand}"/>
+                            <views:BoutonDEtat Classes="ib italique" Content="I" Focusable="False"
+                                               ToolTip.Tip="Italique (Ctrl+I)" IsChecked="{Binding Italic, Mode=OneWay}"
+                                               Command="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).BasculerItaliqueCommand}"/>
+                            <!-- Le souligné : le bouton bascule — il retire le souligné quelle qu'en
+                                 soit la sorte, ou pose le trait simple, comme Ctrl+U —, et le
+                                 chevron qui le suit propose les sortes que le plan nomme. -->
+                            <views:BoutonDEtat x:Name="BoutonSouligne" Classes="ib" Focusable="False"
+                                               ToolTip.Tip="Souligné (Ctrl+U)" IsChecked="{Binding Underline.Actif, Mode=OneWay}"
+                                               Command="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).SoulignerCommand}">
+                                <TextBlock Text="S" FontSize="14" TextDecorations="Underline"/>
+                            </views:BoutonDEtat>
+                            <Button x:Name="SortesDuSouligne" Classes="ib sortes" Focusable="False"
+                                    ToolTip.Tip="Sortes de souligné" Content="{StaticResource IconeSectionOuverte}">
+                                <Button.Flyout>
+                                    <MenuFlyout Placement="BottomEdgeAlignedLeft">
+                                        <MenuItem Header="Trait simple" ToggleType="Radio"
+                                                  IsChecked="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).((models:TextFrame)SingleSelected).Underline, Mode=OneWay, Converter={x:Static conv:SorteDuSouligne.Instance}, ConverterParameter={x:Static vm:SorteDeSouligne.Simple}}"
+                                                  Command="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).SoulignerEnCommand}"
+                                                  CommandParameter="{x:Static vm:SorteDeSouligne.Simple}"/>
+                                        <MenuItem Header="Double" ToggleType="Radio"
+                                                  IsChecked="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).((models:TextFrame)SingleSelected).Underline, Mode=OneWay, Converter={x:Static conv:SorteDuSouligne.Instance}, ConverterParameter={x:Static vm:SorteDeSouligne.Double}}"
+                                                  Command="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).SoulignerEnCommand}"
+                                                  CommandParameter="{x:Static vm:SorteDeSouligne.Double}"/>
+                                        <MenuItem Header="Épais" ToggleType="Radio"
+                                                  IsChecked="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).((models:TextFrame)SingleSelected).Underline, Mode=OneWay, Converter={x:Static conv:SorteDuSouligne.Instance}, ConverterParameter={x:Static vm:SorteDeSouligne.Epais}}"
+                                                  Command="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).SoulignerEnCommand}"
+                                                  CommandParameter="{x:Static vm:SorteDeSouligne.Epais}"/>
+                                        <MenuItem Header="Mots seuls" ToggleType="Radio"
+                                                  IsChecked="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).((models:TextFrame)SingleSelected).Underline, Mode=OneWay, Converter={x:Static conv:SorteDuSouligne.Instance}, ConverterParameter={x:Static vm:SorteDeSouligne.MotsSeuls}}"
+                                                  Command="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).SoulignerEnCommand}"
+                                                  CommandParameter="{x:Static vm:SorteDeSouligne.MotsSeuls}"/>
+                                    </MenuFlyout>
+                                </Button.Flyout>
+                            </Button>
+                            <Border Classes="separateur"/>
+                            <!-- Les quatre alignements : la maquette omet la droite, que le modèle
+                                 a, et Publisher aussi ; elle se range entre le centre et la
+                                 justification, dans l'ordre du menu Texte. -->
+                            <views:BoutonDEtat Classes="ib" Focusable="False" ToolTip.Tip="Aligner le texte à gauche"
+                                               Content="{StaticResource IconeTexteAGauche}"
+                                               IsChecked="{Binding Align, Mode=OneWay, Converter={x:Static conv:EnumToBool.Instance}, ConverterParameter=Left}"
+                                               Command="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).AlignerLeTexteCommand}"
+                                               CommandParameter="{x:Static models:TextAlign.Left}"/>
+                            <views:BoutonDEtat Classes="ib" Focusable="False" ToolTip.Tip="Centrer le texte"
+                                               Content="{StaticResource IconeTexteCentre}"
+                                               IsChecked="{Binding Align, Mode=OneWay, Converter={x:Static conv:EnumToBool.Instance}, ConverterParameter=Center}"
+                                               Command="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).AlignerLeTexteCommand}"
+                                               CommandParameter="{x:Static models:TextAlign.Center}"/>
+                            <views:BoutonDEtat Classes="ib" Focusable="False" ToolTip.Tip="Aligner le texte à droite"
+                                               Content="{StaticResource IconeTexteADroite}"
+                                               IsChecked="{Binding Align, Mode=OneWay, Converter={x:Static conv:EnumToBool.Instance}, ConverterParameter=Right}"
+                                               Command="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).AlignerLeTexteCommand}"
+                                               CommandParameter="{x:Static models:TextAlign.Right}"/>
+                            <views:BoutonDEtat Classes="ib" Focusable="False" ToolTip.Tip="Justifier"
+                                               Content="{StaticResource IconeTexteJustifie}"
+                                               IsChecked="{Binding Align, Mode=OneWay, Converter={x:Static conv:EnumToBool.Instance}, ConverterParameter=Justify}"
+                                               Command="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).AlignerLeTexteCommand}"
+                                               CommandParameter="{x:Static models:TextAlign.Justify}"/>
+                            <Border Classes="separateur"/>
+                            <!-- L'interligne en multiple de la hauteur naturelle (R4), et non en
+                                 points comme la maquette : le modèle ne change pas pour
+                                 l'affichage (décision du 24 octobre 2026). -->
+                            <TextBlock Classes="libelle" Text="Interligne"/>
+                            <NumericUpDown x:Name="InterligneDuBloc" Classes="champ" Width="58" ToolTip.Tip="Interligne"
+                                           TextConverter="{x:Static conv:Unite.Multiple}" Increment="0.05" Minimum="0.5"
+                                           Value="{Binding LineHeight, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
+                            <TextBlock Classes="libelle apresUnChamp" Text="Couleur"/>
+                            <!-- La vignette montre la couleur ; le sélecteur du dock d'avant — les
+                                 cinq pastilles du jeu et le sélecteur libre — s'ouvre dessous. -->
+                            <Button x:Name="CouleurDuTexte" Classes="couleur" Focusable="False" ToolTip.Tip="Couleur du texte">
+                                <Border CornerRadius="3">
+                                    <Border.Background>
+                                        <MultiBinding Converter="{x:Static conv:CouleurDuJeu.Pinceau}">
+                                            <Binding Path="Foreground"/>
+                                            <Binding Path="$parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).Document.Charte"/>
+                                        </MultiBinding>
+                                    </Border.Background>
+                                </Border>
+                                <Button.Flyout>
+                                    <Flyout Placement="BottomEdgeAlignedLeft" Opened="SurCouleurOuverte" Closed="SurCouleurFermee">
+                                        <views:SelecteurDeCouleur Valeur="{Binding Foreground}" Width="240"
+                                               Jeu="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).Document.ColorScheme}"/>
+                                    </Flyout>
+                                </Button.Flyout>
+                            </Button>
+                        </StackPanel>
+                    </DataTemplate>
+
+                    <!-- Un tableau : la même mise en forme, pour toutes ses cases à la fois ;
+                         l'alignement est celui de chaque case, au dock. -->
+                    <DataTemplate DataType="models:TableFrame">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <ComboBox Classes="champ" Width="150" MaxDropDownHeight="320" ToolTip.Tip="Police"
+                                      ItemsSource="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).FontFamilies}"
+                                      SelectedItem="{Binding FontFamily, Converter={x:Static conv:JamaisNul.Instance}}">
+                                <!-- La même liste que celle d'un bloc de texte, et la même
+                                     garde : la police de la bande ne se perd pas (Q20). -->
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate DataType="x:String">
+                                        <TextBlock>
+                                            <TextBlock.Text>
+                                                <MultiBinding Converter="{x:Static conv:LibelleDePolice.Instance}">
+                                                    <Binding/>
+                                                    <Binding Path="$parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).Document.FontScheme"/>
+                                                    <Binding Path="$parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).PolicesDeLaMachine"/>
+                                                </MultiBinding>
+                                            </TextBlock.Text>
+                                        </TextBlock>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                            <NumericUpDown Classes="champ" Width="58" ToolTip.Tip="Corps"
+                                           TextConverter="{x:Static conv:Unite.Points}" Increment="0.5" Minimum="1"
+                                           Value="{Binding FontSize, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
+                            <views:BoutonDEtat Classes="ib" Content="G" FontWeight="Bold" FontSize="14" Focusable="False"
+                                               ToolTip.Tip="Gras (Ctrl+G)" IsChecked="{Binding Bold, Mode=OneWay}"
+                                               Command="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).BasculerGrasCommand}"/>
+                            <views:BoutonDEtat Classes="ib italique" Content="I" Focusable="False"
+                                               ToolTip.Tip="Italique (Ctrl+I)" IsChecked="{Binding Italic, Mode=OneWay}"
+                                               Command="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).BasculerItaliqueCommand}"/>
+                            <Border Classes="separateur"/>
+                            <TextBlock Classes="libelle" Text="Interligne"/>
+                            <NumericUpDown Classes="champ" Width="58" ToolTip.Tip="Interligne"
+                                           TextConverter="{x:Static conv:Unite.Multiple}" Increment="0.05" Minimum="0.5"
+                                           Value="{Binding LineHeight, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
+                            <TextBlock Classes="libelle apresUnChamp" Text="Couleur"/>
+                            <Button Classes="couleur" Focusable="False" ToolTip.Tip="Couleur du texte">
+                                <Border CornerRadius="3">
+                                    <Border.Background>
+                                        <MultiBinding Converter="{x:Static conv:CouleurDuJeu.Pinceau}">
+                                            <Binding Path="Foreground"/>
+                                            <Binding Path="$parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).Document.Charte"/>
+                                        </MultiBinding>
+                                    </Border.Background>
+                                </Border>
+                                <Button.Flyout>
+                                    <Flyout Placement="BottomEdgeAlignedLeft" Opened="SurCouleurOuverte" Closed="SurCouleurFermee">
+                                        <views:SelecteurDeCouleur Valeur="{Binding Foreground}" Width="240"
+                                               Jeu="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).Document.ColorScheme}"/>
+                                    </Flyout>
+                                </Button.Flyout>
+                            </Button>
+                        </StackPanel>
+                    </DataTemplate>
+
+                    <!-- Un groupe : le dock n'a pas de quoi le dissocier. -->
+                    <DataTemplate DataType="models:GroupFrame">
+                        <Button Classes="menu" Content="Dissocier" ToolTip.Tip="Dissocier (Ctrl+Maj+H)"
+                                Command="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).UngroupSelectedCommand}"/>
+                    </DataTemplate>
+
+                    <!-- Une image, une forme : la pastille seule, le dock porte tout. Le gabarit
+                         vide évite que le contrôle n'affiche le nom du type. -->
+                    <DataTemplate DataType="models:Frame">
+                        <Panel/>
+                    </DataTemplate>
+                </ContentControl.DataTemplates>
+            </ContentControl>
+
+            <!-- Plusieurs blocs : les aligner entre eux — ou sur la page, ou les marges, selon
+                 la case du menu Disposition — et les répartir, ce que le dock, qui ne montre
+                 aucun champ à plusieurs blocs, n'offre pas. -->
+            <StackPanel x:Name="CommandesDeLaSelection" Orientation="Horizontal" Spacing="2"
+                        IsVisible="{Binding HasMultipleSelection}">
+                <TextBlock Classes="libelle" Text="Aligner" Margin="0,0,4,0"/>
+                <Button Classes="menu" Content="Gauche" ToolTip.Tip="Aligner à gauche" Command="{Binding AlignLeftCommand}"/>
+                <Button Classes="menu" Content="Centre" ToolTip.Tip="Centrer horizontalement"
+                        Command="{Binding AlignCentreHorizontallyCommand}"/>
+                <Button Classes="menu" Content="Droite" ToolTip.Tip="Aligner à droite" Command="{Binding AlignRightCommand}"/>
+                <Button Classes="menu" Content="Haut" ToolTip.Tip="Aligner en haut" Command="{Binding AlignTopCommand}"/>
+                <Button Classes="menu" Content="Milieu" ToolTip.Tip="Centrer verticalement"
+                        Command="{Binding AlignCentreVerticallyCommand}"/>
+                <Button Classes="menu" Content="Bas" ToolTip.Tip="Aligner en bas" Command="{Binding AlignBottomCommand}"/>
+                <Border Classes="separateur"/>
+                <TextBlock Classes="libelle" Text="Répartir" Margin="0,0,4,0"/>
+                <Button Classes="menu" Content="Horizontalement" ToolTip.Tip="Répartir horizontalement (trois blocs au moins)"
+                        Command="{Binding DistributeHorizontallyCommand}"/>
+                <Button Classes="menu" Content="Verticalement" ToolTip.Tip="Répartir verticalement (trois blocs au moins)"
+                        Command="{Binding DistributeVerticallyCommand}"/>
+            </StackPanel>
         </StackPanel>
     </Border>
 </UserControl>

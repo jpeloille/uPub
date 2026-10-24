@@ -394,7 +394,6 @@ public partial class MainWindowViewModel
     // ne passerait pas pour une section neuve.
     [ObservableProperty] private bool _sectionPositionOuverte = true;
     [ObservableProperty] private bool _sectionCadreOuverte = true;
-    [ObservableProperty] private bool _sectionCaractereOuverte = true;
     [ObservableProperty] private bool _sectionParagrapheOuverte = true;
     [ObservableProperty] private bool _sectionContenuOuverte = true;
     [ObservableProperty] private bool _sectionTableauOuverte = true;

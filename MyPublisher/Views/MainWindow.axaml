@@ -10,7 +10,8 @@
     onglets, lignes des listes, bouton principal — sont ici, au-dessous, et ne citent qu'elle.
 
     Quatre points d'accroche, pour les postes qui suivent sans toucher à ce fichier :
-    - la barre contextuelle est un contrôle à part (BarreContextuelle.axaml), que I3 remplit ;
+    - la barre contextuelle est un contrôle à part (BarreContextuelle.axaml), que I3 a rempli
+      de la mise en forme du texte, qui a quitté le dock ;
     - une entrée du panneau Pages aussi (EntreeDePage.axaml), que I5 change en vignette ;
     - « Page entière » et « Conserver les proportions » sont posés, liés au modèle de vue,
       dont I6 écoute la demande et lit la case ;
@@ -67,6 +68,9 @@
              l'autre n'est pris par OnKeyDown, qui n'intercepte sous Ctrl que N, O, S et E. -->
         <KeyBinding Gesture="Ctrl+G" Command="{Binding BasculerGrasCommand}"/>
         <KeyBinding Gesture="Ctrl+I" Command="{Binding BasculerItaliqueCommand}"/>
+        <!-- Le souligné, Ctrl+U comme dans Publisher (poste I3, sur la commande de I7) : U
+             n'est pris ni par OnKeyDown ni par un autre geste. -->
+        <KeyBinding Gesture="Ctrl+U" Command="{Binding SoulignerCommand}"/>
         <!-- B7 : replier les panneaux, comme le Ctrl+F1 de Publisher (fiche 04). Ni GNOME
              ni KDE ne le prennent par défaut, à la différence d'Alt+F6 (poste A4). -->
         <KeyBinding Gesture="Ctrl+F1" Command="{Binding ReplierLesPanneauxCommand}"/>
@@ -623,6 +627,7 @@
                     <MenuItem Header="_Texte">
                         <MenuItem Header="_Gras" InputGesture="Ctrl+G" Command="{Binding BasculerGrasCommand}"/>
                         <MenuItem Header="_Italique" InputGesture="Ctrl+I" Command="{Binding BasculerItaliqueCommand}"/>
+                        <MenuItem Header="_Souligné" InputGesture="Ctrl+U" Command="{Binding SoulignerCommand}"/>
                         <Separator/>
                         <MenuItem Header="Aligner le texte à _gauche" Command="{Binding AlignerLeTexteCommand}"
                                   CommandParameter="{x:Static models:TextAlign.Left}"/>
@@ -750,7 +755,7 @@
         </Border>
 
         <!-- ===================================================== barre contextuelle -->
-        <!-- Sa place, de hauteur constante (règle 3) ; I3 la remplit. La transaction d'édition
+        <!-- Sa place, de hauteur constante (règle 3) ; I3 l'a remplie. La transaction d'édition
              s'y ouvre et s'y ferme au focus, comme dans le dock (règle 2). -->
         <views:BarreContextuelle DockPanel.Dock="Top" x:Name="BarreContextuelle"
                                  GotFocus="OnPropertyPanelGotFocus" LostFocus="OnPropertyPanelLostFocus"/>
@@ -1035,73 +1040,12 @@
                                                         <Panel Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="3" x:Name="PlaceDeLAlerteDExcedent"/>
                                                     </Grid>
 
-                                                    <!-- Caractère : la mise en forme que la barre contextuelle
-                                                         prendra (I3), et qui quittera alors le dock (règle 1). -->
-                                                    <ToggleButton Classes="titreSection"
-                                                                  IsChecked="{Binding #Root.((vm:MainWindowViewModel)DataContext).SectionCaractereOuverte}">
-                                                        <StackPanel Orientation="Horizontal" Spacing="6">
-                                                            <Panel>
-                                                                <ContentControl Classes="chevronOuvert" Content="{StaticResource IconeSectionOuverte}"/>
-                                                                <ContentControl Classes="chevronFerme" Content="{StaticResource IconeSectionFermee}"/>
-                                                            </Panel>
-                                                            <TextBlock Text="Caractère"/>
-                                                        </StackPanel>
-                                                    </ToggleButton>
-                                                    <Grid Classes="contenuDeSection" ColumnDefinitions="*,8,*" RowDefinitions="Auto,8,Auto,8,Auto"
-                                                          IsVisible="{Binding #Root.((vm:MainWindowViewModel)DataContext).SectionCaractereOuverte}">
-                                                        <StackPanel Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3">
-                                                            <TextBlock Classes="libelle libelleAuDessus" Text="Police"/>
-                                                            <ComboBox Classes="champ" MaxDropDownHeight="320"
-                                                                      ItemsSource="{Binding #Root.((vm:MainWindowViewModel)DataContext).FontFamilies}"
-                                                                      SelectedItem="{Binding FontFamily, Converter={x:Static conv:JamaisNul.Instance}}">
-                                                                <!-- Les deux premières entrées sont le titre et le corps du
-                                                                     jeu de polices : la valeur retenue est la référence, le
-                                                                     libellé dit la police qu'elle désigne aujourd'hui.
-
-                                                                     La police du bloc est toujours dans la liste, même absente
-                                                                     de la machine, et la liste ne renvoie jamais null au bloc :
-                                                                     sans cela, passer d'un bloc à l'autre effaçait la police
-                                                                     d'un .pub composé ailleurs (poste Q20). -->
-                                                                <ComboBox.ItemTemplate>
-                                                                    <DataTemplate DataType="x:String">
-                                                                        <TextBlock>
-                                                                            <TextBlock.Text>
-                                                                                <MultiBinding Converter="{x:Static conv:LibelleDePolice.Instance}">
-                                                                                    <Binding/>
-                                                                                    <Binding Path="#Root.((vm:MainWindowViewModel)DataContext).Document.FontScheme"/>
-                                                                                    <Binding Path="#Root.((vm:MainWindowViewModel)DataContext).PolicesDeLaMachine"/>
-                                                                                </MultiBinding>
-                                                                            </TextBlock.Text>
-                                                                        </TextBlock>
-                                                                    </DataTemplate>
-                                                                </ComboBox.ItemTemplate>
-                                                            </ComboBox>
-                                                        </StackPanel>
-                                                        <StackPanel Grid.Row="2" Grid.Column="0">
-                                                            <TextBlock Classes="libelle libelleAuDessus" Text="Corps"/>
-                                                            <NumericUpDown Classes="champ" TextConverter="{x:Static conv:Unite.Points}"
-                                                                           Increment="0.5" Minimum="1"
-                                                                           Value="{Binding FontSize, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
-                                                        </StackPanel>
-                                                        <StackPanel Grid.Row="2" Grid.Column="2" Orientation="Horizontal" Spacing="2"
-                                                                    VerticalAlignment="Bottom">
-                                                            <ToggleButton Classes="ib" Content="G" FontWeight="Bold" FontSize="14"
-                                                                          ToolTip.Tip="Gras (Ctrl+G)" IsChecked="{Binding Bold}"/>
-                                                            <ToggleButton Classes="ib italique" Content="I"
-                                                                          ToolTip.Tip="Italique (Ctrl+I)" IsChecked="{Binding Italic}"/>
-                                                        </StackPanel>
-                                                        <StackPanel Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="3">
-                                                            <TextBlock Classes="libelle libelleAuDessus" Text="Couleur du texte"/>
-                                                            <views:SelecteurDeCouleur Valeur="{Binding Foreground}"
-                                                                   Jeu="{Binding #Root.((vm:MainWindowViewModel)DataContext).Document.ColorScheme}"/>
-                                                        </StackPanel>
-                                                    </Grid>
-
-                                                    <!-- Paragraphe : l'alignement et l'interligne, que la barre
-                                                         prendra aussi, puis les retraits et les espacements, qui
-                                                         restent. Ils valent pour tout le bloc ; les écarts paragraphe
-                                                         par paragraphe se lisent et s'écrivent dans le fichier, mais
-                                                         ne se règlent pas encore ici. -->
+                                                    <!-- Paragraphe : les retraits et les espacements.
+                                                         L'alignement et l'interligne sont montés dans la
+                                                         barre contextuelle (I3), et ont quitté le dock
+                                                         (règle 1). Ils valent pour tout le bloc ; les écarts
+                                                         paragraphe par paragraphe se lisent et s'écrivent
+                                                         dans le fichier, mais ne se règlent pas encore ici. -->
                                                     <ToggleButton Classes="titreSection"
                                                                   IsChecked="{Binding #Root.((vm:MainWindowViewModel)DataContext).SectionParagrapheOuverte}">
                                                         <StackPanel Orientation="Horizontal" Spacing="6">
@@ -1112,34 +1056,15 @@
                                                             <TextBlock Text="Paragraphe"/>
                                                         </StackPanel>
                                                     </ToggleButton>
-                                                    <Grid Classes="contenuDeSection" ColumnDefinitions="*,8,*" RowDefinitions="Auto,8,Auto,8,Auto,8,Auto,Auto"
+                                                    <Grid Classes="contenuDeSection" ColumnDefinitions="*,8,*" RowDefinitions="Auto,8,Auto,8,Auto"
                                                           IsVisible="{Binding #Root.((vm:MainWindowViewModel)DataContext).SectionParagrapheOuverte}">
                                                         <StackPanel Grid.Row="0" Grid.Column="0">
-                                                            <TextBlock Classes="libelle libelleAuDessus" Text="Alignement"/>
-                                                            <ComboBox Classes="champ"
-                                                                      ItemsSource="{Binding #Root.((vm:MainWindowViewModel)DataContext).TextAlignments}"
-                                                                      SelectedItem="{Binding Align}">
-                                                                <ComboBox.ItemTemplate>
-                                                                    <DataTemplate>
-                                                                        <TextBlock Text="{Binding Converter={x:Static conv:Libelle.Instance}}"/>
-                                                                    </DataTemplate>
-                                                                </ComboBox.ItemTemplate>
-                                                            </ComboBox>
-                                                        </StackPanel>
-                                                        <!-- En multiple de la hauteur naturelle de la police (R4). -->
-                                                        <StackPanel Grid.Row="0" Grid.Column="2">
-                                                            <TextBlock Classes="libelle libelleAuDessus" Text="Interligne"/>
-                                                            <NumericUpDown Classes="champ" TextConverter="{x:Static conv:Unite.Multiple}"
-                                                                           Increment="0.05" Minimum="0.5"
-                                                                           Value="{Binding LineHeight, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
-                                                        </StackPanel>
-                                                        <StackPanel Grid.Row="2" Grid.Column="0">
                                                             <TextBlock Classes="libelle libelleAuDessus" Text="Retrait à gauche"/>
                                                             <NumericUpDown Classes="champ" TextConverter="{x:Static conv:Unite.MillimetresCourts}"
                                                                            Increment="1" Minimum="-350"
                                                                            Value="{Binding IndentLeft, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
                                                         </StackPanel>
-                                                        <StackPanel Grid.Row="2" Grid.Column="2">
+                                                        <StackPanel Grid.Row="0" Grid.Column="2">
                                                             <TextBlock Classes="libelle libelleAuDessus" Text="Retrait à droite"/>
                                                             <NumericUpDown Classes="champ" TextConverter="{x:Static conv:Unite.MillimetresCourts}"
                                                                            Increment="1" Minimum="-350"
@@ -1149,22 +1074,22 @@
                                                              première ligne négatif est la seule façon de composer une
                                                              liste à puces, et un minimum à zéro le rendrait
                                                              inatteignable au dock tout en marchant dans le fichier. -->
-                                                        <StackPanel Grid.Row="4" Grid.Column="0">
+                                                        <StackPanel Grid.Row="2" Grid.Column="0">
                                                             <TextBlock Classes="libelle libelleAuDessus" Text="Première ligne"/>
                                                             <NumericUpDown x:Name="RetraitPremiereLigne" Classes="champ"
                                                                            TextConverter="{x:Static conv:Unite.MillimetresCourts}"
                                                                            Increment="1" Minimum="-350"
                                                                            Value="{Binding IndentFirstLine, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
                                                         </StackPanel>
-                                                        <TextBlock Grid.Row="4" Grid.Column="2" Classes="aide" VerticalAlignment="Bottom"
+                                                        <TextBlock Grid.Row="2" Grid.Column="2" Classes="aide" VerticalAlignment="Bottom"
                                                                    Text="Négative, elle pend : une liste à puces."/>
-                                                        <StackPanel Grid.Row="6" Grid.Column="0">
+                                                        <StackPanel Grid.Row="4" Grid.Column="0">
                                                             <TextBlock Classes="libelle libelleAuDessus" Text="Espace avant"/>
                                                             <NumericUpDown Classes="champ" TextConverter="{x:Static conv:Unite.MillimetresCourts}"
                                                                            Increment="1" Minimum="0"
                                                                            Value="{Binding SpaceBefore, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
                                                         </StackPanel>
-                                                        <StackPanel Grid.Row="6" Grid.Column="2">
+                                                        <StackPanel Grid.Row="4" Grid.Column="2">
                                                             <TextBlock Classes="libelle libelleAuDessus" Text="Espace après"/>
                                                             <NumericUpDown Classes="champ" TextConverter="{x:Static conv:Unite.MillimetresCourts}"
                                                                            Increment="1" Minimum="0"
@@ -1266,62 +1191,14 @@
                                                             </StackPanel>
                                                         </Grid>
 
-                                                        <StackPanel>
-                                                            <TextBlock Classes="libelle libelleAuDessus" Text="Police"/>
-                                                            <ComboBox Classes="champ" MaxDropDownHeight="320"
-                                                                      ItemsSource="{Binding #Root.((vm:MainWindowViewModel)DataContext).FontFamilies}"
-                                                                      SelectedItem="{Binding FontFamily, Converter={x:Static conv:JamaisNul.Instance}}">
-                                                                <!-- La même liste que celle d'un bloc de texte, et la même
-                                                                     garde : la police de la bande ne se perd pas (Q20). -->
-                                                                <ComboBox.ItemTemplate>
-                                                                    <DataTemplate DataType="x:String">
-                                                                        <TextBlock>
-                                                                            <TextBlock.Text>
-                                                                                <MultiBinding Converter="{x:Static conv:LibelleDePolice.Instance}">
-                                                                                    <Binding/>
-                                                                                    <Binding Path="#Root.((vm:MainWindowViewModel)DataContext).Document.FontScheme"/>
-                                                                                    <Binding Path="#Root.((vm:MainWindowViewModel)DataContext).PolicesDeLaMachine"/>
-                                                                                </MultiBinding>
-                                                                            </TextBlock.Text>
-                                                                        </TextBlock>
-                                                                    </DataTemplate>
-                                                                </ComboBox.ItemTemplate>
-                                                            </ComboBox>
-                                                        </StackPanel>
-
-                                                        <Grid ColumnDefinitions="*,8,*">
-                                                            <StackPanel Grid.Column="0">
-                                                                <TextBlock Classes="libelle libelleAuDessus" Text="Corps"/>
-                                                                <NumericUpDown Classes="champ" TextConverter="{x:Static conv:Unite.Points}"
-                                                                               Increment="0.5" Minimum="1"
-                                                                               Value="{Binding FontSize, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
-                                                            </StackPanel>
-                                                            <StackPanel Grid.Column="2">
-                                                                <TextBlock Classes="libelle libelleAuDessus" Text="Interligne"/>
-                                                                <NumericUpDown Classes="champ" TextConverter="{x:Static conv:Unite.Multiple}"
-                                                                               Increment="0.05" Minimum="0.5"
-                                                                               Value="{Binding LineHeight, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
-                                                            </StackPanel>
-                                                        </Grid>
-
-                                                        <StackPanel Orientation="Horizontal" Spacing="2">
-                                                            <ToggleButton Classes="ib" Content="G" FontWeight="Bold" FontSize="14"
-                                                                          ToolTip.Tip="Gras (Ctrl+G)" IsChecked="{Binding Bold}"/>
-                                                            <ToggleButton Classes="ib italique" Content="I"
-                                                                          ToolTip.Tip="Italique (Ctrl+I)" IsChecked="{Binding Italic}"/>
-                                                        </StackPanel>
-
+                                                        <!-- La police, le corps, l'interligne, le gras, l'italique et
+                                                             la couleur du texte de toutes les cases sont montés
+                                                             dans la barre contextuelle (I3). -->
                                                         <StackPanel>
                                                             <TextBlock Classes="libelle libelleAuDessus" Text="Marge intérieure des cases"/>
                                                             <NumericUpDown Classes="champ" TextConverter="{x:Static conv:Unite.MillimetresCourts}"
                                                                            Increment="0.5" Minimum="0"
                                                                            Value="{Binding CellPadding, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
-                                                        </StackPanel>
-
-                                                        <StackPanel>
-                                                            <TextBlock Classes="libelle libelleAuDessus" Text="Couleur du texte"/>
-                                                            <views:SelecteurDeCouleur Valeur="{Binding Foreground}"
-                                                                   Jeu="{Binding #Root.((vm:MainWindowViewModel)DataContext).Document.ColorScheme}"/>
                                                         </StackPanel>
 
                                                         <!-- La grille se règle pour toutes les cases à la fois ; chacune
