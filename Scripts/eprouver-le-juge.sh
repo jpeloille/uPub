@@ -1131,6 +1131,110 @@ saboter "une vue hors de la phase prend en chiffres une couleur de l'apparence" 
     'TextWrapping="Wrap" FontSize="11" Foreground="#FF5B6470" Margin="0,0,0,10"/>' \
     'I1-apparence'
 
+# I2 et B7 : la disposition de la fenêtre, et les panneaux qui se replient. Chaque
+# intitulé commence par « la fenêtre » : « eprouver-le-juge.sh '^la fenêtre' » les joue
+# tous, et eux seuls.
+
+# Règle 3 : la barre contextuelle qui se masque sans sélection fait descendre la planche
+# de 41 px entre la pression du pointeur et son relâchement.
+saboter "la fenêtre masque sa barre contextuelle sans sélection" \
+    MyPublisher/Views/MainWindow.axaml \
+    '        <views:BarreContextuelle DockPanel.Dock="Top" x:Name="BarreContextuelle"' \
+    '        <views:BarreContextuelle DockPanel.Dock="Top" x:Name="BarreContextuelle" IsVisible="{Binding HasSelection}"' \
+    'I2-B7-disposition|DispositionTests'
+
+# Règle 2 : un onglet qui n'ouvre plus la transaction au focus. Rien d'autre ne le voit —
+# les tests d'avant la phase n'ouvraient pas l'onglet Document pour y taper.
+saboter "la fenêtre n'ouvre plus de pas d'annulation à l'onglet Document" \
+    MyPublisher/Views/MainWindow.axaml \
+    '                    <TabItem x:Name="OngletDocument" Header="Document">
+                        <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                                      GotFocus="OnPropertyPanelGotFocus" LostFocus="OnPropertyPanelLostFocus">' \
+    '                    <TabItem x:Name="OngletDocument" Header="Document">
+                        <ScrollViewer HorizontalScrollBarVisibility="Disabled">' \
+    'I2-B7-disposition|DispositionTests'
+
+# La liste montre l'avant en tête : déposer au rang de la liste, et non à son miroir dans
+# la page, retourne le geste. C'est le glissé de A4, réécrit à l'envers par I2.
+saboter "la fenêtre dépose un bloc tiré au rang de la liste et non à son miroir" \
+    MyPublisher/Views/MainWindow.axaml.cs \
+    'if (vm.ReorderFrame(frame, pile.Miroir(index))) e.Handled = true;' \
+    'if (vm.ReorderFrame(frame, index)) e.Handled = true;' \
+    'A4-superposition|PanneauEtBarreTests'
+
+# La vue inversée qui garde le rang de la page pour un bloc ajouté : la liste se trompe
+# de ligne jusqu'à la prochaine remise à zéro.
+saboter "la fenêtre range un bloc ajouté au mauvais rang de « Blocs de la page »" \
+    MyPublisher/ViewModels/PileInversee.cs \
+    'new(NotifyCollectionChangedAction.Add, e.NewItems[0], compte - 1 - e.NewStartingIndex),' \
+    'new(NotifyCollectionChangedAction.Add, e.NewItems[0], e.NewStartingIndex),' \
+    'I2-B7-disposition|DispositionTests'
+
+# B7 : Ctrl+F1 ne replie plus que le panneau Pages.
+saboter "la fenêtre ne replie plus le dock sous Ctrl+F1" \
+    MyPublisher/ViewModels/MainWindowViewModel.Disposition.cs \
+    $'            PanneauPagesVisible = false;\n            DockVisible = false;' \
+    '            PanneauPagesVisible = false;' \
+    'I2-B7-disposition|DispositionTests'
+
+# B7 : le raccourci quitte le tableau du README — il existerait sans que personne le sache.
+saboter "la fenêtre replie ses panneaux sans que le README le dise" \
+    README.md \
+    $'| `Ctrl+F1` | Replier les panneaux, puis les rendre |\n' \
+    '' \
+    'I2-B7-disposition'
+
+# Annuler qui ne se grise plus : un bouton qui a l'air de pouvoir et ne fait rien.
+saboter "la fenêtre laisse Annuler actif sur un historique vide" \
+    MyPublisher/Views/MainWindow.axaml \
+    'Command="{Binding UndoCommand}" IsEnabled="{Binding CanUndo}"' \
+    'Command="{Binding UndoCommand}"' \
+    'I2-B7-disposition|DispositionTests'
+
+# La pastille vide sans sélection : la barre garde sa hauteur, mais ne dit plus « Page ».
+saboter "la fenêtre ne dit plus « Page » sans sélection" \
+    MyPublisher/ViewModels/MainWindowViewModel.Disposition.cs \
+    '        0 => "Page",' \
+    '        0 => "",' \
+    'I2-B7-disposition|DispositionTests'
+
+# Ce que la phase ne fait pas, dessiné quand même : une section Habillage sans moteur.
+saboter "la fenêtre dessine l'Habillage que la phase ne fait pas" \
+    MyPublisher/Views/MainWindow.axaml \
+    '<TextBlock Text="Fond et contour"/>' \
+    '<TextBlock Text="Fond et contour"/><TextBlock Text="Habillage"/>' \
+    'I2-B7-disposition'
+
+# Sous la locale C, « 52,5 mm » ne se lit plus : la valeur reste celle d'avant. Avec le
+# lecteur d'Avalonia, il devenait 525.
+saboter "la fenêtre ne lit plus une longueur saisie à la virgule" \
+    MyPublisher/Converters/DispositionConverters.cs \
+    "        texte = separateur == \",\" ? texte.Replace('.', ',') : texte.Replace(',', '.');" \
+    '' \
+    'I2-B7-disposition|DispositionTests'
+
+# Une section fermée qui ne le dit pas au modèle de vue : son contenu reste ouvert, et le
+# bloc suivant la rouvre.
+saboter "la fenêtre oublie une section fermée" \
+    MyPublisher/Views/MainWindow.axaml \
+    'IsChecked="{Binding #Root.((vm:MainWindowViewModel)DataContext).SectionCadreOuverte}">' \
+    'IsChecked="{Binding #Root.((vm:MainWindowViewModel)DataContext).SectionCadreOuverte, Mode=OneWay}">' \
+    'I2-B7-disposition|DispositionTests'
+
+# La marge commune qui n'écrit plus que la marge gauche : les trois autres gardent l'ancienne.
+saboter "la fenêtre n'écrit plus la marge commune que d'un côté" \
+    MyPublisher/ViewModels/MainWindowViewModel.Disposition.cs \
+    $'            bloc.PaddingRight = value;\n            bloc.PaddingTop = value;\n            bloc.PaddingBottom = value;\n' \
+    '' \
+    'I2-B7-disposition|DispositionTests'
+
+# Le curseur du zoom linéaire : au milieu du rail, 405 % au lieu de 89 %.
+saboter "la fenêtre mène le zoom par un curseur linéaire" \
+    MyPublisher/Converters/DispositionConverters.cs \
+    'value is double zoom && zoom > 0 ? Math.Log(zoom) : AvaloniaPropertyUnset();' \
+    'value is double zoom && zoom > 0 ? zoom : AvaloniaPropertyUnset();' \
+    'I2-B7-disposition|DispositionTests'
+
 echo
 if [ "$cibles" = 1 ]; then
     if [ "$trous" = 0 ]; then

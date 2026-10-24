@@ -140,10 +140,12 @@ public class RetraitsTests
 
         Assert.True(champ.Minimum < 0, "un minimum à zéro interdirait le retrait négatif");
 
+        // Le champ est en millimètres depuis le poste I2, comme toutes les longueurs du
+        // dock : -18 mm, et non plus -18 pt.
         champ.Value = -18;
         Battre();
 
-        Assert.Equal(-18, bloc.IndentFirstLine);
+        Assert.Equal(Units.MmToPoints(-18), bloc.IndentFirstLine, precision: 9);
     }
 
     // -------------------------------------------------------------- la mesure

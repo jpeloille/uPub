@@ -371,17 +371,27 @@ public class RotationTests
     /// Boîte de l'encre rouge — celle du bloc — dans l'image composée. Le rouge écarte
     /// tout ce que la sélection dessine par-dessus : contour bleu, poignées blanches,
     /// disque vert et tige.
+    ///
+    /// La recherche s'en tient à la planche. Depuis la refonte de la fenêtre (poste I2),
+    /// le dock montre « Fond et contour » sans défiler, et son sélecteur de couleur peint
+    /// le fond du bloc — du même rouge — à côté de la planche.
     /// </summary>
     private static (int Largeur, int Hauteur) BoiteRouge(Window fenetre)
     {
         var image = Image(fenetre);
         var bleu = 2 - image.Rouge;
 
+        var planche = fenetre.GetVisualDescendants().OfType<Control>().First(c => c.Name == "PageView");
+        var coin = planche.TranslatePoint(new Point(0, 0), fenetre) ?? new Point(0, 0);
+        var (x0, y0) = ((int)coin.X, (int)coin.Y);
+        var x1 = Math.Min(image.Largeur, x0 + (int)planche.Bounds.Width);
+        var y1 = Math.Min(image.Hauteur, y0 + (int)planche.Bounds.Height);
+
         int gauche = int.MaxValue, haut = int.MaxValue, droite = -1, bas = -1;
 
-        for (var y = 0; y < image.Hauteur; y++)
+        for (var y = y0; y < y1; y++)
         {
-            for (var x = 0; x < image.Largeur; x++)
+            for (var x = x0; x < x1; x++)
             {
                 // Rouge franc, peu de vert et peu de bleu.
                 var i = y * image.Pas + x * 4;

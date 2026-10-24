@@ -69,10 +69,12 @@ public partial class MainWindowViewModel : ViewModelBase
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(WindowTitle))]
+    [NotifyPropertyChangedFor(nameof(TitreDuDocument))]
     private string? _filePath;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(WindowTitle))]
+    [NotifyPropertyChangedFor(nameof(TitreDuDocument))]
     private bool _isDirty;
 
     [ObservableProperty] private string _status = "Prêt";
@@ -439,7 +441,7 @@ public partial class MainWindowViewModel : ViewModelBase
     public string ZoomLabel => $"{Zoom * 100:0} %";
 
     public string CursorLabel =>
-        $"X {Units.PointsToMm(CursorX):0.0} mm   Y {Units.PointsToMm(CursorY):0.0} mm";
+        $"Curseur {Units.PointsToMm(CursorX):0.0} ; {Units.PointsToMm(CursorY):0.0} mm";
 
     /// <summary>
     /// Ce que la barre d'état annonce du bloc sélectionné : son coin, et sa taille.
@@ -631,6 +633,9 @@ public partial class MainWindowViewModel : ViewModelBase
         OnPropertyChanged(nameof(CanDistribute));
         OnPropertyChanged(nameof(CanGroup));
         OnPropertyChanged(nameof(CanUngroup));
+
+        // La pastille, le menu Texte, le fond et la marge du dock (poste I2).
+        NotifierLaDisposition();
     }
 
     // ---------------------------------------------------------------- historique
@@ -1634,7 +1639,7 @@ public partial class MainWindowViewModel : ViewModelBase
     [RelayCommand]
     private void ZoomReset() => SetZoom(1.0);
 
-    public void SetZoom(double value) => Zoom = Math.Clamp(value, 0.1, 8.0);
+    public void SetZoom(double value) => Zoom = Math.Clamp(value, ZoomMinimum, ZoomMaximum);
 
     private static IReadOnlyList<string> LoadSystemFonts()
     {

@@ -506,7 +506,12 @@ public class CoupureTests
             Assert.True(code == 0, $"le banc a échoué sans la porte : {erreurs}");
             Assert.Contains("Les polices des documents sont résolues par Avalonia", erreurs);
             Assert.Single(System.Text.RegularExpressions.Regex.Matches(erreurs, "Avertissement"));
-            Assert.Contains("53 ligne(s)", compte);
+            // Le compte dépend, sans la porte, de l'ordre où les faces ont été chargées
+            // (voir « Mots.Ordres ») : la fenêtre d'avant le poste I2 montrait d'emblée le
+            // jeu de polices dans son panneau, et en chargeait les faces avant la page —
+            // 53 lignes. Le jeu est passé à l'onglet Styles, qui ne s'ouvre pas tout seul :
+            // 55. Ce que le test garde, c'est que la fenêtre dessine ses lignes.
+            Assert.Contains("55 ligne(s)", compte);
             Assert.Contains("Légende", File.ReadAllText(lignes));
         }
         finally

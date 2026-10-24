@@ -27,14 +27,14 @@ Les quatre commandes existent, et l'ergonomie est meilleure que celle du modèle
   (`ViewModels/MainWindowViewModel.cs:516-526`), toutes ramenées à un unique `Reorder`
   qui borne l'index (`:531-544`) — pas de cas limite à la première ni à la dernière
   place.
-- Exposées au menu Disposition (`Views/MainWindow.axaml:140-143`) et dans la barre
-  d'outils latérale.
+- Exposées au menu Disposition (`Views/MainWindow.axaml`) ; premier plan et arrière-plan
+  aussi dans la barre principale, au groupe « Ordre » (phase I, poste I2).
 - Désactivées automatiquement sans sélection (`CanExecute = nameof(HasSelection)`,
   déclaré en `:45-48`).
-- **La pile est visible** : le panneau « Blocs (du fond vers l'avant) »
-  (`Views/MainWindow.axaml:213-222`) montre l'ordre réel, alimenté par la collection
-  `Page.Frames` dont le commentaire pose la convention — « le dernier est au premier
-  plan » (`Models/Document.cs:11`).
+- **La pile est visible** : « Blocs de la page », au pied du dock, montre l'ordre réel,
+  **l'avant en tête** depuis le poste I2 — une vue inversée (`ViewModels/PileInversee.cs`)
+  de la collection `Page.Frames`, dont le commentaire pose la convention — « le dernier
+  est au premier plan » (`Models/Document.cs`).
 - L'ordre est respecté partout : au test de survol, qui parcourt en sens inverse
   (`LastOrDefault`, `Views/PageCanvas.axaml.cs:285`), au rendu, et à l'export
   (`Services/PdfExporter.cs:41`).

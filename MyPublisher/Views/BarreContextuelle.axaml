@@ -1,0 +1,35 @@
+<!--
+    La barre contextuelle, sous la barre principale (phase I). Un contrôle à part, dans son
+    propre fichier, à la place que la fenêtre lui fait : c'est ce qui laisse le poste I3 la
+    remplir sans toucher à MainWindow.axaml, en même temps que I5 et I6.
+
+    Le poste I2 n'y pose que la PASTILLE — la nature du bloc sélectionné, « Page » sans
+    sélection — et sa hauteur. Cette hauteur ne dépend de rien : la barre garde ses 40 px
+    (et son filet) sans sélection comme avec, si bien que la planche ne descend pas entre la
+    pression du pointeur sur un bloc et son relâchement (règle 3 de la phase).
+
+    I3 y ajoute la mise en forme du texte que le dock porte encore, à la suite de la
+    pastille, et prend dans son fichier les contrôles qui quittent le dock (règle 1). La
+    transaction d'édition y est déjà ouverte et fermée au focus, par la fenêtre, comme dans
+    chaque onglet du dock (règle 2).
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:MyPublisher.ViewModels"
+             x:Class="MyPublisher.Views.BarreContextuelle"
+             x:DataType="vm:MainWindowViewModel">
+
+    <!-- 40 px de barre et un filet dessous : 41 en tout, comme la maquette les compte. -->
+    <Border Height="41" Background="{StaticResource FondBarreContextuelle}"
+            BorderBrush="{StaticResource FiletBarreContextuelle}" BorderThickness="0,0,0,1"
+            Padding="12,0">
+        <StackPanel x:Name="ContenuDeLaBarre" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+            <!-- La pastille : 11,5 demi-gras sur le bleu pâle, rayon 10. -->
+            <Border x:Name="PastilleDeLaSelection" Background="{StaticResource Pastille}"
+                    CornerRadius="10" Padding="9,4" Margin="0,0,6,0" VerticalAlignment="Center">
+                <TextBlock Text="{Binding Pastille}" FontSize="11.5" FontWeight="SemiBold"
+                           Foreground="{StaticResource AccentSurvol}"/>
+            </Border>
+        </StackPanel>
+    </Border>
+</UserControl>

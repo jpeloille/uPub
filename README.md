@@ -100,28 +100,43 @@ qui est aussi le seul moyen de les rendre visibles : une page blanche n'apprend 
 
 ## Interface
 
-L'espace de travail se lit de gauche à droite : liste des **pages** et des **blocs**,
-puis la **planche**, puis les **propriétés** du bloc sélectionné, et enfin la **barre
-d'outils** verticale sur le bord droit.
+La fenêtre suit la maquette de `Maquettes/` (phase I du plan). De haut en bas : la
+**barre de menus**, avec le titre du document au milieu ; la **barre principale**, à
+icônes — document, annulation, alignement, ordre, zoom, et l'export en bouton plein à
+droite ; la **barre contextuelle**, qui dit ce qui est sélectionné ; l'espace de travail ;
+la **barre d'état**. L'espace de travail se lit de gauche à droite : le **rail d'outils**,
+le panneau **Pages**, la **planche**, et le **dock** à quatre onglets — *Propriétés*,
+*Styles*, *Couleurs*, *Document*.
 
-La liste « Blocs (du fond vers l'avant) » montre la pile de la page, et se laisse
-réordonner en y tirant un bloc — un trait bleu marque où il se posera. Le clavier fait
-la même chose en plus rapide sur les deux extrêmes : `Ctrl+Maj+F` et `Ctrl+Maj+B`.
+Le **rail** arme un outil : on trace ensuite le cadre directement sur la page, à la taille
+voulue. Un simple clic sans glisser pose le bloc à sa taille par défaut. L'outil se
+désarme tout seul après usage, pour qu'on puisse ajuster immédiatement ce qu'on vient de
+poser ; un bloc de texte passe même directement en saisie. L'image y est rangée parmi les
+outils, mais ne se trace pas : elle demande d'abord un fichier.
+
+L'onglet *Propriétés* montre le bloc sélectionné en sections repliables : Position et
+taille, puis ce qui est propre au type — pour un bloc de texte, Cadre de texte, Caractère,
+Paragraphe et Contenu —, puis Fond et contour. Une section fermée le reste d'un bloc à
+l'autre, le temps de la session. Les longueurs portent leur unité dans le champ
+(« 52,0 mm ») ; on les saisit avec ou sans elle, à la virgule comme au point. Chaque champ,
+quel que soit son onglet, est **un pas d'annulation**. *Styles* et *Couleurs* portent les
+jeux du document ; *Document*, le format, les marges, la grille, les repères de règle et
+le fond de page.
+
+Au pied de *Propriétés*, **Blocs de la page** montre la pile de la page, **l'avant en
+tête**, et se laisse réordonner en y tirant un bloc — un trait bleu marque où il se
+posera. Le clavier fait la même chose en plus rapide sur les deux extrêmes : `Ctrl+Maj+F`
+et `Ctrl+Maj+B`.
 
 La **barre d'état** affiche en permanence, à droite, la position du curseur, puis la
-position et la taille du bloc sélectionné. Les deux dernières suivent le geste pendant
-qu'on déplace ou qu'on redimensionne : au moment où l'on tire une poignée, l'œil est
-sur la page et non sur le panneau de propriétés.
+position et la taille du bloc sélectionné, la page, le format et le zoom, avec son curseur
+en échelle logarithmique. La position et la taille suivent le geste pendant qu'on déplace
+ou qu'on redimensionne : au moment où l'on tire une poignée, l'œil est sur la page et non
+sur le dock.
 
-Les six premiers boutons de cette barre **arment un outil** : on trace ensuite le cadre
-directement sur la page, à la taille voulue. Un simple clic sans glisser pose le bloc à
-sa taille par défaut. L'outil se désarme tout seul après usage, pour qu'on puisse
-ajuster immédiatement ce qu'on vient de poser ; un bloc de texte passe même directement
-en saisie. Les boutons suivants sont des actions immédiates sur le bloc sélectionné :
-ordre de superposition, puis centrage et ajustement aux marges.
-
-L'insertion d'image n'est pas un outil de tracé — elle demande d'abord un fichier — et
-la barre du haut regroupe les commandes du document : fichier, annulation, zoom.
+`Ctrl+F1` — ou *Fenêtre ▸ Replier les panneaux* — masque le panneau Pages et le dock pour
+rendre leur place à la planche ; un second `Ctrl+F1` les rend tels qu'ils étaient. Le menu
+Fenêtre masque aussi l'un ou l'autre.
 
 ## Ce que l'application sait faire
 
@@ -144,7 +159,7 @@ la barre du haut regroupe les commandes du document : fichier, annulation, zoom.
   porte son texte, son alignement, son fond et son contour ; la grille se règle d'un
   geste pour toutes. Les colonnes et les lignes font la taille du bloc : élargir une
   colonne élargit le tableau, et tirer le tableau à la poignée mesure ses cases à la
-  même aune. Une case se remplit dans le panneau de propriétés, où elle est nommée par
+  même aune. Une case se remplit dans la section Tableau du dock, où elle est nommée par
   son rang — « L1 · C2 ».
 - **Plusieurs styles dans un même bloc** : une portion de texte porte sa propre police,
   son corps, son gras, son italique, sa couleur, et se pose en indice ou en exposant.
@@ -160,7 +175,7 @@ la barre du haut regroupe les commandes du document : fichier, annulation, zoom.
 - **Retraits et espacement de paragraphe** : retrait à gauche, à droite, et retrait de
   première ligne — négatif, il fait pendre cette ligne à gauche des suivantes, ce qui
   est la façon d'aligner une liste à puces. Plus un espace avant et un espace après le
-  paragraphe. Le panneau les règle pour le bloc entier ; le fichier, lui, sait déjà les
+  paragraphe. Le dock les règle pour le bloc entier ; le fichier, lui, sait déjà les
   porter paragraphe par paragraphe, ce dont les documents Publisher se servent
   abondamment.
 - **Colonnes à l'intérieur d'un bloc de texte** : on donne au bloc un nombre de
@@ -177,10 +192,10 @@ la barre du haut regroupe les commandes du document : fichier, annulation, zoom.
 - **Le fond n'est pas forcément uni** : c'est au choix un aplat avec son opacité, un
   dégradé de deux couleurs le long d'un angle, une image, ou une teinte dérivée d'une
   couleur de base. Textures et motifs : non, délibérément.
-- **Fond de page** : le même choix, posé sur la publication entière — panneau
-  *DOCUMENT*. Un dégradé de page se règle en trois gestes et change tout l'air d'un
+- **Fond de page** : le même choix, posé sur la publication entière — onglet
+  *Document* du dock. Un dégradé de page se règle en trois gestes et change tout l'air d'un
   document.
-- **Jeu de couleurs et jeu de polices**, panneau *DOCUMENT* : cinq couleurs nommées et
+- **Jeu de couleurs et jeu de polices**, onglets *Couleurs* et *Styles* du dock : cinq couleurs nommées et
   une paire titre/corps, portées par le document. Chaque sélecteur de couleur montre les
   cinq pastilles du jeu, et la liste des polices commence par le titre et le corps du
   jeu. Comme dans Publisher, ce qu'on y prend est une **référence** : changer de jeu
@@ -191,7 +206,7 @@ la barre du haut regroupe les commandes du document : fichier, annulation, zoom.
 - Rotation libre de n'importe quel bloc, y compris pour la sélection et le
   redimensionnement. Elle se prend **à la souris**, par une neuvième poignée posée
   au-dessus du bloc — un disque vert au bout d'une tige — ou se saisit au degré près
-  dans le panneau. `Maj` pendant le geste tourne par pas de 15°, et remet d'aplomb un
+  dans le dock. `Maj` pendant le geste tourne par pas de 15°, et remet d'aplomb un
   bloc qui ne l'est pas.
 - Groupes : plusieurs blocs réunis se déplacent, se tournent et se redimensionnent
   d'une pièce — le redimensionnement met les blocs du groupe à la même échelle. Un
@@ -209,8 +224,8 @@ la barre du haut regroupe les commandes du document : fichier, annulation, zoom.
   Repères* et *Règles* les effacent de l'écran — et *Repères* efface aussi le marqueur
   de débordement, qui ne s'imprime pas davantage.
 - Édition du texte directement sur la page (double-clic).
-- **Importer un texte** — *Insertion ▸ Importer un texte…*, ou le bouton du même nom au
-  panneau d'un bloc de texte : un fichier texte remplit le bloc sélectionné, au style du
+- **Importer un texte** — *Texte ▸ Importer un texte…*, ou le bouton du même nom à la
+  section Contenu d'un bloc de texte : un fichier texte remplit le bloc sélectionné, au style du
   bloc. Il se lit en UTF-8, avec ou sans BOM, en UTF-16 s'il porte sa marque (FF FE ou
   FE FF), ou en Latin-1 quand il n'est pas de l'UTF-8 valide (lu comme Windows-1252, qui
   garde aussi « ’ », « œ » et « € ») ; les fins de ligne CRLF deviennent un seul saut.
@@ -229,7 +244,7 @@ la barre du haut regroupe les commandes du document : fichier, annulation, zoom.
   décochée — par rapport à la page pour un bloc seul et aux blocs entre eux dès
   qu'ils sont plusieurs.
 - Annulation / rétablissement sur 60 pas, couvrant aussi bien les gestes à la
-  souris que les champs du panneau de propriétés.
+  souris que les champs du dock, quel que soit leur onglet.
 - Enregistrement au format `.mypub` (JSON lisible) et export PDF.
 - **Un dossier de travail se déplace sans casser ses images** : les images rangées à
   côté du document — ou sous son dossier — y sont référencées relativement à lui.
@@ -253,7 +268,7 @@ la barre du haut regroupe les commandes du document : fichier, annulation, zoom.
   employée ». Une substitution muette ne dégrade pas seulement l'allure — sur une
   fiche de procédure, elle remplace une flèche par une lettre. Il ne nomme que les
   polices qu'il dessine : un fragment entièrement recouvert par un autre ne dit rien.
-  Au panneau, la liste des polices propose aussi celles que le document emploie sans
+  Au dock, la liste des polices propose aussi celles que le document emploie sans
   que la machine les ait, marquées « (absente) » : sélectionner un tel bloc ne touche
   pas à sa police.
 
@@ -268,6 +283,8 @@ la barre du haut regroupe les commandes du document : fichier, annulation, zoom.
 | `Ctrl+A` | Sélectionner tous les blocs de la page |
 | `Ctrl+Maj+G` / `Ctrl+Maj+H` | Grouper / Dissocier |
 | `Ctrl+Maj+F` / `Ctrl+Maj+B` | Premier plan / Arrière-plan |
+| `Ctrl+G` / `Ctrl+I` | Gras / Italique du bloc de texte sélectionné |
+| `Ctrl+F1` | Replier les panneaux, puis les rendre |
 | `Suppr` | Supprimer la sélection |
 | Flèches | Déplacer de 3 pt (`Maj` : 0,5 pt) |
 | `Ctrl` + molette, `Ctrl` `+`/`-`/`0` | Zoom |
@@ -359,10 +376,12 @@ coup — `DejaVu Sans,DejaVu Sans Condensed` — et l'égalité ferait passer po
 des dizaines de polices pourtant installées. Un avertissement qui crie au loup ne se lit
 plus.
 
-**Les icônes de la barre d'outils sont tracées à l'échelle 1:1** sur une grille commune
-de 24 unités, avec `Stretch="None"`. Une mise à l'échelle uniforme normaliserait chaque
-icône sur sa propre boîte englobante : l'épaisseur du trait varierait alors de 40 % d'un
-bouton à l'autre et l'ensemble cesserait de faire système.
+**Les icônes sont les tracés de la maquette**, sur sa grille commune de 24 unités, avec
+leurs épaisseurs de trait, déclarées une fois dans `Views/Apparence.axaml` avec la palette
+et les classes de l'interface (poste I1). Chaque icône est dessinée à la taille où la
+maquette l'affiche, la grille entière mise à l'échelle d'un bloc : une mise à l'échelle
+icône par icône la normaliserait sur sa propre boîte englobante, l'épaisseur du trait
+varierait alors de 40 % d'un bouton à l'autre et l'ensemble cesserait de faire système.
 
 **Les interactions passent par une couche de saisie transparente** posée sur la page,
 et non par le test de survol des blocs. Les contrôles internes (image, zone de texte)
@@ -450,10 +469,10 @@ partout ailleurs — à l'écran, à l'export — un chemin d'image est absolu.
   retape le texte ; l'annulation du document le rend, au caractère près.
 - Les fragments de style se lisent, s'écrivent et se rendent, mais ne se saisissent pas
   encore à la souris : on ne peut pas sélectionner trois mots dans un bloc pour les
-  mettre en gras. Le panneau agit sur le bloc entier.
+  mettre en gras. Le dock, le menu Texte et `Ctrl+G` agissent sur le bloc entier.
 - L'alignement, les retraits et l'espacement varient d'un paragraphe à l'autre — un
   document Publisher importé les garde, et ils s'affichent et s'exportent —, mais le
-  panneau ne règle que le bloc entier.
+  dock ne règle que le bloc entier.
 - La coupure des lignes se décide, à l'écran comme au PDF, sur la plus large des deux
   mesures, et sur la largeur du bloc telle que le modèle la donne. Ce qui est vérifié,
   par `Scripts/comparer-mots.sh` dans la recette de Q13 : aucune ligne coupée

@@ -12,8 +12,9 @@ glisser-déposer n'importe quelle commande de l'application.
 
 ## État dans MyPublisher
 
-La barre d'outils est fixe : cinq boutons d'outil de tracé puis des actions immédiates
-sur le bloc sélectionné (`Views/MainWindow.axaml`, barre latérale).
+Les barres sont fixes (phase I, poste I2) : un rail d'outils à gauche — sélection, texte,
+titre, image, tableau, rectangle, ellipse —, et une barre principale à icônes en haut —
+document, annulation, alignement, ordre, zoom, export (`Views/MainWindow.axaml`).
 
 ## Écart / ce qu'il faudrait
 
@@ -25,5 +26,6 @@ l'ensemble « fasse système »).
 
 Ce qui mérite en revanche d'être repris de ces pages : **l'idée de barres
 contextuelles**, qui apparaissent selon le type d'objet sélectionné. MyPublisher le fait
-déjà, mais dans le panneau de propriétés (`MainWindow.axaml:297` et suivants, via un
-`ContentControl` qui commute sur le type du bloc). C'est la même idée, mieux placée.
+dans le dock, dont l'onglet Propriétés commute ses sections sur le type du bloc, et dans
+la barre contextuelle sous la barre principale (`Views/BarreContextuelle.axaml`), qui
+porte la nature de la sélection et que le poste I3 remplit.

@@ -27,16 +27,19 @@ bords, **indicateur de page** en bas à gauche (onglets numérotés), et barre d
 
 ## État dans MyPublisher
 
-Disposition proche mais miroir : pages et blocs à gauche, planche au centre, propriétés
-à droite, barre d'outils verticale sur le bord **droit**.
+*Repris le 24 octobre 2026, à la refonte de la fenêtre (phase I, poste I2).* La
+disposition est celle de la maquette de `Maquettes/` : barre de menus, barre principale à
+icônes, barre contextuelle, puis, de gauche à droite, le rail d'outils, le panneau Pages,
+la planche et le dock à quatre onglets ; la barre d'état au pied.
 
-- Liste des pages (`Views/MainWindow.axaml:202-212`) — équivalent plus lisible de
-  l'indicateur de page.
-- Liste des blocs, « du fond vers l'avant » (`:213-222`) — Publisher n'a pas cet
-  équivalent, c'est un avantage net.
-- Barre d'état : position du curseur en mm (`CursorLabel`, `MainWindowViewModel.cs:179`),
-  nombre de pages, zoom.
-- Pas de règles graduées.
+- Panneau Pages (`Views/MainWindow.axaml`, `PanneauPages`) — équivalent plus lisible de
+  l'indicateur de page ; chaque entrée est un contrôle à part (`EntreeDePage.axaml`), qui
+  deviendra une vignette (poste I5).
+- « Blocs de la page », au pied de l'onglet Propriétés du dock, **l'avant en tête** —
+  Publisher n'a pas cet équivalent, c'est un avantage net.
+- Barre d'état : message, position du curseur en mm (`CursorLabel`), position et taille du
+  bloc (A6), « Page 1 sur 3 », format, zoom et son curseur.
+- Règles graduées et repères libres depuis C2b ; la planche est refaite par le poste I4.
 
 ## Écart / ce qu'il faudrait
 

@@ -25,10 +25,10 @@ namespace MyPublisher.Tests.Interface;
 /// Pas « charte » : le mot nomme déjà le jeu de couleurs et de polices du document, que
 /// <c>JeuxTests</c> éprouve.
 ///
-/// Aucune vue ne s'en sert encore : le poste la pose, les suivants la lisent. Ces tests
-/// la mesurent donc sur des contrôles construits pour l'occasion, dans une fenêtre à
-/// l'échelle 1, et vérifient qu'elle ne touche pas à la fenêtre d'aujourd'hui — sa
-/// première promesse, puisqu'elle est chargée pour toute l'application.
+/// Le poste la pose, les suivants la lisent. Ces tests la mesurent sur des contrôles
+/// construits pour l'occasion, dans une fenêtre à l'échelle 1, et vérifient qu'elle ne
+/// touche pas aux vues d'avant la phase — sa première promesse, puisqu'elle est chargée
+/// pour toute l'application. La fenêtre principale n'en est plus depuis le poste I2.
 ///
 /// Les couleurs attendues sont lues dans l'apparence et non recopiées. Ce n'est pas un
 /// cercle : que chaque clé porte la couleur de la maquette, et que chaque style cite la
@@ -376,17 +376,21 @@ public class ApparenceTests
     }
 
     [AvaloniaFact]
-    public void L_apparence_ne_change_pas_un_pixel_de_la_fenetre_d_avant_la_phase()
+    public void L_apparence_ne_change_pas_un_pixel_des_vues_d_avant_la_phase()
     {
-        // L'exemple, un bloc de texte sélectionné : le panneau montre alors ses champs, ses
-        // listes, ses cases et ses boutons — tout ce qu'un style trop large rhabillerait.
-        Rendu.Image Fenetre()
+        // Écrit d'abord sur la fenêtre principale, quand aucune vue ne se servait de
+        // l'apparence. Depuis le poste I2, la fenêtre est de la phase : elle cite
+        // l'apparence, et ne s'ouvre plus sans elle. La promesse reste — un style sans
+        // classe rhabillerait ce qui n'en demande rien — et se mesure sur ce qui n'est pas
+        // de la phase : la planche, que I4 refera, ouverte seule sur l'exemple, un bloc de
+        // texte sélectionné ; et les deux dialogues, coordonnées et catalogue des modèles,
+        // avec leurs champs, leurs listes et leurs boutons.
+        Rendu.Image Composer(Func<Window> ouvrir)
         {
-            var document = DocumentSerializer.Load(Path.Combine(Rendu.Racine(), "Samples", "exemple-bulletin.mypub"));
-            var (fenetre, vm) = Rendu.Ouvrir(document);
+            var fenetre = ouvrir();
+            fenetre.Show();
             try
             {
-                vm.SelectOnly(document.Pages[0].Frames.OfType<Models.TextFrame>().First());
                 Rendu.Battre(8);
                 return Rendu.Composee(fenetre);
             }
@@ -396,33 +400,65 @@ public class ApparenceTests
             }
         }
 
+        Window Planche()
+        {
+            var document = DocumentSerializer.Load(Path.Combine(Rendu.Racine(), "Samples", "exemple-bulletin.mypub"));
+            var vm = new ViewModels.MainWindowViewModel(contacts: new BusinessInfoStore(),
+                horloge: () => new DateTime(2026, 9, 6))
+            {
+                Document = document,
+                CurrentPage = document.Pages[0],
+                FilePath = "banc.mypub",
+                Zoom = 1 / Models.Units.PointToDip,
+            };
+            vm.SelectOnly(document.Pages[0].Frames.OfType<Models.TextFrame>().First());
+            return new Window { Width = 900, Height = 700, DataContext = vm, Content = new Views.PageCanvas() };
+        }
+
+        Window Coordonnees() => new Views.BusinessInfoWindow
+        {
+            Width = 700, Height = 600,
+            DataContext = new ViewModels.BusinessInfoViewModel(new BusinessInfoStore()),
+        };
+
+        Window Catalogue() => new Views.TemplateChooserWindow
+        {
+            Width = 800, Height = 600,
+            DataContext = new ViewModels.TemplateChooserViewModel(TemplateStore.Load()),
+        };
+
         var styles = Application.Current!.Styles;
         var apparence = Apparence();
         var rang = styles.IndexOf(apparence);
 
-        var avec = Fenetre();
-        Rendu.Image sans;
-        styles.Remove(apparence);
-        try
+        foreach (var (nom, vue) in new (string, Func<Window>)[]
+                 { ("la planche", Planche), ("les coordonnées", Coordonnees), ("le catalogue", Catalogue) })
         {
-            sans = Fenetre();
-        }
-        finally
-        {
-            styles.Insert(rang, apparence);
-        }
-        var encore = Fenetre();
+            var avec = Composer(vue);
+            Rendu.Image sans;
+            styles.Remove(apparence);
+            try
+            {
+                sans = Composer(vue);
+            }
+            finally
+            {
+                styles.Insert(rang, apparence);
+            }
+            var encore = Composer(vue);
 
-        // D'abord que la mesure soit sûre : deux ouvertures avec l'apparence rendent la même
-        // image. Sans cela, l'égalité qui suit ne prouverait rien, et l'écart rien non plus.
-        Assert.True(avec.Pixels.SequenceEqual(encore.Pixels), "deux ouvertures identiques ne rendent pas la même image");
-        Assert.Equal((avec.Largeur, avec.Hauteur), (sans.Largeur, sans.Hauteur));
+            // D'abord que la mesure soit sûre : deux ouvertures avec l'apparence rendent la
+            // même image. Sans cela, l'égalité qui suit ne prouverait rien, et l'écart rien
+            // non plus.
+            Assert.True(avec.Pixels.SequenceEqual(encore.Pixels), $"{nom} : deux ouvertures identiques ne rendent pas la même image");
+            Assert.Equal((avec.Largeur, avec.Hauteur), (sans.Largeur, sans.Hauteur));
 
-        var ecarts = Enumerable.Range(0, avec.Pixels.Length / 4)
-            .Where(i => !avec.Pixels.AsSpan(i * 4, 4).SequenceEqual(sans.Pixels.AsSpan(i * 4, 4)))
-            .ToList();
-        Assert.True(ecarts.Count == 0,
-            $"l'apparence change {ecarts.Count} pixels de la fenêtre, le premier en " +
-            $"({ecarts.FirstOrDefault() % avec.Largeur}, {ecarts.FirstOrDefault() / avec.Largeur})");
+            var ecarts = Enumerable.Range(0, avec.Pixels.Length / 4)
+                .Where(i => !avec.Pixels.AsSpan(i * 4, 4).SequenceEqual(sans.Pixels.AsSpan(i * 4, 4)))
+                .ToList();
+            Assert.True(ecarts.Count == 0,
+                $"l'apparence change {ecarts.Count} pixels dans {nom}, le premier en " +
+                $"({ecarts.FirstOrDefault() % avec.Largeur}, {ecarts.FirstOrDefault() / avec.Largeur})");
+        }
     }
 }
