@@ -525,7 +525,9 @@ public static class Compositeur
     ///
     /// **« Mots seuls » ne passe sous aucun blanc** : le trait couvre le mot sans les
     /// espaces qui le suivent, et ni un morceau blanc ni une tabulation n'en reçoivent.
-    /// Le mot se mesure à la règle du rendu, celle qui l'a posé.
+    /// Une insécable est un blanc comme un autre (<see cref="char.IsWhiteSpace(char)"/>) :
+    /// elle reste nue, qu'elle tombe au milieu d'un morceau ou au bout d'un fragment. Le
+    /// mot se mesure à la règle du rendu, celle qui l'a posé.
     ///
     /// **Deux morceaux voisins du même style ne font qu'un trait.** Un trait par mot
     /// ferait repartir à chaque mot le motif d'un pointillé, et doublerait le lissage à
@@ -548,27 +550,34 @@ public static class Compositeur
             if (!souligne.Actif) continue;
 
             var debut = morceau.X + decalages[m];
-            double fin;
 
             if (souligne.WordsOnly)
             {
-                // Un morceau est un mot suivi de ses espaces (voir « Mots ») : le mot
-                // seul, c'est le morceau sans ce qui le suit.
-                var mot = morceau.Texte.TrimEnd();
-                if (mot.Trim().Length == 0) continue;
-                fin = debut + (mot.Length == morceau.Texte.Length
-                    ? morceau.Largeur
-                    : metriques.Largeur(mot, morceau.Style));
-            }
-            else
-            {
-                fin = m + 1 < ligne.Morceaux.Count
-                    ? ligne.Morceaux[m + 1].X + decalages[m + 1]
-                    : debut + morceau.Largeur;
+                // Un morceau est un mot suivi de ses espaces (voir « Mots »), mais une
+                // insécable n'y coupe pas : « Prix : » est un seul morceau. Un trait par
+                // suite de caractères qui ne sont pas des blancs, donc : sans cela,
+                // l'insécable serait soulignée au milieu d'un morceau et nue au bout d'un
+                // fragment, selon une frontière que rien ne montre.
+                var texte = morceau.Texte;
+                double Bord(int k) => k == texte.Length ? morceau.Largeur
+                    : k == 0 ? 0 : metriques.Largeur(texte[..k], morceau.Style);
+                for (var i = 0; i < texte.Length;)
+                {
+                    if (char.IsWhiteSpace(texte[i])) { i++; continue; }
+                    var j = i;
+                    while (j < texte.Length && !char.IsWhiteSpace(texte[j])) j++;
+                    etendues.Add(new EtendueSoulignee(debut + Bord(i), debut + Bord(j), morceau.Style));
+                    i = j;
+                }
+
+                continue;
             }
 
-            if (!souligne.WordsOnly && etendues.Count > 0
-                && etendues[^1].Style == morceau.Style && etendues[^1].Fin == debut)
+            var fin = m + 1 < ligne.Morceaux.Count
+                ? ligne.Morceaux[m + 1].X + decalages[m + 1]
+                : debut + morceau.Largeur;
+
+            if (etendues.Count > 0 && etendues[^1].Style == morceau.Style && etendues[^1].Fin == debut)
             {
                 etendues[^1] = etendues[^1] with { Fin = fin };
             }

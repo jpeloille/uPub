@@ -13,7 +13,10 @@
 # nomme et sort en erreur.
 #
 #   Scripts/eprouver-le-juge.sh            # tous les sabotages
-#   Scripts/eprouver-le-juge.sh 'motif'    # ceux dont l'intitulé répond au motif (grep -E)
+#   Scripts/eprouver-le-juge.sh 'motif'    # ceux dont l'intitulé ou le garde-fou attendu
+#                                          # répond au motif (grep -E) : le garde-fou porte
+#                                          # le code du poste (« I7-souligne »), si bien que
+#                                          # « I7 » retient les sabotages du poste I7
 #   Scripts/eprouver-le-juge.sh --cibles   # sans rien saboter : chaque texte visé est-il
 #                                          # présent, et une seule fois ? (quelques secondes)
 #   Scripts/eprouver-le-juge.sh --tranche 2/4 [motif]
@@ -89,7 +92,7 @@ filtre="${1:-}"
 # propre sabotage ne prouve rien, même si un test voisin le voit à sa place.
 saboter() {
     local intitule="$1" fichier="$2" avant="$3" apres="$4" attendu="${5:-}"
-    if [ -n "$filtre" ] && ! grep -qE "$filtre" <<< "$intitule"; then return; fi
+    if [ -n "$filtre" ] && ! grep -qE "$filtre" <<< "$intitule $attendu"; then return; fi
     rang=$((rang + 1))
     if [ $(( (rang - 1) % tranches )) != $((tranche - 1)) ]; then return; fi
     sabotages=$((sabotages + 1))
@@ -437,9 +440,9 @@ saboter "un collage qui porte du texte est poussé à gauche comme un saut" \
     '' \
     'Q1-styles-frappe|RecalageTests|FrappeTests'
 
-# I7 — le souligné. Dix-huit sabotages : le style effectif, les étendues que la
-# composition souligne, la géométrie des traits, chacun des deux rendus, le fichier,
-# l'import, la copie et la commande. Les rendus partagent le noyau ; un sabotage du
+# I7 — le souligné. Vingt-six sabotages : le style effectif, les étendues que la
+# composition souligne, la géométrie et le motif des traits, chacun des deux rendus —
+# l'exposant et la couleur compris —, le fichier, l'import, la copie et la commande. Les rendus partagent le noyau ; un sabotage du
 # noyau tombe des deux côtés à la fois, et c'est la mesure contre la table « post » de la
 # recette, jamais la comparaison de l'écran au PDF, qui le voit. Placés après Q1 et non
 # en fin de liste, où les autres postes de la phase I ajoutent les leurs en même temps.
@@ -463,8 +466,16 @@ saboter "un souligné continu s'arrête au bout de son morceau, avant le blanc �
 
 saboter "un souligné « mots seuls » passe sous les blancs qui suivent un mot" \
     MyPublisher.Core/Models/Compositeur.cs \
-    'var mot = morceau.Texte.TrimEnd();' \
-    'var mot = morceau.Texte;' \
+    'while (j < texte.Length && !char.IsWhiteSpace(texte[j])) j++;' \
+    'j = texte.Length;' \
+    'I7-souligne|Souligne(Ecran)?Tests'
+
+# Repris après relecture : « Mots » ne coupe pas à l'insécable, qui n'était nue qu'au
+# bout d'un fragment.
+saboter "un souligné « mots seuls » passe sous une insécable au milieu d'un morceau" \
+    MyPublisher.Core/Models/Compositeur.cs \
+    '&& !char.IsWhiteSpace(texte[j])) j++;' \
+    "&& texte[j] != ' ') j++;" \
     'I7-souligne|Souligne(Ecran)?Tests'
 
 saboter "le haut du souligné que donne la police est pris pour son axe" \
@@ -483,6 +494,33 @@ saboter "le second trait d'un souligné double touche le premier" \
     MyPublisher.Core/Models/Souligne.cs \
     'premier + 2 * amplitude + 2 * trait' \
     'premier + 2 * amplitude + trait' \
+    'I7-souligne|Souligne(Ecran)?Tests'
+
+# Repris après relecture : la part couverte ne sépare pas deux motifs voisins, et deux
+# motifs échangés restent cinq dessins distincts. La recette lit le dessin — la longueur
+# des tirets, les points entre eux —, le test la valeur.
+saboter "le tiret-point et le tiret-point-point échangent leurs motifs" \
+    MyPublisher.Core/Models/Souligne.cs \
+    '        TraitDeSouligne.DotDash => [4, 2, 1, 2],
+        TraitDeSouligne.DotDotDash => [4, 2, 1, 2, 1, 2],' \
+    '        TraitDeSouligne.DotDash => [4, 2, 1, 2, 1, 2],
+        TraitDeSouligne.DotDotDash => [4, 2, 1, 2],' \
+    'I7-souligne|Souligne(Ecran)?Tests'
+
+saboter "le tiret et le tiret long échangent leurs motifs" \
+    MyPublisher.Core/Models/Souligne.cs \
+    '        TraitDeSouligne.Dash => [4, 2],
+        TraitDeSouligne.LongDash => [8, 3],' \
+    '        TraitDeSouligne.Dash => [8, 3],
+        TraitDeSouligne.LongDash => [4, 2],' \
+    'I7-souligne|Souligne(Ecran)?Tests'
+
+# Repris après relecture : une police qui ne donne pas la place du trait le posait sur
+# la ligne de base. Aucune police de la recette ne le fait : le test seul le voit.
+saboter "une police sans place de souligné pose le trait sur la ligne de base" \
+    MyPublisher.Core/Models/Souligne.cs \
+    '(haut > 0 ? haut : corps / 10, ' \
+    '(haut, ' \
     'I7-souligne|Souligne(Ecran)?Tests'
 
 saboter "le souligné en vague se trace droit" \
@@ -516,6 +554,33 @@ saboter "l'export ne trace plus le souligné" \
     MyPublisher.Core/Services/PdfExporter.cs \
     'foreach (var trace in style.Underline.Traits(haut, epaisseur))' \
     'foreach (var trace in Souligne.Aucun.Traits(haut, epaisseur))' \
+    'I7-souligne'
+
+# Repris après relecture : rien ne soulignait un exposant, ni un texte de couleur hors
+# des lignes justifiées. La recette mesure le trait de « 12 » sous sa ligne de base
+# décalée, et la teinte des deux traits sur l'image en couleur.
+saboter "l'export pose le souligné d'un exposant sous la ligne de base du texte" \
+    MyPublisher.Core/Services/PdfExporter.cs \
+    '                        ligneDeBase - etendue.Style.BaselineShift * etendue.Style.FontSize);' \
+    '                        ligneDeBase);' \
+    'I7-souligne'
+
+saboter "l'écran pose le souligné d'un exposant sous la ligne de base du texte" \
+    MyPublisher/Views/TexteCompose.cs \
+    'var baseDuMorceau = ligneDeBase - style.BaselineShift * style.FontSize;' \
+    'var baseDuMorceau = ligneDeBase;' \
+    'I7-souligne'
+
+saboter "l'export trace le souligné en noir sous un texte de couleur" \
+    MyPublisher.Core/Services/PdfExporter.cs \
+    'var couleur = ParseColor(style.Foreground) ?? XColors.Black;' \
+    'var couleur = XColors.Black;' \
+    'I7-souligne'
+
+saboter "l'écran trace le souligné en noir sous un texte de couleur" \
+    MyPublisher/Views/TexteCompose.cs \
+    'var pinceau = Converters.Conv.ToBrush(trait.Couleur) ?? Brushes.Black;' \
+    'var pinceau = Brushes.Black;' \
     'I7-souligne'
 
 saboter "l'écran ne trace plus le souligné" \
@@ -863,7 +928,7 @@ saboter "la vignette peint ses filets sans résoudre la couleur du jeu" \
 saboter "la vignette compose ses filets sans résoudre la police du jeu" \
     MyPublisher/Views/TemplatePreview.cs \
     '        var commun = charte.StyleCommun(text);' \
-    '        var commun = new StyleEffectif(text.FontFamily, text.FontSize, text.Bold, text.Italic, text.Foreground, 0);' \
+    '        var commun = new StyleEffectif(text.FontFamily, text.FontSize, text.Bold, text.Italic, text.Underline, text.Foreground, 0);' \
     'Q9-vignette|VignetteTests'
 
 # Le poste B2. Le décodage peut être juste et le branchement faux : deux sabotages
@@ -1249,6 +1314,15 @@ saboter "une vue hors de la phase prend en chiffres une couleur de l'apparence" 
     'I1-apparence'
 
 echo
+# Un motif qui ne retient rien ne prouve rien : sans ce refus, une faute de frappe dans
+# le motif — ou un motif qui cherche le code du poste là où il n'est pas — se lirait
+# « 0 sabotages, 0 attrapés », comme un succès.
+if [ "$sabotages" = 0 ]; then
+    precision=""
+    [ "$tranches" != 1 ] && precision=" (tranche $tranche/$tranches, $rang retenus en tout)"
+    echo "ÉCHEC : aucun sabotage retenu${filtre:+ par le motif « $filtre »}$precision : rien n'a été éprouvé." >&2
+    exit 1
+fi
 if [ "$cibles" = 1 ]; then
     if [ "$trous" = 0 ]; then
         echo "Les $sabotages textes visés sont présents, chacun une seule fois."

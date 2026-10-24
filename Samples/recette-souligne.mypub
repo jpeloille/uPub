@@ -947,6 +947,56 @@
           "Columns": 1,
           "ColumnGap": 5.67,
           "VerticalAlign": "Top"
+        },
+        {
+          "$kind": "text",
+          "Name": "Exposant",
+          "X": 360,
+          "Y": 662,
+          "Width": 200,
+          "Height": 34,
+          "Rotation": 0,
+          "Fill": null,
+          "Stroke": null,
+          "StrokeThickness": 1,
+          "StrokeStyle": "Solid",
+          "CornerRadius": 0,
+          "Text": "Voir la note 12",
+          "FontFamily": "Liberation Sans",
+          "FontSize": 18,
+          "Bold": false,
+          "Italic": false,
+          "Underline": true,
+          "Foreground": "#FFB0302A",
+          "Spans": [
+            {
+              "Start": 13,
+              "Length": 2,
+              "FontFamily": null,
+              "FontSize": 12,
+              "Bold": null,
+              "Italic": null,
+              "Underline": null,
+              "Foreground": null,
+              "BaselineShift": 0.33
+            }
+          ],
+          "Align": "Left",
+          "LineHeight": 1,
+          "PaddingLeft": 0,
+          "PaddingTop": 0,
+          "PaddingRight": 0,
+          "PaddingBottom": 0,
+          "Field": "None",
+          "IndentLeft": 0,
+          "IndentRight": 0,
+          "IndentFirstLine": 0,
+          "SpaceBefore": 0,
+          "SpaceAfter": 0,
+          "Paragraphs": [],
+          "Columns": 1,
+          "ColumnGap": 5.67,
+          "VerticalAlign": "Top"
         }
       ]
     }

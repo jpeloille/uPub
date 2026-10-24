@@ -249,6 +249,29 @@ public class SouligneTests
 
     [Fact]
     [Trait("poste", "I7")]
+    public void Mots_seuls_laisse_nue_une_insecable_au_milieu_dun_morceau_comme_au_bout_dun_fragment()
+    {
+        var motsSeuls = new Souligne(TraitDeSouligne.Solid, wordsOnly: true);
+
+        // « Prix : dix », l'espace avant les deux-points insécable : « Mots » ne coupe pas
+        // à l'insécable, qui tombe au milieu du morceau « Prix : ».
+        var (ligne, decalages) = PremiereLigne("Prix\u00A0: dix", 100, TextAlign.Left, motsSeuls);
+        Assert.Equal("Prix\u00A0: ", ligne.Morceaux[0].Texte);
+        var seul = Compositeur.Soulignes(ligne, decalages, new ChasseFixe());
+
+        // Les deux-points en gras : un fragment commence juste après l'insécable, qui
+        // tombe alors au bout du morceau « Prix ».
+        (ligne, decalages) = PremiereLigne("Prix\u00A0: dix", 100, TextAlign.Left, motsSeuls,
+            new StyleSpan { Start = 5, Length = 1, Bold = true });
+        Assert.Equal("Prix\u00A0", ligne.Morceaux[0].Texte);
+        var coupe = Compositeur.Soulignes(ligne, decalages, new ChasseFixe());
+
+        Assert.Equal([(0.0, 4.0), (5.0, 6.0), (7.0, 10.0)], seul.Select(e => (e.Debut, e.Fin)));
+        Assert.Equal([(0.0, 4.0), (5.0, 6.0), (7.0, 10.0)], coupe.Select(e => (e.Debut, e.Fin)));
+    }
+
+    [Fact]
+    [Trait("poste", "I7")]
     public void Mots_seuls_laisse_nus_les_blancs_elargis()
     {
         var motsSeuls = new Souligne(TraitDeSouligne.Solid, wordsOnly: true);
@@ -339,6 +362,17 @@ public class SouligneTests
 
     [Fact]
     [Trait("poste", "I7")]
+    public void Une_police_sans_place_de_souligne_le_pose_a_un_dixieme_de_corps_sous_la_ligne_de_base()
+    {
+        // Ce que passent les deux rendus quand la police ne dit rien (em nul) : un haut nul
+        // poserait le trait sur la ligne de base, contre la panse des lettres rondes.
+        Assert.Equal((2.0, 1.0), Souligne.Mesure(0, 0, 20));
+        Assert.Equal((2.0, 0.9), Souligne.Mesure(-0.3, 0.9, 20));
+        Assert.True(Souligne.Simple.Traits(2.0, 1.0)[0].Axe - 0.5 > 0, "le trait touche la ligne de base");
+    }
+
+    [Fact]
+    [Trait("poste", "I7")]
     public void Chaque_trait_a_son_motif_et_le_plein_nen_a_pas()
     {
         Assert.Null(Souligne.Simple.Motif);
@@ -351,6 +385,15 @@ public class SouligneTests
         {
             Assert.NotNull(new Souligne(trait).Motif);
         }
+
+        // Chaque sorte a SON motif, et non seulement un motif à elle : deux motifs
+        // échangés restent cinq dessins distincts, mais le tiret-point se dessinerait en
+        // tiret-point-point. La recette les mesure à l'encre ; ceci les tient à la valeur.
+        Assert.Equal([1.0, 1], new Souligne(TraitDeSouligne.Dotted).Motif);
+        Assert.Equal([4.0, 2], new Souligne(TraitDeSouligne.Dash).Motif);
+        Assert.Equal([8.0, 3], new Souligne(TraitDeSouligne.LongDash).Motif);
+        Assert.Equal([4.0, 2, 1, 2], new Souligne(TraitDeSouligne.DotDash).Motif);
+        Assert.Equal([4.0, 2, 1, 2, 1, 2], new Souligne(TraitDeSouligne.DotDotDash).Motif);
 
         // Cinq motifs, cinq dessins : deux sortes qui se dessineraient pareil ne se
         // reconnaîtraient pas.

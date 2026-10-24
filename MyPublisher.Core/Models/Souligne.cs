@@ -135,11 +135,15 @@ public readonly record struct Souligne
     ///
     /// Une police sans épaisseur de souligné — une table <c>post</c> vide — en reçoit une
     /// d'un vingtième de corps, l'ordre de grandeur des polices courantes (DejaVu 4,4 %,
-    /// Liberation Sans 7,3 %). La règle est ici, et non dans chaque rendu, pour qu'ils ne
-    /// s'en inventent pas chacun une.
+    /// Liberation Sans 7,3 %, Noto 5 %). Une police sans place de souligné — zéro, ou un
+    /// haut au-dessus de la ligne de base — en reçoit une d'un dixième de corps sous la
+    /// ligne de base, celle des polices Noto : un haut nul poserait le trait sur la ligne
+    /// de base, collé à la panse d'un « o ». Un rendu qui ne lit aucune métrique passe
+    /// deux zéros, et reçoit les deux. La règle est ici, et non dans chaque rendu, pour
+    /// qu'ils ne s'en inventent pas chacun une.
     /// </summary>
     public static (double Haut, double Epaisseur) Mesure(double haut, double epaisseur, double corps) =>
-        (haut, epaisseur > 0 ? epaisseur : corps / 20);
+        (haut > 0 ? haut : corps / 10, epaisseur > 0 ? epaisseur : corps / 20);
 
     /// <summary>
     /// Le tracé d'une vague de <paramref name="debut"/> à <paramref name="fin"/>, autour

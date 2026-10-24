@@ -14,10 +14,15 @@
 #      est MESURÉ contre la table « post » de sa police, lue ici dans le fichier : le haut
 #      du trait à 0,15 pt près, l'épaisseur à 12 % près — deux fois celle de la police
 #      pour un trait épais —, le second trait d'un double à une épaisseur du premier, la
-#      vague sur trois épaisseurs de haut, et chaque motif à sa part de la ligne. « Mots
+#      vague sur trois épaisseurs de haut, et chaque motif à sa part de la ligne et à son
+#      dessin : la longueur de ses tirets et le nombre de points entre deux tirets, qui
+#      séparent le tiret du tiret long et le tiret-point du tiret-point-point. « Mots
 #      seuls » laisse sous chaque blanc un trou de la largeur du blanc ; un souligné
 #      continu court sans trou d'un bord à l'autre d'une ligne justifiée, sous ses blancs
-#      élargis. Et l'écran et le PDF posent le trait à la même ordonnée, à 0,25 pt près ;
+#      élargis. Un exposant souligné porte son trait sous SA ligne de base, montée de son
+#      décalage, à la place que la police donne à son corps ; et le trait a la couleur de
+#      son texte, mesurée sur l'image en couleur. Et l'écran et le PDF posent le trait à la
+#      même ordonnée, à 0,25 pt près ;
 #   3. l'image — « comparer-rendus.sh » passe sur la page, à sa tolérance par défaut ;
 #   4. l'import — ATA 21, dont dix-sept styles de caractère portent chacun une des
 #      dix-sept sortes de Publisher (voir plus bas), se lit par libmspub en seize sortes
@@ -149,12 +154,17 @@ pp=4
 pdftocairo -r "$((72 * pp))" -f 1 -l 1 -png -singlefile "$travail/sortie.pdf" "$travail/pdf"
 magick "$travail/ecran.png" -colorspace gray "$travail/ecran.pgm"
 magick "$travail/pdf.png" -colorspace gray "$travail/pdf.pgm"
+# En couleur aussi : les niveaux de gris ne disent pas la teinte d'un trait.
+magick "$travail/ecran.png" -alpha remove -alpha off -depth 8 "$travail/ecran.ppm"
+magick "$travail/pdf.png" -alpha remove -alpha off -depth 8 "$travail/pdf.ppm"
 pdftotext -bbox "$travail/sortie.pdf" "$travail/boites.html"
 
-python3 - "$document" "$travail/boites.html" "$travail/ecran.pgm" "$travail/pdf.pgm" "$pp" <<'PY'
+python3 - "$document" "$travail/boites.html" "$travail/ecran.pgm" "$travail/pdf.pgm" "$pp" \
+    "$travail/ecran.ppm" "$travail/pdf.ppm" <<'PY'
 import json, re, struct, subprocess, sys
 
 document, boites, ecran, pdf, pp = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], int(sys.argv[5])
+ecran_couleur, pdf_couleur = sys.argv[6], sys.argv[7]
 
 def lire_pgm(chemin):
     donnees = open(chemin, "rb").read()
@@ -191,19 +201,40 @@ mots = [(float(a), float(b), float(c), t) for a, b, c, t in re.findall(
     r'<word xMin="([0-9.]+)" yMin="([0-9.]+)" xMax="([0-9.]+)" yMax="[0-9.]+">([^<]*)</word>',
     open(boites, encoding="utf-8").read())]
 images = {"écran": lire_pgm(ecran), "PDF": lire_pgm(pdf)}
+couleurs = {"écran": lire_pgm(ecran_couleur), "PDF": lire_pgm(pdf_couleur)}
+
+def du_bloc(bloc):
+    """Les mots d'un bloc, dans son cadre : deux blocs côte à côte partagent des ordonnées."""
+    return [m for m in mots if bloc["Y"] <= m[1] < bloc["Y"] + bloc["Height"]
+            and bloc["X"] - 1 <= m[0] < bloc["X"] + bloc["Width"]]
 
 def encre(image, x, y):
     largeur, hauteur, pixels = image
     if x < 0 or y < 0 or x >= largeur or y >= hauteur: return 0.0
     return (255 - pixels[y * largeur + x]) / 255
 
-def passages(image, x, haut, bas):
+def teinte(couleur):
+    """« #AARRGGBB » en rouge, vert, bleu."""
+    return tuple(int(couleur[i:i + 2], 16) for i in (3, 5, 7))
+
+def couverture(image, x, y, c):
+    """La part d'un pixel de l'image en couleur que couvre une encre de teinte c : sa place
+    sur le chemin qui va du blanc à c. Les niveaux de gris sous-estimeraient l'encre d'un
+    texte de couleur, et l'épaisseur de son trait avec elle. Une encre plus sombre que c —
+    du noir à la place du rouge — couvre plus que le pixel entier."""
+    largeur, hauteur, pixels = image
+    if x < 0 or y < 0 or x >= largeur or y >= hauteur: return 0.0
+    i = 3 * (y * largeur + x)
+    return (sum((255 - pixels[i + k]) * (255 - c[k]) for k in range(3))
+            / sum((255 - v) ** 2 for v in c))
+
+def passages(image, x, haut, bas, mesure=encre):
     """Les passages d'encre de la colonne x entre deux ordonnées en points : pour chacun,
     son centre et son épaisseur, en points. L'épaisseur est la somme des couvertures de
     ses pixels : le lissage d'un bord n'y change rien."""
     trouves, courant = [], None
     for y in range(int(haut * pp), int(bas * pp) + 1):
-        c = encre(image, x, y)
+        c = mesure(image, x, y)
         if c > 0.03:
             courant = courant or [0.0, 0.0]
             courant[0] += c
@@ -239,6 +270,19 @@ def trous(presence):
             courant += 1
     return premier / pp, dernier / pp, largeurs
 
+def dessin(presence, t):
+    """Le dessin d'un motif le long de la ligne : la longueur de ses traits, en épaisseurs,
+    sans le premier ni le dernier, qu'un bout de ligne peut écourter."""
+    longueurs, courant = [], 0
+    for p in presence:
+        if p:
+            courant += 1
+        elif courant:
+            longueurs.append(courant / pp / t)
+            courant = 0
+    if courant: longueurs.append(courant / pp / t)
+    return longueurs[1:-1]
+
 def mediane(valeurs):
     valeurs = sorted(valeurs)
     return valeurs[len(valeurs) // 2] if valeurs else float("nan")
@@ -261,18 +305,26 @@ def souligne(bloc):
 # huit pour trois. Un motif ramené à un trait plein couvrirait toute la ligne.
 couvert = {"Solid": 1.0, "Dotted": 1 / 2, "Dash": 4 / 6, "LongDash": 8 / 11,
            "DotDash": 5 / 9, "DotDotDash": 6 / 12}
+# La part ne sépare pas les voisins : 67 % pour le tiret, 73 % pour le tiret long, 56 et
+# 50 % pour le tiret-point et le tiret-point-point, à 0,1 près. Leur dessin les sépare :
+# la longueur du tiret, en épaisseurs, et le nombre de points qui suivent chaque tiret.
+# Le pointillé n'a que des points. Un trait d'au plus deux épaisseurs et demie est un point.
+motifs = {"Dotted": (None, None), "Dash": (4, 0), "LongDash": (8, 0), "DotDash": (4, 1), "DotDotDash": (4, 2)}
+
+def decale(bloc):
+    return any(f.get("BaselineShift") for f in bloc.get("Spans") or [])
 
 sortes = 0
 for bloc in blocs:
     s = souligne(bloc)
-    if not s or bloc["Align"] == "Justify": continue
+    if not s or bloc["Align"] == "Justify" or decale(bloc): continue
     sortes += 1
     p = police(bloc["FontFamily"])
     corps = bloc["FontSize"]
     base = bloc["Y"] + p["montee"] * corps / p["em"]
     haut = base - p["position"] * corps / p["em"]
     t = p["epaisseur"] * corps / p["em"] * (2 if s["Thick"] else 1)
-    ligne = sorted((m for m in mots if bloc["Y"] <= m[1] < bloc["Y"] + bloc["Height"]), key=lambda m: m[0])
+    ligne = sorted(du_bloc(bloc), key=lambda m: m[0])
     blancs = [b[0] - a[2] for a, b in zip(ligne, ligne[1:])]
     gauche, droite = ligne[0][0] - 3, ligne[-1][2] + 3
     nom = f"« {bloc['Name']} » ({bloc['FontFamily']})"
@@ -316,6 +368,7 @@ for bloc in blocs:
             bornes = trous(presence)
             m["trous"] = bornes[2] if bornes else []
             m["part"] = sum(presence) / max(1, len(presence) - int(6 * pp))
+            m["dessin"] = dessin(presence, t)
         mesures[cote] = m
 
         # Le haut du trait est où la police le met, et chaque trait a son épaisseur.
@@ -350,9 +403,28 @@ for bloc in blocs:
             elif s["Line"] == "Solid":
                 if m["trous"]:
                     refuser(f"{nom}, {cote} : le trait plein s'interrompt {len(m['trous'])} fois.")
-            elif abs(m["part"] - couvert[s["Line"]]) > 0.1:
-                refuser(f"{nom}, {cote} : le motif couvre {m['part']:.0%} de la ligne, "
-                        f"{couvert[s['Line']]:.0%} attendus.")
+            else:
+                if abs(m["part"] - couvert[s["Line"]]) > 0.1:
+                    refuser(f"{nom}, {cote} : le motif couvre {m['part']:.0%} de la ligne, "
+                            f"{couvert[s['Line']]:.0%} attendus.")
+                tiret, apres = motifs[s["Line"]]
+                tirets = [l for l in m["dessin"] if l > 2.5]
+                points = [l for l in m["dessin"] if l <= 2.5]
+                lu = [round(l, 1) for l in m["dessin"][:8]]
+                if tiret is None:
+                    if tirets or not points or abs(mediane(points) - 1) > 0.5:
+                        refuser(f"{nom}, {cote} : un pointillé n'a que des points d'une épaisseur ; "
+                                f"traits relevés, en épaisseurs : {lu}.")
+                elif len(tirets) < 3:
+                    refuser(f"{nom}, {cote} : {len(tirets)} tiret(s) relevé(s), trois au moins attendus ; {lu}.")
+                else:
+                    if abs(mediane(tirets) - tiret) > 1.2:
+                        refuser(f"{nom}, {cote} : des tirets de {mediane(tirets):.1f} épaisseurs, {tiret} attendues ; {lu}.")
+                    if round(len(points) / len(tirets)) != apres:
+                        refuser(f"{nom}, {cote} : {len(points)} point(s) pour {len(tirets)} tirets, "
+                                f"{apres} par tiret attendu(s) ; {lu}.")
+                m["motif"] = f"tirets {mediane(tirets):.1f}, points {len(points)}/{len(tirets)}" if tirets else \
+                    f"points {mediane(points) if points else 0:.1f}"
 
     if len(mesures) == 2:
         e, d = mesures["écran"], mesures["PDF"]
@@ -362,6 +434,7 @@ for bloc in blocs:
     print(f"    {bloc['Name']:24} {bloc['FontFamily']:16} post : haut {haut - base:4.2f} ép. {t:4.2f} — "
           + " — ".join(f"{c} : haut {m['dessus'] - base:4.2f} ép. {m['epaisseur']:4.2f}"
                        + (f" part {m['part']:4.0%}" if "part" in m else f" vague {m['etendue']:4.2f}")
+                       + (f" ({m['motif']})" if "motif" in m else "")
                        for c, m in mesures.items()))
 
 # Les lignes justifiées : un souligné continu court d'un bord à l'autre de la colonne,
@@ -375,9 +448,8 @@ for bloc in blocs:
     naturelle = p["naturelle"] * corps / p["em"]
     t = p["epaisseur"] * corps / p["em"]
     lignes = {}
-    for m in mots:
-        if bloc["Y"] <= m[1] < bloc["Y"] + bloc["Height"]:
-            lignes.setdefault(round(m[1], 1), []).append(m)
+    for m in du_bloc(bloc):
+        lignes.setdefault(round(m[1], 1), []).append(m)
     rangs = sorted(lignes)
     # La dernière ligne d'un paragraphe ne se justifie pas : on ne mesure que les autres.
     for k, cle in enumerate(rangs[:-1]):
@@ -405,11 +477,82 @@ for bloc in blocs:
         print(f"    {bloc['Name']:24} ligne {k + 1} : {len(ligne)} mots, blancs élargis à "
               f"{mediane(blancs):.2f} pt — trait mesuré à l'écran et au PDF")
 
-if sortes != 17 or justifiees < 4:
-    refuser(f"{sortes} sortes et {justifiees} lignes justifiées mesurées ; dix-sept et quatre au moins attendues.")
+# L'exposant souligné, et la couleur du trait. Le trait d'un morceau se pose sous SA ligne
+# de base, montée de son décalage comme son texte, à la place et à l'épaisseur que la
+# police donne à SON corps : sous « 12 », ni sous la ligne de base du texte courant, ni à
+# l'épaisseur du grand corps. Mesurés sur l'image en couleur, par la couverture d'une
+# encre de la teinte du texte : le trait de chaque morceau a la couleur de son texte, et
+# un trait noir sous un texte rouge se voit, ce que les niveaux de gris ne diraient pas.
+exposants = 0
+for bloc in blocs:
+    if not decale(bloc): continue
+    p = police(bloc["FontFamily"])
+    corps = bloc["FontSize"]
+    base = bloc["Y"] + p["montee"] * corps / p["em"]
+    c = teinte(bloc["Foreground"])
+    tous = sorted(du_bloc(bloc), key=lambda m: m[0])
+    parts = []
+    for f in bloc["Spans"]:
+        if not f.get("BaselineShift"): continue
+        corps_f = f["FontSize"] or corps
+        texte = bloc["Text"][f["Start"]:f["Start"] + f["Length"]]
+        parts.append((f"l'exposant « {texte} »", corps_f, base - f["BaselineShift"] * corps_f,
+                      [m for m in tous if m[3] == texte]))
+    parts.append(("le texte courant", corps, base, [m for m in tous if all(m not in q[3] for q in parts)]))
+
+    for quoi, corps_m, base_m, ses_mots in parts:
+        nom = f"« {bloc['Name']} », {quoi}"
+        if not ses_mots:
+            refuser(f"{nom} : introuvable dans le PDF.")
+            continue
+        haut = base_m - p["position"] * corps_m / p["em"]
+        t = p["epaisseur"] * corps_m / p["em"]
+        dessus_par_cote = {}
+        for cote, image in couleurs.items():
+            def mesure(image, x, y): return couverture(image, x, y, c)
+            # Une marge d'un point et demi de chaque côté de chaque mot : l'écran ne pose
+            # pas ses mots exactement où le PDF les pose.
+            xs = [x for m in ses_mots for x in range(int((m[0] + 1.5) * pp), int((m[2] - 1.5) * pp))]
+            libres = [x for x in xs if not any(mesure(image, x, y) > 0.05 for y in
+                                              range(int((base_m - 0.7 * corps_m) * pp), int((base_m - 0.3) * pp)))]
+            # Jusque sous la ligne de base du texte courant : un trait qui n'aurait pas
+            # monté avec son exposant y serait.
+            colonnes = [q for q in (passages(image, x, base_m - 0.3, base + 0.6 * corps, mesure) for x in libres) if q]
+            pleines = [q[0] for q in colonnes if len(q) == 1]
+            if len(pleines) < 3 or len(pleines) < 0.5 * len(colonnes):
+                refuser(f"{nom}, {cote} : {len(pleines)} colonne(s) portent un trait seul, "
+                        f"sur {len(colonnes)} sous {len(libres)} colonne(s) sans lettre.")
+                continue
+            dessus = mediane([y - e / 2 for y, e in pleines])
+            epaisseur = mediane([e for _, e in pleines])
+            dessus_par_cote[cote] = dessus
+            if abs(dessus - haut) > 0.15:
+                refuser(f"{nom}, {cote} : le haut du trait est à {dessus - base:.2f} pt sous la ligne de base du "
+                        f"texte ; sous sa ligne de base décalée, la table « post » le met à {haut - base:.2f}.")
+            if abs(epaisseur - t) > 0.12 * t + 0.05:
+                refuser(f"{nom}, {cote} : le trait a {epaisseur:.2f} pt d'épaisseur, la police en donne "
+                        f"{t:.2f} au corps {corps_m}.")
+            # La teinte : les pixels que le trait couvre en entier, au cœur du trait.
+            pleins = [couleurs[cote][2][3 * (y * couleurs[cote][0] + x) + k]
+                      for x in libres for y in range(int((dessus + 0.2 * t) * pp), int((dessus + 0.8 * t) * pp) + 1)
+                      if mesure(image, x, y) > 0.85 for k in range(3)]
+            vue = tuple(mediane(pleins[k::3]) for k in range(3))
+            if not pleins or max(abs(a - b) for a, b in zip(vue, c)) > 40:
+                refuser(f"{nom}, {cote} : le trait est de teinte {vue}, son texte de {c}.")
+        if len(dessus_par_cote) == 2 and abs(dessus_par_cote["écran"] - dessus_par_cote["PDF"]) > 0.25:
+            refuser(f"{nom} : le trait est à {dessus_par_cote['écran'] - base:.2f} pt sous la ligne de base à "
+                    f"l'écran, à {dessus_par_cote['PDF'] - base:.2f} au PDF.")
+        exposants += 1
+        print(f"    {bloc['Name']:24} {quoi:22} post : haut {haut - base:5.2f} ép. {t:4.2f} — "
+              + " — ".join(f"{k} : haut {v - base:5.2f}" for k, v in dessus_par_cote.items())
+              + f", teinte {bloc['Foreground']}")
+
+if sortes != 17 or justifiees < 4 or exposants < 2:
+    refuser(f"{sortes} sortes, {justifiees} lignes justifiées et {exposants} morceaux décalés ou non mesurés ; "
+            "dix-sept, quatre et deux au moins attendus.")
 sys.exit(1 if echec else 0)
 PY
-echo "  2. le dessin : chaque sorte à la place et à l'épaisseur de la table « post », à l'écran et au PDF."
+echo "  2. le dessin : chaque sorte à la place et à l'épaisseur de la table « post », à son motif, l'exposant sous sa ligne de base, à la teinte de son texte, à l'écran et au PDF."
 
 # ------------------------------------------------------------------------- 3. l'image
 
@@ -654,7 +797,7 @@ for projet in MyPublisher.Tests MyPublisher.Tests.Interface; do
         exit 1
     fi
     joues="$(sed -n 's/.*Passed: *\([0-9][0-9]*\).*/\1/p' "$travail/tests.txt" | head -1)"
-    attendus=$([ "$projet" = MyPublisher.Tests ] && echo 50 || echo 7)
+    attendus=$([ "$projet" = MyPublisher.Tests ] && echo 58 || echo 7)
     if [ -z "$joues" ] || [ "$joues" -lt "$attendus" ]; then
         echo "ÉCHEC : ${joues:-0} test(s) du poste joué(s) dans $projet, $attendus au moins attendus." >&2
         exit 1
