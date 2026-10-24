@@ -161,6 +161,8 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private void OnDocumentPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
+        RemarquerUneRetouche();
+
         // Les dimensions se saisissent aussi en clair, format libre compris : ce sont
         // elles qui font foi, et le sélecteur de format qui les suit.
         if (e.PropertyName is nameof(Models.Document.PageWidth) or nameof(Models.Document.PageHeight))
@@ -481,7 +483,9 @@ public partial class MainWindowViewModel : ViewModelBase
         get
         {
             var name = FilePath is null ? "Sans titre" : Path.GetFileName(FilePath);
-            return $"{(IsDirty ? "• " : "")}{name} — MyPublisher";
+            // Une saisie du dock qui a déjà changé le document compte comme une
+            // modification, avant même d'avoir empilé son pas (poste I2).
+            return $"{(IsDirty || RetoucheEnCours ? "• " : "")}{name} — MyPublisher";
         }
     }
 
@@ -556,6 +560,8 @@ public partial class MainWindowViewModel : ViewModelBase
     /// </summary>
     private void OnSelectedFrameChanged(object? sender, PropertyChangedEventArgs e)
     {
+        RemarquerUneRetouche();
+
         if (e.PropertyName is nameof(Frame.X) or nameof(Frame.Y)
             or nameof(Frame.Width) or nameof(Frame.Height) or nameof(Frame.Rotation))
         {
@@ -659,12 +665,19 @@ public partial class MainWindowViewModel : ViewModelBase
         var baseline = _editBaseline;
         _editBaseline = null;
 
-        if (DocumentSerializer.ToJson(Document) == baseline.Json) return;
+        if (DocumentSerializer.ToJson(Document) == baseline.Json)
+        {
+            RetoucheEnCours = false;
+            return;
+        }
 
         _undo.Add(baseline);
         if (_undo.Count > MaxHistory) _undo.RemoveAt(0);
         _redo.Clear();
         IsDirty = true;
+        // Après l'empilement : Annuler, qui suivait la saisie en cours, suit désormais
+        // l'historique sans s'être grisé entre les deux.
+        RetoucheEnCours = false;
         NotifyHistory();
     }
 
@@ -745,6 +758,8 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         OnPropertyChanged(nameof(CanUndo));
         OnPropertyChanged(nameof(CanRedo));
+        OnPropertyChanged(nameof(PeutAnnuler));
+        OnPropertyChanged(nameof(PeutRetablir));
         UndoCommand.NotifyCanExecuteChanged();
         RedoCommand.NotifyCanExecuteChanged();
     }

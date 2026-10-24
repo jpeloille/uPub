@@ -43,12 +43,16 @@ la planche et le dock à quatre onglets ; la barre d'état au pied.
 
 ## Écart / ce qu'il faudrait
 
-1. **Règles sur les deux bords.** Utile en soi, mais surtout prérequis du geste
-   « glisser un repère depuis la règle » — voir [06-reperes-regles.md](06-reperes-regles.md).
-2. **Taille du bloc dans la barre d'état.** Aujourd'hui elle n'est lisible que dans le
-   panneau de droite ; pendant un redimensionnement, l'œil est sur la page.
-   `CursorLabel` est le point d'accroche évident.
-3. **Objets absents de la palette** : trait, flèche, tableau, AutoShapes. Le trait est
-   le plus criant — un filet de séparation est un besoin de PAO élémentaire, et il ne
-   demande qu'un `ShapeKind.Line` dans `Models/Frame.cs:11`, avec le tracé
-   correspondant dans `PdfExporter.DrawShape` (`Services/PdfExporter.cs:74`).
+*Repris le 25 octobre 2026, après la relecture du poste I2.* Deux des trois écarts que la
+fiche relevait sont refermés : les règles graduées sur les deux bords, d'où l'on tire un
+repère, depuis C2b — voir [06-reperes-regles.md](06-reperes-regles.md) — ; la taille du
+bloc dans la barre d'état, à côté de sa position, suivie pendant le geste et non à sa
+fin, depuis A6. Le tableau est au rail depuis C9. Restent :
+
+1. **Le trait et la flèche**, absents du rail. Un filet de séparation est un besoin de
+   PAO élémentaire ; c'est le poste A10, au lot 2 de la phase I. Le bouton Ligne, que la
+   maquette range au rail, n'y apparaîtra qu'avec son geste : jusque-là, l'import d'un
+   `.pub` simule le trait par un rectangle.
+2. **La main et la loupe**, que la maquette range aussi au rail : le poste I6.
+3. **Les formes automatiques** (AutoShapes) : ni planifiées, ni demandées par les deux
+   documents réels.

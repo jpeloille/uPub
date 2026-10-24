@@ -12,7 +12,9 @@
 #      a. B7 : Ctrl+F1 est déclaré une fois, au menu Fenêtre comme au clavier, n'est pris ni
 #         par OnKeyDown ni par un autre geste, et figure au tableau des raccourcis du README
 #         — comme Ctrl+G et Ctrl+I, que le menu Texte reçoit. Le doublon d'un geste se
-#         tait : Avalonia joue le premier et laisse l'autre inerte.
+#         tait : Avalonia joue le premier et laisse l'autre inerte. Chaque case de menu de la
+#         fenêtre se lie dans les deux sens : MenuItem.IsChecked se lie dans un seul par
+#         défaut, et une case sans « Mode=TwoWay » s'inverse sans rien changer.
 #      b. Les points d'accroche que les postes suivants attendent sont posés, chacun sous
 #         son nom : la barre contextuelle (I3) dans son propre fichier, au focus de la
 #         transaction ; l'entrée du panneau Pages (I5) dans le sien ; « Page entière » et
@@ -21,7 +23,9 @@
 #      c. Ce que la phase ne fait pas n'est pas dessiné, pas même grisé : ni Habillage, ni
 #         Effets, ni « Ajuster le texte », ni Gabarits, ni pipette, ni graisse, ni style de
 #         paragraphe nommé, ni nuancier — confirmé par le propriétaire le 24 octobre 2026.
-#         Seul ce qui s'affiche compte : un commentaire qui les nomme ne dessine rien.
+#         Seul ce qui s'affiche compte : un commentaire qui les nomme ne dessine rien. Un
+#         libellé se lit comme il s'affiche, sans ses touches d'accès : « A_juster le texte »
+#         est « Ajuster le texte » à l'écran.
 #      d. Les noms que tests, recettes et banc cherchent survivent (règle 6), et le dock a
 #         ses quatre onglets, dans l'ordre de la maquette.
 #      e. Les vues que le poste écrit sont dans la liste des vues de la phase de la recette
@@ -31,8 +35,10 @@
 #      sa place et à sa couleur ; la planche qui ne bouge pas entre la pression qui
 #      sélectionne, le relâchement et Échap (règle 3) ; chaque champ du dock, quel que
 #      soit son onglet, en un seul pas d'annulation (règle 2) ; les longueurs avec leur
-#      unité ; « Blocs de la page » l'avant en tête ; Ctrl+F1 ; Annuler et Rétablir grisés ;
-#      le menu Texte ; les sections fermées retenues ; la barre d'état.
+#      unité ; « Blocs de la page » l'avant en tête ; Ctrl+F1 et le menu Fenêtre au pointeur ;
+#      Annuler et Rétablir grisés, sauf pendant une saisie qui a déjà changé le bloc ; le
+#      menu Texte, et Ctrl+G pendant une saisie du dock ; les sections fermées retenues ;
+#      les vignettes de Fond et contour, les champs grisés, l'italique ; la barre d'état.
 #
 # Le glissé dans « Blocs de la page », réécrit à l'envers, se joue sous la recette de A4,
 # qui l'éprouvait déjà.
@@ -113,11 +119,17 @@ if len(fenetres) != 1:
     refuser("menus : le menu Fenêtre manque.")
 else:
     entrees = [(e.get("Header"), e.get("IsChecked") or e.get("Command")) for e in fenetres[0] if e.tag == A + "MenuItem"]
-    attendues = [("Panneau _Pages", "{Binding PanneauPagesVisible}"), ("_Dock", "{Binding DockVisible}"),
+    attendues = [("Panneau _Pages", "{Binding PanneauPagesVisible, Mode=TwoWay}"),
+                 ("_Dock", "{Binding DockVisible, Mode=TwoWay}"),
                  ("_Replier les panneaux", "{Binding ReplierLesPanneauxCommand}")]
     if entrees != attendues:
         refuser(f"menus : le menu Fenêtre porte {entrees}, attendu {attendues}.")
-print("    a. Ctrl+F1, Ctrl+G et Ctrl+I déclarés une fois, au menu et au tableau du README ; menu Fenêtre")
+# Toute case de menu : liée dans un seul sens, elle se coche au clic sans rien changer.
+for e in fenetre.iter(A + "MenuItem"):
+    if e.get("ToggleType") in ("CheckBox", "Radio") and (e.get("IsChecked") or "").startswith("{Binding") \
+            and not re.search(r"\bMode=TwoWay\b", e.get("IsChecked")):
+        refuser(f"menus : la case « {e.get('Header')} » est liée sans Mode=TwoWay — son clic ne change rien.")
+print("    a. Ctrl+F1, Ctrl+G et Ctrl+I déclarés une fois, au menu et au tableau du README ; menu Fenêtre ; cases liées dans les deux sens")
 
 # ---------------------------------------------------------- b. les points d'accroche
 
@@ -158,7 +170,8 @@ for fichier in (FENETRE, barre, entree):
     arbre = ET.fromstring(fichier.read_text(encoding="utf-8"))
     for e in arbre.iter():
         for attribut in ("Text", "Header", "Content", "{https://github.com/avaloniaui}ToolTip.Tip", "ToolTip.Tip"):
-            valeur = e.get(attribut) or ""
+            # Lu comme à l'écran : la touche d'accès « _ » s'efface, « __ » est un trait.
+            valeur = (e.get(attribut) or "").replace("__", "\0").replace("_", "").replace("\0", "_")
             for mot in INTERDITS:
                 if mot.lower() in valeur.lower():
                     refuser(f"dessin : {fichier.name} affiche « {valeur} » — {mot} n'est pas fait par la phase, "
@@ -211,7 +224,7 @@ echo "  1. les sources : raccourcis, points d'accroche, rien de mort, noms et on
 
 # ------------------------------------------------------------------------ 2. les tests
 
-attendus=14
+attendus=20
 if ! dotnet test MyPublisher.Tests.Interface/MyPublisher.Tests.Interface.csproj ${MYPUBLISHER_DEJA_COMPILE:+--no-build} \
         --nologo -v q --filter "poste=I2" > "$travail/tests.txt" 2>&1; then
     sed 's/^/    /' "$travail/tests.txt" >&2
@@ -224,7 +237,7 @@ if [ "${joues:-0}" -lt "$attendus" ]; then
     echo "Un filtre qui ne désigne plus rien sort en 0 : la recette ne s'en contente pas." >&2
     exit 1
 fi
-echo "  2. la fenêtre à 1400 × 900 : zones, planche immobile, un pas par champ et par onglet, unités, Ctrl+F1, menus, sections, barre d'état ($joues tests)"
+echo "  2. la fenêtre à 1400 × 900 : zones, planche immobile, un pas par champ, par onglet et par geste, unités, Ctrl+F1 et menu Fenêtre, Annuler, menus, sections, vignettes, champs grisés, barre d'état ($joues tests)"
 
 echo "I2 : la fenêtre a la disposition de la maquette, et ses points d'accroche."
 echo "B7 : Ctrl+F1 replie les deux panneaux, et le second les rend."

@@ -502,6 +502,31 @@
     <Style Selector="ComboBox.champ:focus-visible /template/ Border#Background">
         <Setter Property="BorderBrush" Value="{StaticResource Accent}"/>
     </Style>
+    <!-- Grisé : la maquette ne dessine pas cet état, que des champs du dock prennent (le
+         contour « Aucun » grise son épaisseur). Comme le bouton-icône : le fond et le bord du
+         champ, à 40 % — pas le gris de Fluent, qui n'est pas de la maquette. -->
+    <Style Selector="TextBox.champ:disabled /template/ Border#PART_BorderElement">
+        <Setter Property="Background" Value="{StaticResource Blanc}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource BordChamp}"/>
+    </Style>
+    <!-- Le champ numérique porte son bord sur son « ButtonSpinner » ; sa zone de texte, d'un
+         fond et d'un bord transparents, ne doit pas en peindre un second, qui foncerait le
+         bord grisé là où l'opacité se compose trait par trait. -->
+    <Style Selector="NumericUpDown.champ /template/ TextBox#PART_TextBox:disabled /template/ Border#PART_BorderElement">
+        <Setter Property="Background" Value="Transparent"/>
+        <Setter Property="BorderBrush" Value="Transparent"/>
+    </Style>
+    <Style Selector="ComboBox.champ:disabled /template/ Border#Background">
+        <Setter Property="Background" Value="{StaticResource Blanc}"/>
+        <Setter Property="BorderBrush" Value="{StaticResource BordChamp}"/>
+    </Style>
+    <Style Selector="TextBox.champ:disabled, NumericUpDown.champ /template/ TextBox#PART_TextBox:disabled,
+                     ComboBox.champ:disabled /template/ ContentControl#ContentPresenter">
+        <Setter Property="Foreground" Value="{StaticResource Texte}"/>
+    </Style>
+    <Style Selector="TextBox.champ:disabled, ComboBox.champ:disabled, NumericUpDown.champ:disabled">
+        <Setter Property="Opacity" Value="0.4"/>
+    </Style>
     <!-- Le champ numérique est une zone de texte dans un « ButtonSpinner » : ce sont eux
          qui portent la hauteur minimale du thème, pas le contrôle. Ses deux flèches, de la
          largeur d'un bouton chacune, ne tiennent pas dans les 58 px que la maquette donne

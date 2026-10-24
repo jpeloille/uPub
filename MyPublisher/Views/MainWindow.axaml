@@ -75,7 +75,13 @@
     <Window.Styles>
 
         <!-- La barre de menus : les « .menu » de la maquette, corps 12,5, rayon 4, survol
-             gris. Les menus déroulants gardent Fluent ; seule la barre est rhabillée. -->
+             gris. Les menus déroulants gardent Fluent ; seule la barre est rhabillée. Fluent
+             donne au menu 32 px de haut, où chaque entrée s'étire : le survol en ferait 32
+             au lieu des 23 de la maquette (4 + la ligne + 4), centrés dans la barre de 34. -->
+        <Style Selector="Menu.barreDeMenus">
+            <Setter Property="Height" Value="NaN"/>
+            <Setter Property="MinHeight" Value="0"/>
+        </Style>
         <Style Selector="Menu.barreDeMenus > MenuItem">
             <Setter Property="FontSize" Value="12.5"/>
             <Setter Property="Foreground" Value="{StaticResource Commande}"/>
@@ -96,6 +102,17 @@
                          Menu.barreDeMenus > MenuItem:selected /template/ ContentPresenter#PART_HeaderPresenter,
                          Menu.barreDeMenus > MenuItem:open /template/ ContentPresenter#PART_HeaderPresenter">
             <Setter Property="Foreground" Value="{StaticResource Commande}"/>
+        </Style>
+
+        <!-- Le bouton Italique, comme la maquette : un « I » penché en Georgia, à défaut une
+             serif qui a une vraie face italique — la serif générique de fontconfig peut être
+             une sans, d'où les deux noms avant elle. Inter, la police du chrome, n'a pas de
+             face italique : penché par simulation, son « I » sans empattement se lit comme
+             une barre oblique. -->
+        <Style Selector="ToggleButton.ib.italique">
+            <Setter Property="FontFamily" Value="Georgia, Noto Serif, Liberation Serif, serif"/>
+            <Setter Property="FontStyle" Value="Italic"/>
+            <Setter Property="FontSize" Value="14"/>
         </Style>
 
         <!-- Un bouton à libellé de la barre principale — « Page entière » : le « .menu » de
@@ -400,6 +417,30 @@
                 </ControlTemplate>
             </Setter>
         </Style>
+
+        <!-- La vignette de couleur en tête des lignes Fond et Contour : 22 × 22, bordée comme
+             un champ, rayon 4. Sans fond ni contour, la diagonale rouge de « Aucun », comme
+             la maquette la peint : un dégradé à 135° dont la bande va de 46 à 54 %. -->
+        <Style Selector="Border.vignette">
+            <Setter Property="Width" Value="22"/>
+            <Setter Property="Height" Value="22"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BordChamp}"/>
+            <Setter Property="ClipToBounds" Value="True"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="0,0,8,0"/>
+        </Style>
+        <Style Selector="Border.vignette.aucune">
+            <Setter Property="Background">
+                <LinearGradientBrush StartPoint="0%,0%" EndPoint="100%,100%">
+                    <GradientStop Offset="0.45" Color="{StaticResource CouleurBlanc}"/>
+                    <GradientStop Offset="0.46" Color="{StaticResource CouleurAucun}"/>
+                    <GradientStop Offset="0.54" Color="{StaticResource CouleurAucun}"/>
+                    <GradientStop Offset="0.55" Color="{StaticResource CouleurBlanc}"/>
+                </LinearGradientBrush>
+            </Setter>
+        </Style>
     </Window.Styles>
 
     <!-- Les champs de chaque sorte de remplissage, déclarés une fois pour toutes. Le fond
@@ -564,7 +605,7 @@
                              composition, ou la page — et, page décochée, les blocs entre eux
                              dès qu'ils sont plusieurs. -->
                         <MenuItem Header="Par rapport aux mar_ges" ToggleType="CheckBox"
-                                  IsChecked="{Binding AlignToMargins}"/>
+                                  IsChecked="{Binding AlignToMargins, Mode=TwoWay}"/>
                         <Separator/>
                         <MenuItem Header="Ajuster aux _marges" Command="{Binding FitToMarginsCommand}"/>
                         <Separator/>
@@ -605,8 +646,8 @@
                     </MenuItem>
 
                     <MenuItem Header="_Affichage">
-                        <MenuItem Header="_Repères" ToggleType="CheckBox" IsChecked="{Binding ShowGuides}"/>
-                        <MenuItem Header="Rè_gles" ToggleType="CheckBox" IsChecked="{Binding ShowRulers}"/>
+                        <MenuItem Header="_Repères" ToggleType="CheckBox" IsChecked="{Binding ShowGuides, Mode=TwoWay}"/>
+                        <MenuItem Header="Rè_gles" ToggleType="CheckBox" IsChecked="{Binding ShowRulers, Mode=TwoWay}"/>
                         <Separator/>
                         <MenuItem Header="Zoom _avant" Command="{Binding ZoomInCommand}"/>
                         <MenuItem Header="Zoom a_rrière" Command="{Binding ZoomOutCommand}"/>
@@ -614,12 +655,14 @@
                     </MenuItem>
 
                     <!-- Le menu Fenêtre : les deux panneaux, chacun à son tour, ou les deux
-                         d'un geste (B7). -->
+                         d'un geste (B7). Une case de menu se lie dans un seul sens par défaut
+                         (MenuItem.IsChecked, à la différence de ToggleButton.IsChecked) : sans
+                         « Mode=TwoWay », le clic inverse la coche et le panneau reste là. -->
                     <MenuItem Header="Fe_nêtre">
                         <MenuItem Name="MenuPanneauPages" Header="Panneau _Pages" ToggleType="CheckBox"
-                                  IsChecked="{Binding PanneauPagesVisible}"/>
+                                  IsChecked="{Binding PanneauPagesVisible, Mode=TwoWay}"/>
                         <MenuItem Name="MenuDock" Header="_Dock" ToggleType="CheckBox"
-                                  IsChecked="{Binding DockVisible}"/>
+                                  IsChecked="{Binding DockVisible, Mode=TwoWay}"/>
                         <Separator/>
                         <MenuItem Name="MenuReplierLesPanneaux" Header="_Replier les panneaux" InputGesture="Ctrl+F1"
                                   Command="{Binding ReplierLesPanneauxCommand}"/>
@@ -648,14 +691,17 @@
                     <Button x:Name="BoutonEnregistrer" Classes="ib" ToolTip.Tip="Enregistrer (Ctrl+S)" Click="OnSave"
                             Content="{StaticResource IconeEnregistrer}"/>
                     <Border Classes="separateur"/>
-                    <!-- Grisés quand l'historique est vide. La commande, elle, reste ouverte au
-                         clavier et au menu : une saisie en cours dans le dock se referme à
-                         l'annulation, avant même d'avoir empilé son pas. -->
+                    <!-- Grisés quand l'historique est vide. Une saisie du dock qui a déjà changé
+                         le document n'a pas encore empilé son pas — elle ne le fait qu'à la
+                         perte du focus — et Annuler la déferait : il reste actif pour elle
+                         (PeutAnnuler), et son clic, qui prend le focus, la referme puis
+                         l'annule. Rétablir se grise pendant ce temps : le pas qui vient videra
+                         sa pile. -->
                     <Button x:Name="BoutonAnnuler" Classes="ib" ToolTip.Tip="Annuler (Ctrl+Z)"
-                            Command="{Binding UndoCommand}" IsEnabled="{Binding CanUndo}"
+                            Command="{Binding UndoCommand}" IsEnabled="{Binding PeutAnnuler}"
                             Content="{StaticResource IconeAnnuler}"/>
                     <Button x:Name="BoutonRetablir" Classes="ib" ToolTip.Tip="Rétablir (Ctrl+Y)"
-                            Command="{Binding RedoCommand}" IsEnabled="{Binding CanRedo}"
+                            Command="{Binding RedoCommand}" IsEnabled="{Binding PeutRetablir}"
                             Content="{StaticResource IconeRetablir}"/>
                     <Border Classes="separateur"/>
                     <TextBlock Classes="libelle" Text="Aligner" Margin="4,0,6,0" VerticalAlignment="Center"/>
@@ -901,7 +947,7 @@
                                                         </CheckBox>
                                                         <DockPanel Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="3">
                                                             <TextBlock Classes="libelle libelleAGauche" Text="Nom" Margin="0,0,6,0"/>
-                                                            <TextBox Classes="champ" Text="{Binding Name}"/>
+                                                            <TextBox x:Name="ChampNom" Classes="champ" Text="{Binding Name}"/>
                                                         </DockPanel>
                                                     </Grid>
                                                 </StackPanel>
@@ -1041,7 +1087,7 @@
                                                                     VerticalAlignment="Bottom">
                                                             <ToggleButton Classes="ib" Content="G" FontWeight="Bold" FontSize="14"
                                                                           ToolTip.Tip="Gras (Ctrl+G)" IsChecked="{Binding Bold}"/>
-                                                            <ToggleButton Classes="ib" Content="I" FontStyle="Italic" FontSize="14"
+                                                            <ToggleButton Classes="ib italique" Content="I"
                                                                           ToolTip.Tip="Italique (Ctrl+I)" IsChecked="{Binding Italic}"/>
                                                         </StackPanel>
                                                         <StackPanel Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="3">
@@ -1151,7 +1197,7 @@
                                                         </ComboBox>
                                                         <!-- Le texte saisi reste là sous le champ, et se retrouve
                                                              intact quand on repasse à « Aucun ». -->
-                                                        <TextBox Classes="champ" Text="{Binding Saisie}" AcceptsReturn="True" TextWrapping="Wrap"
+                                                        <TextBox x:Name="SaisieDuTexte" Classes="champ" Text="{Binding Saisie}" AcceptsReturn="True" TextWrapping="Wrap"
                                                                  Height="110" VerticalContentAlignment="Top" Padding="8,6"
                                                                  IsEnabled="{Binding !HasField}"/>
                                                         <TextBlock Classes="aide" IsVisible="{Binding HasField}"
@@ -1261,7 +1307,7 @@
                                                         <StackPanel Orientation="Horizontal" Spacing="2">
                                                             <ToggleButton Classes="ib" Content="G" FontWeight="Bold" FontSize="14"
                                                                           ToolTip.Tip="Gras (Ctrl+G)" IsChecked="{Binding Bold}"/>
-                                                            <ToggleButton Classes="ib" Content="I" FontStyle="Italic" FontSize="14"
+                                                            <ToggleButton Classes="ib italique" Content="I"
                                                                           ToolTip.Tip="Italique (Ctrl+I)" IsChecked="{Binding Italic}"/>
                                                         </StackPanel>
 
@@ -1438,6 +1484,13 @@
                                                              ce qui passe sous le bloc reste visible. -->
                                                         <DockPanel>
                                                             <TextBlock Classes="libelle libelleAGauche" Text="Fond" Width="52" Margin="0,0,8,0"/>
+                                                            <!-- La vignette montre le fond ; elle ne le règle pas : la
+                                                                 liste et le sélecteur au-dessous le font, un contrôle par
+                                                                 propriété (règle 1). -->
+                                                            <Border x:Name="VignetteDuFond" Classes="vignette" Classes.aucune="{Binding !HasFill}">
+                                                                <views:FondBloc Fond="{Binding Fill}" IsVisible="{Binding HasFill}"
+                                                                                views:JeuAffiche.Charte="{Binding #Root.((vm:MainWindowViewModel)DataContext).Document.Charte}"/>
+                                                            </Border>
                                                             <ComboBox x:Name="SorteDeFond" Classes="champ"
                                                                       ItemsSource="{Binding #Root.((vm:MainWindowViewModel)DataContext).SortesDeFond}"
                                                                       SelectedItem="{Binding #Root.((vm:MainWindowViewModel)DataContext).FondDuBloc}">
@@ -1470,7 +1523,17 @@
                                                              épaisseur — centrée sur le bord du bloc, en points. -->
                                                         <DockPanel>
                                                             <TextBlock Classes="libelle libelleAGauche" Text="Contour" Width="52" Margin="0,0,8,0"/>
-                                                            <NumericUpDown Classes="champ" Width="64" Margin="0,0,8,0"
+                                                            <Border x:Name="VignetteDuContour" Classes="vignette" Classes.aucune="{Binding !HasStroke}">
+                                                                <Border IsVisible="{Binding HasStroke}">
+                                                                    <Border.Background>
+                                                                        <MultiBinding Converter="{x:Static conv:CouleurDuJeu.Pinceau}">
+                                                                            <Binding Path="StrokeColor"/>
+                                                                            <Binding Path="#Root.((vm:MainWindowViewModel)DataContext).Document.Charte"/>
+                                                                        </MultiBinding>
+                                                                    </Border.Background>
+                                                                </Border>
+                                                            </Border>
+                                                            <NumericUpDown x:Name="EpaisseurDuContour" Classes="champ" Width="64" Margin="0,0,8,0"
                                                                            TextConverter="{x:Static conv:Unite.Points}"
                                                                            Increment="0.5" Minimum="0" IsEnabled="{Binding HasStroke}"
                                                                            Value="{Binding StrokeThickness, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>

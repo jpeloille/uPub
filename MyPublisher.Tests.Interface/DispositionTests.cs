@@ -55,6 +55,33 @@ public class DispositionTests
         return new Rect(coin, controle.Bounds.Size);
     }
 
+    /// <summary>
+    /// Un clic de la souris au centre d'un contrôle, dans la racine qui le porte : la
+    /// fenêtre, ou le menu déroulant ouvert, qui est une racine à lui.
+    /// </summary>
+    private static void Cliquer(Control controle)
+    {
+        var racine = controle.GetVisualRoot() as TopLevel ?? throw new InvalidOperationException("hors de l'arbre");
+        var centre = controle.TranslatePoint(new Point(controle.Bounds.Width / 2, controle.Bounds.Height / 2), racine)
+                     ?? throw new InvalidOperationException();
+        racine.MouseDown(centre, MouseButton.Left);
+        racine.MouseUp(centre, MouseButton.Left);
+        Rendu.Battre();
+    }
+
+    /// <summary>Le mélange d'une couleur à 40 % sur le blanc : un contrôle grisé, sur un fond blanc.</summary>
+    private static Color Grisee(Color couleur)
+    {
+        static byte Canal(byte c) => (byte)Math.Round(255 - (255 - c) * 0.4);
+        return Color.FromRgb(Canal(couleur.R), Canal(couleur.G), Canal(couleur.B));
+    }
+
+    private static void ProcheDe(Color attendue, Color lue, string quoi)
+    {
+        Assert.True(Math.Abs(attendue.R - lue.R) <= 1 && Math.Abs(attendue.G - lue.G) <= 1 && Math.Abs(attendue.B - lue.B) <= 1,
+            $"{quoi} : {lue} au lieu de {attendue}");
+    }
+
     private static Color Couleur(string cle)
     {
         Assert.True(Application.Current!.TryGetResource(cle, ThemeVariant.Light, out var valeur), cle);
@@ -104,6 +131,14 @@ public class DispositionTests
         Assert.Equal(new Rect(1400 - 293, 121, 293, 752), dock);
         // 292 px de dock, son filet à gauche.
         Assert.Equal(292, Trouver<TabControl>(fenetre, "OngletsDuDock").Bounds.Width);
+
+        // Un menu de la barre : le « .menu » de la maquette, 4 + la ligne + 4 — 23 px chez
+        // elle —, centré dans les 34 de la barre, et non les 32 de Fluent, où le survol
+        // s'étirerait d'un bord à l'autre.
+        var fichier = Trouver<Menu>(fenetre, "Menus").Items.OfType<MenuItem>().First();
+        var survol = Boite(fenetre, fichier.GetVisualDescendants().OfType<Border>().First(b => b.Name == "PART_LayoutRoot"));
+        Assert.InRange(survol.Height, 22, 25);
+        Assert.InRange(survol.Center.Y, 16, 18);
 
         // Les couleurs des zones, et leurs filets.
         Assert.Equal(Couleur("CouleurBlanc"), Pixel(fenetre, 700, 10));
@@ -155,8 +190,19 @@ public class DispositionTests
         var barre = Trouver<BarreContextuelle>(fenetre, "BarreContextuelle");
         var pastille = Trouver<Border>(fenetre, "PastilleDeLaSelection").GetVisualDescendants().OfType<TextBlock>().Single();
 
+        var bordDeLaPastille = Trouver<Border>(fenetre, "PastilleDeLaSelection");
+
+        // Le texte ne suffit pas : une pastille masquée garde son texte, et la barre sa
+        // hauteur. C'est ce qu'on voit qui compte.
+        void PageSeVoit()
+        {
+            Assert.Equal("Page", pastille.Text);
+            Assert.True(bordDeLaPastille.IsEffectivelyVisible, "la pastille ne se voit pas sans sélection");
+            Assert.True(bordDeLaPastille.Bounds.Width > 0 && bordDeLaPastille.Bounds.Height > 0);
+        }
+
         var origine = Origine(fenetre);
-        Assert.Equal("Page", pastille.Text);
+        PageSeVoit();
         Assert.Equal(41, barre.Bounds.Height);
 
         foreach (var (bloc, nature) in new (Frame, string)[] { (texte, "Bloc de texte"), (forme, "Rectangle") })
@@ -176,7 +222,7 @@ public class DispositionTests
             fenetre.KeyPressQwerty(PhysicalKey.Escape, RawInputModifiers.None);
             Rendu.Battre();
             Assert.Null(vm.SingleSelected);
-            Assert.Equal("Page", pastille.Text);
+            PageSeVoit();
             Assert.Equal(origine, Origine(fenetre));
             Assert.Equal(41, barre.Bounds.Height);
         }
@@ -433,18 +479,87 @@ public class DispositionTests
         Assert.Equal(largeur, planche.Bounds.Width);
 
         // Le second Ctrl+F1 rend l'état d'avant, et non « les deux » : le dock seul masqué
-        // au menu Fenêtre le reste.
+        // au menu Fenêtre le reste. Entre les deux, le premier a bien tout replié — un
+        // raccourci qui inverserait chaque panneau montrerait le dock et masquerait Pages.
         vm.DockVisible = false;
         Rendu.Battre();
+        var dockMasque = planche.Bounds.Width;
         fenetre.KeyPressQwerty(PhysicalKey.F1, RawInputModifiers.Control);
+        Rendu.Battre();
+        Assert.False(pages.IsVisible);
+        Assert.False(dock.IsVisible);
+        Assert.True(planche.Bounds.Width >= largeur + panneaux,
+            $"le dock masqué, la planche passe de {dockMasque} à {planche.Bounds.Width} px au repli");
         fenetre.KeyPressQwerty(PhysicalKey.F1, RawInputModifiers.Control);
         Rendu.Battre();
         Assert.True(pages.IsVisible);
         Assert.False(dock.IsVisible);
+        Assert.Equal(dockMasque, planche.Bounds.Width);
+
+        // Un état d'avant périmé ne revient pas. Un panneau masqué, replié ; puis l'autre
+        // rouvert et remasqué à la main : le raccourci les déplie tous deux, et non le repli
+        // d'avant. Chaque panneau à son tour, chacun son geste au menu.
+        foreach (var (masque, touche) in new (Action, Action<bool>)[]
+                 {
+                     (() => vm.PanneauPagesVisible = false, v => vm.DockVisible = v),
+                     (() => vm.DockVisible = false, v => vm.PanneauPagesVisible = v),
+                 })
+        {
+            vm.PanneauPagesVisible = vm.DockVisible = true;
+            masque();
+            Rendu.Battre();
+            fenetre.KeyPressQwerty(PhysicalKey.F1, RawInputModifiers.Control);
+            Rendu.Battre();
+            touche(true);
+            touche(false);
+            Rendu.Battre();
+            fenetre.KeyPressQwerty(PhysicalKey.F1, RawInputModifiers.Control);
+            Rendu.Battre();
+            Assert.True(pages.IsVisible && dock.IsVisible,
+                $"un repli plus ancien est revenu : Pages {pages.IsVisible}, dock {dock.IsVisible}");
+        }
 
         // Un état de la vue, et non du document.
         Assert.False(vm.CanUndo);
         Assert.False(vm.IsDirty);
+    }
+
+    [AvaloniaFact]
+    public void Le_menu_Fenetre_masque_chaque_panneau_au_pointeur()
+    {
+        // Au pointeur, comme la main : une case de menu se lie dans un seul sens par défaut,
+        // et la coche s'inverserait sans que le panneau bouge.
+        var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(Texte("A", 60, 60)));
+        var menu = Trouver<Menu>(fenetre, "Menus").Items.OfType<MenuItem>().Single(m => Equals(m.Header, "Fe_nêtre"));
+
+        foreach (var (nom, panneau) in new[] { ("MenuPanneauPages", "PanneauPages"), ("MenuDock", "Dock") })
+        {
+            var bord = Trouver<Border>(fenetre, panneau);
+            foreach (var visible in new[] { false, true })
+            {
+                Cliquer(menu);
+                var entree = menu.Items.OfType<MenuItem>().Single(m => m.Name == nom);
+                Assert.True(entree.IsEffectivelyVisible, $"« {entree.Header} » n'est pas à l'écran, menu ouvert");
+                Cliquer(entree);
+                Assert.Equal(visible, entree.IsChecked);
+                Assert.Equal(visible, bord.IsVisible);
+            }
+        }
+
+        Assert.True(vm.PanneauPagesVisible && vm.DockVisible);
+
+        // Masqué à la main, rendu par le raccourci.
+        Cliquer(menu);
+        Cliquer(menu.Items.OfType<MenuItem>().Single(m => m.Name == "MenuDock"));
+        Assert.False(Trouver<Border>(fenetre, "Dock").IsVisible);
+        fenetre.KeyPressQwerty(PhysicalKey.F1, RawInputModifiers.Control);
+        fenetre.KeyPressQwerty(PhysicalKey.F1, RawInputModifiers.Control);
+        Rendu.Battre();
+        Assert.False(Trouver<Border>(fenetre, "Dock").IsVisible);
+        Cliquer(menu);
+        Cliquer(menu.Items.OfType<MenuItem>().Single(m => m.Name == "MenuDock"));
+        Assert.True(Trouver<Border>(fenetre, "Dock").IsVisible);
+        Assert.False(vm.CanUndo);
     }
 
     // ------------------------------------------------------------ barre principale
@@ -472,6 +587,45 @@ public class DispositionTests
         Assert.True(retablir.IsEffectivelyEnabled);
         // L'annulation rend un document relu : le bloc est une autre instance.
         Assert.Equal(20, vm.CurrentPage!.Frames[0].X);
+    }
+
+    [AvaloniaFact]
+    public void Annuler_reste_actif_pendant_une_saisie_qui_a_change_le_bloc()
+    {
+        // Une valeur validée sans quitter le champ : le bloc a bougé, mais le pas n'entre dans
+        // l'historique qu'à la perte du focus. Annuler ne se grise pas pour autant, et son
+        // clic — qui prend le focus — referme la saisie puis l'annule.
+        var bloc = Texte("Texte", 60, 60);
+        var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(bloc));
+        vm.SelectOnly(bloc);
+        Rendu.Battre();
+        var annuler = Trouver<Button>(fenetre, "BoutonAnnuler");
+        var retablir = Trouver<Button>(fenetre, "BoutonRetablir");
+        var titre = Trouver<TextBlock>(fenetre, "TitreDuDocument");
+        Assert.False(annuler.IsEffectivelyEnabled);
+
+        var saisie = Trouver<NumericUpDown>(fenetre, "ChampX").GetVisualDescendants().OfType<TextBox>().First();
+        saisie.Focus();
+        Rendu.Battre();
+        // Sélectionner n'est pas retoucher : le focus seul ne rend pas Annuler.
+        Assert.False(annuler.IsEffectivelyEnabled);
+        saisie.SelectAll();
+        fenetre.KeyTextInput("52.5");
+        fenetre.KeyPressQwerty(PhysicalKey.Enter, RawInputModifiers.None);
+        Rendu.Battre();
+        Assert.Equal(Units.MmToPoints(52.5), bloc.X, precision: 9);
+        Assert.True(saisie.IsFocused);
+        Assert.False(vm.CanUndo);
+        Assert.True(annuler.IsEffectivelyEnabled, "le bloc a bougé et Annuler est grisé");
+        Assert.False(retablir.IsEffectivelyEnabled);
+        Assert.Equal("banc.mypub — modifié", titre.Text);
+
+        Cliquer(annuler);
+        Assert.Equal(60, vm.CurrentPage!.Frames[0].X, precision: 9);
+        Assert.False(vm.CanUndo);
+        Assert.True(vm.CanRedo);
+        Assert.False(annuler.IsEffectivelyEnabled);
+        Assert.True(retablir.IsEffectivelyEnabled);
     }
 
     [AvaloniaFact]
@@ -555,6 +709,45 @@ public class DispositionTests
         Assert.Equal(EditorTool.Select, vm.ActiveTool);
     }
 
+    [AvaloniaFact]
+    public void Ctrl_G_pendant_une_saisie_du_dock_fait_son_propre_pas()
+    {
+        // Un geste, un pas, où que soit le focus (règle 2). Le raccourci joue sans retirer le
+        // focus au champ, dont la transaction est ouverte : le gras ne doit pas s'y fondre,
+        // et la frappe qui suit, dans le même champ, fait encore le sien.
+        var bloc = Texte("Nom1", 60, 60);
+        var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(bloc));
+        vm.SelectOnly(bloc);
+        Rendu.Battre();
+
+        var nom = Trouver<TextBox>(fenetre, "ChampNom");
+        nom.Focus();
+        Rendu.Battre();
+        nom.SelectAll();
+        fenetre.KeyTextInput("Nouveau");
+        Rendu.Battre();
+        fenetre.KeyPressQwerty(PhysicalKey.G, RawInputModifiers.Control);
+        Rendu.Battre();
+        Assert.True(bloc.Bold);
+        Assert.True(nom.IsFocused);
+        Assert.True(vm.CanUndo, "le gras s'est fondu dans la saisie en cours");
+        fenetre.KeyTextInput(" bis");
+        Rendu.Battre();
+        Quitter(fenetre);
+
+        TextFrame Bloc() => Assert.IsType<TextFrame>(vm.CurrentPage!.Frames[0]);
+        Assert.Equal(("Nouveau bis", true), (Bloc().Name, Bloc().Bold));
+        foreach (var (attendu, gras) in new[] { ("Nouveau", true), ("Nouveau", false), ("Nom1", false) })
+        {
+            Assert.True(vm.CanUndo, $"il manque un pas avant « {attendu} »");
+            vm.UndoCommand.Execute(null);
+            Rendu.Battre();
+            Assert.Equal((attendu, gras), (Bloc().Name, Bloc().Bold));
+        }
+
+        Assert.False(vm.CanUndo, "trois gestes, plus de trois pas");
+    }
+
     // ------------------------------------------------------------ les sections
 
     [AvaloniaFact]
@@ -597,6 +790,96 @@ public class DispositionTests
         Assert.True(Titre("Paragraphe").IsChecked);
         Assert.True(Titre("Position et taille").IsChecked);
         Assert.False(vm.CanUndo);
+    }
+
+    // ------------------------------------------------------------ Fond et contour
+
+    [AvaloniaFact]
+    public void Fond_et_contour_ont_leur_vignette_de_couleur()
+    {
+        // La vignette de 22 en tête de chaque ligne, comme la maquette : la couleur, ou la
+        // diagonale rouge de « Aucun ».
+        var sans = Texte("Sans", 60, 60);
+        var avec = Carre("Avec", 60, 220);
+        avec.HasStroke = true;
+        avec.StrokeColor = "#FF884422";
+        avec.StrokeThickness = 2;
+        var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(sans, avec));
+
+        Color Centre(string nom, out Rect boite)
+        {
+            var vignette = Trouver<Border>(fenetre, nom);
+            vignette.BringIntoView();
+            Rendu.Battre();
+            boite = Boite(fenetre, vignette);
+            Assert.Equal(new Size(22, 22), boite.Size);
+            return Pixel(fenetre, (int)boite.Center.X, (int)boite.Center.Y);
+        }
+
+        vm.SelectOnly(sans);
+        Rendu.Battre();
+        foreach (var nom in new[] { "VignetteDuFond", "VignetteDuContour" })
+        {
+            Assert.Equal(Couleur("CouleurAucun"), Centre(nom, out var boite));
+            // Hors de la diagonale, le blanc ; sur le bord, le bord des champs.
+            Assert.Equal(Couleur("CouleurBlanc"), Pixel(fenetre, (int)boite.X + 5, (int)boite.Y + 5));
+            Assert.Equal(Couleur("CouleurBordChamp"), Pixel(fenetre, (int)boite.Center.X, (int)boite.Y));
+        }
+
+        vm.SelectOnly(avec);
+        Rendu.Battre();
+        Assert.Equal(Color.Parse("#336699"), Centre("VignetteDuFond", out _));
+        Assert.Equal(Color.Parse("#884422"), Centre("VignetteDuContour", out _));
+        Assert.False(vm.CanUndo, "montrer la couleur a écrit dans le document");
+    }
+
+    [AvaloniaFact]
+    public void Un_champ_grise_garde_le_fond_et_le_bord_de_la_maquette()
+    {
+        // Le contour « Aucun » grise son épaisseur, un champ calculé grise la saisie : le fond
+        // et le bord du champ, à 40 %, et non le gris de Fluent (#CCCCCC, bordé de #94979D).
+        var bloc = Texte("Texte", 60, 60);
+        bloc.Field = FieldKind.PageNumber;
+        var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(bloc));
+        vm.SelectOnly(bloc);
+        Rendu.Battre();
+
+        foreach (var champ in new Control[]
+                 {
+                     Trouver<NumericUpDown>(fenetre, "EpaisseurDuContour"), Trouver<TextBox>(fenetre, "SaisieDuTexte"),
+                 })
+        {
+            Assert.False(champ.IsEffectivelyEnabled);
+            champ.BringIntoView();
+            Rendu.Battre();
+            var boite = Boite(fenetre, champ);
+            Assert.InRange(boite.Bottom, 0, 860);
+            ProcheDe(Couleur("CouleurBlanc"), Pixel(fenetre, (int)boite.Right - 4, (int)boite.Center.Y), $"{champ.Name}, fond");
+            ProcheDe(Grisee(Couleur("CouleurBordChamp")), Pixel(fenetre, (int)boite.Center.X, (int)boite.Y), $"{champ.Name}, bord");
+        }
+    }
+
+    [AvaloniaFact]
+    public void Le_bouton_Italique_a_une_vraie_italique()
+    {
+        // Le « I » de la maquette est en Georgia, serif. Inter, la police du chrome, n'a pas
+        // d'italique : penché par simulation, son « I » se lit comme une barre oblique.
+        var bloc = Texte("Texte", 60, 60);
+        var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(bloc));
+        vm.SelectOnly(bloc);
+        Rendu.Battre();
+
+        var bouton = fenetre.GetVisualDescendants().OfType<ToggleButton>()
+            .Single(t => Equals(ToolTip.GetTip(t), "Italique (Ctrl+I)") && t.IsEffectivelyVisible);
+        var texte = bouton.GetVisualDescendants().OfType<TextBlock>().Single();
+        Assert.Equal("I", texte.Text);
+        Assert.Equal(FontStyle.Italic, texte.FontStyle);
+        Assert.True(FontManager.Current.TryGetGlyphTypeface(new Typeface(texte.FontFamily, FontStyle.Italic, texte.FontWeight),
+            out var police));
+        Assert.Equal(FontStyle.Italic, police.Style);
+        Assert.Equal(FontSimulations.None, police.FontSimulations);
+        // Une serif nommée : la serif générique peut tomber sur une sans.
+        Assert.Contains(police.FamilyName, texte.FontFamily.FamilyNames.Where(n => n != "serif"));
     }
 
     // ------------------------------------------------------------ barre d'état

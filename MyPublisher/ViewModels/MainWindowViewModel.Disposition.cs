@@ -6,6 +6,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MyPublisher.Converters;
 using MyPublisher.Models;
+using MyPublisher.Services;
 
 namespace MyPublisher.ViewModels;
 
@@ -37,6 +38,9 @@ public partial class MainWindowViewModel
     /// </summary>
     private (bool Pages, bool Dock)? _avantLeRepli;
 
+    /// <summary>Vrai le temps que <see cref="ReplierLesPanneaux"/> pose les deux panneaux.</summary>
+    private bool _repliEnCours;
+
     /// <summary>
     /// Replie les deux colonnes latérales pour rendre leur place à la planche, comme le
     /// <c>Ctrl+F1</c> de Publisher (fiche 04) ; les déplie si elles le sont déjà. Le rail
@@ -49,20 +53,41 @@ public partial class MainWindowViewModel
     [RelayCommand]
     private void ReplierLesPanneaux()
     {
-        if (PanneauPagesVisible || DockVisible)
+        _repliEnCours = true;
+        try
         {
-            _avantLeRepli = (PanneauPagesVisible, DockVisible);
-            PanneauPagesVisible = false;
-            DockVisible = false;
-            Status = "Panneaux repliés — Ctrl+F1 les rend";
-            return;
-        }
+            if (PanneauPagesVisible || DockVisible)
+            {
+                _avantLeRepli = (PanneauPagesVisible, DockVisible);
+                PanneauPagesVisible = false;
+                DockVisible = false;
+                Status = "Panneaux repliés — Ctrl+F1 les rend";
+                return;
+            }
 
-        var (pages, dock) = _avantLeRepli ?? (true, true);
-        _avantLeRepli = null;
-        PanneauPagesVisible = pages;
-        DockVisible = dock;
-        Status = "Panneaux dépliés";
+            var (pages, dock) = _avantLeRepli ?? (true, true);
+            _avantLeRepli = null;
+            PanneauPagesVisible = pages;
+            DockVisible = dock;
+            Status = "Panneaux dépliés";
+        }
+        finally
+        {
+            _repliEnCours = false;
+        }
+    }
+
+    // Un panneau montré ou masqué au menu Fenêtre périme l'état d'avant le repli : rouverts
+    // puis masqués à la main, les deux panneaux se déplient tous deux au raccourci, au lieu
+    // de rendre ce qu'un repli plus ancien avait retenu.
+    partial void OnPanneauPagesVisibleChanged(bool value)
+    {
+        if (!_repliEnCours) _avantLeRepli = null;
+    }
+
+    partial void OnDockVisibleChanged(bool value)
+    {
+        if (!_repliEnCours) _avantLeRepli = null;
     }
 
     // ------------------------------------------------------------- points d'accroche
@@ -122,7 +147,57 @@ public partial class MainWindowViewModel
     /// sien (<see cref="WindowTitle"/>), que le bureau affiche dans sa liste des fenêtres.
     /// </summary>
     public string TitreDuDocument =>
-        (FilePath is null ? "Sans titre" : Path.GetFileName(FilePath)) + (IsDirty ? " — modifié" : "");
+        (FilePath is null ? "Sans titre" : Path.GetFileName(FilePath)) +
+        (IsDirty || RetoucheEnCours ? " — modifié" : "");
+
+    // ---------------------------------------------------------- Annuler et Rétablir
+
+    private bool _retoucheEnCours;
+
+    /// <summary>
+    /// Une transaction ouverte — un champ du dock qui a le focus, un geste sur la planche —
+    /// a déjà changé le document, sans avoir encore empilé son pas : il ne l'empile qu'à sa
+    /// fermeture, à la perte du focus. Le document est pourtant modifié, et Annuler le
+    /// déferait (<c>EndPendingEdit</c>) : le bouton ne doit pas se griser entre les deux.
+    /// Relevé à la première retouche du bloc choisi ou du document, et oublié à la
+    /// fermeture de la transaction.
+    /// </summary>
+    public bool RetoucheEnCours
+    {
+        get => _retoucheEnCours;
+        private set
+        {
+            if (!SetProperty(ref _retoucheEnCours, value)) return;
+            OnPropertyChanged(nameof(PeutAnnuler));
+            OnPropertyChanged(nameof(PeutRetablir));
+            OnPropertyChanged(nameof(TitreDuDocument));
+            OnPropertyChanged(nameof(WindowTitle));
+        }
+    }
+
+    /// <summary>
+    /// Le bouton Annuler de la barre principale : grisé quand l'historique est vide et que
+    /// rien n'attend d'y entrer. Un bouton grisé ne prend ni le pointeur ni le focus — le
+    /// clic ne refermerait même pas la saisie qu'il devait défaire.
+    /// </summary>
+    public bool PeutAnnuler => CanUndo || RetoucheEnCours;
+
+    /// <summary>
+    /// Le bouton Rétablir : une retouche en cours videra la pile de rétablissement dès
+    /// qu'elle empilera son pas, ce que Rétablir ferait d'abord.
+    /// </summary>
+    public bool PeutRetablir => CanRedo && !RetoucheEnCours;
+
+    /// <summary>
+    /// Appelée à chaque retouche du document ou d'un bloc choisi. Une seule comparaison au
+    /// document de référence par transaction, tant qu'elle n'a rien changé : une retouche
+    /// qui écrit la valeur déjà là ne compte pas.
+    /// </summary>
+    private void RemarquerUneRetouche()
+    {
+        if (RetoucheEnCours || _editDepth == 0 || _editBaseline is null) return;
+        if (DocumentSerializer.ToJson(Document) != _editBaseline.Json) RetoucheEnCours = true;
+    }
 
     // -------------------------------------------------------- la pastille de la barre
 
@@ -180,24 +255,32 @@ public partial class MainWindowViewModel
 
     private void Retoucher(Action<TextFrame> surTexte, Action<TableFrame>? surTableau, string message)
     {
-        if (SingleSelected is TextFrame texte)
-        {
-            BeginEdit();
-            surTexte(texte);
-            CommitEdit();
-        }
-        else if (SingleSelected is TableFrame tableau && surTableau is not null)
-        {
-            BeginEdit();
-            surTableau(tableau);
-            CommitEdit();
-        }
-        else
-        {
-            return;
-        }
+        if (SingleSelected is TextFrame texte) UnGesteUnPas(() => surTexte(texte));
+        else if (SingleSelected is TableFrame tableau && surTableau is not null) UnGesteUnPas(() => surTableau(tableau));
+        else return;
 
         Status = message;
+    }
+
+    /// <summary>
+    /// Un geste de la fenêtre — un raccourci, une entrée du menu Texte — fait son propre pas
+    /// d'annulation, où que soit le focus (règle 2). Un raccourci joue sans retirer le
+    /// focus au champ du dock, dont la transaction est ouverte : imbriqué dedans, le gras
+    /// se fondrait dans le pas du champ, et une annulation déferait les deux. La saisie en
+    /// cours est donc refermée d'abord — son pas avant celui du geste —, puis rouverte à la
+    /// même profondeur : la suite de la frappe dans le même champ reste dans une
+    /// transaction, que la perte du focus refermera.
+    /// </summary>
+    private void UnGesteUnPas(Action geste)
+    {
+        var ouvertes = _editDepth;
+        if (ouvertes > 0) EndPendingEdit();
+
+        BeginEdit();
+        geste();
+        CommitEdit();
+
+        for (var i = 0; i < ouvertes; i++) BeginEdit();
     }
 
     // -------------------------------------------------------------- Fond et contour

@@ -13,7 +13,10 @@
 # nomme et sort en erreur.
 #
 #   Scripts/eprouver-le-juge.sh            # tous les sabotages
-#   Scripts/eprouver-le-juge.sh 'motif'    # ceux dont l'intitulé répond au motif (grep -E)
+#   Scripts/eprouver-le-juge.sh 'motif'    # ceux dont l'intitulé, ou le garde-fou attendu,
+#                                          # répond au motif (grep -E) : « I2|B7 » joue ceux
+#                                          # que la recette I2-B7 doit attraper. Un motif
+#                                          # qui ne retient rien est un échec, pas un succès
 #   Scripts/eprouver-le-juge.sh --cibles   # sans rien saboter : chaque texte visé est-il
 #                                          # présent, et une seule fois ? (quelques secondes)
 #   Scripts/eprouver-le-juge.sh --tranche 2/4 [motif]
@@ -89,7 +92,9 @@ filtre="${1:-}"
 # propre sabotage ne prouve rien, même si un test voisin le voit à sa place.
 saboter() {
     local intitule="$1" fichier="$2" avant="$3" apres="$4" attendu="${5:-}"
-    if [ -n "$filtre" ] && ! grep -qE "$filtre" <<< "$intitule"; then return; fi
+    # Le motif lit l'intitulé et le garde-fou attendu : les intitulés ne portent pas le code
+    # de leur poste, la recette qui doit les attraper, si.
+    if [ -n "$filtre" ] && ! grep -qE "$filtre" <<< "$intitule" && ! grep -qE "$filtre" <<< "$attendu"; then return; fi
     rang=$((rang + 1))
     if [ $(( (rang - 1) % tranches )) != $((tranche - 1)) ]; then return; fi
     sabotages=$((sabotages + 1))
@@ -1133,7 +1138,8 @@ saboter "une vue hors de la phase prend en chiffres une couleur de l'apparence" 
 
 # I2 et B7 : la disposition de la fenêtre, et les panneaux qui se replient. Chaque
 # intitulé commence par « la fenêtre » : « eprouver-le-juge.sh '^la fenêtre' » les joue
-# tous, et eux seuls.
+# tous, et eux seuls ; « eprouver-le-juge.sh 'I2|B7' » joue ceux qu'attend la recette
+# I2-B7, c'est-à-dire tous sauf le glissé, que la recette de A4 attrape.
 
 # Règle 3 : la barre contextuelle qui se masque sans sélection fait descendre la planche
 # de 41 px entre la pression du pointeur et son relâchement.
@@ -1173,8 +1179,8 @@ saboter "la fenêtre range un bloc ajouté au mauvais rang de « Blocs de la pag
 # B7 : Ctrl+F1 ne replie plus que le panneau Pages.
 saboter "la fenêtre ne replie plus le dock sous Ctrl+F1" \
     MyPublisher/ViewModels/MainWindowViewModel.Disposition.cs \
-    $'            PanneauPagesVisible = false;\n            DockVisible = false;' \
-    '            PanneauPagesVisible = false;' \
+    $'                PanneauPagesVisible = false;\n                DockVisible = false;' \
+    '                PanneauPagesVisible = false;' \
     'I2-B7-disposition|DispositionTests'
 
 # B7 : le raccourci quitte le tableau du README — il existerait sans que personne le sache.
@@ -1187,7 +1193,7 @@ saboter "la fenêtre replie ses panneaux sans que le README le dise" \
 # Annuler qui ne se grise plus : un bouton qui a l'air de pouvoir et ne fait rien.
 saboter "la fenêtre laisse Annuler actif sur un historique vide" \
     MyPublisher/Views/MainWindow.axaml \
-    'Command="{Binding UndoCommand}" IsEnabled="{Binding CanUndo}"' \
+    'Command="{Binding UndoCommand}" IsEnabled="{Binding PeutAnnuler}"' \
     'Command="{Binding UndoCommand}"' \
     'I2-B7-disposition|DispositionTests'
 
@@ -1235,7 +1241,105 @@ saboter "la fenêtre mène le zoom par un curseur linéaire" \
     'value is double zoom && zoom > 0 ? zoom : AvaloniaPropertyUnset();' \
     'I2-B7-disposition|DispositionTests'
 
+# Repris après relecture. Une case du menu Fenêtre liée dans un seul sens : le clic coche
+# « Dock » et le dock reste là.
+saboter "la fenêtre lie la case Dock de son menu dans un seul sens" \
+    MyPublisher/Views/MainWindow.axaml \
+    'IsChecked="{Binding DockVisible, Mode=TwoWay}"' \
+    'IsChecked="{Binding DockVisible}"' \
+    'I2-B7-disposition|DispositionTests'
+
+# Annuler grisé sur l'historique seul : le bloc a bougé au dock, le pas n'est pas encore
+# empilé, et le clic ne referme même pas la saisie.
+saboter "la fenêtre grise Annuler pendant une saisie qui a changé le bloc" \
+    MyPublisher/Views/MainWindow.axaml \
+    'IsEnabled="{Binding PeutAnnuler}"' \
+    'IsEnabled="{Binding CanUndo}"' \
+    'I2-B7-disposition|DispositionTests'
+
+saboter "la fenêtre ne remarque plus qu'une saisie a changé le bloc" \
+    MyPublisher/ViewModels/MainWindowViewModel.Disposition.cs \
+    '        if (DocumentSerializer.ToJson(Document) != _editBaseline.Json) RetoucheEnCours = true;' \
+    '' \
+    'I2-B7-disposition|DispositionTests'
+
+# Ctrl+G pendant une saisie du dock : le gras se fond dans le pas du champ (règle 2).
+saboter "la fenêtre fond le gras dans la saisie en cours du dock" \
+    MyPublisher/ViewModels/MainWindowViewModel.Disposition.cs \
+    '        if (ouvertes > 0) EndPendingEdit();' \
+    '' \
+    'I2-B7-disposition|DispositionTests'
+
+# B7 : un état d'avant le repli qui survit aux gestes du menu Fenêtre.
+saboter "la fenêtre rend au raccourci un état d'avant périmé" \
+    MyPublisher/ViewModels/MainWindowViewModel.Disposition.cs \
+    $'    partial void OnPanneauPagesVisibleChanged(bool value)\n    {\n        if (!_repliEnCours) _avantLeRepli = null;\n    }' \
+    $'    partial void OnPanneauPagesVisibleChanged(bool value)\n    {\n    }' \
+    'I2-B7-disposition|DispositionTests'
+
+# B7 : un raccourci qui inverse chaque panneau au lieu de les replier — le dock masqué au
+# menu, il montrerait le dock et masquerait Pages.
+saboter "la fenêtre inverse chaque panneau sous Ctrl+F1" \
+    MyPublisher/ViewModels/MainWindowViewModel.Disposition.cs \
+    $'    private void ReplierLesPanneaux()\n    {\n' \
+    $'    private void ReplierLesPanneaux()\n    {\n        PanneauPagesVisible = !PanneauPagesVisible;\n        DockVisible = !DockVisible;\n        if (DockVisible || !DockVisible) return;\n' \
+    'I2-B7-disposition|DispositionTests'
+
+# Règle 3 : la pastille masquée sans sélection. La barre garde sa hauteur et la pastille
+# son texte ; seul ce qu'on voit la trahit.
+saboter "la fenêtre masque la pastille sans sélection" \
+    MyPublisher/Views/BarreContextuelle.axaml \
+    '<Border x:Name="PastilleDeLaSelection" Background=' \
+    '<Border x:Name="PastilleDeLaSelection" IsVisible="{Binding HasSelection}" Background=' \
+    'I2-B7-disposition|DispositionTests'
+
+# Ce que la phase ne fait pas, caché derrière une touche d'accès, dans un menu dont aucun
+# test ne compare les entrées.
+saboter "la fenêtre dessine « Ajuster le texte » sous une touche d'accès" \
+    MyPublisher/Views/MainWindow.axaml \
+    '<MenuItem Header="Ajuster aux _marges" Command="{Binding FitToMarginsCommand}"/>' \
+    '<MenuItem Header="Ajuster aux _marges" Command="{Binding FitToMarginsCommand}"/><MenuItem Header="A_juster le texte"/>' \
+    'I2-B7-disposition'
+
+# Le menu de la barre aux 32 px de Fluent : le survol s'étire d'un bord à l'autre.
+saboter "la fenêtre laisse les menus de sa barre à la hauteur de Fluent" \
+    MyPublisher/Views/MainWindow.axaml \
+    $'        <Style Selector="Menu.barreDeMenus">\n            <Setter Property="Height" Value="NaN"/>\n            <Setter Property="MinHeight" Value="0"/>\n        </Style>\n' \
+    '' \
+    'I2-B7-disposition|DispositionTests'
+
+# Un champ grisé du dock au gris de Fluent, qui n'est pas de la maquette.
+saboter "la fenêtre grise une zone de texte du gris de Fluent" \
+    MyPublisher/Views/Apparence.axaml \
+    $'    <Style Selector="TextBox.champ:disabled /template/ Border#PART_BorderElement">\n        <Setter Property="Background" Value="{StaticResource Blanc}"/>\n        <Setter Property="BorderBrush" Value="{StaticResource BordChamp}"/>\n    </Style>\n' \
+    '' \
+    'I2-B7-disposition|DispositionTests'
+
+# La vignette du fond sans la diagonale de « Aucun » : vide, elle ne dit rien.
+saboter "la fenêtre ne montre plus « Aucun » dans la vignette du fond" \
+    MyPublisher/Views/MainWindow.axaml \
+    '<Border x:Name="VignetteDuFond" Classes="vignette" Classes.aucune="{Binding !HasFill}">' \
+    '<Border x:Name="VignetteDuFond" Classes="vignette">' \
+    'I2-B7-disposition|DispositionTests'
+
+# L'italique d'Inter, simulé : le « I » devient une barre oblique.
+saboter "la fenêtre penche le « I » d'Inter pour l'italique" \
+    MyPublisher/Views/MainWindow.axaml \
+    '            <Setter Property="FontFamily" Value="Georgia, Noto Serif, Liberation Serif, serif"/>
+' \
+    '' \
+    'I2-B7-disposition|DispositionTests'
+
 echo
+# Rien d'éprouvé n'est pas une épreuve réussie : un motif qui ne retient aucun sabotage — ou
+# une tranche vide — sortait en vert sur « 0 sabotages, 0 attrapés ».
+if [ "$sabotages" = 0 ]; then
+    portee=""
+    [ -n "$filtre" ] && portee=" par le motif « $filtre »"
+    [ "$tranches" != 1 ] && portee="$portee dans la tranche $tranche/$tranches"
+    echo "ÉCHEC : aucun sabotage retenu$portee — rien n'a été éprouvé." >&2
+    exit 1
+fi
 if [ "$cibles" = 1 ]; then
     if [ "$trous" = 0 ]; then
         echo "Les $sabotages textes visés sont présents, chacun une seule fois."
