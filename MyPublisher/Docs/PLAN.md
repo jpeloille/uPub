@@ -24,7 +24,7 @@ Où en est chaque poste. Une seule règle pour la colonne d'avancement : un post
 on écrit ce qui est fait plutôt qu'un pourcentage inventé — un poste à moitié écrit n'est
 pas un poste à moitié livré. La colonne se met à jour dans le commit qui clôt le poste.
 
-*Dernière mise à jour : 13 octobre 2026 (salve 2 fusionnée).*
+*Dernière mise à jour : 24 octobre 2026 (phase I spécifiée, lots 1 et 2 avant la salve 3).*
 
 | Poste | Intitulé | Avancement | Où ça en est |
 |---|---|:---:|---|
@@ -41,7 +41,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **A7** | Alignement vertical du texte | **100 %** | Haut, milieu, bas sur le bloc de texte ; le calage est borné à zéro. `FormatVersion` reste à 3 |
 | **A8** | Insérer des pages : nombre, position, contenu | 0 % | Spécifié le 11 octobre 2026 |
 | **A9** | Rotation par quart de tour | 0 % | Spécifié le 11 octobre 2026 |
-| **A10** | Objet trait, et flèche | 0 % | Spécifié le 11 octobre 2026 ; l'import simule le trait par un rectangle |
+| **A10** | Objet trait, et flèche | 0 % | Spécifié le 11 octobre 2026 ; l'import simule le trait par un rectangle. Passé au lot 2 de la phase I, pour l'outil Ligne |
 | **A11** | Aimantation réglable, et aux autres blocs | 0 % | Spécifié le 11 octobre 2026 |
 | **A12** | Menu contextuel du bloc | 0 % | Spécifié le 11 octobre 2026 |
 | **A13** | Rognage manuel de l'image | 0 % | Spécifié le 11 octobre 2026 |
@@ -53,7 +53,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **B4** | Archive `.mypubz` | 0 % | — |
 | **B5** | Avertir sur les substitutions de polices | **100 %** | L'export nomme la police demandée et celle employée ; recette dans `Scripts/recettes/` |
 | **B6** | Aperçu avant impression | 0 % | Spécifié le 11 octobre 2026 |
-| **B7** | Replier les panneaux | 0 % | Spécifié le 11 octobre 2026 |
+| **B7** | Replier les panneaux | 0 % | Spécifié le 11 octobre 2026 ; livré avec I2 (lot 1), au menu Fenêtre |
 | **C1** | Fond et bordure au niveau de `Frame` | **100 %** | Fond, contour, trait, arrondi et opacité sur tout bloc ; `FormatVersion` 2, migration à l'ouverture ; recette dans `Scripts/recettes/` |
 | **C2** | Repères | **100 %** | C2a grille de composition · C2b règles graduées et repères libres ; recette dans `Scripts/recettes/` |
 | **C3** | Sélection multiple, puis groupement | **100 %** | C3a sélection · C3b alignement et répartition · C3c groupe persistant ; recette dans `Scripts/recettes/` |
@@ -92,13 +92,23 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **Q20** | La liste des polices garde la police du bloc | **100 %** | Trouvé par la relecture de C5b. La liste propose les polices du document absentes de la machine, libellées « (absente) », et la liaison ne renvoie jamais null au bloc. Recette dans `Scripts/recettes/` |
 | **Q21** | Un tremblement ne déplace pas le bloc | 0 % | Trouvé par la relecture de Q14 : un pixel de mouvement pendant le clic, près d'une marge, fait sauter le bloc de 3 pt par l'aimantation |
 | **Q22** | Un clic sur une poignée ne redimensionne pas | 0 % | Trouvé par la relecture de Q14 : une pression sans mouvement près d'un coin fait passer le bloc de 100 à 96 pt et empile un pas d'annulation |
-| **Q23** | Sélectionner un bloc ne fige pas la fenêtre | 0 % | Trouvé à la fusion de Q14 : une pression sur un bloc non sélectionné rend la main après 170 à 470 ms, le temps de recomposer le panneau ; les tests du double-clic s'en écartent en sélectionnant d'abord |
+| **Q23** | Sélectionner un bloc ne fige pas la fenêtre | 0 % | Trouvé à la fusion de Q14 : une pression sur un bloc non sélectionné rend la main après 170 à 470 ms, le temps de recomposer le panneau ; les tests du double-clic s'en écartent en sélectionnant d'abord. Repris en fin de lot 1 |
+| **I1** | Charte de l'interface | 0 % | Spécifié le 24 octobre 2026, d'après la maquette ; lot 1 |
+| **I2** | Disposition de la fenêtre | 0 % | Spécifié le 24 octobre 2026 ; lot 1, avec B7 |
+| **I3** | Barre contextuelle | 0 % | Spécifié le 24 octobre 2026 ; lot 1 |
+| **I4** | Planche : règles fixes, projection, bulle de dimensions | 0 % | Spécifié le 24 octobre 2026 ; lot 1 |
+| **I5** | Vignettes de pages | 0 % | Spécifié le 24 octobre 2026 ; lot 1 |
+| **I6** | Main, zoom, page entière, proportions | 0 % | Spécifié le 24 octobre 2026 ; lot 1 |
+| **I7** | Souligné | 0 % | Spécifié le 24 octobre 2026 ; lot 2 |
+| **I8** | Masquer un bloc | 0 % | Spécifié le 24 octobre 2026 ; lot 2 |
+| **I9** | Compter les lignes en excédent | 0 % | Spécifié le 24 octobre 2026 ; lot 2 |
 | **D** | Moteur de composition | — | Décision non ouverte ; à rouvrir quand A, B et C sont livrées |
 
 **Par phase** — P : 4 sur 4 · A : 7 sur 15 · B : 3 sur 7 · C : 7 sur 9 · R : 5 sur 7 ·
-Q : 16 sur 23 · D : non planifié.
+Q : 16 sur 23 · I : 0 sur 9 · D : non planifié.
 
-Soit **42 postes sur 65**. Le compte a doublé le 11 octobre 2026 sans que rien ne
+Soit **42 postes sur 74**. Le 24 octobre 2026, la phase I en a ajouté neuf, tirés de la
+maquette de la nouvelle interface. Le compte avait doublé le 11 octobre 2026 sans que rien ne
 recule : il porte désormais les onze postes de l'audit des fiches (A8 à A15, B6, B7,
 C8), deux postes que les documents réels demandaient (R6, R7), et la phase Q, qui
 recense les défauts que les postes et les relectures ont **trouvés et consignés sans les
@@ -614,6 +624,8 @@ avant la colonne de droite.
 | **Règles graduées** (C2a) | repères de règle posés à la souris (C2b) |
 | **Modèles** (B1) | jeux de couleurs et de polices (C5b), informations professionnelles (C4) |
 | **Mesure du texte** (seuil D) | ajustement automatique, chaînage, habillage |
+| **Charte de l'interface** (I1) | toute la phase I |
+| **Disposition de la fenêtre** (I2) | barre contextuelle (I3), vignettes (I5), navigation (I6), puis le lot 2 |
 | **P1 + P2** | toute la phase C |
 
 Deux remarques que le graphe rend visibles :
@@ -4222,6 +4234,408 @@ sélectionné rend la main en moins de 100 ms (médiane de trois passes) ; les t
 double-clic reprennent le geste entier, le premier clic prenant le bloc, et passent vingt
 fois de suite. Effort : à mesurer — la cause d'abord.
 
+*Repris le 24 octobre 2026 en fin de lot 1 de la phase I* : la barre contextuelle et les
+onglets ajoutent des contrôles recomposés à chaque sélection, et le défaut se mesure sur
+l'interface qui restera.
+
+---
+
+## Phase I — La nouvelle interface
+
+*Ouverte le 24 octobre 2026*, sur la maquette de la fenêtre principale déposée dans
+`Maquettes/Fenêtre principale — bloc de texte sélectionné-html/Main.dc.html` : un seul
+écran, la fenêtre en 1440 × 900, un bloc de texte sélectionné. Elle **réorganise** une
+interface qui existe en grande partie, et elle la **rhabille** : un rail d'outils à
+gauche, une barre principale à icônes qui reçoit l'alignement et l'ordre, une barre
+contextuelle qui suit la sélection, un dock à onglets aux sections repliables, une
+planche claire aux règles fixes. Elle suppose aussi des fonctions que le modèle n'a pas ;
+la phase n'en prend que les plus légères.
+
+La maquette fait foi pour la **disposition**, la **palette**, les **tailles des
+contrôles** et les **libellés**. Elle ne fait pas foi pour les **cotes** : la page y est
+dessinée à 64 % sous un libellé de 86 %, les bandes de projection et les champs X, Y, L,
+H ne décrivent pas le bloc dessiné, le repère cyan passe sous la page, et elle annonce
+3 colonnes dans la barre contextuelle pour 2 au dock. Aucune recette ne reprend un de ses
+nombres, ni son contenu — 3 pages, « Article principal » —, qui n'est pas celui de
+`exemple-bulletin.mypub`.
+
+**Quatre décisions du propriétaire, le 24 octobre 2026.**
+
+- Le dock a des **onglets**, comme la maquette. La ligne « Volet Office commutable » de
+  [Ce que ce plan ne fait pas](#ce-que-ce-plan-ne-fait-pas) est rouverte. Ce qu'elle
+  craignait — un panneau qui change de contenu sans prévenir — reste écarté : c'est
+  l'utilisateur qui choisit l'onglet, et le premier, Propriétés, suit la sélection comme
+  le panneau d'aujourd'hui.
+- **A6 reste clos** : la position et la taille du bloc restent dans la barre d'état, et
+  la bulle de dimensions de la maquette s'y **ajoute**, sur la planche (I4).
+- **Le modèle ne change pas pour l'affichage** : quatre marges intérieures (C6), un
+  interligne en multiple de la hauteur naturelle (R4). Le dock montre un champ de marge
+  quand les quatre sont égales, quatre sinon, et l'interligne en multiple (« 1,15 × »).
+  Les longueurs y portent leur unité dans la valeur, en millimètres comme la maquette,
+  par les convertisseurs de Q14 et leur mémoire.
+- Les deux lots passent **avant la salve 3**. Le lot 1 absorbe **B7** — replier les
+  panneaux, que la maquette range au menu Fenêtre — et **Q23**, que la barre
+  contextuelle aggraverait.
+
+**Deux lots.** Le lot 1 ne touche que la vue : aucune clé sérialisée nouvelle,
+`FormatVersion` inchangée, le relevé de `Scripts/reference.txt` inchangé. Le lot 2 ajoute
+au modèle ce que la maquette montre et qui est **additif**, sans nouvelle version, au
+précédent de `Columns` : le souligné, la visibilité d'un bloc, le trait (A10), et le
+compte des lignes en excédent, qui n'est qu'une fonction. Le sérialiseur écrit toutes les
+valeurs, défaut compris (`JsonIgnoreCondition.Never`) : chaque poste du lot 2 qui ajoute
+une clé réenregistre donc `Samples/` et `Templates/`, et le dit dans son commit.
+
+**Ce que la maquette montre et que la phase ne fait pas.** Rien de cela n'est dessiné,
+pas même grisé : un contrôle sans moteur derrière est une commande morte.
+
+- Le **port de chaînage**, « **Ajuster le texte** » et la section **Habillage** : le
+  [seuil D](#seuil-d--le-moteur-de-composition), dont la décision reste au propriétaire.
+  Le marqueur rouge de A2 reste le signal du débordement.
+- La section **Effets** : A14 pour le contour et l'ombre du caractère, rien pour le reste.
+- Le **style de paragraphe nommé** et la **graisse** : un poste chacun, avec nouvelle
+  version — la graisse remplace un booléen. Ni l'un ni l'autre n'est planifié.
+- Les **gabarits** : les pages maîtres, toujours non planifiées. Le mot « gabarit » a déjà
+  deux sens dans le code — le préréglage d'un outil et les `DataTemplate` de la planche —,
+  et un troisième devra s'appeler autrement.
+- La **pipette**, qui demande de choisir entre copier une référence de jeu
+  (`scheme:accent1`) et la couleur résolue.
+- Le **nuancier libre** de l'onglet Couleurs : l'onglet montre le jeu de couleurs, qui
+  existe.
+
+**Les règles de la phase.** Elles valent pour chaque poste et se vérifient à sa relecture.
+
+1. **Un contrôle par propriété.** Ce qui monte dans la barre contextuelle quitte le dock ;
+   rien n'est doublé. Des tests prennent leur contrôle par `.Single()` : la police
+   (Q20), l'angle (Q14), le cadrage de l'image, le sélecteur de couleur.
+2. **Un geste, un pas d'annulation, où que soit le champ.** La transaction d'édition ne
+   s'ouvre aujourd'hui qu'au focus du panneau de droite. La barre contextuelle et chaque
+   onglet l'ouvrent et la ferment de la même façon. Aucun test existant ne verrait
+   l'oubli : chaque poste qui déplace un champ en écrit un.
+3. **La planche ne bouge pas quand la sélection change.** La barre contextuelle garde sa
+   hauteur sans sélection, et montre alors la pastille « Page ». Sinon la page descend de
+   40 px entre la pression du pointeur et son relâchement.
+4. **Rien de neuf dans `PageRoot`.** C'est ce que l'écran compare au PDF (`Rendu.Encre`,
+   le banc, `comparer-rendus.sh`). Bulle, projection, repères prolongés et poignées
+   vivent dans l'`Overlay` ou hors de la page.
+5. **Aucun zoom d'office.** Les tests et le banc ouvrent à l'échelle 1 ; « Page entière »
+   est une commande, jamais l'effet d'une ouverture ni d'un redimensionnement.
+6. **Les noms survivent.** `PageRoot`, `InputLayer`, `Overlay`, `TopRuler`, `LeftRuler`,
+   `ListeDesBlocs`, `TraitDInsertion`, `FormatDePage`, `JeuDeCouleurs`,
+   `NombreDeColonnes`, `RetraitPremiereLigne`, `MenuImporterTexte` et son libellé
+   « Importer un te_xte… », `BoutonImporterTexte`, `PositionDuBloc`, `TailleDuBloc` :
+   tests, recettes et banc les cherchent par leur nom.
+7. **Le juge garde ses cibles.** Chaque texte qu'il sabote reste présent, une seule fois :
+   `eprouver-le-juge.sh --cibles` passe avant chaque fusion. Un code neuf de liste, de
+   vignette ou de geste ne recopie pas une ligne visée.
+8. **La culture reste la culture courante.** Pas de fr-FR forcé : la virgule de la
+   maquette vient de la locale, et les tests tournent sous `LC_ALL=C`.
+9. **Les raccourcis passent par le tableau du README**, que lit la recette de A4 : sans
+   doublon, et aucun `Ctrl`+lettre déclaré à la fois en `KeyBinding` et dans `OnKeyDown`.
+   Les lettres seules ne jouent que hors saisie.
+10. **Chaque poste met ce qu'il ajoute au modèle de vue dans un fichier partiel à lui**
+    (`MainWindowViewModel` est `partial`) : c'est ce qui permet à deux postes de partir
+    ensemble sans toucher le même fichier.
+11. Chaque recette entre dans `Scripts/verifier.sh`, et chacune est éprouvée par au moins
+    un sabotage du juge, comme depuis P3.
+
+### Lot 1 — La vue
+
+Quatre vagues, parce que la fenêtre et la planche sont chacune un seul fichier : I1 seul ;
+puis I2 avec B7, en même temps que I4 ; puis I3, I5 et I6 ensemble, chacun dans son
+propre contrôle ou sa propre couche, aux points d'accroche que I2 a posés ; puis Q23, sur
+l'interface finie.
+
+#### I1 — La charte de l'interface
+
+Une seule source pour la palette, les tailles et les icônes de la maquette : un
+dictionnaire de ressources et ses styles, chargés par `App.axaml`.
+
+- **Couleurs** : accent `#2557C7` (survol `#1B439C`) ; texte `#1F2329` et `#2B323B` ;
+  libellés `#5B6470` ; fonds `#FFFFFF`, `#F4F5F7`, `#FAFAFB` ; filets `#E2E5EA` et
+  `#D5D9DF` ; bord des champs `#CDD2D9` ; barre contextuelle `#EEF2FB` filetée de
+  `#D6DEEE`, pastille `#DCE5F8` ; alerte `#FDF1E8` sur `#8A2E07`.
+- **Classes** : bouton-icône de 30 × 30 à rayon 6, actif plein d'accent ; champ de 26 px
+  à rayon 5, corps 12 ; libellé de corps 11 ; séparateur de 1 × 20 ; titre de section
+  repliable de corps 12, demi-gras.
+- **Icônes** : les tracés SVG de la maquette, sur sa grille de 24, avec ses épaisseurs de
+  trait (1,7 à 2,2). Un tracé à trait s'écrit en `Path` à `Stroke`, et non en `PathIcon`,
+  qui ne sait que remplir.
+
+Inter est déjà la police de l'interface. Le poste ne déplace rien : il pose la charte, et
+les postes suivants la lisent.
+
+*Recette* :
+- chaque couleur de la maquette est déclarée une fois dans la charte, et aucune vue
+  écrite ou réécrite par la phase ne l'écrit en dur (script sur les sources) ;
+- chaque icône nommée par une vue existe dans la charte, et chaque icône de la charte
+  sert ;
+- au banc, un bouton-icône rend 30 × 30 px à l'échelle 1, et son état actif est plein
+  d'accent.
+
+Effort : faible.
+
+#### I2 — La disposition de la fenêtre *(avec B7)*
+
+La fenêtre de la maquette, de haut en bas.
+
+- **Barre de menus.** La marque « M MyPublisher », les menus, et le titre du document
+  centré : « exemple-bulletin.mypub — modifié ». Deux menus neufs : **Texte** — gras
+  `Ctrl+G` et italique `Ctrl+I`, comme dans Publisher en français, les quatre
+  alignements, et « Importer un te_xte… », qui y passe avec son nom et son libellé — et
+  **Fenêtre** — le panneau Pages, le dock, et « Replier les panneaux » sur `Ctrl+F1`.
+  C'est B7, livré ici avec sa recette. La barre de titre du système reste, avec son
+  « • nom — MyPublisher » : Avalonia gère mal sous Linux l'extension de la zone cliente,
+  et la réserve de 300 px que la maquette laisse à droite n'a pas d'objet sans elle.
+- **Barre principale à icônes.** Nouveau, Ouvrir, Enregistrer · Annuler, Rétablir ·
+  Aligner : à gauche, centrer horizontalement, centrer verticalement, ajuster aux marges ·
+  Ordre : premier plan, arrière-plan, grouper · le zoom −, sa valeur, + et « Page
+  entière » — le bouton est posé ici, sa commande vient de I6 · « Exporter en PDF » en
+  bouton principal, à droite. Avancer et reculer d'un rang, répartir et « par rapport aux
+  marges » restent au menu Disposition. Annuler et Rétablir se grisent quand l'historique
+  est vide.
+- **La place de la barre contextuelle**, de hauteur constante (règle 3), que I3 remplit.
+  I2 y pose la pastille du type sélectionné, et « Page » sans sélection.
+- **Rail d'outils à gauche**, de 46 px, outils seuls, dans l'ordre de la maquette :
+  Sélection (V), Main (Espace) · Bloc de texte (T), Titre (H), Image, Tableau (B) ·
+  Rectangle (R), Ellipse (E), Ligne (L) · Zoom (Z). Main et Zoom attendent I6, Ligne
+  attend A10 : leurs boutons n'apparaissent qu'avec leur geste. L'image reste une action
+  qui ouvre le choix du fichier, rangée parmi les outils. La pipette n'est pas posée.
+- **Panneau Pages**, de 168 px : un en-tête avec « + », puis la liste des pages, dont le
+  gabarit d'entrée est le point d'accroche des vignettes de I5 — d'ici là, le numéro.
+  Pas de section Gabarits.
+- **La planche** : ce poste n'y touche pas (I4).
+- **Le dock**, de 292 px, à quatre onglets.
+  - *Propriétés* : les sections repliables du bloc choisi. D'abord Position et taille — X,
+    Y, L, H, l'angle, le nom, et la case « Conserver les proportions », dont le geste
+    vient de I6. Puis la section propre au type : pour un bloc de texte, Cadre de texte
+    (colonnes, gouttière, marges intérieures, alignement vertical), Paragraphe (retraits
+    et espacements) et Contenu (champ, saisie, « Importer un texte… ») ; sinon Tableau,
+    Image ou Groupe. Puis Fond et contour. Au pied, **Blocs de la page**, l'avant en
+    tête ; la place de l'œil est réservée au lot 2.
+  - *Styles* : le jeu de polices.
+  - *Couleurs* : le jeu de couleurs.
+  - *Document* : format, marges, grille, repères de règle, fond de page.
+
+  Les sections sont ouvertes par défaut, et le dock retient, le temps de la session,
+  celles qu'on a fermées.
+- **Barre d'état** : le message — `Status`, que des tests lisent, reste —, le curseur, la
+  position et la taille du bloc (A6, inchangées), « Page 1 sur 3 », le format
+  (« A4 portrait », ou ses dimensions en millimètres pour un format libre), et le zoom
+  avec son curseur, en échelle logarithmique entre les bornes de `SetZoom`.
+
+**Ce qui se réécrit, et pourquoi.** L'ordre de la liste des blocs s'inverse : les cinq
+tests de A4 qui lient l'indice de la liste à celui de `Page.Frames`, et le calcul du rang
+de dépôt, se réécrivent à l'envers, avec les mêmes garanties. Les tests qui cherchent un
+contrôle d'un onglet non choisi — `FormatDePage`, `JeuDeCouleurs`, les polices du jeu, le
+fond de page — ouvrent d'abord l'onglet, par une aide commune de `Rendu`. Le README
+(l'interface lue de gauche à droite, la barre « sur le bord droit », la table des
+raccourcis) et les fiches 02, 03, 04 et 15 se réécrivent sur la nouvelle disposition.
+
+*Recette* :
+- au banc, à 1400 × 900, chaque zone est à sa place : le rail à gauche, le panneau Pages
+  entre le rail et la planche, le dock de 292 px à droite, la barre contextuelle sous la
+  barre principale ;
+- sélectionner puis désélectionner un bloc ne déplace pas l'origine de `PageRoot` à
+  l'écran (règle 3) ;
+- chaque champ du dock, quel que soit son onglet, change le bloc en un seul pas
+  d'annulation ;
+- dans « Blocs de la page », un glissé du premier rang au troisième donne la même pile
+  qu'avant la refonte, lue à l'envers ;
+- B7 : après `Ctrl+F1`, la planche gagne au moins la largeur des deux panneaux et ceux-ci
+  sont invisibles ; un second `Ctrl+F1` rend l'état d'avant. Le raccourci figure au
+  README et n'en double aucun autre ;
+- les recettes de A4, A5, A6, B2, C5b, C6, R2, R3, Q14 et Q20 passent, réécrites
+  seulement là où ce poste le dit.
+
+Effort : lourd — c'est la moitié de la phase.
+
+#### I3 — La barre contextuelle
+
+La barre de la maquette, sous la barre principale, suit la sélection. Pour un bloc qui
+porte du texte — texte, titre, tableau —, elle reçoit la mise en forme que le dock
+portait :
+- la police, avec la garde de Q20 ;
+- le corps (« 10,5 pt ») ;
+- le gras, l'italique et la couleur du texte ;
+- les alignements gauche, centre, droite et justifié — la maquette omet la droite, mais
+  le modèle l'a, et Publisher aussi ;
+- l'interligne, en multiple.
+
+Ces contrôles quittent le dock (règle 1). Le souligné attend I7 ; la graisse et le style
+nommé ne sont pas faits. Les colonnes restent au dock seul, où la maquette les met aussi.
+
+Pour une image, une forme, un groupe ou une sélection multiple, la barre ne porte que la
+pastille et les commandes propres au type que le dock n'a pas : dissocier pour un groupe,
+aligner et répartir pour plusieurs blocs. Rien n'y est doublé.
+
+La barre est un contrôle à part, dans son propre fichier, à la place que I2 lui a faite :
+c'est ce qui lui permet de partir en même temps que I5 et I6.
+
+*Recette* :
+- un bloc de texte sélectionné : la barre montre sa police, son corps et son alignement ;
+  un clic sur « centré » centre le bloc à l'écran et au PDF, en un pas d'annulation ;
+- la police, l'angle et la couleur du texte n'ont toujours qu'un contrôle visible chacun
+  (les `.Single()` de Q14, Q20 et C5b) ;
+- passer d'un bloc de texte à une image change la barre sans déplacer la planche ;
+- une saisie dans la barre ne vole pas les lettres seules : `T` frappé pendant que le
+  corps a le focus s'écrit dans le champ, et `T` après `Échap` arme l'outil texte.
+
+Effort : moyen.
+
+#### I4 — La planche
+
+La planche de la maquette, à mécanique existante.
+
+- **Fond** gris clair `#DCDFE4` au lieu de `#3A3D42`, et ombre de page double et légère.
+- **Règles fixes** au bord haut et au bord gauche de la zone visible, de 20 px, graduées
+  en millimètres de part et d'autre de la page : les valeurs sont négatives à gauche et
+  au-dessus. Le zéro de chaque règle reste l'origine de la page. Les tests de C2 et de
+  A1 se reformulent sur ce zéro, et non plus sur l'origine du contrôle ; `TopRuler` et
+  `LeftRuler` gardent leur nom et leur geste.
+- **Projection de la sélection** sur les deux règles, en bande d'accent à 14 %, suivie
+  pendant le geste. Elle porte sur l'emprise du bloc (`Extent`), et non sur `X` et
+  `Width` : un bloc tourné s'étend plus loin.
+- **Repères** tracés sur toute la planche, en cyan `#12A4C4`, et non plus seulement dans
+  la page, donc hors de `PageRoot` (règle 4). Lâché hors de la page, un repère est
+  toujours retiré.
+- **Marques** : marges en pointillé rose `#E3A6D6` ; cadre de sélection de 1,5 px
+  d'accent, décalé de 4 px hors du bloc, qui tourne avec lui ; poignées carrées de 7 px,
+  blanches bordées d'accent ; poignée de rotation en disque blanc bordé d'accent, au
+  bout de sa tige. Le README, qui dit « disque vert », suit.
+- **Bulle de dimensions** pendant le tracé et le redimensionnement : « L 102,9 mm ·
+  H 138,4 mm », sous le bloc, sur fond sombre, dans l'`Overlay`. Elle s'ajoute à la barre
+  d'état de A6, elle ne la remplace pas.
+
+*Piège* : `RotationTests` prend pour poignée de rotation la première `Ellipse` visible de
+l'`Overlay`. Rien de rond ne s'y ajoute avant elle : la bulle est un rectangle arrondi,
+et la projection vit dans les règles.
+
+*Recette* :
+- `comparer-rendus.sh` et `comparer-mots.sh` passent sur l'exemple et sur ATA 21 sans
+  changer de tolérance : rien n'a bougé dans `PageRoot` ;
+- au banc, la projection d'un bloc tourné de 30° couvre exactement son emprise sur
+  chaque règle, au pixel près ;
+- un repère tiré de la règle du haut se voit à gauche de la page, sur la planche ;
+  lâché sur la planche hors de la page, il disparaît ;
+- pendant un redimensionnement, la bulle et la barre d'état disent la même taille.
+
+Effort : moyen.
+
+#### I5 — Les vignettes de pages
+
+Chaque page du panneau Pages se montre en vignette de 96 px de large, au rapport de la
+page, avec son numéro dessous ; la page active est bordée de 2 px d'accent. La vignette
+se dessine depuis la composition, comme celle des modèles depuis Q9, et non par des
+`ControleDeBloc`, dont `DetachementTests` compte exactement deux.
+
+Elle suit le document ouvert, qui se modifie en place. Le cache de `TemplatePreview` ne
+convient pas tel quel : il ne s'invalide pas sur une modification en place, et ne
+dessine que la première page. Si le poste le réutilise, les sept cibles du juge dans
+`TemplatePreview.cs` restent présentes et uniques.
+
+*Recette* :
+- modifier un bloc de la page 2 change les pixels de la vignette 2, et non ceux de la
+  vignette 1 ; une annulation les rend ;
+- ajouter, dupliquer ou supprimer une page met la liste à jour, et un clic sur une
+  vignette change la page courante ;
+- `DetachementTests` et `VignetteTests` passent inchangés ;
+- sur ATA 21, redessiner toutes les vignettes après une modification prend moins de
+  50 ms (médiane de trois passes).
+
+Effort : moyen.
+
+#### I6 — Naviguer dans la planche, et garder les proportions
+
+Les gestes de la maquette qui n'existent pas encore.
+
+- **Main** : l'outil, ou `Espace` tenu, fait glisser la planche — le défilement de son
+  `ScrollViewer` — sans toucher à aucun bloc. Le curseur en main sert déjà à la
+  rotation : celui de l'outil est la main ouverte, puis fermée pendant le glissé.
+- **Zoom** (`Z`) : un clic zoome en avant, `Alt`+clic en arrière, et le point visé reste
+  sous le pointeur. `Ctrl`+molette fait de même, ce qu'elle ne fait pas aujourd'hui.
+- **Page entière** : la page tient dans la zone visible, règles et marge de la planche
+  déduites, dans les bornes de `SetZoom`. Jamais d'office (règle 5).
+- **Conserver les proportions** : la case posée par I2. C'est un état de la session et
+  non du document : elle ne passe ni par l'historique ni par l'état « modifié ».
+  Cochée, le redimensionnement par une poignée de coin et la saisie de L ou de H gardent
+  le rapport du bloc ; les poignées de côté non, comme dans Publisher. `Maj` pendant le
+  geste fait l'inverse de la case.
+
+`Espace` et `Z` se rangent avec les lettres seules : ils ne jouent que hors saisie, et pas
+quand un bouton a le focus, puisque `Espace` l'actionnerait.
+
+*Recette* :
+- `Espace` tenu et un glissé de 100 px décalent le défilement de 100 px ; aucun bloc n'a
+  bougé, et l'historique est vide ;
+- un clic de l'outil Zoom en un point de la page : le même point de la page est sous le
+  pointeur avant et après, à 1 px près ;
+- « Page entière » sur un A4 et sur un format paysage : la page tient, et l'un de ses
+  côtés touche la zone, à la marge près ;
+- case cochée, un coin tiré de 20 mm garde le rapport à 0,01 près, en un pas
+  d'annulation, et la case ne rend pas le document « modifié ».
+
+Effort : moyen.
+
+### Lot 2 — Ce que le modèle doit apprendre
+
+Quatre ajouts additifs, **en série** : tous touchent `Frame.cs`, et trois
+`PdfExporter.cs`. A10, l'objet trait, déjà spécifié en phase A, passe de la salve 5 à ce
+lot, pour l'outil Ligne du rail ; I2 pose alors son bouton, et le menu Insertion gagne
+« Trait ».
+
+#### I7 — Le souligné
+
+Le souligné se porte sur le bloc de texte, sur le fragment de style (R1) et dans le style
+effectif. Il se dessine à l'écran et au PDF à la position et à l'épaisseur que donne la
+police. Il a le bouton S de la barre contextuelle et `Ctrl+U`. L'import `.pub` le lit si
+libmspub le donne : à vérifier sur les deux documents ATR.
+
+*Recette* :
+- `"Underline": true` fait l'aller-retour JSON, au bloc et au fragment ; un document sans
+  souligné se réécrit au caractère près, une fois les Samples réenregistrés ;
+- sur un document de recette souligné, le trait est à la même ordonnée à l'écran et au
+  PDF à 0,25 pt près, et `comparer-rendus.sh` passe sous la tolérance ;
+- le souligné suit la frappe comme le gras (Q1), et une recopie du bloc le garde
+  (`Clone`).
+
+Effort : moyen.
+
+#### I8 — Masquer un bloc
+
+C'est l'œil de « Blocs de la page ». Un bloc masqué n'est pas dessiné à l'écran ni
+exporté ; on ne peut pas le saisir sur la planche, et il ne sert ni à l'aimantation ni à
+l'alignement. Il reste dans la liste, l'œil fermé, et s'y sélectionne. Le basculer est un
+geste qui s'annule et rend le document « modifié » : c'est une propriété du document, pas
+de la vue. Par défaut, un bloc est visible ; les cases d'un tableau, faites de blocs de
+texte jetables, ne voient pas la propriété.
+
+*Recette* :
+- `"Visible": false` fait l'aller-retour JSON ; une recopie et un groupe la gardent ;
+- un bloc masqué n'apparaît ni au PDF (`pdftotext` et décompte des tracés) ni dans
+  `PageRoot`, et un clic à sa place prend le bloc d'en dessous ;
+- l'export n'avertit pas des polices d'un bloc masqué (Q8 : seules les polices
+  dessinées) ;
+- un pas d'annulation rouvre l'œil.
+
+Effort : faible à moyen.
+
+#### I9 — Compter les lignes en excédent
+
+C'est l'alerte de la maquette au dock : « Texte en excédent : 4 lignes ». Le noyau sait
+qu'un bloc déborde, mais il le mesure en points (A2). Il lui manque une fonction pure du
+`Compositeur` qui compte les lignes composées que le bloc ne montre pas, la même pour
+l'écran et pour l'export. L'avertissement d'export garde sa formulation, et le relevé de
+P2 ne bouge pas.
+
+*Recette* (test pur, puis interface) :
+- un bloc de dix lignes qui en montre six donne quatre ; un bloc qui ne déborde pas
+  donne zéro, sans alerte ;
+- sur `recette-debordement.mypub`, le compte du dock est celui des lignes absentes du PDF
+  (`pdftotext` contre le texte du bloc) ;
+- l'alerte suit la frappe, sans attendre un changement de sélection.
+
+Effort : faible.
+
 ---
 
 ## Ordre d'exécution
@@ -4235,9 +4649,11 @@ touchent, le second attend la salve suivante.
 |---|---|---|
 | **1** | Q1 · les sept recettes de P3 · Q2 · Q3 · Q12 | La dette qui abîme des données, le banc complet, et trois réparations courtes. **Fusionnée le 11 octobre 2026** |
 | **2** | Q4 à Q9 · Q13 à Q17 · B2 · C5b · Q20 | Les écarts écran ↔ PDF, et les deux postes d'usage qui ne demandent rien. **Fusionnée le 13 octobre 2026** (juge 107/107) |
-| **3** | R6 · A8 · A9 · A15 · B7 · B4 · Q23 | Le paragraphe au panneau, et des postes courts, indépendants les uns des autres |
+| **Lot 1** | I1 · puis I2 + B7 ∥ I4 · puis I3 ∥ I5 ∥ I6 · puis Q23 | La nouvelle interface, vue seule, en quatre vagues : la fenêtre et la planche sont chacune un seul fichier. Décidé le 24 octobre 2026 |
+| **Lot 2** | I7 · I8 · A10 · I9, en série | Ce que le modèle doit apprendre pour la maquette ; tous touchent `Frame.cs` |
+| **3** | R6 · A8 · A9 · A15 · B4 | Le paragraphe — dans la barre contextuelle de I3 —, et des postes courts, indépendants les uns des autres. B7 et Q23 sont passés au lot 1 |
 | **4** | R7 · A12 · C7 · B3 + B6 | Le texte riche à la souris, et ce qui reprend les commandes des salves précédentes |
-| **5** | A10 · A11 · A13 · Q10 · Q11 · Q21 · Q22 | La géométrie et la couche de saisie |
+| **5** | A11 · A13 · Q10 · Q11 · Q21 · Q22 | La géométrie et la couche de saisie. A10 est passé au lot 2 |
 | **6** | A14 · C8 · Q18 · Q19 | Les deux postes à risque, chacun précédé de son essai |
 | **D** | Note de décision | Rédigée après la salve 6 ; **la décision revient au propriétaire du projet** |
 
@@ -4295,7 +4711,7 @@ par l'usage des modèles de B1, si le besoin est réel.
 | Fonction | Fiche | Raison |
 |---|---|---|
 | Barres d'outils personnalisables | 03 | Héritage d'Office 2007, abandonné par Publisher lui-même en 2010. Une barre courte et pensée vaut mieux. |
-| Volet Office commutable | 04 | Réponse au manque de place d'un écran de 2007. Deux panneaux permanents sont plus lisibles. Retenu seulement : pouvoir les replier (B7). |
+| Volet Office commutable | 04 | Réponse au manque de place d'un écran de 2007. Deux panneaux permanents sont plus lisibles. Retenu seulement : pouvoir les replier (B7). **Rouvert le 24 octobre 2026** par le propriétaire : le dock de la phase I a des onglets, que l'utilisateur choisit (I2). Ce que la ligne craignait — un panneau qui change de contenu sans prévenir — reste écarté. |
 | Bibliothèque d'images en ligne | 13 | Service tiers, catalogue à maintenir, licences. Disproportionné pour un logiciel local. La variante locale rejoint C7. |
 | WordArt | 17 | Glyphes à vectoriser des deux côtés de la chaîne, pour une esthétique datée. Le besoin réel — un titre qui se voit — se traite en propriétés ordinaires : contour et ombre du caractère (A14) ; le dégradé de C5c ne porte que sur les fonds. |
 | Retouche d'image (luminosité, contraste, nuances de gris, couleur transparente) | 14 | Traitement pixel, coûteux à exporter proprement. Relève de l'éditeur d'images en amont. |
@@ -4307,7 +4723,7 @@ par l'usage des modèles de B1, si le besoin est réel.
 | Symbole, objet incorporé, lien hypertexte, signet | 22 | Hors du document imprimé que MyPublisher produit. Un symbole se tape ou se colle. |
 | Embarquer les polices | 21 | Licences. B4 écrit la liste des polices employées, et B5 avertit de leur substitution. |
 | Bibliothèque de conception (*Design Gallery*) | 20 | Contenu à dessiner et à maintenir. C7 en offre l'usage, avec le contenu de l'utilisateur. |
-| Pages maîtres | 22 | Non écarté sur le fond — simplement non planifié. À reconsidérer avec C4, dont il partage la logique de contenu répété. |
+| Pages maîtres | 22 | Non écarté sur le fond — simplement non planifié. À reconsidérer avec C4, dont il partage la logique de contenu répété. La maquette de la phase I montre une section « Gabarits » ; elle n'est pas dessinée. |
 
 ---
 
@@ -4325,6 +4741,7 @@ finissent toujours par se contredire.
 | **C** | C1 remplissage · C2 repères · C3 sélection multiple · C4 champs · C5 couleurs · C6 marges · C7 bibliothèque · C8 miroir · C9 tableau | structure | P1, P2 |
 | **R** | R1 texte riche · R2 retraits · R3 colonnes · R4 interligne · R5 import `.pub` · R6 paragraphe au panneau · R7 texte riche à la souris | documents réels | R6 et R7 : Q1 |
 | **Q** | Q1 à Q23 | dettes consignées | — |
+| **I** | I1 charte · I2 fenêtre · I3 barre contextuelle · I4 planche · I5 vignettes · I6 navigation et proportions · I7 souligné · I8 masquer un bloc · I9 lignes en excédent | nouvelle interface | I2 : I1 · I3, I5, I6 : I2 · lot 2 : lot 1 |
 | **D** | moteur de composition | décision | Q13, puis A, B, C |
 
 Trois postes à faire en premier si l'on ne devait en retenir que trois, au
