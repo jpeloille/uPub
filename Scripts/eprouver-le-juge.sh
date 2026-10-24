@@ -1131,6 +1131,107 @@ saboter "une vue hors de la phase prend en chiffres une couleur de l'apparence" 
     'TextWrapping="Wrap" FontSize="11" Foreground="#FF5B6470" Margin="0,0,0,10"/>' \
     'I1-apparence'
 
+# I4 : la planche. Chaque intitulé dit « la planche » : « eprouver-le-juge.sh planche » les
+# joue tous, et eux seuls. Chacun est attendu par la recette du poste ou par ses tests
+# (PlancheTests), qui mesurent l'image que la fenêtre compose.
+
+# La projection lit le cadre du bloc et non son emprise : sur un bloc droit, rien ne
+# change ; sur un bloc tourné, la bande tombe à côté, des deux côtés.
+saboter "la planche projette le cadre d'un bloc tourné et non son emprise" \
+    MyPublisher/Views/PageCanvas.axaml.cs \
+    'Projeter(Extent.Union(frames.Select(frame => frame.Extent)));' \
+    'Projeter(Extent.Union(frames.Select(frame => new Extent(frame.X, frame.Y, frame.X + frame.Width, frame.Y + frame.Height))));' \
+    'I4-planche|PlancheTests'
+
+# Les repères repartent du haut de la page, comme quand ils vivaient dans PageRoot : sur la
+# page rien ne change, au-dessus d'elle le cyan manque.
+saboter "la planche arrête les repères au haut de la page" \
+    MyPublisher/Views/PageCanvas.Planche.cs \
+    'Canvas.SetTop(trait, coin.Y);' \
+    'Canvas.SetTop(trait, 0);' \
+    'I4-planche|PlancheTests'
+
+# La règle de gauche n'apprend plus où tombe le zéro : elle se gradue depuis son bord, et
+# la page qui défile ne l'entraîne plus.
+saboter "la planche ne redit plus son zéro à la règle de gauche" \
+    MyPublisher/Views/PageCanvas.Planche.cs \
+    'if (Surface.TranslatePoint(default, LeftRuler) is { } gauche) LeftRuler.Origine = gauche.Y;' \
+    '' \
+    'I4-planche|PlancheTests'
+
+# La page prend le gris de la planche au lieu du blanc du papier : PageRoot change, ce que
+# la confrontation au PDF voit sur les quatre pages.
+saboter "la planche peint la page de son propre gris" \
+    MyPublisher/Views/PageCanvas.axaml \
+    'Background="{x:Static conv:Conv.Papier}"
+                               ClipToBounds="True">' \
+    'Background="{StaticResource FondPlanche}"
+                               ClipToBounds="True">' \
+    'I4-planche|PlancheTests'
+
+# La bulle ne parle plus pendant un redimensionnement : la barre d'état seule dit la taille.
+saboter "la planche ne montre plus la bulle de dimensions au redimensionnement" \
+    MyPublisher/Views/PageCanvas.axaml.cs \
+    '_mode == DragMode.Resize) MontrerLaBulle(' \
+    '_mode == DragMode.Rotate) MontrerLaBulle(' \
+    'I4-planche|PlancheTests'
+
+# Le cadre de sélection colle au bloc, comme avant le poste : les poignées reviennent sur
+# les coins, et tous les gestes passent encore.
+saboter "la planche colle le cadre de sélection au bloc" \
+    MyPublisher/Views/PageCanvas.axaml.cs \
+    'private const double SelectionGap = 3.25;' \
+    'private const double SelectionGap = 0;' \
+    'I4-planche|PlancheTests'
+
+# Le bord tiré rejoint le pointeur au lieu de suivre son chemin : saisie au coin du bloc,
+# la poignée marche comme avant ; saisie là où elle se dessine, sur le cadre, elle fait
+# sauter le bord de 3,25 px au premier mouvement.
+saboter "la planche fait sauter le bord d'un bloc vers le pointeur qui tire sa poignée" \
+    MyPublisher/Views/PageCanvas.axaml.cs \
+    'var localX = dx * cos + dy * sin;' \
+    'var localX = dx * cos + dy * sin + _startPointer.X - _startX - _startWidth;' \
+    'I4-planche|PlancheTests'
+
+# Les poignées pleines d'accent : le geste ne change pas, le dessin n'est plus celui de la
+# maquette.
+saboter "la planche remplit ses poignées d'accent" \
+    MyPublisher/Views/PageCanvas.axaml \
+    '<Style Selector="Rectangle.poignee, Ellipse.poignee">
+            <Setter Property="Fill" Value="{StaticResource Blanc}"/>' \
+    '<Style Selector="Rectangle.poignee, Ellipse.poignee">
+            <Setter Property="Fill" Value="{StaticResource Accent}"/>' \
+    'I4-planche|PlancheTests'
+
+# La règle ne se gradue plus avant le zéro : elle redevient la règle qui bordait la page.
+saboter "la planche ne gradue plus ses règles avant la page" \
+    MyPublisher/Views/Ruler.cs \
+    'if (at < 0 || at > longueur) continue;' \
+    'if (at < Origine || at > longueur) continue;' \
+    'I4-planche|PlancheTests'
+
+# Les marges reprennent un trait en points, qui suit le zoom : à l'échelle 1, 0,4 px de
+# rose étalé sur deux colonnes, et plus un pixel franc.
+saboter "la planche trace les marges d'un trait qui suit le zoom" \
+    MyPublisher/Views/PageCanvas.axaml \
+    'StrokeThickness="{Binding RenderScale, Converter={x:Static conv:Conv.UnPixel}}"' \
+    'StrokeThickness="0.4"' \
+    'I4-planche|PlancheTests'
+
+# La feuille perd son ombre : la page se découpe à plat sur le gris.
+saboter "la planche pose la feuille sans ombre" \
+    MyPublisher/Views/PageCanvas.axaml \
+    'BoxShadow="0 1 2 0 #1F000000, 0 6 33 0 #1A000000"' \
+    'Tag="sans ombre"' \
+    'I4-planche|PlancheTests'
+
+# Un repère lâché à gauche de la page, sur la planche où il se voit désormais, y reste.
+saboter "la planche garde un repère lâché hors de la page" \
+    MyPublisher/Views/PageCanvas.axaml.cs \
+    'if (_draggedGuide.Position < 0 || _draggedGuide.Position > limit)' \
+    'if (_draggedGuide.Position < -1000 || _draggedGuide.Position > limit)' \
+    'I4-planche|PlancheTests'
+
 echo
 if [ "$cibles" = 1 ]; then
     if [ "$trous" = 0 ]; then

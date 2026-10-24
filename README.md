@@ -190,24 +190,30 @@ la barre du haut regroupe les commandes du document : fichier, annulation, zoom.
   jeux de polices sont livrés, et les quatre modèles portent le jeu « Marine ».
 - Rotation libre de n'importe quel bloc, y compris pour la sélection et le
   redimensionnement. Elle se prend **à la souris**, par une neuvième poignée posée
-  au-dessus du bloc — un disque vert au bout d'une tige — ou se saisit au degré près
-  dans le panneau. `Maj` pendant le geste tourne par pas de 15°, et remet d'aplomb un
-  bloc qui ne l'est pas.
+  au-dessus du bloc — un disque blanc bordé d'accent, au bout d'une tige — ou se saisit
+  au degré près dans le panneau. `Maj` pendant le geste tourne par pas de 15°, et remet
+  d'aplomb un bloc qui ne l'est pas.
 - Groupes : plusieurs blocs réunis se déplacent, se tournent et se redimensionnent
   d'une pièce — le redimensionnement met les blocs du groupe à la même échelle. Un
   bloc d'un groupe ne se sélectionne pas directement : on dissocie pour le retoucher.
 - Sélection d'un bloc ou de plusieurs (`Ctrl` + clic), déplacement d'ensemble,
   redimensionnement par huit poignées, rotation par une neuvième. Les poignées ne
   paraissent que sur un bloc seul : pour tourner ou redimensionner plusieurs blocs, on
-  les groupe.
+  les groupe. Le cadre de sélection passe à 4 px du bloc et tourne avec lui ; pendant
+  qu'on trace un bloc ou qu'on le redimensionne, une bulle sous lui dit sa largeur et
+  sa hauteur — les mêmes que la barre d'état. Un clic sur le gris de la planche libère
+  la sélection, et une poignée qui sort de la page s'y saisit encore.
 - Grille de composition : colonnes et lignes avec leur gouttière, grille de ligne de
   base réglée en points. L'aimantation s'y accroche comme aux marges, aux bords et à
   l'axe médian de la page.
-- Règles graduées bordant la planche, et repères libres posés où l'on veut : on les
-  glisse depuis une règle, on les déplace, on les retire en les ramenant hors de la
-  page, et l'aimantation s'y accroche. Aucun repère ne s'imprime ; *Affichage ▸
-  Repères* et *Règles* les effacent de l'écran — et *Repères* efface aussi le marqueur
-  de débordement, qui ne s'imprime pas davantage.
+- Règles fixes au bord haut et au bord gauche de la planche, graduées en millimètres de
+  part et d'autre de la page — négatives à gauche et au-dessus, le zéro au coin de la
+  page —, où la sélection se projette en bande bleue pâle. Repères libres posés où l'on
+  veut, et tracés sur toute la planche : on les glisse depuis une règle, on les déplace,
+  on les retire en les lâchant hors de la page, et l'aimantation s'y accroche. Aucun
+  repère ne s'imprime ; *Affichage ▸ Repères* et *Règles* les effacent de l'écran — et
+  *Repères* efface aussi les marges en pointillé et le marqueur de débordement, qui ne
+  s'impriment pas davantage.
 - Édition du texte directement sur la page (double-clic).
 - **Importer un texte** — *Insertion ▸ Importer un texte…*, ou le bouton du même nom au
   panneau d'un bloc de texte : un fichier texte remplit le bloc sélectionné, au style du

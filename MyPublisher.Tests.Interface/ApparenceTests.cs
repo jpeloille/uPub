@@ -396,20 +396,25 @@ public class ApparenceTests
             }
         }
 
-        var styles = Application.Current!.Styles;
+        // Sans ses STYLES, et non sans elle : ses couleurs restent. Depuis le poste I4, la
+        // planche est une vue de la phase et cite les pinceaux de l'apparence — retirée
+        // tout entière, l'apparence emporterait ce que la planche lit, et la fenêtre ne
+        // s'ouvrirait plus. Ce que ce test garde n'a pas changé : aucun style de
+        // l'apparence ne rhabille ce qui ne porte pas sa classe. Une clé qui masquerait une
+        // ressource du thème est l'affaire du test précédent.
         var apparence = Apparence();
-        var rang = styles.IndexOf(apparence);
+        var regles = apparence.ToList();
 
         var avec = Fenetre();
         Rendu.Image sans;
-        styles.Remove(apparence);
+        apparence.Clear();
         try
         {
             sans = Fenetre();
         }
         finally
         {
-            styles.Insert(rang, apparence);
+            apparence.AddRange(regles);
         }
         var encore = Fenetre();
 

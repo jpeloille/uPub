@@ -122,6 +122,15 @@ public partial class Document : ObservableObject
     [property: JsonPropertyOrder(85)]
     private FillBrush? _background;
 
+    /// <summary>
+    /// Le papier : ce que montre une page sans fond. L'export ne le peint pas — un lecteur
+    /// de PDF pose la page sur ce même blanc —, l'écran le peint lui-même, sous le fond de
+    /// page et au milieu de la planche grise. Nommé ici, et non dans l'apparence de
+    /// l'interface, parce que c'est le blanc du document (poste I4). Une constante et non
+    /// une propriété : rien ne s'en écrit dans le fichier.
+    /// </summary>
+    public const string Papier = "#FFFFFFFF";
+
     /// <summary>La teinte retenue pendant qu'aucun fond n'est posé. Jamais sérialisée.</summary>
     private string _dernierFond = "#FFF2F4F7";
 

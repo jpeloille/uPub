@@ -38,11 +38,65 @@
         <Style Selector="ItemsControl.horizontalGuides ContentPresenter" x:DataType="models:GuideLine">
             <Setter Property="Canvas.Top" Value="{Binding Position}"/>
         </Style>
-        <Style Selector="ItemsControl.verticalRulerGuides ContentPresenter" x:DataType="models:RulerGuide">
-            <Setter Property="Canvas.Left" Value="{Binding Position}"/>
+
+        <!-- Les marques de la planche (poste I4), aux couleurs de l'apparence. Elles sont
+             posées par le code — leur nombre et leur place suivent la sélection, le geste
+             et le défilement — et habillées ici : une marque se reconnaît à sa classe, et
+             sa couleur ne s'écrit nulle part ailleurs. Aucune ne vit dans PageRoot, que
+             l'écran compare au PDF (règle 4 de la phase).
+
+             Le cadre de sélection : 1,5 px d'accent, posé 4 px hors du bloc. Les poignées :
+             7 px de blanc dans un filet de 1,5 px d'accent — un Rectangle d'Avalonia rentre
+             son trait dans ses limites, d'où les 10 px de côté. La poignée de rotation est
+             le même disque, au bout d'une tige du même trait. -->
+        <Style Selector="Polygon.cadreDeSelection">
+            <Setter Property="Stroke" Value="{StaticResource Accent}"/>
+            <Setter Property="StrokeThickness" Value="1.5"/>
         </Style>
-        <Style Selector="ItemsControl.horizontalRulerGuides ContentPresenter" x:DataType="models:RulerGuide">
-            <Setter Property="Canvas.Top" Value="{Binding Position}"/>
+        <Style Selector="Rectangle.poignee, Ellipse.poignee">
+            <Setter Property="Fill" Value="{StaticResource Blanc}"/>
+            <Setter Property="Stroke" Value="{StaticResource Accent}"/>
+            <Setter Property="StrokeThickness" Value="1.5"/>
+        </Style>
+        <Style Selector="Polyline.tigeDeRotation">
+            <Setter Property="Stroke" Value="{StaticResource Accent}"/>
+            <Setter Property="StrokeThickness" Value="1.5"/>
+        </Style>
+        <!-- Le cadre d'un bloc qu'on trace : la même teinte que la projection sur les
+             règles, l'accent à 14 %, sous un pointillé d'accent. -->
+        <Style Selector="Rectangle.traceEnCours">
+            <Setter Property="Stroke" Value="{StaticResource Accent}"/>
+            <Setter Property="StrokeThickness" Value="1"/>
+            <Setter Property="Fill" Value="{StaticResource Projection}"/>
+        </Style>
+        <!-- Un repère libre : un pixel de cyan, à tous les zooms, sur toute la planche. -->
+        <Style Selector="Rectangle.repereLibre">
+            <Setter Property="Fill" Value="{StaticResource Repere}"/>
+        </Style>
+        <!-- La bulle de dimensions, sous le bloc qu'on trace ou qu'on redimensionne : un
+             rectangle arrondi et non un disque, pour ne jamais passer, dans l'Overlay, pour
+             la poignée de rotation que RotationTests y cherche. -->
+        <Style Selector="Border.bulleDeDimensions">
+            <Setter Property="Background" Value="{StaticResource Texte}"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Padding" Value="7,3"/>
+        </Style>
+        <Style Selector="Border.bulleDeDimensions > TextBlock">
+            <Setter Property="Foreground" Value="{StaticResource Blanc}"/>
+            <Setter Property="FontSize" Value="10.5"/>
+            <Setter Property="FontFeatures" Value="+tnum"/>
+        </Style>
+
+        <!-- Les deux règles et leur coin : la face au gris de la fenêtre, le filet fort du
+             côté de la planche, deux gris de graduation et les chiffres de la barre d'état,
+             comme la maquette. -->
+        <Style Selector="views|Ruler">
+            <Setter Property="Fond" Value="{StaticResource FondFenetre}"/>
+            <Setter Property="Bord" Value="{StaticResource FiletFort}"/>
+            <Setter Property="Graduation" Value="{StaticResource Graduation}"/>
+            <Setter Property="GraduationFine" Value="{StaticResource GraduationFine}"/>
+            <Setter Property="Chiffres" Value="{StaticResource Etat}"/>
+            <Setter Property="Projection" Value="{StaticResource Projection}"/>
         </Style>
 
         <!-- Fond et contour d'un bloc : deux éléments qui prennent le contenu en
@@ -308,38 +362,64 @@
 
     </UserControl.DataTemplates>
 
-    <ScrollViewer Name="Scroller"
-                  Background="#FF3A3D42"
+    <!-- La planche de la maquette (poste I4) : deux règles FIXES au bord haut et au bord
+         gauche de la zone visible, et la page qui défile entre elles sur un fond gris clair.
+
+         Les règles ne défilent plus avec la page, comme elles le faisaient en la bordant :
+         elles restent où l'œil les cherche, et se graduent de part et d'autre de la page —
+         négatives à gauche et au-dessus. Leur zéro reste l'origine de la page : le code
+         le leur redit à chaque mise en page et à chaque défilement (« Origine »), si bien
+         qu'une graduation tombe toujours en face de la position qu'elle annonce. -->
+    <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,*">
+
+        <Border Grid.Row="0" Grid.Column="0" Width="{x:Static views:Ruler.Breadth}"
+                Height="{x:Static views:Ruler.Breadth}"
+                Background="{StaticResource FondFenetre}"
+                BorderBrush="{StaticResource FiletFort}" BorderThickness="0,0,1,1"
+                IsVisible="{Binding ShowRulers}"/>
+
+        <views:Ruler Grid.Row="0" Grid.Column="1" Name="TopRuler"
+                     Orientation="Horizontal"
+                     IsVisible="{Binding ShowRulers}"
+                     Scale="{Binding RenderScale}"/>
+
+        <views:Ruler Grid.Row="1" Grid.Column="0" Name="LeftRuler"
+                     Orientation="Vertical"
+                     IsVisible="{Binding ShowRulers}"
+                     Scale="{Binding RenderScale}"/>
+
+    <ScrollViewer Grid.Row="1" Grid.Column="1" Name="Scroller"
+                  Background="{StaticResource FondPlanche}"
                   HorizontalScrollBarVisibility="Auto"
                   VerticalScrollBarVisibility="Auto">
 
         <!-- La planche est centrée tant qu'elle tient dans la fenêtre, sinon elle défile.
-             Les règles bordent la page et défilent avec elle : c'est ce qui garantit
-             qu'une graduation tombe exactement en face de la position qu'elle annonce,
-             sans avoir à suivre le défilement à la main. -->
-        <Panel Name="Stage" Margin="40" HorizontalAlignment="Center" VerticalAlignment="Center">
-            <Grid ColumnDefinitions="Auto,Auto" RowDefinitions="Auto,Auto">
+             Elle couvre au moins toute la zone visible : la couche de saisie s'étend avec
+             elle, si bien qu'une poignée posée hors de la page — la rotation d'un bloc collé
+             au haut, le cadre décalé d'un bloc au bord — se saisit encore, et qu'un clic
+             sur le gris libère la sélection comme un clic dans le blanc de la page. -->
+        <Panel Name="Stage"
+               MinWidth="{Binding #Scroller.Viewport.Width}"
+               MinHeight="{Binding #Scroller.Viewport.Height}">
 
-                <Border Grid.Row="0" Grid.Column="0" Background="#FFF3F4F6"
-                        BorderBrush="#FFD9DDE3" BorderThickness="0,0,1,1"
-                        IsVisible="{Binding ShowRulers}"/>
+            <!-- La feuille : le papier et son ombre double, légère, de la maquette —
+                 « 0 1px 2px rgba(0,0,0,.12), 0 6px 20px rgba(0,0,0,.10) ». Le noir des
+                 ombres n'est pas une couleur de l'apparence, qui n'en a pas le nom. Le
+                 flou ne s'écrit pas pareil : CSS en tire un écart type de la moitié du
+                 rayon, Avalonia de 0,29 fois le rayon plus un demi-pixel. Les 20 px de
+                 la maquette en font donc 33 ici — relevé au pixel contre son rendu,
+                 profil pour profil sur les bords qu'elle montre.
 
-                <views:Ruler Grid.Row="0" Grid.Column="1" Name="TopRuler"
-                             Orientation="Horizontal"
-                             IsVisible="{Binding ShowRulers}"
-                             PageLength="{Binding Document.PageWidth}"
-                             Scale="{Binding RenderScale}"/>
+                 32 px de planche autour laissent voir la poignée de rotation d'un bloc
+                 posé tout en haut de la page, 26 px au-dessus de lui. -->
+            <Border Name="Feuille" Margin="32"
+                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                    Background="{x:Static conv:Conv.Papier}"
+                    BoxShadow="0 1 2 0 #1F000000, 0 6 33 0 #1A000000">
 
-                <views:Ruler Grid.Row="1" Grid.Column="0" Name="LeftRuler"
-                             Orientation="Vertical"
-                             IsVisible="{Binding ShowRulers}"
-                             PageLength="{Binding Document.PageHeight}"
-                             Scale="{Binding RenderScale}"/>
-
-            <Border Grid.Row="1" Grid.Column="1" Background="White" BoxShadow="0 6 28 0 #70000000">
-
-                <!-- Trois couches superposées et exactement alignées :
-                     la page mise à l'échelle, la couche de poignées, la couche de saisie. -->
+                <!-- Quatre couches superposées et exactement alignées : la page mise à
+                     l'échelle, les repères libres, les poignées, et — au-dessus de la
+                     feuille, sur toute la planche — la couche de saisie. -->
                 <Panel Name="Surface">
 
                     <LayoutTransformControl Name="Scaler"
@@ -349,15 +429,18 @@
                         <!-- La charte du document — jeu de couleurs et jeu de polices — posée
                              ici et héritée par tout ce que la page dessine : changer de jeu
                              recolore d'un coup les blocs qui y font référence (poste C5b). -->
+                        <!-- Le blanc de la page est celui du papier, que le document nomme
+                             (Document.Papier) : ce n'est pas le blanc de l'interface, et il ne
+                             changerait pas avec elle. -->
                         <Panel Name="PageRoot"
                                views:JeuAffiche.Charte="{Binding Document.Charte}"
                                Width="{Binding Document.PageWidth}"
                                Height="{Binding Document.PageHeight}"
-                               Background="White"
+                               Background="{x:Static conv:Conv.Papier}"
                                ClipToBounds="True">
 
-                            <!-- Le fond de page, sous tout le reste et sur le blanc de la
-                                 planche : il se dessine par le même contrôle que le fond
+                            <!-- Le fond de page, sous tout le reste et sur le blanc du
+                                 papier : il se dessine par le même contrôle que le fond
                                  d'un bloc, et l'export le pose de même en tête de page.
                                  Absent, la page reste blanche comme elle l'a toujours été. -->
                             <views:FondBloc Fond="{Binding Document.Background}"
@@ -365,15 +448,23 @@
 
                             <!-- Repères : zone de marges, colonnes, lignes, lignes de base.
                                  Ils ne sont dessinés que là — l'export ne les connaît pas,
-                                 et c'est ce qui garantit qu'ils ne s'impriment jamais. -->
+                                 et c'est ce qui garantit qu'ils ne s'impriment jamais. Les
+                                 repères libres, eux, ont quitté la page pour la planche
+                                 entière (poste I4) : voir « CoucheDesReperes ». -->
                             <Panel IsVisible="{Binding ShowGuides}" IsHitTestVisible="False">
+                                <!-- Les marges en pointillé rose de la maquette, sous les
+                                     blocs comme elles l'ont toujours été. Un pixel d'écran à
+                                     tous les zooms : l'épaisseur, en points de page, est
+                                     l'inverse de l'échelle, et le pointillé se compte en
+                                     épaisseurs — trois pixels pleins, deux vides. -->
                                 <Canvas>
                                     <Rectangle Canvas.Left="{Binding Document.MarginLeft}"
                                                Canvas.Top="{Binding Document.MarginTop}"
                                                Width="{Binding Document.MarginBoxWidth}"
                                                Height="{Binding Document.MarginBoxHeight}"
-                                               Stroke="#FF7FB2E5" StrokeThickness="0.4"
-                                               StrokeDashArray="6,4"/>
+                                               Stroke="{StaticResource MargeDePage}"
+                                               StrokeThickness="{Binding RenderScale, Converter={x:Static conv:Conv.UnPixel}}"
+                                               StrokeDashArray="3,2"/>
                                 </Canvas>
 
                                 <ItemsControl Classes="verticalGuides" ItemsSource="{Binding Document.VerticalGridLines}">
@@ -408,38 +499,6 @@
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
-
-                                <!-- Repères libres, d'un vert franc : ce sont les seuls
-                                     que l'utilisateur a posés lui-même, ils doivent se
-                                     distinguer de la grille qu'il a réglée. -->
-                                <ItemsControl Classes="verticalRulerGuides" ItemsSource="{Binding Document.VerticalRulerGuides}">
-                                    <ItemsControl.ItemsPanel>
-                                        <ItemsPanelTemplate>
-                                            <Canvas/>
-                                        </ItemsPanelTemplate>
-                                    </ItemsControl.ItemsPanel>
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate DataType="models:RulerGuide">
-                                            <Rectangle Width="0.5"
-                                                       Height="{Binding #Board.((vm:MainWindowViewModel)DataContext).Document.PageHeight}"
-                                                       Fill="#FF2F9E5E"/>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
-
-                                <ItemsControl Classes="horizontalRulerGuides" ItemsSource="{Binding Document.HorizontalRulerGuides}">
-                                    <ItemsControl.ItemsPanel>
-                                        <ItemsPanelTemplate>
-                                            <Canvas/>
-                                        </ItemsPanelTemplate>
-                                    </ItemsControl.ItemsPanel>
-                                    <ItemsControl.ItemTemplate>
-                                        <DataTemplate DataType="models:RulerGuide">
-                                            <Rectangle Width="{Binding #Board.((vm:MainWindowViewModel)DataContext).Document.PageWidth}"
-                                                       Height="0.5" Fill="#FF2F9E5E"/>
-                                        </DataTemplate>
-                                    </ItemsControl.ItemTemplate>
-                                </ItemsControl>
                             </Panel>
 
                             <!-- La classe « frames » vaut pour ce canevas comme pour celui
@@ -455,14 +514,25 @@
                         </Panel>
                     </LayoutTransformControl>
 
+                    <!-- Les repères libres, prolongés sur toute la planche : hors de PageRoot,
+                         au-dessus de la page qu'ils traversent, et hors de la mise à l'échelle
+                         pour garder un pixel de large à tous les zooms. Le code pose un trait
+                         par repère, depuis le haut — ou la gauche — de la planche jusqu'à son
+                         bord opposé ; la couche ne déborde pas de la feuille dans la mise en
+                         page, elle dessine seulement au-delà. -->
+                    <Canvas Name="CoucheDesReperes" IsHitTestVisible="False"
+                            IsVisible="{Binding ShowGuides}"/>
+
                     <!-- Hors de la mise à l'échelle : les poignées gardent une taille constante
                          quel que soit le zoom. Leurs positions sont calculées en code-behind. -->
                     <Canvas Name="Overlay" IsHitTestVisible="False"/>
-
-                    <Border Name="InputLayer" Background="Transparent"/>
                 </Panel>
             </Border>
-            </Grid>
+
+            <!-- La couche de saisie couvre toute la planche, et non plus la seule page.
+                 Ses coordonnées restent celles de la page : le code les lit sur « Surface ». -->
+            <Border Name="InputLayer" Background="Transparent"/>
         </Panel>
     </ScrollViewer>
+    </Grid>
 </UserControl>
