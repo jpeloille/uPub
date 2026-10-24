@@ -1,21 +1,32 @@
 <!--
-    La charte de l'interface (phase I, poste I1) : la palette, les tailles et les icônes de
-    la maquette « Fenêtre principale — bloc de texte sélectionné », à un seul endroit.
+    L'apparence de l'interface (phase I, poste I1) : la palette, les tailles et les icônes
+    de la maquette « Fenêtre principale — bloc de texte sélectionné », à un seul endroit.
+
+    Elle ne s'appelle pas « charte », bien que c'en soit une : le mot est pris. « Charte »
+    est, dans le noyau, le jeu de couleurs et de polices du DOCUMENT (Core/Models/Jeux.cs),
+    que « JeuAffiche.Charte » pose sur la page, dans ce dossier même. Ce fichier habille
+    l'INTERFACE, jamais la page : aucune de ses couleurs n'entre dans un document. Pour la
+    même raison, ses classes d'icône ne s'appellent pas « trait » et « plein » : « trait »
+    nomme déjà le motif du contour d'un bloc et l'objet trait de A10, et un « Path » de la
+    planche classé ainsi serait repeint sans un mot.
 
     App.axaml l'inclut après le thème Fluent, pour toute l'application. Elle ne change
-    rien à l'écran d'aujourd'hui, et c'est voulu : le poste pose la charte, les postes
+    rien à l'écran d'aujourd'hui, et c'est voulu : le poste pose l'apparence, les postes
     suivants la lisent. Trois règles la tiennent, que la recette I1 vérifie sur ce fichier.
 
     1. Chaque style est porté par une CLASSE. Aucun sélecteur nu — « Button », « TextBox » —
        ne s'y écrit : il rhabillerait d'un coup tous les boutons de la fenêtre actuelle, qui
-       n'en demande pas tant. Les classes de la charte ne servent encore nulle part ; elles
-       ne recouvrent aucune de celles des vues d'avant la phase (« tool », « sidebar »,
-       « icon », « sep », « section », « field », « pastille »…).
-    2. Chaque couleur de l'interface de la maquette est déclarée UNE fois, en « Color » ;
-       les pinceaux et les styles la citent par sa clé. Aucune autre couleur n'y entre. La
-       page dessinée dans la maquette n'en fait pas partie — bandeau, images et lignes de
-       texte sont le document, pas l'interface —, ni l'orange du port de chaînage, que la
-       phase ne fait pas (seuil D).
+       n'en demande pas tant. Les classes d'ici ne recouvrent aucune de celles des vues
+       d'avant la phase (« tool », « sidebar », « icon », « sep », « section », « field »,
+       « pastille »…) : une vue qui en emploie une est une vue de la phase, et la recette
+       veut qu'elle soit dans sa liste.
+    2. Chaque couleur de l'interface de la maquette est déclarée UNE fois, en « Color », en
+       chiffres ; les pinceaux et les styles la citent par sa clé, et nulle part ailleurs
+       une couleur ne s'écrit en chiffres, sous aucune forme, ni par son nom — sauf
+       « Transparent », qui n'en est pas une. Aucune autre couleur n'y entre. La page
+       dessinée dans la maquette n'en fait pas partie — bandeau, images et lignes de texte
+       sont le document, pas l'interface —, ni l'orange du port de chaînage, que la phase
+       ne fait pas (seuil D).
     3. Chaque icône est le tracé de la maquette, élément par élément, sur sa grille de 24,
        avec l'épaisseur, les extrémités et les jointures de son trait, à la taille où la
        maquette l'affiche. Un tracé à trait est un « Path » à « Stroke » : « PathIcon » ne
@@ -28,6 +39,10 @@
       libelle       .lbl   libellé de corps 11
       separateur    .sep   filet vertical de 1 × 20, sur un Border
       titreSection  .sec   titre de section repliable (ToggleButton), corps 12 demi-gras
+      iconeTrait    —      tracé d'icône dont le trait prend la couleur courante
+      iconePlein    —      tracé d'icône dont le fond prend la couleur courante
+    La recette relit la feuille de style de la maquette, et vérifie que les cinq premières
+    classes en portent les tailles et les couleurs, chaque couleur par la bonne clé.
 
     Une icône s'emploie comme contenu : `<Button Classes="ib" Content="{StaticResource
     IconeNouveau}"/>`. Elle est déclarée « x:Shared="False" », si bien que chaque emploi
@@ -36,10 +51,11 @@
     (« currentColor » de la maquette), c'est-à-dire « TextElement.Foreground », que le
     bouton porte : sombre au repos, blanc sur l'accent, sans un style par icône.
 
-    La liste des icônes et du poste qui emploiera chacune est dans la recette
-    (Scripts/recettes/I1-charte.sh), avec la liste des vues écrites par la phase : elle
-    vérifie que chaque icône nommée par une vue existe ici, et que chaque icône d'ici
-    sert, dès que le poste qui l'attend est clos.
+    La recette (Scripts/recettes/I1-apparence.sh) tient la liste des icônes et du poste qui
+    emploiera chacune, et celle des vues de la phase : elle vérifie que chaque icône citée
+    par une vue existe ici, que chaque icône d'ici sert dès que le poste qui l'attend est
+    clos, et qu'une vue qui cite l'apparence, ou qui écrit en dur une de ses couleurs, est
+    dans la liste.
 -->
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
@@ -109,9 +125,9 @@
              « path » recopié tel quel, « rect » et « circle » écrits en tracé — un rectangle
              arrondi part du haut à gauche après l'arrondi et tourne dans le sens horaire,
              comme le svg, ce qui cale le pointillé de « Grouper » au même endroit. Classes :
-             « trait » pour un trait à la couleur courante, « plein » pour un remplissage à
-             la couleur courante ; une couleur fixe de la maquette (le blanc d'« Arrière-
-             plan », le gris de l'œil et de la rotation) est citée par sa clé.
+             « iconeTrait » pour un trait à la couleur courante, « iconePlein » pour un
+             remplissage à la couleur courante ; une couleur fixe de la maquette (le blanc
+             d'« Arrière-plan », le gris de l'œil et de la rotation) est citée par sa clé.
 
              Deux traductions, que le svg et Avalonia n'écrivent pas pareil :
              - le pointillé : le svg le mesure en unités de la grille, Avalonia en épaisseurs
@@ -122,123 +138,123 @@
         <!-- Barre principale — lues par I2. -->
         <Viewbox x:Key="IconeNouveau" x:Shared="False" Width="18" Height="18">
             <Canvas Width="24" Height="24" ClipToBounds="True">
-                <Path Classes="trait" StrokeThickness="1.7" StrokeLineCap="Round" StrokeJoin="Round"
+                <Path Classes="iconeTrait" StrokeThickness="1.7" StrokeLineCap="Round" StrokeJoin="Round"
                       Data="M14 3H6v18h12V7z"/>
-                <Path Classes="trait" StrokeThickness="1.7" StrokeLineCap="Round" StrokeJoin="Round"
+                <Path Classes="iconeTrait" StrokeThickness="1.7" StrokeLineCap="Round" StrokeJoin="Round"
                       Data="M14 3v4h4"/>
-                <Path Classes="trait" StrokeThickness="1.7" StrokeLineCap="Round" StrokeJoin="Round"
+                <Path Classes="iconeTrait" StrokeThickness="1.7" StrokeLineCap="Round" StrokeJoin="Round"
                       Data="M12 11v6M9 14h6"/>
             </Canvas>
         </Viewbox>
         <Viewbox x:Key="IconeOuvrir" x:Shared="False" Width="18" Height="18">
             <Canvas Width="24" Height="24" ClipToBounds="True">
-                <Path Classes="trait" StrokeThickness="1.7" StrokeLineCap="Round" StrokeJoin="Round"
+                <Path Classes="iconeTrait" StrokeThickness="1.7" StrokeLineCap="Round" StrokeJoin="Round"
                       Data="M3 7h6l2 2h10v10H3z"/>
             </Canvas>
         </Viewbox>
         <Viewbox x:Key="IconeEnregistrer" x:Shared="False" Width="18" Height="18">
             <Canvas Width="24" Height="24" ClipToBounds="True">
-                <Path Classes="trait" StrokeThickness="1.7" StrokeLineCap="Round" StrokeJoin="Round"
+                <Path Classes="iconeTrait" StrokeThickness="1.7" StrokeLineCap="Round" StrokeJoin="Round"
                       Data="M5 4h11l3 3v13H5z"/>
-                <Path Classes="trait" StrokeThickness="1.7" StrokeLineCap="Round" StrokeJoin="Round"
+                <Path Classes="iconeTrait" StrokeThickness="1.7" StrokeLineCap="Round" StrokeJoin="Round"
                       Data="M8 4v5h7V4M8 20v-6h8v6"/>
             </Canvas>
         </Viewbox>
         <Viewbox x:Key="IconeAnnuler" x:Shared="False" Width="18" Height="18">
             <Canvas Width="24" Height="24" ClipToBounds="True">
-                <Path Classes="trait" StrokeThickness="1.7" StrokeLineCap="Round" StrokeJoin="Round"
+                <Path Classes="iconeTrait" StrokeThickness="1.7" StrokeLineCap="Round" StrokeJoin="Round"
                       Data="M9 7L4 12l5 5"/>
-                <Path Classes="trait" StrokeThickness="1.7" StrokeLineCap="Round" StrokeJoin="Round"
+                <Path Classes="iconeTrait" StrokeThickness="1.7" StrokeLineCap="Round" StrokeJoin="Round"
                       Data="M4 12h10a6 6 0 0 1 0 12"/>
             </Canvas>
         </Viewbox>
         <Viewbox x:Key="IconeRetablir" x:Shared="False" Width="18" Height="18">
             <Canvas Width="24" Height="24" ClipToBounds="True">
-                <Path Classes="trait" StrokeThickness="1.7" StrokeLineCap="Round" StrokeJoin="Round"
+                <Path Classes="iconeTrait" StrokeThickness="1.7" StrokeLineCap="Round" StrokeJoin="Round"
                       Data="M15 7l5 5-5 5"/>
-                <Path Classes="trait" StrokeThickness="1.7" StrokeLineCap="Round" StrokeJoin="Round"
+                <Path Classes="iconeTrait" StrokeThickness="1.7" StrokeLineCap="Round" StrokeJoin="Round"
                       Data="M20 12H10a6 6 0 0 0 0 12"/>
             </Canvas>
         </Viewbox>
         <Viewbox x:Key="IconeAlignerAGauche" x:Shared="False" Width="18" Height="18">
             <Canvas Width="24" Height="24" ClipToBounds="True">
-                <Path Classes="trait" StrokeThickness="1.7" StrokeLineCap="Round"
+                <Path Classes="iconeTrait" StrokeThickness="1.7" StrokeLineCap="Round"
                       Data="M4 3v18"/>
-                <Path Classes="trait" StrokeThickness="1.7" StrokeLineCap="Round"
+                <Path Classes="iconeTrait" StrokeThickness="1.7" StrokeLineCap="Round"
                       Data="M8,6 H18 A1,1 0 0 1 19,7 V9 A1,1 0 0 1 18,10 H8 A1,1 0 0 1 7,9 V7 A1,1 0 0 1 8,6 Z"/>
-                <Path Classes="trait" StrokeThickness="1.7" StrokeLineCap="Round"
+                <Path Classes="iconeTrait" StrokeThickness="1.7" StrokeLineCap="Round"
                       Data="M8,14 H13 A1,1 0 0 1 14,15 V17 A1,1 0 0 1 13,18 H8 A1,1 0 0 1 7,17 V15 A1,1 0 0 1 8,14 Z"/>
             </Canvas>
         </Viewbox>
         <Viewbox x:Key="IconeCentrerHorizontalement" x:Shared="False" Width="18" Height="18">
             <Canvas Width="24" Height="24" ClipToBounds="True">
-                <Path Classes="trait" StrokeThickness="1.7" StrokeLineCap="Round"
+                <Path Classes="iconeTrait" StrokeThickness="1.7" StrokeLineCap="Round"
                       Data="M12 3v18"/>
-                <Path Classes="trait" StrokeThickness="1.7" StrokeLineCap="Round"
+                <Path Classes="iconeTrait" StrokeThickness="1.7" StrokeLineCap="Round"
                       Data="M6,6 H18 A1,1 0 0 1 19,7 V9 A1,1 0 0 1 18,10 H6 A1,1 0 0 1 5,9 V7 A1,1 0 0 1 6,6 Z"/>
-                <Path Classes="trait" StrokeThickness="1.7" StrokeLineCap="Round"
+                <Path Classes="iconeTrait" StrokeThickness="1.7" StrokeLineCap="Round"
                       Data="M9,14 H15 A1,1 0 0 1 16,15 V17 A1,1 0 0 1 15,18 H9 A1,1 0 0 1 8,17 V15 A1,1 0 0 1 9,14 Z"/>
             </Canvas>
         </Viewbox>
         <Viewbox x:Key="IconeCentrerVerticalement" x:Shared="False" Width="18" Height="18">
             <Canvas Width="24" Height="24" ClipToBounds="True">
-                <Path Classes="trait" StrokeThickness="1.7" StrokeLineCap="Round"
+                <Path Classes="iconeTrait" StrokeThickness="1.7" StrokeLineCap="Round"
                       Data="M3 12h18"/>
-                <Path Classes="trait" StrokeThickness="1.7" StrokeLineCap="Round"
+                <Path Classes="iconeTrait" StrokeThickness="1.7" StrokeLineCap="Round"
                       Data="M7,5 H9 A1,1 0 0 1 10,6 V18 A1,1 0 0 1 9,19 H7 A1,1 0 0 1 6,18 V6 A1,1 0 0 1 7,5 Z"/>
-                <Path Classes="trait" StrokeThickness="1.7" StrokeLineCap="Round"
+                <Path Classes="iconeTrait" StrokeThickness="1.7" StrokeLineCap="Round"
                       Data="M15,8 H17 A1,1 0 0 1 18,9 V15 A1,1 0 0 1 17,16 H15 A1,1 0 0 1 14,15 V9 A1,1 0 0 1 15,8 Z"/>
             </Canvas>
         </Viewbox>
         <Viewbox x:Key="IconeAjusterAuxMarges" x:Shared="False" Width="18" Height="18">
             <Canvas Width="24" Height="24" ClipToBounds="True">
-                <Path Classes="trait" StrokeThickness="1.7" StrokeLineCap="Round"
+                <Path Classes="iconeTrait" StrokeThickness="1.7" StrokeLineCap="Round"
                       Data="M4,4 H20 A1,1 0 0 1 21,5 V19 A1,1 0 0 1 20,20 H4 A1,1 0 0 1 3,19 V5 A1,1 0 0 1 4,4 Z"/>
-                <Path Classes="trait" StrokeThickness="1.7" StrokeLineCap="Round"
+                <Path Classes="iconeTrait" StrokeThickness="1.7" StrokeLineCap="Round"
                       Data="M8,8 H16 A1,1 0 0 1 17,9 V15 A1,1 0 0 1 16,16 H8 A1,1 0 0 1 7,15 V9 A1,1 0 0 1 8,8 Z"/>
             </Canvas>
         </Viewbox>
         <Viewbox x:Key="IconePremierPlan" x:Shared="False" Width="18" Height="18">
             <Canvas Width="24" Height="24" ClipToBounds="True">
-                <Path Classes="trait plein" StrokeThickness="1.7" StrokeJoin="Round"
+                <Path Classes="iconeTrait iconePlein" StrokeThickness="1.7" StrokeJoin="Round"
                       Data="M10,9 H19 A1,1 0 0 1 20,10 V19 A1,1 0 0 1 19,20 H10 A1,1 0 0 1 9,19 V10 A1,1 0 0 1 10,9 Z"/>
-                <Path Classes="trait" StrokeThickness="1.7" StrokeJoin="Round"
+                <Path Classes="iconeTrait" StrokeThickness="1.7" StrokeJoin="Round"
                       Data="M5,4 H14 A1,1 0 0 1 15,5 V14 A1,1 0 0 1 14,15 H5 A1,1 0 0 1 4,14 V5 A1,1 0 0 1 5,4 Z"/>
             </Canvas>
         </Viewbox>
         <Viewbox x:Key="IconeArrierePlan" x:Shared="False" Width="18" Height="18">
             <Canvas Width="24" Height="24" ClipToBounds="True">
-                <Path Classes="trait plein" StrokeThickness="1.7" StrokeJoin="Round"
+                <Path Classes="iconeTrait iconePlein" StrokeThickness="1.7" StrokeJoin="Round"
                       Data="M5,4 H14 A1,1 0 0 1 15,5 V14 A1,1 0 0 1 14,15 H5 A1,1 0 0 1 4,14 V5 A1,1 0 0 1 5,4 Z"/>
-                <Path Classes="trait" StrokeThickness="1.7" StrokeJoin="Round" Fill="{StaticResource Blanc}"
+                <Path Classes="iconeTrait" StrokeThickness="1.7" StrokeJoin="Round" Fill="{StaticResource Blanc}"
                       Data="M10,9 H19 A1,1 0 0 1 20,10 V19 A1,1 0 0 1 19,20 H10 A1,1 0 0 1 9,19 V10 A1,1 0 0 1 10,9 Z"/>
             </Canvas>
         </Viewbox>
         <Viewbox x:Key="IconeGrouper" x:Shared="False" Width="18" Height="18">
             <Canvas Width="24" Height="24" ClipToBounds="True">
-                <Path Classes="trait" StrokeThickness="1.7" StrokeDashArray="1.17647,1.17647"
+                <Path Classes="iconeTrait" StrokeThickness="1.7" StrokeDashArray="1.17647,1.17647"
                       Data="M5,3 H19 A2,2 0 0 1 21,5 V19 A2,2 0 0 1 19,21 H5 A2,2 0 0 1 3,19 V5 A2,2 0 0 1 5,3 Z"/>
-                <Path Classes="trait" StrokeThickness="1.7"
+                <Path Classes="iconeTrait" StrokeThickness="1.7"
                       Data="M7,7 H12 V12 H7 Z"/>
-                <Path Classes="trait" StrokeThickness="1.7"
+                <Path Classes="iconeTrait" StrokeThickness="1.7"
                       Data="M12,12 H17 V17 H12 Z"/>
             </Canvas>
         </Viewbox>
         <Viewbox x:Key="IconeZoomArriere" x:Shared="False" Width="16" Height="16">
             <Canvas Width="24" Height="24" ClipToBounds="True">
-                <Path Classes="trait" StrokeThickness="2" StrokeLineCap="Round"
+                <Path Classes="iconeTrait" StrokeThickness="2" StrokeLineCap="Round"
                       Data="M5 12h14"/>
             </Canvas>
         </Viewbox>
         <Viewbox x:Key="IconeZoomAvant" x:Shared="False" Width="16" Height="16">
             <Canvas Width="24" Height="24" ClipToBounds="True">
-                <Path Classes="trait" StrokeThickness="2" StrokeLineCap="Round"
+                <Path Classes="iconeTrait" StrokeThickness="2" StrokeLineCap="Round"
                       Data="M5 12h14M12 5v14"/>
             </Canvas>
         </Viewbox>
         <Viewbox x:Key="IconeExporter" x:Shared="False" Width="15" Height="15">
             <Canvas Width="24" Height="24" ClipToBounds="True">
-                <Path Classes="trait" StrokeThickness="2" StrokeLineCap="Round" StrokeJoin="Round"
+                <Path Classes="iconeTrait" StrokeThickness="2" StrokeLineCap="Round" StrokeJoin="Round"
                       Data="M12 4v11M7 10l5 5 5-5M5 20h14"/>
             </Canvas>
         </Viewbox>
@@ -246,27 +262,28 @@
         <!-- Barre contextuelle — lues par I3. -->
         <Viewbox x:Key="IconeTexteAGauche" x:Shared="False" Width="17" Height="17">
             <Canvas Width="24" Height="24" ClipToBounds="True">
-                <Path Classes="trait" StrokeThickness="1.8" StrokeLineCap="Round"
+                <Path Classes="iconeTrait" StrokeThickness="1.8" StrokeLineCap="Round"
                       Data="M4 6h16M4 10h10M4 14h16M4 18h10"/>
             </Canvas>
         </Viewbox>
         <Viewbox x:Key="IconeTexteCentre" x:Shared="False" Width="17" Height="17">
             <Canvas Width="24" Height="24" ClipToBounds="True">
-                <Path Classes="trait" StrokeThickness="1.8" StrokeLineCap="Round"
+                <Path Classes="iconeTrait" StrokeThickness="1.8" StrokeLineCap="Round"
                       Data="M4 6h16M7 10h10M4 14h16M7 18h10"/>
             </Canvas>
         </Viewbox>
         <Viewbox x:Key="IconeTexteJustifie" x:Shared="False" Width="17" Height="17">
             <Canvas Width="24" Height="24" ClipToBounds="True">
-                <Path Classes="trait" StrokeThickness="1.8" StrokeLineCap="Round"
+                <Path Classes="iconeTrait" StrokeThickness="1.8" StrokeLineCap="Round"
                       Data="M4 6h16M4 10h16M4 14h16M4 18h11"/>
             </Canvas>
         </Viewbox>
         <!-- La maquette omet l'alignement à droite, que le modèle a et que I3 pose : il est
-             dessiné dans le même langage, miroir exact de « à gauche » (x → 24 − x). -->
+             dessiné dans le même langage, miroir exact de « à gauche » (x → 24 − x), que la
+             recette recalcule sur le svg de la maquette. -->
         <Viewbox x:Key="IconeTexteADroite" x:Shared="False" Width="17" Height="17">
             <Canvas Width="24" Height="24" ClipToBounds="True">
-                <Path Classes="trait" StrokeThickness="1.8" StrokeLineCap="Round"
+                <Path Classes="iconeTrait" StrokeThickness="1.8" StrokeLineCap="Round"
                       Data="M4 6h16M10 10h10M4 14h16M10 18h10"/>
             </Canvas>
         </Viewbox>
@@ -275,69 +292,69 @@
              n'apparaissent qu'avec leur geste. -->
         <Viewbox x:Key="IconeSelection" x:Shared="False" Width="18" Height="18">
             <Canvas Width="24" Height="24" ClipToBounds="True">
-                <Path Classes="plein"
+                <Path Classes="iconePlein"
                       Data="M6 3v17l4.2-4.1 2.7 5.6 2.4-1.2-2.6-5.4 5.8-.3z"/>
             </Canvas>
         </Viewbox>
         <Viewbox x:Key="IconeMain" x:Shared="False" Width="18" Height="18">
             <Canvas Width="24" Height="24" ClipToBounds="True">
-                <Path Classes="trait" StrokeThickness="1.7" StrokeLineCap="Round" StrokeJoin="Round"
+                <Path Classes="iconeTrait" StrokeThickness="1.7" StrokeLineCap="Round" StrokeJoin="Round"
                       Data="M8 12V6a1.5 1.5 0 0 1 3 0v5M11 11V4.5a1.5 1.5 0 0 1 3 0V11M14 11V6a1.5 1.5 0 0 1 3 0v8a7 7 0 0 1-7 7c-2.5 0-4-1.5-5.5-4L3 14a1.5 1.5 0 0 1 2.5-1.6L8 15"/>
             </Canvas>
         </Viewbox>
         <Viewbox x:Key="IconeBlocDeTexte" x:Shared="False" Width="18" Height="18">
             <Canvas Width="24" Height="24" ClipToBounds="True">
-                <Path Classes="plein"
+                <Path Classes="iconePlein"
                       Data="M4 4h16v4.2h-5.9V20H9.9V8.2H4z"/>
             </Canvas>
         </Viewbox>
         <Viewbox x:Key="IconeTitre" x:Shared="False" Width="18" Height="18">
             <Canvas Width="24" Height="24" ClipToBounds="True">
-                <Path Classes="plein"
+                <Path Classes="iconePlein"
                       Data="M4 4h4v6.4h8V4h4v16h-4v-6.4H8V20H4z"/>
             </Canvas>
         </Viewbox>
         <Viewbox x:Key="IconeImage" x:Shared="False" Width="18" Height="18">
             <Canvas Width="24" Height="24" ClipToBounds="True">
-                <Path Classes="trait" StrokeThickness="1.7" StrokeJoin="Round"
+                <Path Classes="iconeTrait" StrokeThickness="1.7" StrokeJoin="Round"
                       Data="M4,5 H20 A1,1 0 0 1 21,6 V18 A1,1 0 0 1 20,19 H4 A1,1 0 0 1 3,18 V6 A1,1 0 0 1 4,5 Z"/>
-                <Path Classes="trait" StrokeThickness="1.7" StrokeJoin="Round"
+                <Path Classes="iconeTrait" StrokeThickness="1.7" StrokeJoin="Round"
                       Data="M6 16l4-5 3 3.5 2.5-3L19 16"/>
-                <Path Classes="trait" StrokeThickness="1.7" StrokeJoin="Round"
+                <Path Classes="iconeTrait" StrokeThickness="1.7" StrokeJoin="Round"
                       Data="M10.3,9 A1.3,1.3 0 1 1 7.7,9 A1.3,1.3 0 1 1 10.3,9 Z"/>
             </Canvas>
         </Viewbox>
         <Viewbox x:Key="IconeTableau" x:Shared="False" Width="18" Height="18">
             <Canvas Width="24" Height="24" ClipToBounds="True">
-                <Path Classes="trait" StrokeThickness="1.7"
+                <Path Classes="iconeTrait" StrokeThickness="1.7"
                       Data="M4,5 H20 A1,1 0 0 1 21,6 V18 A1,1 0 0 1 20,19 H4 A1,1 0 0 1 3,18 V6 A1,1 0 0 1 4,5 Z"/>
-                <Path Classes="trait" StrokeThickness="1.7"
+                <Path Classes="iconeTrait" StrokeThickness="1.7"
                       Data="M3 10h18M9.5 5v14M14.5 5v14"/>
             </Canvas>
         </Viewbox>
         <Viewbox x:Key="IconeRectangle" x:Shared="False" Width="18" Height="18">
             <Canvas Width="24" Height="24" ClipToBounds="True">
-                <Path Classes="trait" StrokeThickness="1.8"
+                <Path Classes="iconeTrait" StrokeThickness="1.8"
                       Data="M4.5,5.5 H19.5 A1,1 0 0 1 20.5,6.5 V17.5 A1,1 0 0 1 19.5,18.5 H4.5 A1,1 0 0 1 3.5,17.5 V6.5 A1,1 0 0 1 4.5,5.5 Z"/>
             </Canvas>
         </Viewbox>
         <Viewbox x:Key="IconeEllipse" x:Shared="False" Width="18" Height="18">
             <Canvas Width="24" Height="24" ClipToBounds="True">
-                <Path Classes="trait" StrokeThickness="1.8"
+                <Path Classes="iconeTrait" StrokeThickness="1.8"
                       Data="M20.5,12 A8.5,6.5 0 1 1 3.5,12 A8.5,6.5 0 1 1 20.5,12 Z"/>
             </Canvas>
         </Viewbox>
         <Viewbox x:Key="IconeLigne" x:Shared="False" Width="18" Height="18">
             <Canvas Width="24" Height="24" ClipToBounds="True">
-                <Path Classes="trait" StrokeThickness="1.8" StrokeLineCap="Round"
+                <Path Classes="iconeTrait" StrokeThickness="1.8" StrokeLineCap="Round"
                       Data="M5 19L19 5"/>
             </Canvas>
         </Viewbox>
         <Viewbox x:Key="IconeLoupe" x:Shared="False" Width="18" Height="18">
             <Canvas Width="24" Height="24" ClipToBounds="True">
-                <Path Classes="trait" StrokeThickness="1.8" StrokeLineCap="Round"
+                <Path Classes="iconeTrait" StrokeThickness="1.8" StrokeLineCap="Round"
                       Data="M16.5,10.5 A6,6 0 1 1 4.5,10.5 A6,6 0 1 1 16.5,10.5 Z"/>
-                <Path Classes="trait" StrokeThickness="1.8" StrokeLineCap="Round"
+                <Path Classes="iconeTrait" StrokeThickness="1.8" StrokeLineCap="Round"
                       Data="M15 15l5 5"/>
             </Canvas>
         </Viewbox>
@@ -345,19 +362,19 @@
         <!-- Panneau Pages, sections du dock, rotation — lues par I2 ; l'alerte par I9, l'œil par I8. -->
         <Viewbox x:Key="IconeAjouterPage" x:Shared="False" Width="14" Height="14">
             <Canvas Width="24" Height="24" ClipToBounds="True">
-                <Path Classes="trait" StrokeThickness="2.2" StrokeLineCap="Round"
+                <Path Classes="iconeTrait" StrokeThickness="2.2" StrokeLineCap="Round"
                       Data="M12 5v14M5 12h14"/>
             </Canvas>
         </Viewbox>
         <Viewbox x:Key="IconeSectionOuverte" x:Shared="False" Width="12" Height="12">
             <Canvas Width="24" Height="24" ClipToBounds="True">
-                <Path Classes="trait" StrokeThickness="2.4" StrokeLineCap="Round"
+                <Path Classes="iconeTrait" StrokeThickness="2.4" StrokeLineCap="Round"
                       Data="M6 9l6 6 6-6"/>
             </Canvas>
         </Viewbox>
         <Viewbox x:Key="IconeSectionFermee" x:Shared="False" Width="12" Height="12">
             <Canvas Width="24" Height="24" ClipToBounds="True">
-                <Path Classes="trait" StrokeThickness="2.4" StrokeLineCap="Round"
+                <Path Classes="iconeTrait" StrokeThickness="2.4" StrokeLineCap="Round"
                       Data="M9 6l6 6-6 6"/>
             </Canvas>
         </Viewbox>
@@ -369,9 +386,9 @@
         </Viewbox>
         <Viewbox x:Key="IconeAlerte" x:Shared="False" Width="14" Height="14">
             <Canvas Width="24" Height="24" ClipToBounds="True">
-                <Path Classes="trait" StrokeThickness="2" StrokeLineCap="Round"
+                <Path Classes="iconeTrait" StrokeThickness="2" StrokeLineCap="Round"
                       Data="M12 8v5M12 16.5v.5"/>
-                <Path Classes="trait" StrokeThickness="2" StrokeLineCap="Round"
+                <Path Classes="iconeTrait" StrokeThickness="2" StrokeLineCap="Round"
                       Data="M21,12 A9,9 0 1 1 3,12 A9,9 0 1 1 21,12 Z"/>
             </Canvas>
         </Viewbox>
@@ -389,10 +406,10 @@
     <!-- L'icône prend la couleur courante : celle que le texte prendrait au même endroit.
          C'est le « currentColor » de la maquette ; le bouton, la section ou l'alerte qui la
          porte n'a qu'à régler sa couleur de texte. -->
-    <Style Selector="Path.trait">
+    <Style Selector="Path.iconeTrait">
         <Setter Property="Stroke" Value="{Binding $self.(TextElement.Foreground)}"/>
     </Style>
-    <Style Selector="Path.plein">
+    <Style Selector="Path.iconePlein">
         <Setter Property="Fill" Value="{Binding $self.(TextElement.Foreground)}"/>
     </Style>
 

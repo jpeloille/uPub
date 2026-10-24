@@ -8,6 +8,7 @@ using Avalonia.Controls.Documents;
 using Avalonia.Controls.Primitives;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
+using Avalonia.Input;
 using Avalonia.Platform;
 using Avalonia.Media;
 using Avalonia.Styling;
@@ -19,36 +20,40 @@ using Xunit;
 namespace MyPublisher.Tests.Interface;
 
 /// <summary>
-/// La charte de l'interface — poste I1 : la palette, les classes et les icônes de la
-/// maquette, déclarées dans <c>Views/Charte.axaml</c> et chargées par <c>App.axaml</c>.
+/// L'apparence de l'interface — poste I1 : la palette, les classes et les icônes de la
+/// maquette, déclarées dans <c>Views/Apparence.axaml</c> et chargées par <c>App.axaml</c>.
+/// Pas « charte » : le mot nomme déjà le jeu de couleurs et de polices du document, que
+/// <c>JeuxTests</c> éprouve.
 ///
 /// Aucune vue ne s'en sert encore : le poste la pose, les suivants la lisent. Ces tests
 /// la mesurent donc sur des contrôles construits pour l'occasion, dans une fenêtre à
 /// l'échelle 1, et vérifient qu'elle ne touche pas à la fenêtre d'aujourd'hui — sa
 /// première promesse, puisqu'elle est chargée pour toute l'application.
 ///
-/// Les couleurs attendues sont lues dans la charte et non recopiées : que la charte
-/// porte les couleurs de la maquette, c'est la recette qui le vérifie, sur les sources
-/// (<c>Scripts/recettes/I1-charte.sh</c>). Ici, on vérifie qu'elle les applique.
+/// Les couleurs attendues sont lues dans l'apparence et non recopiées. Ce n'est pas un
+/// cercle : que chaque clé porte la couleur de la maquette, et que chaque style cite la
+/// bonne clé, c'est la recette qui le vérifie, sur les sources et contre la maquette
+/// elle-même (<c>Scripts/recettes/I1-apparence.sh</c>). Ici, on vérifie que l'écran les
+/// applique.
 /// </summary>
 [Trait("poste", "I1")]
-public class CharteTests
+public class ApparenceTests
 {
     /// <summary>
-    /// La charte telle qu'App.axaml l'a chargée. Le compilateur XAML remplace l'inclusion
-    /// d'un fichier du projet par le jeu de styles lui-même : on le reconnaît donc à sa
+    /// L'apparence telle qu'App.axaml l'a chargée. Le compilateur XAML remplace l'inclusion
+    /// d'un fichier du projet par le jeu de styles lui-même : on la reconnaît donc à sa
     /// première couleur, et non au nom de son fichier.
     /// </summary>
-    private static Styles Charte() =>
+    private static Styles Apparence() =>
         Application.Current!.Styles.OfType<Styles>().Single(s => s.Resources.ContainsKey("CouleurAccent"));
 
     private static IReadOnlyList<string> Icones() =>
-        Charte().Resources.Keys.OfType<string>().Where(c => c.StartsWith("Icone")).Order().ToList();
+        Apparence().Resources.Keys.OfType<string>().Where(c => c.StartsWith("Icone")).Order().ToList();
 
     private static object Ressource(string cle)
     {
         Assert.True(Application.Current!.TryGetResource(cle, ThemeVariant.Light, out var valeur),
-            $"« {cle} » n'est pas dans la charte");
+            $"« {cle} » n'est pas dans l'apparence");
         return valeur!;
     }
 
@@ -119,6 +124,12 @@ public class CharteTests
             Assert.Equal(1.0, fenetre.RenderScaling);
             Assert.Equal(new Size(30, 30), repos.Bounds.Size);
             Assert.Equal(new Size(30, 30), actif.Bounds.Size);
+            // Le rayon de la maquette, exactement. Les pixels du coin, plus bas, ne
+            // distinguent pas un rayon de 5 d'un rayon de 6 — l'un et l'autre laissent le
+            // pixel d'angle au fond et adoucissent son voisin —, ni un rayon de 6 d'un rond
+            // de 15, dont la boîte et l'aire tiennent encore dans leurs bornes.
+            Assert.Equal(new CornerRadius(6), repos.CornerRadius);
+            Assert.Equal(new CornerRadius(6), actif.CornerRadius);
 
             var image = Composer(fenetre);
             var accent = Couleur("CouleurAccent");
@@ -132,8 +143,9 @@ public class CharteTests
             Assert.Equal((60, 10), (pleins.Min(p => p.X), pleins.Min(p => p.Y)));
             Assert.Equal((30, 30), (pleins.Max(p => p.X) - 59, pleins.Max(p => p.Y) - 9));
             Assert.True(pleins.Count > 600, $"l'accent ne couvre que {pleins.Count} pixels sur 900");
-            // Le rayon de 6 rogne le coin : le pixel d'angle et son voisin en diagonale
-            // restent au fond, ce qu'un rayon de 3 ne ferait déjà plus pour le second.
+            // Et ce rayon est dessiné : le pixel d'angle et son voisin en diagonale restent
+            // hors de l'accent plein, ce qu'un rayon de 4 ou moins ne ferait plus pour le
+            // second.
             Assert.NotEqual(accent, Pixel(image, 60, 10));
             Assert.NotEqual(accent, Pixel(image, 61, 11));
             // L'icône de l'outil actif est blanche : elle suit la couleur du bouton.
@@ -147,6 +159,83 @@ public class CharteTests
             Assert.Equal(blanc, Pixel(image, 12, 37));
             Assert.True(Zone(10, 10, 30, 30).Count(p => Pixel(image, p.X, p.Y) == commande) > 20,
                 "l'icône du bouton au repos n'est pas à la couleur des commandes");
+        }
+        finally
+        {
+            fenetre.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public void Un_bouton_icone_survole_presse_ou_grise_suit_la_maquette()
+    {
+        // La maquette dessine le survol (« .ib:hover », un gris) et rien d'autre : pressé, un
+        // bouton y est survolé ; actif, il reste plein d'accent même survolé, « .ib.on »
+        // venant après « .ib:hover ». Le grisé, qu'elle ne dessine pas et que I2 demande pour
+        // Annuler et Rétablir, efface le bouton sans lui donner de fond. Fluent a, pour
+        // chacun de ces états, son propre gris ou son propre bleu : c'est eux qu'on chasse.
+        var repos = new Button { Classes = { "ib" }, Content = Icone("IconeSelection") };
+        var actif = new ToggleButton { Classes = { "ib" }, IsChecked = true, Content = Icone("IconeBlocDeTexte") };
+        var grise = new Button { Classes = { "ib" }, IsEnabled = false, Content = Icone("IconeSelection") };
+        var fenetre = Poser(170, 60, (repos, 10, 10), (actif, 60, 10), (grise, 110, 10));
+        try
+        {
+            var accent = Couleur("CouleurAccent");
+            var survol = Couleur("CouleurSurvol");
+            var commande = Couleur("CouleurCommande");
+            var blanc = Couleur("CouleurBlanc");
+
+            // Un geste, puis l'image. « CaptureRenderedFrame » n'avance l'horloge du rendu que
+            // d'un tic, et cela ne suffit pas toujours : relâché puis quitté, le bouton pressé
+            // restait gris sur l'image alors que son fond était déjà transparent — une image
+            // en retard d'un tic. Un tic de plus, et l'image suit l'état qu'on vient de poser ;
+            // sans lui, la mesure de l'état pressé pouvait lire celle du survol d'avant.
+            (Rendu.Image Image, bool Bgra) Apres(Action geste)
+            {
+                geste();
+                Rendu.Battre();
+                AvaloniaHeadlessPlatform.ForceRenderTimerTick();
+                Rendu.Battre();
+                return Composer(fenetre);
+            }
+
+            // Survolé : le fond passe au gris de la maquette d'un bord à l'autre — (12, 25)
+            // et (37, 25) sont à deux pixels des bords, hors des coins et de l'icône —, et
+            // l'icône garde la couleur des commandes.
+            var image = Apres(() => fenetre.MouseMove(new Point(25, 25)));
+            Assert.True(repos.IsPointerOver, "le pointeur synthétique ne survole pas le bouton");
+            Assert.Equal(survol, Pixel(image, 12, 25));
+            Assert.Equal(survol, Pixel(image, 37, 25));
+            Assert.True(Zone(10, 10, 30, 30).Count(p => Pixel(image, p.X, p.Y) == commande) > 20,
+                "l'icône du bouton survolé n'est plus à la couleur des commandes");
+
+            // Pressé : le même gris, et non celui, plus sombre, de Fluent.
+            image = Apres(() => fenetre.MouseDown(new Point(25, 25), MouseButton.Left));
+            Assert.True(repos.IsPressed, "le pointeur synthétique ne presse pas le bouton");
+            Assert.Equal(survol, Pixel(image, 12, 25));
+            fenetre.MouseUp(new Point(25, 25), MouseButton.Left);
+
+            // Actif et survolé : plein d'accent, l'icône blanche ; le bouton quitté revient
+            // au fond, quoiqu'il garde le focus que la pression lui a donné.
+            image = Apres(() => fenetre.MouseMove(new Point(75, 25)));
+            Assert.True(actif.IsPointerOver, "le pointeur synthétique ne survole pas le bouton actif");
+            Assert.Equal(accent, Pixel(image, 62, 25));
+            Assert.True(Zone(60, 10, 30, 30).Count(p => Pixel(image, p.X, p.Y) == blanc) > 20,
+                "l'icône du bouton actif survolé n'est plus blanche");
+            Assert.Equal(blanc, Pixel(image, 12, 25));
+
+            // Grisé, le pointeur dessus : aucun fond — ni le gris du survol, ni celui de
+            // Fluent —, et l'icône à 40 % : son pixel le plus sombre est le gris des commandes
+            // mêlé au blanc dans cette proportion, à l'arrondi près.
+            image = Apres(() => fenetre.MouseMove(new Point(125, 25)));
+            Assert.Equal(blanc, Pixel(image, 112, 25));
+            Assert.Equal(blanc, Pixel(image, 137, 25));
+            var sombre = Zone(110, 10, 30, 30).Select(p => Pixel(image, p.X, p.Y)).MinBy(c => c.R + c.G + c.B);
+            byte Mele(byte c, byte fond) => (byte)Math.Round(0.4 * c + 0.6 * fond);
+            var voulu = Color.FromRgb(Mele(commande.R, blanc.R), Mele(commande.G, blanc.G), Mele(commande.B, blanc.B));
+            Assert.True(Math.Abs(sombre.R - voulu.R) <= 2 && Math.Abs(sombre.G - voulu.G) <= 2 &&
+                        Math.Abs(sombre.B - voulu.B) <= 2,
+                $"le bouton grisé dessine son icône en {sombre}, et non en {voulu} — le gris des commandes à 40 %");
         }
         finally
         {
@@ -186,7 +275,7 @@ public class CharteTests
             var (x, y) = (10 + i % 8 * 50, 10 + i / 8 * 50);
             poses.Add((cadre, x, y));
             tailles[cle] = (x + (40 - (int)boite.Width) / 2, y + (40 - (int)boite.Height) / 2, (int)boite.Width,
-                traits.Any(t => t.Classes.Contains("trait") || t.Classes.Contains("plein")));
+                traits.Any(t => t.Classes.Contains("iconeTrait") || t.Classes.Contains("iconePlein")));
         }
 
         var fenetre = Poser(420, 10 + (cles.Count + 7) / 8 * 50, poses.ToArray());
@@ -269,15 +358,15 @@ public class CharteTests
     }
 
     [AvaloniaFact]
-    public void Aucune_cle_de_la_charte_ne_masque_une_ressource_du_theme()
+    public void Aucune_cle_de_l_apparence_ne_masque_une_ressource_du_theme()
     {
         // Les modèles de Fluent cherchent leurs pinceaux par leur nom, de proche en proche
-        // jusqu'à l'application, où la charte est lue APRÈS le thème : une clé de la charte
+        // jusqu'à l'application, où l'apparence est lue APRÈS le thème : une de ses clés
         // qui porterait le nom d'une des leurs repeindrait tous les contrôles de la fenêtre.
-        var themes = Application.Current!.Styles.Where(s => !ReferenceEquals(s, Charte())).ToList();
+        var themes = Application.Current!.Styles.Where(s => !ReferenceEquals(s, Apparence())).ToList();
         Assert.Contains(themes, s => s is FluentTheme);
 
-        foreach (var cle in Charte().Resources.Keys)
+        foreach (var cle in Apparence().Resources.Keys)
         foreach (var theme in themes)
         foreach (var variante in new[] { ThemeVariant.Light, ThemeVariant.Dark, ThemeVariant.Default })
         {
@@ -287,7 +376,7 @@ public class CharteTests
     }
 
     [AvaloniaFact]
-    public void La_charte_ne_change_pas_un_pixel_de_la_fenetre_d_avant_la_phase()
+    public void L_apparence_ne_change_pas_un_pixel_de_la_fenetre_d_avant_la_phase()
     {
         // L'exemple, un bloc de texte sélectionné : le panneau montre alors ses champs, ses
         // listes, ses cases et ses boutons — tout ce qu'un style trop large rhabillerait.
@@ -308,23 +397,23 @@ public class CharteTests
         }
 
         var styles = Application.Current!.Styles;
-        var charte = Charte();
-        var rang = styles.IndexOf(charte);
+        var apparence = Apparence();
+        var rang = styles.IndexOf(apparence);
 
         var avec = Fenetre();
         Rendu.Image sans;
-        styles.Remove(charte);
+        styles.Remove(apparence);
         try
         {
             sans = Fenetre();
         }
         finally
         {
-            styles.Insert(rang, charte);
+            styles.Insert(rang, apparence);
         }
         var encore = Fenetre();
 
-        // D'abord que la mesure soit sûre : deux ouvertures avec la charte rendent la même
+        // D'abord que la mesure soit sûre : deux ouvertures avec l'apparence rendent la même
         // image. Sans cela, l'égalité qui suit ne prouverait rien, et l'écart rien non plus.
         Assert.True(avec.Pixels.SequenceEqual(encore.Pixels), "deux ouvertures identiques ne rendent pas la même image");
         Assert.Equal((avec.Largeur, avec.Hauteur), (sans.Largeur, sans.Hauteur));
@@ -333,7 +422,7 @@ public class CharteTests
             .Where(i => !avec.Pixels.AsSpan(i * 4, 4).SequenceEqual(sans.Pixels.AsSpan(i * 4, 4)))
             .ToList();
         Assert.True(ecarts.Count == 0,
-            $"la charte change {ecarts.Count} pixels de la fenêtre, le premier en " +
+            $"l'apparence change {ecarts.Count} pixels de la fenêtre, le premier en " +
             $"({ecarts.FirstOrDefault() % avec.Largeur}, {ecarts.FirstOrDefault() / avec.Largeur})");
     }
 }

@@ -986,65 +986,150 @@ saboter "sans la porte, l'écran adresse une collection qui n'existe pas" \
     'return new FontFamily($"{Cle}#{nom}");' \
     'Q13-coupure|CoupureTests'
 
-# I1 : la charte. Aucune vue ne s'en sert encore — seule sa recette et ses tests la
-# voient, et chaque sabotage doit tomber sous eux.
+# I1 : l'apparence de l'interface. Aucune vue ne s'en sert encore — seules sa recette et
+# ses tests la voient, et chaque sabotage doit tomber sous eux. Chaque intitulé dit
+# « l'apparence » : « eprouver-le-juge.sh apparence » les joue tous, et eux seuls.
 
-# Le bouton-icône actif peint du gris de survol : il garde sa taille, son icône, et la
-# charte ses couleurs déclarées ; seule la mesure à l'écran voit qu'il n'est plus plein
-# d'accent.
-saboter "le bouton-icône actif n'est plus plein d'accent" \
-    MyPublisher/Views/Charte.axaml \
+# Le bouton-icône actif peint du gris de survol : il garde sa taille, son icône, et
+# l'apparence ses couleurs déclarées ; la recette le lit contre la feuille de style de la
+# maquette, la mesure à l'écran voit qu'il n'est plus plein d'accent.
+saboter "le bouton-icône actif de l'apparence n'est plus plein d'accent" \
+    MyPublisher/Views/Apparence.axaml \
     '    <Style Selector="ToggleButton.ib:checked /template/ ContentPresenter#PART_ContentPresenter">
         <Setter Property="Background" Value="{StaticResource Accent}"/>' \
     '    <Style Selector="ToggleButton.ib:checked /template/ ContentPresenter#PART_ContentPresenter">
         <Setter Property="Background" Value="{StaticResource Survol}"/>' \
-    'I1-charte|CharteTests'
+    'I1-apparence|ApparenceTests'
 
 # Un sélecteur nu : tous les boutons de la fenêtre d'aujourd'hui passent à 30 × 30 et
 # transparents. La recette le lit dans la source, le test le voit à l'écran.
-saboter "un style de la charte rhabille tous les boutons de la fenêtre" \
-    MyPublisher/Views/Charte.axaml \
+saboter "un style de l'apparence rhabille tous les boutons de la fenêtre" \
+    MyPublisher/Views/Apparence.axaml \
     '<Style Selector="Button.ib, ToggleButton.ib">' \
     '<Style Selector="Button, ToggleButton.ib">' \
-    'I1-charte|CharteTests'
+    'I1-apparence|ApparenceTests'
 
 # Un tracé qui ne se ferme plus : l'icône se dessine encore, presque pareille — l'angle
 # en haut à gauche d'« Enregistrer » s'ouvre. Seule la comparaison à la maquette le voit.
-saboter "une icône de la charte s'écarte du tracé de la maquette" \
-    MyPublisher/Views/Charte.axaml \
+saboter "une icône de l'apparence s'écarte du tracé de la maquette" \
+    MyPublisher/Views/Apparence.axaml \
     'Data="M5 4h11l3 3v13H5z"' \
     'Data="M5 4h11l3 3v13H5"' \
-    'I1-charte'
+    'I1-apparence'
 
 # Une icône partagée : son premier emploi la perdrait au second, sans erreur.
-saboter "une icône de la charte n'existe qu'en un exemplaire" \
-    MyPublisher/Views/Charte.axaml \
+saboter "une icône de l'apparence n'existe qu'en un exemplaire" \
+    MyPublisher/Views/Apparence.axaml \
     '<Viewbox x:Key="IconeSelection" x:Shared="False"' \
     '<Viewbox x:Key="IconeSelection"' \
-    'I1-charte|CharteTests'
+    'I1-apparence|ApparenceTests'
 
-# La même couleur, mais écrite en chiffres dans un style : l'écran ne change pas, la
-# charte a deux sources pour un gris.
-saboter "un style de la charte écrit sa couleur en chiffres" \
-    MyPublisher/Views/Charte.axaml \
-    '<Setter Property="Foreground" Value="{StaticResource Libelle}"/>' \
-    '<Setter Property="Foreground" Value="#5B6470"/>' \
-    'I1-charte'
+# La même couleur, mais écrite en chiffres dans un style : l'écran ne change pas,
+# l'apparence a deux sources pour un gris. Le texte visé porte son sélecteur : un style
+# ajouté plus tard au même gris ne le rendra pas ambigu.
+saboter "un style de l'apparence écrit sa couleur en chiffres" \
+    MyPublisher/Views/Apparence.axaml \
+    '<Style Selector="TextBlock.libelle">
+        <Setter Property="FontSize" Value="11"/>
+        <Setter Property="Foreground" Value="{StaticResource Libelle}"/>' \
+    '<Style Selector="TextBlock.libelle">
+        <Setter Property="FontSize" Value="11"/>
+        <Setter Property="Foreground" Value="#5B6470"/>' \
+    'I1-apparence'
+
+# Le même blanc, écrit en abrégé : la forme que la recette ne lisait pas.
+saboter "un style de l'apparence écrit son blanc en abrégé" \
+    MyPublisher/Views/Apparence.axaml \
+    '    <Style Selector="ToggleButton.ib:checked">
+        <Setter Property="Foreground" Value="{StaticResource Blanc}"/>' \
+    '    <Style Selector="ToggleButton.ib:checked">
+        <Setter Property="Foreground" Value="#FFF"/>' \
+    'I1-apparence'
+
+# L'accent et son survol échangés : chaque couleur reste déclarée une fois, et les tests,
+# qui lisent l'accent dans l'apparence, le retrouvent sur le bouton actif. Seule la
+# recette, qui tient le nom de chaque couleur et relit la feuille de la maquette, le voit.
+saboter "l'apparence échange l'accent et son survol" \
+    MyPublisher/Views/Apparence.axaml \
+    '<Color x:Key="CouleurAccent">#2557C7</Color>                <!-- bouton actif, bouton principal, sélection, onglet choisi -->
+        <Color x:Key="CouleurAccentSurvol">#1B439C</Color>' \
+    '<Color x:Key="CouleurAccent">#1B439C</Color>                <!-- bouton actif, bouton principal, sélection, onglet choisi -->
+        <Color x:Key="CouleurAccentSurvol">#2557C7</Color>' \
+    'I1-apparence'
+
+# La projection de la sélection à 60 % au lieu de 14 % : aucune vue ne la peint encore.
+saboter "la projection de l'apparence n'est plus l'accent à 14 %" \
+    MyPublisher/Views/Apparence.axaml \
+    '<SolidColorBrush x:Key="Projection" Color="{StaticResource CouleurAccent}" Opacity="0.14"/>' \
+    '<SolidColorBrush x:Key="Projection" Color="{StaticResource CouleurAccent}" Opacity="0.6"/>' \
+    'I1-apparence'
 
 # Le trait des icônes figé au gris des commandes : au repos rien ne change, mais sur
 # l'accent l'icône ne passe plus au blanc — ni à aucune couleur courante.
-saboter "le trait d'une icône ne suit plus la couleur courante" \
-    MyPublisher/Views/Charte.axaml \
-    '<Setter Property="Stroke" Value="{Binding $self.(TextElement.Foreground)}"/>' \
-    '<Setter Property="Stroke" Value="{StaticResource Commande}"/>' \
-    'I1-charte|CharteTests'
+saboter "le trait d'une icône de l'apparence ne suit plus la couleur courante" \
+    MyPublisher/Views/Apparence.axaml \
+    '<Style Selector="Path.iconeTrait">
+        <Setter Property="Stroke" Value="{Binding $self.(TextElement.Foreground)}"/>' \
+    '<Style Selector="Path.iconeTrait">
+        <Setter Property="Stroke" Value="{StaticResource Commande}"/>' \
+    'I1-apparence|ApparenceTests'
 
 # Le champ reprend la hauteur de Fluent.
-saboter "un champ de la charte rend 32 px au lieu de 26" \
-    MyPublisher/Views/Charte.axaml \
-    '<Setter Property="Height" Value="26"/>' \
-    '<Setter Property="Height" Value="32"/>' \
-    'I1-charte|CharteTests'
+saboter "un champ de l'apparence rend 32 px au lieu de 26" \
+    MyPublisher/Views/Apparence.axaml \
+    '<Style Selector="TextBox.champ, ComboBox.champ, NumericUpDown.champ">
+        <Setter Property="Height" Value="26"/>' \
+    '<Style Selector="TextBox.champ, ComboBox.champ, NumericUpDown.champ">
+        <Setter Property="Height" Value="32"/>' \
+    'I1-apparence|ApparenceTests'
+
+# Un rayon de 5 au lieu de 6 : les pixels du coin n'y voient rien, l'un et l'autre
+# adoucissant le même pixel. Le test le lit sur le bouton, la recette dans la feuille.
+saboter "le bouton-icône de l'apparence perd son rayon de 6" \
+    MyPublisher/Views/Apparence.axaml \
+    '<Style Selector="Button.ib, ToggleButton.ib">
+        <Setter Property="Width" Value="30"/>
+        <Setter Property="Height" Value="30"/>
+        <Setter Property="MinWidth" Value="0"/>
+        <Setter Property="MinHeight" Value="0"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="CornerRadius" Value="6"/>' \
+    '<Style Selector="Button.ib, ToggleButton.ib">
+        <Setter Property="Width" Value="30"/>
+        <Setter Property="Height" Value="30"/>
+        <Setter Property="MinWidth" Value="0"/>
+        <Setter Property="MinHeight" Value="0"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="CornerRadius" Value="5"/>' \
+    'ApparenceTests'
+
+# Le survol peint d'accent : le bouton survolé passerait pour actif.
+saboter "le bouton-icône de l'apparence survolé se peint d'accent" \
+    MyPublisher/Views/Apparence.axaml \
+    'ToggleButton.ib:pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{StaticResource Survol}"/>' \
+    'ToggleButton.ib:pressed /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{StaticResource Accent}"/>' \
+    'ApparenceTests'
+
+# Le grisé qui ne grise plus : Annuler et Rétablir (I2) auraient l'air actifs sur un
+# historique vide. La maquette ne dessine pas cet état ; seul le test le mesure.
+saboter "le bouton-icône grisé de l'apparence garde toute son encre" \
+    MyPublisher/Views/Apparence.axaml \
+    '<Style Selector="Button.ib:disabled, ToggleButton.ib:disabled">
+        <Setter Property="Opacity" Value="0.4"/>' \
+    '<Style Selector="Button.ib:disabled, ToggleButton.ib:disabled">
+        <Setter Property="Opacity" Value="1"/>' \
+    'ApparenceTests'
+
+# Une vue d'avant la phase prend en chiffres le gris des libellés de la maquette, sans
+# entrer dans la liste des vues de la phase — le cas d'une planche réécrite qui oublierait
+# la liste. Rien ne la cite : seul le relevé des couleurs écrites en dur la trahit.
+saboter "une vue hors de la phase prend en chiffres une couleur de l'apparence" \
+    MyPublisher/Views/BusinessInfoWindow.axaml \
+    'TextWrapping="Wrap" FontSize="11" Foreground="#FF8A929E" Margin="0,0,0,10"/>' \
+    'TextWrapping="Wrap" FontSize="11" Foreground="#FF5B6470" Margin="0,0,0,10"/>' \
+    'I1-apparence'
 
 echo
 if [ "$cibles" = 1 ]; then
