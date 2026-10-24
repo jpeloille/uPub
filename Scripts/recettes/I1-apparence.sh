@@ -80,6 +80,7 @@ vues_de_la_phase=(
     MyPublisher/Views/PageCanvas.axaml.cs
     MyPublisher/Views/PageCanvas.Planche.cs
     MyPublisher/Views/Ruler.cs
+    MyPublisher/Views/PageCanvas.Navigation.cs
 )
 
 # Le relevé d'avant la phase : les couleurs de la maquette que des fichiers hors de la

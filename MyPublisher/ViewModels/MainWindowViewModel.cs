@@ -201,9 +201,14 @@ public partial class MainWindowViewModel : ViewModelBase
 
     partial void OnActiveToolChanged(EditorTool value)
     {
-        Status = value == EditorTool.Select
-            ? "Prêt"
-            : "Tracez le cadre sur la page — un simple clic pose le bloc à sa taille par défaut.";
+        Status = value switch
+        {
+            EditorTool.Select => "Prêt",
+            // Les deux outils de la planche (poste I6) ne tracent rien.
+            EditorTool.Main => "Glissez pour faire défiler la planche.",
+            EditorTool.Zoom => "Cliquez pour zoomer en avant, Alt + clic pour zoomer en arrière.",
+            _ => "Tracez le cadre sur la page — un simple clic pose le bloc à sa taille par défaut.",
+        };
     }
 
     partial void OnSelectedPageSizeChanged(PageSize? value)
@@ -577,6 +582,9 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         OnPropertyChanged(nameof(FramePositionLabel));
         OnPropertyChanged(nameof(FrameSizeLabel));
+        // Les champs L et H du dock, qui passent par le modèle de vue (poste I6).
+        OnPropertyChanged(nameof(LargeurDuBloc));
+        OnPropertyChanged(nameof(HauteurDuBloc));
     }
 
     /// <summary>La sélection dans l'ordre de superposition de la page, du fond vers l'avant.</summary>
@@ -855,7 +863,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private const double MinDrawnSize = 8;
 
     /// <summary>Un outil de tracé est armé : le plan de travail crée au lieu de sélectionner.</summary>
-    public bool IsDrawing => ActiveTool != EditorTool.Select;
+    public bool IsDrawing => ActiveTool != EditorTool.Select && !NavigueDansLaPlanche;
 
     /// <summary>
     /// Gabarit d'un outil : apparence du bloc, et taille utilisée quand on pose

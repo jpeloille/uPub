@@ -40,6 +40,9 @@ la planche et le dock à quatre onglets ; la barre d'état au pied.
 - Barre d'état : message, position du curseur en mm (`CursorLabel`), position et taille du
   bloc (A6), « Page 1 sur 3 », format, zoom et son curseur.
 - Règles graduées et repères libres depuis C2b ; la planche est refaite par le poste I4.
+- La main et la loupe au rail, depuis le poste I6 : la main fait glisser la planche,
+  `Espace` tenu la prête sans changer d'outil ; la loupe zoome autour du point visé, en
+  arrière sous `Alt`, comme `Ctrl` + molette ; « Page entière » tient la page dans la zone.
 
 ## Écart / ce qu'il faudrait
 
@@ -47,12 +50,11 @@ la planche et le dock à quatre onglets ; la barre d'état au pied.
 fiche relevait sont refermés : les règles graduées sur les deux bords, d'où l'on tire un
 repère, depuis C2b — voir [06-reperes-regles.md](06-reperes-regles.md) — ; la taille du
 bloc dans la barre d'état, à côté de sa position, suivie pendant le geste et non à sa
-fin, depuis A6. Le tableau est au rail depuis C9. Restent :
+fin, depuis A6. Le tableau est au rail depuis C9, la main et la loupe depuis I6. Restent :
 
 1. **Le trait et la flèche**, absents du rail. Un filet de séparation est un besoin de
    PAO élémentaire ; c'est le poste A10, au lot 2 de la phase I. Le bouton Ligne, que la
    maquette range au rail, n'y apparaîtra qu'avec son geste : jusque-là, l'import d'un
    `.pub` simule le trait par un rectangle.
-2. **La main et la loupe**, que la maquette range aussi au rail : le poste I6.
-3. **Les formes automatiques** (AutoShapes) : ni planifiées, ni demandées par les deux
+2. **Les formes automatiques** (AutoShapes) : ni planifiées, ni demandées par les deux
    documents réels.

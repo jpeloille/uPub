@@ -35,7 +35,11 @@ public partial class PageCanvas : UserControl
     /// </summary>
     private enum Anchor { NorthWest, North, NorthEast, East, SouthEast, South, SouthWest, West, Rotate }
 
-    private enum DragMode { None, Move, Resize, Rotate, Create, Guide }
+    /// <summary>
+    /// Le geste en cours. <see cref="Pan"/> est celui de la main (poste I6) : il fait
+    /// défiler la planche et ne touche à rien d'autre.
+    /// </summary>
+    private enum DragMode { None, Move, Resize, Rotate, Create, Guide, Pan }
 
     /// <summary>
     /// Côté d'une poignée carrée, en pixels écran : les 7 px de blanc de la maquette dans
@@ -213,7 +217,9 @@ public partial class PageCanvas : UserControl
         InputLayer.PointerMoved += OnPointerMoved;
         InputLayer.PointerReleased += OnPointerReleased;
         InputLayer.DoubleTapped += OnDoubleTapped;
-        Scroller.PointerWheelChanged += OnPointerWheelChanged;
+        // Au passage descendant : la zone qui défile consommerait la molette avant nous
+        // (poste I6, voir PageCanvas.Navigation.cs).
+        Scroller.AddHandler(PointerWheelChangedEvent, OnPointerWheelChanged, RoutingStrategies.Tunnel);
 
         // En phase de tunnel : on quitte la saisie avant que le clic n'atteigne sa cible.
         AddHandler(PointerPressedEvent, OnTunnelPointerPressed, RoutingStrategies.Tunnel);
@@ -240,6 +246,7 @@ public partial class PageCanvas : UserControl
         {
             _vm.PropertyChanged -= OnViewModelPropertyChanged;
             _vm.Selection.CollectionChanged -= OnSelectionChanged;
+            _vm.PageEntiereDemandee -= OnPageEntiereDemandee;
         }
 
         _vm = DataContext as MainWindowViewModel;
@@ -250,6 +257,10 @@ public partial class PageCanvas : UserControl
             // La collection n'est jamais remplacée : un seul abonnement suffit, et il
             // couvre aussi les changements qui ne déplacent pas l'ancre.
             _vm.Selection.CollectionChanged += OnSelectionChanged;
+
+            // « Page entière » est un calcul de la planche, qui seule connaît sa taille à
+            // l'écran : le bouton reste grisé tant qu'elle ne l'écoute pas (poste I6).
+            _vm.PageEntiereDemandee += OnPageEntiereDemandee;
         }
 
         TrackFrames();
@@ -289,10 +300,10 @@ public partial class PageCanvas : UserControl
                 // laisserait le cadre en pointillés affiché à l'écran.
                 CancelCreate();
 
-                // Un outil de tracé s'annonce par le curseur ; on quitte aussi la
-                // saisie en cours, qui monopoliserait le pointeur.
+                // Un outil de tracé s'annonce par le curseur — la main et la loupe aussi ;
+                // on quitte aussi la saisie en cours, qui monopoliserait le pointeur.
                 EndTextEdit();
-                InputLayer.Cursor = _vm?.IsDrawing == true ? DrawCursor : ArrowCursor;
+                InputLayer.Cursor = CurseurAuRepos(KeyModifiers.None);
                 break;
         }
     }
@@ -476,6 +487,9 @@ public partial class PageCanvas : UserControl
 
         Focus();
 
+        // La main et la loupe passent avant tout : elles ne touchent à aucun bloc (I6).
+        if (PrendreLaNavigation(e)) return;
+
         var surfacePoint = e.GetPosition(Surface);
         var page = ToPageCoordinates(surfacePoint);
 
@@ -588,7 +602,13 @@ public partial class PageCanvas : UserControl
 
         if (_mode == DragMode.None)
         {
-            UpdateCursor(surfacePoint, page);
+            if (!PoserLeCurseurDeNavigation(e.KeyModifiers)) UpdateCursor(surfacePoint, page);
+            return;
+        }
+
+        if (_mode == DragMode.Pan)
+        {
+            GlisserLaPlanche(e);
             return;
         }
 
@@ -613,11 +633,13 @@ public partial class PageCanvas : UserControl
         if (_vm.SingleSelected is not { } frame) return;
 
         // Maj sert aux deux gestes, et pas à la même chose : proportions conservées au
-        // redimensionnement, pas de 15° à la rotation. C'est ce que fait Publisher.
+        // redimensionnement, pas de 15° à la rotation. C'est ce que fait Publisher. Au
+        // redimensionnement, Maj fait l'inverse de la case « Conserver les proportions »
+        // du dock (poste I6) : cochée, le coin garde le rapport, et Maj le libère.
         var maj = e.KeyModifiers.HasFlag(KeyModifiers.Shift);
 
         if (_mode == DragMode.Rotate) ApplyRotate(frame, page, maj);
-        else ApplyResize(frame, page, maj);
+        else ApplyResize(frame, page, maj != _vm.ConserverLesProportions);
     }
 
     private void OnPointerReleased(object? sender, PointerReleasedEventArgs e)
@@ -640,6 +662,13 @@ public partial class PageCanvas : UserControl
         if (mode == DragMode.Guide)
         {
             FinishGuideDrag();
+            return;
+        }
+
+        // La main n'a ouvert aucun pas d'annulation : elle n'en ferme pas.
+        if (mode == DragMode.Pan)
+        {
+            LacherLaPlanche();
             return;
         }
 
@@ -945,7 +974,8 @@ public partial class PageCanvas : UserControl
         var width = right - left;
         var height = bottom - top;
 
-        // Maj sur une poignée d'angle : conservation des proportions d'origine.
+        // Sur une poignée d'angle, Maj ou la case du dock : conservation des proportions
+        // d'origine. Les poignées de côté ne les gardent jamais, comme dans Publisher.
         if (keepAspect && movesLeft != movesRight && movesTop != movesBottom &&
             _startWidth > 0 && _startHeight > 0)
         {
@@ -1016,6 +1046,9 @@ public partial class PageCanvas : UserControl
 
     private void OnDoubleTapped(object? sender, TappedEventArgs e)
     {
+        // Deux clics de la loupe zooment deux fois ; deux prises de la main ne saisissent rien.
+        if (MainArmee || LoupeArmee) return;
+
         if (_vm?.SingleSelected is TextFrame text) BeginTextEdit(text);
     }
 
@@ -1085,13 +1118,5 @@ public partial class PageCanvas : UserControl
         }
 
         base.OnKeyDown(e);
-    }
-
-    private void OnPointerWheelChanged(object? sender, PointerWheelEventArgs e)
-    {
-        if (!e.KeyModifiers.HasFlag(KeyModifiers.Control) || _vm is null) return;
-
-        _vm.SetZoom(_vm.Zoom * (e.Delta.Y > 0 ? 1.1 : 1 / 1.1));
-        e.Handled = true;
     }
 }

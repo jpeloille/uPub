@@ -70,6 +70,9 @@ public partial class MainWindow : Window
             if (ReferenceEquals(e.Source, OngletsDuDock)) ClosePropertyEdit();
         };
 
+        // La fenêtre quittée Espace tenu ne verra pas son relâchement : la main se lâche ici (I6).
+        Deactivated += (_, _) => PageView.MainTenue = false;
+
         DataContextChanged += (_, _) => AttachViewModel();
         AttachViewModel();
 
@@ -558,6 +561,14 @@ public partial class MainWindow : Window
                 case Key.E: vm.ActiveTool = EditorTool.Ellipse; e.Handled = true; return;
                 // « B » comme bande : « T » appartient au texte.
                 case Key.B: vm.ActiveTool = EditorTool.Table; e.Handled = true; return;
+                case Key.Z: vm.ActiveTool = EditorTool.Zoom; e.Handled = true; return;
+                // Espace tenu : la main, sans changer d'outil, jusqu'au relâchement (I6). Pas
+                // quand un bouton a le focus — Espace l'actionnerait — ni pendant une saisie,
+                // écartée plus haut.
+                case Key.Space when FocusManager?.GetFocusedElement() is not Button:
+                    PageView.MainTenue = true;
+                    e.Handled = true;
+                    return;
             }
         }
 
@@ -574,13 +585,24 @@ public partial class MainWindow : Window
             case Key.Up: vm.NudgeSelection(0, -1, fine); e.Handled = true; return;
             case Key.Down: vm.NudgeSelection(0, 1, fine); e.Handled = true; return;
             case Key.Escape:
-                // Échap désarme l'outil s'il y en a un, et ne libère la sélection qu'ensuite.
-                if (vm.IsDrawing) vm.ActiveTool = EditorTool.Select;
+                // Échap désarme l'outil s'il y en a un — la main et la loupe comprises —, et ne
+                // libère la sélection qu'ensuite.
+                if (vm.ActiveTool != EditorTool.Select) vm.ActiveTool = EditorTool.Select;
                 else vm.Selected = null;
                 e.Handled = true;
                 return;
         }
 
         base.OnKeyDown(e);
+    }
+
+    /// <summary>
+    /// Espace relâché rend l'outil d'avant (I6). Toujours, sans regarder le focus : une main
+    /// restée tenue parce que le relâchement serait allé ailleurs ne se lâcherait plus.
+    /// </summary>
+    protected override void OnKeyUp(KeyEventArgs e)
+    {
+        if (e.Key == Key.Space) PageView.MainTenue = false;
+        base.OnKeyUp(e);
     }
 }
