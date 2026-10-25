@@ -172,11 +172,14 @@ public sealed class VignetteDePage : TemplatePreview
     /// Un bloc retouché : seuls ses filets se recomposent — ceux du groupe qui le porte,
     /// s'il en a un. Sur une grande page, la frappe dans un bloc ne recompose pas les
     /// autres à chaque lettre. Un tableau fait exception : une ligne ou une colonne de plus
-    /// change le nombre de ses cases, et les rangs des blocs suivants avec lui.
+    /// change le nombre de ses cases, et les rangs des blocs suivants avec lui. L'œil aussi
+    /// (poste I8) : un bloc masqué n'est pas parcouru, et le montrer ou le cacher décale les
+    /// rangs de tous les blocs de texte qui le suivent.
     /// </summary>
     private void SurBloc(object? sender, PropertyChangedEventArgs e)
     {
-        if (sender is TableFrame || sender is null || !_blocDeLaPage.TryGetValue(sender, out var deLaPage)) Oublier();
+        if (e.PropertyName == nameof(Frame.Visible)) Oublier();
+        else if (sender is TableFrame || sender is null || !_blocDeLaPage.TryGetValue(sender, out var deLaPage)) Oublier();
         else Oublier(deLaPage);
     }
 

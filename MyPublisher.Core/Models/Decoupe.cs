@@ -44,12 +44,17 @@ public static class Decoupe
     /// cette pointe est ce qui dépasse le plus, jusqu'à t/2·√2 à 45° : avec t/2 seulement,
     /// la découpe l'émoussait (trouvé par la relecture du 12 octobre 2026). Ce qu'un bloc
     /// tourné porte tourne avec lui, et compte de même.
+    ///
+    /// Un bloc masqué ne compte pas (poste I8) : il ne dessine rien, ni dans son cadre ni
+    /// hors de lui, et son filet n'a pas à élargir la découpe de ses voisins visibles.
     /// </summary>
     public static double Marge(IEnumerable<Frame> blocs)
     {
         var marge = 0.0;
         foreach (var bloc in blocs)
         {
+            if (!bloc.Visible) continue;
+
             var propre = Math.Max(DemiFilet(bloc), Marge(Portes(bloc)));
             marge = Math.Max(marge, Tourne(bloc) ? propre * Math.Sqrt(2) : propre);
         }

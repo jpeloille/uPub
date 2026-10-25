@@ -55,6 +55,7 @@
           "StrokeThickness": 1,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
+          "Visible": true,
           "Shape": "Rectangle"
         },
         {
@@ -73,6 +74,7 @@
           "StrokeThickness": 2,
           "StrokeStyle": "Solid",
           "CornerRadius": 10,
+          "Visible": true,
           "Shape": "Rectangle"
         },
         {
@@ -93,6 +95,7 @@
           "StrokeThickness": 1,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
+          "Visible": true,
           "Shape": "Rectangle"
         },
         {
@@ -113,6 +116,7 @@
           "StrokeThickness": 3,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
+          "Visible": true,
           "Shape": "Ellipse"
         },
         {
@@ -133,6 +137,7 @@
           "StrokeThickness": 1,
           "StrokeStyle": "Solid",
           "CornerRadius": 30,
+          "Visible": true,
           "Shape": "Rectangle"
         }
       ]

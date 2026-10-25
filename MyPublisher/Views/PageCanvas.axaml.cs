@@ -333,9 +333,12 @@ public partial class PageCanvas : UserControl
     private void RefreshOverlay()
     {
         var page = _vm?.CurrentPage;
+        // Un bloc masqué (poste I8) se sélectionne dans la liste, mais la planche n'en
+        // montre rien : ni cadre, ni poignées, ni projection. Ce qu'on ne voit pas ne se
+        // saisit pas, et une poignée tirée retoucherait un bloc que rien ne dessine.
         var frames = _vm is null || page is null
             ? []
-            : _vm.Selection.Where(page.Frames.Contains).ToList();
+            : _vm.Selection.Where(frame => frame.Visible && page.Frames.Contains(frame)).ToList();
 
         for (var i = 0; i < frames.Count; i++)
         {
@@ -508,7 +511,7 @@ public partial class PageCanvas : UserControl
             return;
         }
 
-        if (_vm.SingleSelected is { } single && HitHandle(single, surfacePoint) is { } anchor)
+        if (_vm.SingleSelected is { Visible: true } single && HitHandle(single, surfacePoint) is { } anchor)
         {
             // Même prise, mêmes repères de départ, même capture : la rotation n'est
             // qu'un second mode de ce geste-là. BeginEdit ici, CommitEdit au relâché,
@@ -537,8 +540,9 @@ public partial class PageCanvas : UserControl
 
         // Ordre de superposition : le dernier bloc dessiné est le premier candidat. Sur la
         // page seulement : le gris libère la sélection, même là où passe, rognée, la part
-        // d'un bloc qui déborde.
-        var hit = DansLaPage(page) ? _vm.CurrentPage.Frames.LastOrDefault(f => f.HitTest(page.X, page.Y)) : null;
+        // d'un bloc qui déborde. Un bloc masqué n'est pas candidat (poste I8) : un clic à
+        // sa place prend le bloc d'en dessous.
+        var hit = DansLaPage(page) ? _vm.CurrentPage.Frames.LastOrDefault(f => f.Visible && f.HitTest(page.X, page.Y)) : null;
         var additive = e.KeyModifiers.HasFlag(KeyModifiers.Control) ||
                        e.KeyModifiers.HasFlag(KeyModifiers.Shift);
 
@@ -584,10 +588,13 @@ public partial class PageCanvas : UserControl
 
         _startPointer = page;
         _moveStart.Clear();
-        foreach (var frame in _vm.Selection) _moveStart.Add((frame, frame.X, frame.Y));
+        // Les blocs visibles seuls : un bloc masqué ne suit pas la main, et son empreinte
+        // ne compte pas dans celle qu'on aimante (poste I8).
+        var visibles = _vm.Selection.Where(frame => frame.Visible).ToList();
+        foreach (var frame in visibles) _moveStart.Add((frame, frame.X, frame.Y));
 
-        _moveSnappable = _vm.Selection.All(frame => frame.Rotation == 0);
-        _moveExtent = Extent.Union(_vm.Selection.Select(frame => frame.Extent)) ?? default;
+        _moveSnappable = visibles.All(frame => frame.Rotation == 0);
+        _moveExtent = Extent.Union(visibles.Select(frame => frame.Extent)) ?? default;
     }
 
     private void OnPointerMoved(object? sender, PointerEventArgs e)
@@ -738,7 +745,7 @@ public partial class PageCanvas : UserControl
             return;
         }
 
-        if (_vm?.SingleSelected is { } selected && HitHandle(selected, surfacePoint) is { } anchor)
+        if (_vm?.SingleSelected is { Visible: true } selected && HitHandle(selected, surfacePoint) is { } anchor)
         {
             // La neuvième poignée d'abord : elle n'est pas un bord, et l'arithmétique
             // ci-dessous — qui compte huit poignées — lui donnerait un curseur de
@@ -762,7 +769,7 @@ public partial class PageCanvas : UserControl
             return;
         }
 
-        var over = DansLaPage(page) ? _vm?.CurrentPage?.Frames.LastOrDefault(f => f.HitTest(page.X, page.Y)) : null;
+        var over = DansLaPage(page) ? _vm?.CurrentPage?.Frames.LastOrDefault(f => f.Visible && f.HitTest(page.X, page.Y)) : null;
         InputLayer.Cursor = over is null ? ArrowCursor : MoveCursor;
     }
 
@@ -1055,6 +1062,9 @@ public partial class PageCanvas : UserControl
     private void BeginTextEdit(TextFrame frame)
     {
         if (_editing is not null) return;
+
+        // Un bloc masqué ne se saisit pas sur la page, où il n'est pas (poste I8).
+        if (!frame.Visible) return;
 
         // Un bloc à champ affiche une valeur calculée : la saisir sur la page
         // reviendrait à modifier un texte qu'on ne voit pas.

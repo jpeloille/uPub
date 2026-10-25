@@ -238,10 +238,13 @@ public class TemplatePreview : Control
 
     /// <summary>
     /// Dessine un bloc dans le repère de la page. Récursif comme le reste : un groupe
-    /// translate le repère et redescend.
+    /// translate le repère et redescend. Un bloc masqué n'est pas dessiné, ni rien de ce
+    /// qu'il porte (poste I8) : la vignette montre la page telle qu'elle s'imprime.
     /// </summary>
     private void Draw(DrawingContext context, Frame frame, double scale, Charte charte)
     {
+        if (!frame.Visible) return;
+
         using var _ = frame.Rotation == 0
             ? (IDisposable)new NoTransform()
             : context.PushTransform(

@@ -186,6 +186,23 @@ public abstract partial class Frame : ObservableObject
     private double _cornerRadius;
 
     /// <summary>
+    /// Le bloc se dessine-t-il (poste I8) : c'est l'œil de « Blocs de la page ». Masqué, il
+    /// n'est dessiné ni à l'écran ni à l'export, ne se saisit pas sur la planche et ne sert
+    /// ni à l'aimantation ni à l'alignement ; il reste dans le document et dans la liste.
+    /// Une propriété du document et non de la vue : la basculer s'annule et rend le
+    /// document « modifié », et elle s'enregistre.
+    ///
+    /// Visible par défaut, le cas de tous les documents écrits jusqu'ici : ils se dessinent
+    /// comme avant, et l'addition ne demande aucune migration — <c>FormatVersion</c> reste
+    /// à 5, au précédent de <see cref="TextFrame.Columns"/>. Elle vaut pour tout bloc, un
+    /// groupe et ce qu'il porte compris ; les cases d'un tableau, blocs de texte jetables
+    /// (<see cref="TableFrame.CellFrames"/>), naissent visibles et suivent leur tableau.
+    /// </summary>
+    [ObservableProperty]
+    [property: JsonPropertyOrder(95)]
+    private bool _visible = true;
+
+    /// <summary>
     /// Teintes retenues pendant qu'aucun fond ou contour n'est appliqué, pour que
     /// retirer puis remettre retrouve la couleur choisie au lieu d'une valeur neuve.
     /// État transitoire d'interface : jamais sérialisé.
@@ -463,6 +480,8 @@ public abstract partial class Frame : ObservableObject
         target.StrokeThickness = StrokeThickness;
         target.StrokeStyle = StrokeStyle;
         target.CornerRadius = CornerRadius;
+        // Une recopie masquée reste masquée (poste I8) : dupliquer un bloc ne le montre pas.
+        target.Visible = Visible;
     }
 }
 

@@ -143,7 +143,10 @@ le fond de page.
 Au pied de *Propriétés*, **Blocs de la page** montre la pile de la page, **l'avant en
 tête**, et se laisse réordonner en y tirant un bloc — un trait bleu marque où il se
 posera. Le clavier fait la même chose en plus rapide sur les deux extrêmes : `Ctrl+Maj+F`
-et `Ctrl+Maj+B`.
+et `Ctrl+Maj+B`. L'**œil** de chaque ligne masque le bloc, ou le montre : masqué, il n'est
+ni dessiné ni exporté, un clic à sa place prend le bloc d'en dessous, et il ne s'aligne ni
+ne se répartit. Il reste dans la liste, l'œil fermé, et s'y sélectionne ; « Tout
+sélectionner » le laisse. Le geste s'annule, et se garde à l'enregistrement.
 
 La **barre d'état** affiche en permanence, à droite, la position du curseur, puis la
 position et la taille du bloc sélectionné, la page, le format et le zoom, avec son curseur
@@ -470,6 +473,10 @@ Le souligné, `Underline`, s'écrit sur le bloc et sur chaque portion : `false` 
 réglages — `{ "Line": "Dotted", "Double": false, "Thick": true, "WordsOnly": false }`, le
 trait étant l'un de `Solid`, `Dotted`, `Dash`, `LongDash`, `DotDash`, `DotDotDash`,
 `Wave`. Sur une portion, `null` laisse celui du bloc.
+
+Tout bloc porte `Visible`, `true` par défaut ; à `false`, il n'est ni dessiné ni
+exporté, ni rien de ce qu'il porte s'il est un groupe. Une case de tableau ne le porte
+pas : c'est le tableau qui se masque.
 
 Chaque bloc porte un discriminant `$kind` (`text`, `image`, `shape`, `group`, `table`)
 et, pour

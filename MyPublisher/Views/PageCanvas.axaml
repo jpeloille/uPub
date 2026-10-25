@@ -24,10 +24,13 @@
         <!-- ItemsControl place ses éléments via un ContentPresenter : c'est lui qui porte
              la position sur le Canvas. Le style est posé ici, et non sur un ItemsControl
              précis, pour valoir aussi bien pour les blocs de la page que pour ceux d'un
-             groupe — le rendu est récursif. -->
+             groupe — le rendu est récursif. Un bloc masqué (poste I8) n'y est pas dessiné,
+             ni rien de ce qu'il porte : c'est la seule chose que la page perd, et l'export
+             passe le même bloc. -->
         <Style Selector="ItemsControl.frames ContentPresenter" x:DataType="models:Frame">
             <Setter Property="Canvas.Left" Value="{Binding X}"/>
             <Setter Property="Canvas.Top" Value="{Binding Y}"/>
+            <Setter Property="IsVisible" Value="{Binding Visible}"/>
         </Style>
 
         <!-- Même mécanique pour les repères : c'est le ContentPresenter qui porte la

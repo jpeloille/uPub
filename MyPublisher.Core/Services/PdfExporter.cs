@@ -177,9 +177,14 @@ public static class PdfExporter
     /// traités ici : le groupe, et le tableau, dont les cases sont des blocs de texte
     /// ordinaires. Oublier le tableau laisserait ses polices hors du contrôle — trouvé
     /// par la relecture de B5, avant même que C9 ne soit fusionné.
+    ///
+    /// Un bloc masqué n'y est pas, ni rien de ce qu'il porte (poste I8) : l'export ne le
+    /// dessine pas, et la passe des polices ne nomme que ce qui est dessiné (Q8).
     /// </summary>
     private static IEnumerable<Frame> Descendance(Frame frame)
     {
+        if (!frame.Visible) yield break;
+
         yield return frame;
 
         var enfants = frame switch
@@ -199,6 +204,11 @@ public static class PdfExporter
     /// Dessine une liste de blocs de même niveau, chacun avec la désignation sous
     /// laquelle un avertissement le nommera. La liste entière est nécessaire pour cela :
     /// c'est elle qui dit si un nom suffit à désigner.
+    ///
+    /// Un bloc masqué est passé (poste I8) : ni lui ni ce qu'il porte ne se dessine, et
+    /// rien de lui n'avertit — ni débordement, ni image introuvable. Il garde son rang
+    /// dans la liste : un homonyme visible reste désigné par le numéro qu'il a dans le
+    /// document, que l'œil d'un voisin soit ouvert ou non.
     /// </summary>
     private static void DessinerTous(
         XGraphics gfx, MetriquesPdf metriques, IReadOnlyList<Frame> blocs, List<string> warnings,
@@ -206,6 +216,8 @@ public static class PdfExporter
     {
         for (var rang = 0; rang < blocs.Count; rang++)
         {
+            if (!blocs[rang].Visible) continue;
+
             DrawFrame(gfx, metriques, blocs[rang], warnings, context, charte, Reperer(chemin, blocs, rang));
         }
     }

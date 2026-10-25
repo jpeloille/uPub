@@ -49,6 +49,7 @@
           "StrokeThickness": 1,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
+          "Visible": true,
           "Shape": "Rectangle"
         },
         {
@@ -64,6 +65,7 @@
           "StrokeThickness": 1,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
+          "Visible": true,
           "Text": "REPERE",
           "FontFamily": "DejaVu Sans",
           "FontSize": 14,

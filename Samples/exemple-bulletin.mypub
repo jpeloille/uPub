@@ -49,6 +49,7 @@
           "StrokeThickness": 0,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
+          "Visible": true,
           "Shape": "Rectangle"
         },
         {
@@ -67,6 +68,7 @@
           "StrokeThickness": 0,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
+          "Visible": true,
           "Shape": "Rectangle"
         },
         {
@@ -82,6 +84,7 @@
           "StrokeThickness": 1,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
+          "Visible": true,
           "Text": "Le Petit Composeur",
           "FontFamily": "DejaVu Sans",
           "FontSize": 30,
@@ -120,6 +123,7 @@
           "StrokeThickness": 1,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
+          "Visible": true,
           "Text": "Bulletin trimestriel de mise en page — n° 1",
           "FontFamily": "DejaVu Sans",
           "FontSize": 12,
@@ -158,6 +162,7 @@
           "StrokeThickness": 1,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
+          "Visible": true,
           "Text": "Un logiciel de PAO qui ne demande ni Windows ni compromis.",
           "FontFamily": "DejaVu Sans",
           "FontSize": 15,
@@ -196,6 +201,7 @@
           "StrokeThickness": 1,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
+          "Visible": true,
           "Text": "La composition d'une page tient à peu de choses : une grille lisible, des marges qui respirent, et une hiérarchie typographique qui guide l'œil. MyPublisher travaille en points typographiques — l'unité du plomb, puis du PDF. Le document n'est donc jamais converti d'une unité vers une autre.\n\nC'est un détail invisible et pourtant décisif : une conversion à chaque export introduit une dérive d'arrondi qui décale les blocs.",
           "FontFamily": "DejaVu Sans",
           "FontSize": 10.5,
@@ -234,6 +240,7 @@
           "StrokeThickness": 1,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
+          "Visible": true,
           "Text": "Chaque bloc est indépendant : on le pose, on le déplace, on l'aligne sur les repères de marge. L'aimantation accroche les bords de la page, les marges et l'axe médian ; la touche Alt la désactive.\n\nLes huit poignées redimensionnent depuis n'importe quel côté, et la touche Maj conserve les proportions sur les poignées d'angle. La rotation reste correcte : sélection, poignées et curseurs suivent l'angle du bloc.",
           "FontFamily": "DejaVu Sans",
           "FontSize": 10.5,
@@ -275,6 +282,7 @@
           "StrokeThickness": 1.5,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
+          "Visible": true,
           "Shape": "Ellipse"
         },
         {
@@ -290,6 +298,7 @@
           "StrokeThickness": 1,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
+          "Visible": true,
           "Text": "Les formes acceptent remplissage, contour, épaisseur, arrondi et rotation libre. Le texte dispose de la police système de votre choix, du corps, de l'interligne, de l'alignement — justification comprise — et de la couleur.",
           "FontFamily": "DejaVu Sans",
           "FontSize": 10.5,
@@ -331,6 +340,7 @@
           "StrokeThickness": 1,
           "StrokeStyle": "Solid",
           "CornerRadius": 8,
+          "Visible": true,
           "Shape": "Rectangle"
         },
         {
@@ -346,6 +356,7 @@
           "StrokeThickness": 1,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
+          "Visible": true,
           "Text": "Astuce : les flèches déplacent le bloc de 3 pt, Maj + flèches de 0,5 pt pour le calage fin, et Ctrl + molette règle le zoom.",
           "FontFamily": "DejaVu Sans",
           "FontSize": 10.5,
@@ -387,6 +398,7 @@
           "StrokeThickness": 0,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
+          "Visible": true,
           "Shape": "Rectangle"
         },
         {
@@ -402,6 +414,7 @@
           "StrokeThickness": 1,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
+          "Visible": true,
           "Text": "MyPublisher — composé sous Linux, exporté en PDF A4",
           "FontFamily": "DejaVu Sans",
           "FontSize": 9,
@@ -445,6 +458,7 @@
           "StrokeThickness": 1,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
+          "Visible": true,
           "Text": "Composer sans surprise",
           "FontFamily": "DejaVu Sans",
           "FontSize": 24,
@@ -486,6 +500,7 @@
           "StrokeThickness": 0,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
+          "Visible": true,
           "Shape": "Rectangle"
         },
         {
@@ -501,6 +516,7 @@
           "StrokeThickness": 1,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
+          "Visible": true,
           "Text": "Le modèle du document ne connaît aucun type d'interface : les couleurs y sont des chaînes, les alignements des énumérations. C'est ce qui permet au rendu à l'écran et à l'export PDF de partager exactement les mêmes données, sans couche intermédiaire susceptible de diverger de l'un ou de l'autre.\n\nLes polices, elles, sont résolues par fontconfig — la référence du système. Une famille absente est substituée comme le ferait n'importe quelle autre application Linux, plutôt que de faire échouer l'export.",
           "FontFamily": "DejaVu Sans",
           "FontSize": 11,
@@ -542,6 +558,7 @@
           "StrokeThickness": 0,
           "StrokeStyle": "Solid",
           "CornerRadius": 10,
+          "Visible": true,
           "Shape": "Rectangle"
         },
         {
@@ -557,6 +574,7 @@
           "StrokeThickness": 1,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
+          "Visible": true,
           "Text": "« Toute la géométrie est en points. La conversion vers les pixels de l'écran n'existe qu'à un seul endroit du code. »",
           "FontFamily": "DejaVu Sans",
           "FontSize": 14,
@@ -595,6 +613,7 @@
           "StrokeThickness": 1,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
+          "Visible": true,
           "Text": "Le format .mypub est du JSON indenté et versionné : il se lit dans un éditeur de texte, se compare dans un gestionnaire de versions, et se régénère en PDF depuis la ligne de commande.",
           "FontFamily": "DejaVu Sans",
           "FontSize": 10.5,
@@ -633,6 +652,7 @@
           "StrokeThickness": 1,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
+          "Visible": true,
           "Text": "L'annulation couvre soixante pas et englobe aussi bien un glisser-déposer complet que la saisie d'un champ dans le panneau de propriétés, chacun comptant pour une seule étape.",
           "FontFamily": "DejaVu Sans",
           "FontSize": 10.5,
@@ -671,6 +691,7 @@
           "StrokeThickness": 1,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
+          "Visible": true,
           "Text": "Rotation libre au degré près",
           "FontFamily": "DejaVu Sans",
           "FontSize": 14,
@@ -712,6 +733,7 @@
           "StrokeThickness": 0,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
+          "Visible": true,
           "Shape": "Rectangle"
         },
         {
@@ -727,6 +749,7 @@
           "StrokeThickness": 1,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
+          "Visible": true,
           "Text": "2",
           "FontFamily": "DejaVu Sans",
           "FontSize": 9,
