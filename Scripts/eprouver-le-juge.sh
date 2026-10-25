@@ -623,6 +623,147 @@ saboter "« Souligné » s'emboîte dans la saisie ouverte, sans pas à lui" \
     '' \
     'I7-souligne|Souligne(Ecran)?Tests'
 
+# I8 — masquer un bloc. Posés à la relecture du 26 octobre 2026 : le poste était fusionné
+# sans un sabotage, et « eprouver-le-juge.sh I8 » sortait sur un motif qui ne désignait
+# rien. Chaque intitulé dit « (I8) » ; chacun est attendu par la recette du poste ou par
+# ses tests (MasquerTests, MasquerEcranTests). Les trois du survol, de la poignée et de la
+# saisie passaient avant la relecture : aucun test ne lisait ce que le bloc masqué y
+# gardait. Les trois derniers ferment les défauts que la relecture a trouvés.
+saboter "un bloc masqué (I8) se dessine au PDF" \
+    MyPublisher.Core/Services/PdfExporter.cs \
+    'if (!blocs[rang].Visible) continue;' \
+    '' \
+    'I8-masquer|Masquer(Ecran)?Tests'
+
+saboter "un bloc masqué (I8) fait nommer sa police à l'export" \
+    MyPublisher.Core/Services/PdfExporter.cs \
+    'if (!frame.Visible) yield break;' \
+    '' \
+    'I8-masquer|Masquer(Ecran)?Tests'
+
+saboter "le filet d'un bloc masqué (I8) élargit la découpe de son groupe" \
+    MyPublisher.Core/Models/Decoupe.cs \
+    'if (!bloc.Visible) continue;' \
+    '' \
+    'I8-masquer|Masquer(Ecran)?Tests'
+
+saboter "un bloc masqué (I8) se dessine dans PageRoot" \
+    MyPublisher/Views/PageCanvas.axaml \
+    '<Setter Property="IsVisible" Value="{Binding Visible}"/>' \
+    '' \
+    'I8-masquer|Masquer(Ecran)?Tests'
+
+saboter "un clic prend un bloc masqué (I8) au lieu du bloc d'en dessous" \
+    MyPublisher/Views/PageCanvas.axaml.cs \
+    '_vm.CurrentPage.Frames.LastOrDefault(f => f.Visible && f.HitTest(page.X, page.Y))' \
+    '_vm.CurrentPage.Frames.LastOrDefault(f => f.HitTest(page.X, page.Y))' \
+    'I8-masquer|Masquer(Ecran)?Tests'
+
+saboter "le pointeur annonce un déplacement sur un bloc masqué (I8)" \
+    MyPublisher/Views/PageCanvas.axaml.cs \
+    '_vm?.CurrentPage?.Frames.LastOrDefault(f => f.Visible && f.HitTest(page.X, page.Y))' \
+    '_vm?.CurrentPage?.Frames.LastOrDefault(f => f.HitTest(page.X, page.Y))' \
+    'I8-masquer|Masquer(Ecran)?Tests'
+
+saboter "la poignée d'un bloc masqué (I8) se saisit" \
+    MyPublisher/Views/PageCanvas.axaml.cs \
+    'if (_vm.SingleSelected is { Visible: true } single && HitHandle(single, surfacePoint) is { } anchor)' \
+    'if (_vm.SingleSelected is { } single && HitHandle(single, surfacePoint) is { } anchor)' \
+    'I8-masquer|Masquer(Ecran)?Tests'
+
+saboter "un texte masqué (I8) s'ouvre en saisie sur la page" \
+    MyPublisher/Views/PageCanvas.axaml.cs \
+    'if (!frame.Visible) return;' \
+    '' \
+    'I8-masquer|Masquer(Ecran)?Tests'
+
+saboter "un bloc masqué (I8) pris dans la liste a son cadre et ses poignées" \
+    MyPublisher/Views/PageCanvas.axaml.cs \
+    '_vm.Selection.Where(frame => frame.Visible && page.Frames.Contains(frame))' \
+    '_vm.Selection.Where(page.Frames.Contains)' \
+    'I8-masquer|Masquer(Ecran)?Tests'
+
+saboter "une recopie d'un bloc masqué (I8) le montre" \
+    MyPublisher.Core/Models/Frame.cs \
+    'target.Visible = Visible;' \
+    '' \
+    'CloneTests|I8-masquer|Masquer(Ecran)?Tests'
+
+saboter "« Tout sélectionner » prend les blocs masqués (I8)" \
+    MyPublisher/ViewModels/MainWindowViewModel.cs \
+    'SetSelection(CurrentPage.Frames.Where(frame => frame.Visible).ToList());' \
+    'SetSelection(CurrentPage.Frames.ToList());' \
+    'I8-masquer|Masquer(Ecran)?Tests'
+
+saboter "dissocier un groupe masqué (I8) montre ses blocs" \
+    MyPublisher/ViewModels/MainWindowViewModel.cs \
+    'child.Visible = child.Visible && group.Visible;' \
+    '' \
+    'I8-masquer|Masquer(Ecran)?Tests'
+
+saboter "un bloc (I8) naît masqué" \
+    MyPublisher.Core/Models/Frame.cs \
+    'private bool _visible = true;' \
+    'private bool _visible;' \
+    'I8-masquer|Masquer(Ecran)?Tests'
+
+saboter "l'alignement déplace un bloc masqué (I8)" \
+    MyPublisher/ViewModels/MainWindowViewModel.cs \
+    'if (!frame.Visible) continue;
+            frame.X += dx;' \
+    'frame.X += dx;' \
+    'I8-masquer|Masquer(Ecran)?Tests'
+
+saboter "l'alignement prend un bloc masqué (I8) pour repère" \
+    MyPublisher/ViewModels/MainWindowViewModel.Masquer.cs \
+    'private List<Frame> BlocsAlignables => Selection.Where(frame => frame.Visible).ToList();' \
+    'private List<Frame> BlocsAlignables => Selection.ToList();' \
+    'I8-masquer|Masquer(Ecran)?Tests'
+
+saboter "l'œil (I8) se fond dans la saisie en cours, sans pas à lui" \
+    MyPublisher/ViewModels/MainWindowViewModel.Masquer.cs \
+    'var ouvertes = _editDepth;
+        EndPendingEdit();' \
+    'var ouvertes = 0;' \
+    'I8-masquer|Masquer(Ecran)?Tests'
+
+saboter "un bloc masqué (I8) reste dans une sélection multiple" \
+    MyPublisher/ViewModels/MainWindowViewModel.Masquer.cs \
+    'if (!bloc.Visible && Selection.Count > 1 && Selection.Contains(bloc))' \
+    'if (bloc.Visible && Selection.Count > 1 && Selection.Contains(bloc))' \
+    'I8-masquer|Masquer(Ecran)?Tests'
+
+saboter "la vignette de la page (I8) dessine un bloc masqué" \
+    MyPublisher/Views/TemplatePreview.cs \
+    'if (!frame.Visible) return;' \
+    '' \
+    'I8-masquer|Masquer(Ecran)?Tests'
+
+saboter "la vignette de la page (I8) garde ses filets quand un œil s'ouvre" \
+    MyPublisher/Views/VignetteDePage.cs \
+    'if (e.PropertyName == nameof(Frame.Visible)) Oublier();
+        else if' \
+    'if' \
+    'I8-masquer|Masquer(Ecran)?Tests'
+
+saboter "un Ctrl+clic étend à un bloc masqué (I8) la sélection prise dans la liste" \
+    MyPublisher/ViewModels/MainWindowViewModel.cs \
+    'if (frames.Count > 1) frames.RemoveAll(bloc => !bloc.Visible);' \
+    '' \
+    'I8-masquer|Masquer(Ecran)?Tests'
+
+saboter "fermer l'œil (I8) du bloc qu'on tape le laisse en saisie" \
+    MyPublisher/Views/PageCanvas.axaml.cs \
+    'if (ReferenceEquals(_editing, masque) && !masque.Visible) EndTextEdit();' \
+    '' \
+    'I8-masquer|Masquer(Ecran)?Tests'
+
+saboter "l'œil (I8) prend le focus au champ qu'on tape" \
+    MyPublisher/Views/MainWindow.axaml.cs \
+    'RendreLeFocusApresLOeil();' \
+    '' \
+    'I8-masquer|Masquer(Ecran)?Tests'
+
 # C5b — les jeux de couleurs et de polices. La référence se résout en un seul endroit
 # du noyau, que les deux rendus appellent : un sabotage du noyau tombe des deux côtés à
 # la fois, et c'est la recette — qui calcule les couleurs attendues depuis les valeurs

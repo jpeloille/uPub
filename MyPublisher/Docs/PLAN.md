@@ -102,7 +102,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **I5** | Vignettes de pages | **100 %** | Chaque page du panneau Pages en vignette de 96 px au rapport de la page, son numéro dessous, la page courante bordée de 2 px d'accent ; un clic y mène, sans rien mettre à l'historique. `Views/VignetteDePage.cs` dérive de la vignette des modèles : un schéma tiré de la composition, sans contrôle de bloc, qui dessine sa page — et non la première — avec le fond de page. Elle suit le document qui se modifie en place : elle écoute sa page bloc par bloc, comme la planche, et ne recompose que les filets du bloc retouché ; une annulation rend ses pixels. Sur ATA 21, redessiner les vignettes prend 14 ms après une retouche du plus long texte, 43 ms quand le jeu de polices fait tout recomposer. Les sept cibles du juge dans `TemplatePreview.cs` restent, `DetachementTests` et `VignetteTests` passent inchangés. Neuf tests ; recette dans `Scripts/recettes/`. Relecture et juge après fusion |
 | **I6** | Main, zoom, page entière, proportions | **100 %** | La main du rail, ou `Espace` tenu hors saisie et hors bouton, fait glisser la planche — son seul défilement, sans bloc touché ni pas d'annulation —, main ouverte puis fermée, deux curseurs dessinés aux pinceaux de l'apparence. La loupe (`Z`) zoome d'un pas au clic, en arrière sous `Alt`, le point visé restant sous le pointeur ; `Ctrl`+molette de même, prise avant que la zone qui défile ne la consomme. « Page entière » tient la page dans la zone, marge de la planche déduite, mesurée après la mise en page, qui arrondit au pixel supérieur ; jamais d'office. « Conserver les proportions », état de la session : cochée, un coin tiré et la saisie de L ou de H — qui passent désormais par le modèle de vue — gardent le rapport du bloc, les côtés non, et `Maj` pendant le glissé fait l'inverse. Les deux icônes du poste servent. Neuf tests ; relecture et juge après fusion. Recette dans `Scripts/recettes/` |
 | **I7** | Souligné | **100 %** | Le souligné porte sa sorte — plein, pointillé, tiret, tiret long, tiret-point, tiret-point-point ou vague ; simple ou double, épais ou non, « mots seuls » — au bloc, au fragment, où `null` laisse celui du bloc, et dans le style effectif. Il s'écrit `false`, `true` pour le trait simple, ou en objet `{ Line, Double, Thick, WordsOnly }` ; `FormatVersion` ne change pas, Samples et Templates sont réenregistrés. Il se trace à l'écran et au PDF à la place et à l'épaisseur de la table `post`, sous la ligne de base de son morceau, exposant compris, et à la couleur de son texte ; seize des dix-sept sortes de libmspub s'importent, le double en double. La commande `SoulignerCommand` est dans `MainWindowViewModel.Souligne.cs`, sans bouton : le bouton S, `Ctrl+U` et le menu viennent de I3. Recette dans `Scripts/recettes/`, vingt-six sabotages au juge |
-| **I8** | Masquer un bloc | **100 %** | L'œil de « Blocs de la page », à la place que I2 avait réservée : un clic masque le bloc, ou le montre, en un pas d'annulation, même pendant une saisie, sans le sélectionner ni prendre le focus ; le document est « modifié ». `Visible` sur tout bloc, `true` par défaut ; `FormatVersion` ne change pas, Samples et Templates sont réenregistrés — un « Visible » de plus par bloc, rien d'autre. Masqué, le bloc n'est dessiné ni dans `PageRoot` ni au PDF, ni ce que porte un groupe masqué ; rien de lui n'avertit, ni sa police (Q8), ni son image, ni son débordement ; son filet n'élargit plus la découpe d'un groupe. Un clic à sa place prend le bloc d'en dessous ; l'alignement et la répartition ne le voient pas, « Tout sélectionner » non plus. Il reste dans la liste, l'œil fermé, et s'y sélectionne, sans cadre ni poignée sur la planche ; masqué, il quitte une sélection multiple. Une recopie le garde, dissocier un groupe masqué laisse ses blocs masqués ; les cases d'un tableau ne portent pas la propriété. La vignette de la page (I5) ne le dessine pas. L'icône du poste sert. Vingt-cinq tests ; relecture et juge après fusion. Recette dans `Scripts/recettes/` |
+| **I8** | Masquer un bloc | **100 %** | L'œil de « Blocs de la page », à la place que I2 avait réservée : un clic masque le bloc, ou le montre, en un pas d'annulation, même pendant une saisie, sans le sélectionner ni prendre le focus ; le document est « modifié ». `Visible` sur tout bloc, `true` par défaut ; `FormatVersion` ne change pas, Samples et Templates sont réenregistrés — un « Visible » de plus par bloc, rien d'autre. Masqué, le bloc n'est dessiné ni dans `PageRoot` ni au PDF, ni ce que porte un groupe masqué ; rien de lui n'avertit, ni sa police (Q8), ni son image, ni son débordement ; son filet n'élargit plus la découpe d'un groupe. Un clic à sa place prend le bloc d'en dessous ; l'alignement et la répartition ne le voient pas, « Tout sélectionner » non plus. Il reste dans la liste, l'œil fermé, et s'y sélectionne, sans cadre ni poignée sur la planche ; masqué, il quitte une sélection multiple. Une recopie le garde, dissocier un groupe masqué laisse ses blocs masqués ; les cases d'un tableau ne portent pas la propriété. La vignette de la page (I5) ne le dessine pas. L'icône du poste sert. Trente-quatre tests ; relu et jugé le 26 octobre 2026 : trois défauts refermés — la sélection étendue depuis un bloc masqué le gardait, l'œil laissait en saisie le bloc qu'on tape et prenait le focus au champ qu'on tape —, neuf tests d'interface, vingt-deux sabotages au juge. Recette dans `Scripts/recettes/` |
 | **I9** | Compter les lignes en excédent | **100 %** | `Compositeur.LignesEnExcedent`, fonction pure du noyau : les lignes dont l'encre — la hauteur naturelle, au milieu de l'avance — sort du bloc, au calage vertical (A7), au bord du bloc et non de la zone (C6), au seuil du marqueur de A2 ; les colonnes et les blocs tournés sans chemin à part. Le dock l'affiche à la section « Cadre de texte », dans la place que I2 avait réservée : « Texte en excédent : 4 lignes » au fond, à la couleur et à l'icône d'alerte de l'apparence, au singulier pour une ligne, rien à zéro ; il suit la frappe et chaque réglage du bloc sans changement de sélection, et ne touche pas au document. Le modèle de vue le porte dans `MainWindowViewModel.Excedent.cs`. Aucune clé sérialisée ; l'avertissement d'export et le relevé de P2 inchangés. Sur `recette-debordement.mypub` et sur une variante en colonnes, marges, interligne 1,5 et rotation, le compte du dock est celui des lignes absentes du PDF, bloc par bloc, lu par la commande `excedent` du banc. Dix-huit tests, douze purs et six sur la fenêtre ; recette dans `Scripts/recettes/`. Relecture et juge après fusion |
 | **N1** | Le banc des gestes | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 1 |
 | **N2** | Mettre en forme une plage, dans le noyau | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 1 |
@@ -5394,6 +5394,46 @@ un glissé n'emportent rien qu'on ne voie. Dissocier un groupe masqué laisse se
 masqués : dissocier ne fait rien paraître. L'aimantation n'est pas touchée : elle ne vise
 encore aucun bloc (A11), et un bloc masqué ne se tire pas ; A11 dira qu'un bloc masqué
 n'attire rien. libmspub ne transmet aucun bloc masqué : un `.pub` s'importe tout visible.
+
+*Repris le 26 octobre 2026 après relecture.* La relecture a trouvé trois défauts, chacun
+montré par un test d'interface écrit avant sa correction, et trois trous du filet.
+
+- **Une sélection étendue depuis un bloc masqué le gardait.** Pris seul dans la liste, un
+  bloc masqué restait dans la sélection qu'un `Ctrl`+clic ou un `Maj`+clic sur la planche
+  étendait : deux blocs pris, dont un que rien ne montre, et Suppr emportait les deux.
+  `ToggleSelection` lâche les blocs masqués d'une sélection de plusieurs
+  (`Etendre_la_selection_depuis_un_bloc_masque_le_lache`).
+- **Fermer l'œil du bloc qu'on tape le laissait en saisie** : invisible mais `IsEditing`, la
+  couche de saisie éteinte, Échap sans effet, et le clic suivant sur la planche ne servait
+  qu'à en sortir. La planche referme la saisie une fois la commande de l'œil jouée — fermée
+  tout de suite, elle refermait la transaction de l'œil au milieu de sa commande —, si bien
+  que la frappe et l'œil gardent chacun leur pas
+  (`Fermer_l_oeil_du_bloc_qu_on_tape_referme_la_saisie`).
+- **L'œil prenait le focus.** Le bouton n'est pas focalisable, mais la pression donnait le
+  focus à sa ligne, premier ancêtre qui l'est : le champ du dock qu'on tapait le perdait, et
+  la lettre suivante armait un outil au lieu de s'écrire. La fenêtre rend le focus, la
+  pression passée, au champ qui l'avait, s'il est encore à l'écran
+  (`L_oeil_laisse_le_focus_au_champ_du_dock_qu_on_tape`,
+  `L_oeil_d_un_voisin_laisse_la_saisie_sur_la_page_se_poursuivre`).
+
+Les trois tests des deux derniers défauts sont joués dans les deux ordres où ce que la
+pression poste arrive, avant ou après le relâchement.
+
+*Le juge.* Le poste était fusionné sans un sabotage, et `eprouver-le-juge.sh I8` sortait sur
+un motif qui ne désignait rien. Vingt-deux sont posés, chacun attendu par la recette ou par
+`MasquerTests` et `MasquerEcranTests` : le PDF, la passe des polices, la découpe d'un
+groupe, `PageRoot`, le clic, le survol, la poignée, la saisie, le cadre, la recopie, la
+valeur par défaut, « Tout sélectionner », dissocier, l'alignement et son repère, le pas de
+l'œil pendant une saisie, la sélection multiple, les deux vignettes, et les trois défauts.
+Trois passaient avant la relecture — le pointeur qui annonce un déplacement sur un bloc
+masqué, sa poignée qu'on saisit, le texte masqué qu'on ouvre en saisie — : le test du clic
+lit désormais le curseur, et `La_poignee_d_un_bloc_masque_ne_se_saisit_pas` et
+`Un_texte_masque_ne_s_ouvre_pas_en_saisie_sur_la_page` les attrapent. Joué le 26 octobre 2026 : vingt-deux sur vingt-deux — le dernier rejoué seul, le premier passage ayant buté sur le quota plein du /tmp partagé, où `verifier.sh` a échoué sans nommer de coupable. La recette
+compte vingt tests d'interface au lieu de onze.
+
+*La recette de I5 comptait exactement* sept cibles du juge dans `TemplatePreview.cs` : le
+sabotage de la vignette masquée en fait une huitième, et elle tombait sur l'arbre propre.
+Elle en demande désormais sept au moins — A10 en pose une aussi.
 
 #### I9 — Compter les lignes en excédent
 

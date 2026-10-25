@@ -403,12 +403,36 @@ public partial class MainWindow : Window
         if (e.Source is not Visual source) return;
         // L'œil d'une ligne (poste I8) est un bouton, pas une prise : on ne tire pas un bloc
         // par son œil.
-        if (source.GetSelfAndVisualAncestors().OfType<Button>().Any()) return;
+        if (source.GetSelfAndVisualAncestors().OfType<Button>().Any())
+        {
+            RendreLeFocusApresLOeil();
+            return;
+        }
         if (source.GetSelfAndVisualAncestors().OfType<ListBoxItem>().FirstOrDefault()
             is not { DataContext: Frame frame }) return;
 
         _draggedBlock = frame;
         _dragOrigin = e.GetPosition(ListeDesBlocs);
+    }
+
+    /// <summary>
+    /// L'œil ne prend pas le focus (poste I8) : la frappe en cours garde le sien. Le bouton
+    /// n'est pas focalisable, mais la pression donne le focus au premier ancêtre qui l'est,
+    /// sa ligne : le champ du dock ou la saisie sur la page le perdait, et la lettre suivante
+    /// armait un outil au lieu de s'écrire (trouvé par la relecture du 26 octobre 2026). Le
+    /// focus revient, la pression passée, au champ qui l'avait, s'il est encore à l'écran —
+    /// il ne l'est plus quand l'œil vient de masquer le bloc qu'on tapait. Le champ du dock
+    /// referme sa saisie en perdant le focus et la rouvre en le reprenant : le début de la
+    /// frappe, l'œil et la suite ont chacun leur pas, comme le veut la règle 2.
+    /// </summary>
+    private void RendreLeFocusApresLOeil()
+    {
+        if (FocusManager?.GetFocusedElement() is not InputElement champ) return;
+
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (champ.IsEffectivelyVisible && champ.IsAttachedToVisualTree()) champ.Focus();
+        });
     }
 
     private void OnBlockListMoved(object? sender, PointerEventArgs e)
