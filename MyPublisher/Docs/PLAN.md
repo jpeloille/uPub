@@ -106,7 +106,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **I9** | Compter les lignes en excédent | **100 %** | `Compositeur.LignesEnExcedent`, fonction pure du noyau : les lignes dont l'encre — la hauteur naturelle, au milieu de l'avance — sort du bloc, au calage vertical (A7), au bord du bloc et non de la zone (C6), au seuil du marqueur de A2 ; les colonnes et les blocs tournés sans chemin à part. Le dock l'affiche à la section « Cadre de texte », dans la place que I2 avait réservée : « Texte en excédent : 4 lignes » au fond, à la couleur et à l'icône d'alerte de l'apparence, au singulier pour une ligne, rien à zéro ; il suit la frappe et chaque réglage du bloc sans changement de sélection, et ne touche pas au document. Le modèle de vue le porte dans `MainWindowViewModel.Excedent.cs`. Aucune clé sérialisée ; l'avertissement d'export et le relevé de P2 inchangés. Sur `recette-debordement.mypub` et sur une variante en colonnes, marges, interligne 1,5 et rotation, le compte du dock est celui des lignes absentes du PDF, bloc par bloc, lu par la commande `excedent` du banc. Dix-huit tests, douze purs et six sur la fenêtre ; recette dans `Scripts/recettes/`. Relecture et juge après fusion |
 | **N1** | Le banc des gestes | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 1 |
 | **N2** | Mettre en forme une plage, dans le noyau | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 1 |
-| **N3** | Chaque morceau composé sait d'où il vient | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 1 |
+| **N3** | Chaque morceau composé sait d'où il vient | **100 %** | `Morceau` porte en dernier membre `Debut`, la position de son premier caractère ; `LigneComposee` sa plage `Debut`–`Fin`, blancs rognés compris, saut exclu, et son `Paragraphe`, compté comme `Recalage` le compte. `Decouper` lit le texte tel qu'il est, sans `Replace` : seule exception, déclarée, un « \r\n » que deux fragments se partagent ne fait plus qu'un paragraphe — aucun document du dépôt n'en porte. Deux fonctions pures du noyau, `Compositeur.Abscisse` et `PositionLaPlusProche`, taquets, justification et blancs pendants compris ; `Compositeur.LigneDuTexteVide` pour le curseur d'un bloc vide. La vue pose, dans la passe même du dessin, une `TexteCompose.LignePosee` par ligne, lignes vides comprises ; `TexteCompose.Geometrie()` les rend avec `PointDe(index)` et `IndexSous(point)`, en coordonnées du bloc, colonnes et calage compris, rien pour un bloc à champ. **La sortie ne change pas, mesuré** : l'empreinte de la composition (`Scripts/empreinte-composition.sh`, commande `empreinte` du banc) — 2 492 lignes à la règle de l'écran et du PDF, 13 880 morceaux au bit près, ce que l'écran pose et souligne, les pixels de 29 pages, le PDF exporté et ses 6 634 mots — est identique avant et après sur les 18 documents du dépôt : `Samples/`, `Templates/`, ATA 21 et les Fiches. 76 tests sous `poste=N3`, 66 purs et 10 sur la vraie fenêtre ; un sabotage au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **N4** | L'affichage au clavier | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 1 |
 | **N5** | Quitter la saisie d'un clic qui agit | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 2 |
 | **N6** | Les raccourcis de la fenêtre laissent la touche au champ | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 2 |
@@ -5642,6 +5642,62 @@ n'a pas de géométrie, son `Contenu` différant de `Text`.
 - au juge : un mot renvoyé garde la position de son blanc de tête.
 
 Fichiers : `Compositeur.cs`, `Views/TexteCompose.cs`, tests. Effort : moyen.
+
+*Livré le 26 octobre 2026*, sur `interface` au commit `2d8b9f9`.
+
+**Le noyau.** `Morceau(Texte, Style, X, Largeur, Debut)` ; `LigneComposee` finit par
+`Debut, Fin, Paragraphe`. `Decouper` parcourt le texte d'origine : chaque unité garde sa
+place, un saut sa longueur — un « \n », un « \r » seul, ou un « \r\n » pour un seul,
+même à cheval sur deux fragments. Le renvoi laisse la tête blanche du mot au bout de la ligne
+qu'il quitte ; le morceau renvoyé commence après elle, et la ligne quittée finit là où commence
+la suivante. Deux fonctions pures sur une ligne posée : `Compositeur.Abscisse(ligne,
+decalages, position, texte, commun, metriques)`, comptée depuis l'origine de la ligne comme
+`Soulignes`, et `Compositeur.PositionLaPlusProche(ligne, decalages, abscisse, texte, commun,
+metriques)`, son inverse, la première à égalité. Une tabulation avance au taquet ; le point
+qui suit un blanc élargi est au mot suivant ; les blancs rognés pendent après le dernier
+morceau, mesurés à son style, ou au style commun sur une ligne sans morceau ; jamais le
+milieu d'une paire de substitution. `Composer` ne rend toujours aucune ligne pour un texte
+vide — un bloc vide ne déborde pas — ; `LigneDuTexteVide` rend celle qu'il aurait, de la
+même composition.
+
+**La vue.** `TexteCompose.Disposer` pose, dans la passe du dessin, une
+`LignePosee(Ligne, Rang, Origine, Haut, LigneDeBase, Decalages)` par ligne, lignes vides
+comprises — une ligne sans morceau prend la montée du style commun. `ControleDeBloc.Mesurer`
+peut composer la ligne du texte vide, et `TexteMesure` porte le style commun.
+`TexteCompose.Geometrie()` rend une `GeometrieDuTexte` — `Lignes`, `LigneDe(index)`,
+`PointDe(index)`, `IndexSous(point)` —, rien sans bloc ni pour un bloc à champ ;
+`TexteCompose.PointDe` et `IndexSous` y délèguent, en recomposant à chaque appel : qui
+demande beaucoup de points garde la géométrie. `PointDe` rend le point d'insertion sur la
+ligne de base de sa ligne ; une position où une ligne est renvoyée est le début de la
+suivante. `IndexSous` prend la colonne la plus proche parmi celles qui portent du texte, la
+ligne la plus proche dans cette colonne, puis la position la plus proche sur la ligne.
+
+**Mesuré.** L'empreinte de la composition, relevée avant tout changement puis après, par
+`Scripts/empreinte-composition.sh` et la commande `empreinte` du banc, qui n'emploie que
+l'API d'avant N3 : 18 documents — les 12 de `Samples/`, les 4 de `Templates/`, ATA 21 et les
+Fiches par pub2raw —, 289 contrôles de texte, 2 492 lignes composées à la règle de l'écran et
+à celle du PDF, 13 880 morceaux avec leur style, leur abscisse et leur largeur au bit près, les
+décalages de justification, ce que `Poser` et `Souligner` rendent, l'empreinte des pixels de
+29 pages, et le PDF exporté, normalisé de ce que PDFsharp tire au hasard, avec ses 6 634 mots
+et leur boîte : **identique**. Deux relevés d'avant, pris du même code, l'étaient aussi entre
+eux. Aucune chaîne des 16 `.mypub` ne porte de « \r », ni aucun texte d'ATA 21 et des Fiches.
+Sur les documents réels, `PointDe(m.Debut).X` est l'ancre du dessin à 10⁻⁶ près, et
+`IndexSous(PointDe(i)) == i` pour chaque position de l'exemple, d'ATA 21, des Fiches et de
+`recette-colonnes`. Une géométrie coûte de 0,2 à 15 ms par bloc sur ATA 21, machine chargée.
+
+*Choisi sans certitude* : `PointDe` sur la ligne de base, et non au sommet de la ligne ; la
+fin d'une ligne renvoyée rendue au début de la suivante, sans affinité ; un point à égale
+distance de deux colonnes ou de deux lignes donné à la première ; la bande d'une ligne étendue
+à sa ligne de base quand un interligne serré l'en fait sortir. L'outil d'empreinte est gardé,
+et la recette le joue sur demande (`--empreinte <référence>`) : il demande quelques minutes et
+un relevé de référence que le dépôt ne garde pas, les pixels dépendant des polices de la
+machine.
+
+*Relevé, non corrigé* : la mise en page arrondit au pixel la place et la taille du contrôle
+d'un bloc — 22,77 pt de haut deviennent 23 — et un bloc tourné tourne autour du centre de son
+contrôle : le repère que `Frame.ToLocal` calcule sur le modèle s'écarte de celui de l'écran de
+0,5 pt sur les deux blocs tournés d'ATA 21. Le caractère visé n'en change pas ; c'est l'affaire
+de N12 et de R7.
 
 #### N4 — L'affichage au clavier *(fiche 23, d10, d11, d13, e14, f24)*
 

@@ -4,8 +4,13 @@ using System.Linq;
 
 namespace MyPublisher.Models;
 
-/// <summary>Un morceau de ligne d'un seul style, avec sa largeur et son abscisse.</summary>
-public readonly record struct Morceau(string Texte, StyleEffectif Style, double X, double Largeur);
+/// <summary>
+/// Un morceau de ligne d'un seul style, avec sa largeur et son abscisse, et la position de
+/// son premier caractère dans le texte composé : <c>texte.Substring(Debut, Texte.Length)</c>
+/// est son <paramref name="Texte"/> (poste N3). C'est ce qui permet de passer d'un point de
+/// la ligne à un caractère du texte, et l'inverse — le curseur, le clic, la sélection.
+/// </summary>
+public readonly record struct Morceau(string Texte, StyleEffectif Style, double X, double Largeur, int Debut);
 
 /// <summary>
 /// Une portion soulignée d'une ligne : de <paramref name="Debut"/> à <paramref name="Fin"/>,
@@ -46,12 +51,23 @@ public readonly record struct EtendueSoulignee(double Debut, double Fin, StyleEf
 /// se décide sur une hauteur cumulée, et deux rendus qui la cumuleraient chacun de son
 /// côté finiraient par ne pas couper au même endroit. Un rendu n'a donc plus rien à
 /// additionner ; il lit.
+///
+/// <paramref name="Debut"/> et <paramref name="Fin"/> sont la plage du texte que la ligne
+/// couvre, et <paramref name="Paragraphe"/> le rang de son paragraphe (poste N3). La plage
+/// compte les blancs que la composition a rognés — ceux de la fin de la ligne, et le blanc
+/// de tête d'un mot renvoyé, qui restent au bout de la ligne qu'il quitte —, mais pas le
+/// saut qui ferme un paragraphe : les lignes se suivent et couvrent tout le texte, sauts
+/// exceptés. Une ligne renvoyée finit là où commence la suivante ; un paragraphe vide est
+/// une ligne de plage vide. Le rang de paragraphe est celui que <see cref="Recalage"/>
+/// compte : un « \r\n » n'ouvre qu'un paragraphe, même quand deux fragments se le
+/// partagent.
 /// </summary>
 public readonly record struct LigneComposee(
     IReadOnlyList<Morceau> Morceaux, double Largeur, double Naturelle, bool FinDeParagraphe,
     TextAlign Fer,
     double Retrait, double Disponible, double EspaceAvant, double EspaceApres,
-    int Colonne, double Haut, double Avance)
+    int Colonne, double Haut, double Avance,
+    int Debut, int Fin, int Paragraphe)
 {
     public string Texte => string.Concat(Morceaux.Select(m => m.Texte));
 }
@@ -141,8 +157,38 @@ public static class Compositeur
         double largeur, double hauteur, Colonnage colonnes, double interligne,
         IMetriques metriques)
     {
+        // Un texte vide ne compose aucune ligne : rien ne s'y dessine, rien n'y déborde.
+        if (string.IsNullOrEmpty(texte)) return new List<LigneComposee>();
+
+        return Composition(texte, fragments, commun, ecarts, communParagraphe,
+            largeur, hauteur, colonnes, interligne, metriques);
+    }
+
+    /// <summary>
+    /// La ligne qu'aurait un texte vide : celle d'un paragraphe vide, le premier du bloc,
+    /// avec son retrait, son fer, son espace avant et la hauteur naturelle du style
+    /// commun. <see cref="Composer"/> n'en rend aucune, et c'est voulu — un bloc vide ne
+    /// déborde pas —, mais le curseur s'y pose (poste N3). Elle sort de la même
+    /// composition que les autres lignes, et non d'un calcul à part qui pourrait s'en
+    /// écarter.
+    /// </summary>
+    public static LigneComposee LigneDuTexteVide(
+        StyleEffectif commun, IReadOnlyList<ParagraphSpan> ecarts, ParagrapheEffectif communParagraphe,
+        double largeur, double hauteur, Colonnage colonnes, double interligne, IMetriques metriques) =>
+        Composition(string.Empty, [], commun, ecarts, communParagraphe,
+            largeur, hauteur, colonnes, interligne, metriques)[0];
+
+    /// <summary>
+    /// La composition elle-même, texte vide compris : elle rend alors la seule ligne d'un
+    /// paragraphe vide.
+    /// </summary>
+    private static List<LigneComposee> Composition(
+        string texte, IReadOnlyList<StyleSpan> fragments, StyleEffectif commun,
+        IReadOnlyList<ParagraphSpan> ecarts, ParagrapheEffectif communParagraphe,
+        double largeur, double hauteur, Colonnage colonnes, double interligne,
+        IMetriques metriques)
+    {
         var lignes = new List<LigneComposee>();
-        if (string.IsNullOrEmpty(texte)) return lignes;
 
         // Le texte est composé une fois pour la largeur d'UNE colonne : toutes ont la
         // même, la découpe ne dépend donc pas de celle où la ligne atterrira. C'est ce
@@ -151,9 +197,9 @@ public static class Compositeur
         var largeurColonne = colonnes.Largeur(largeur);
 
         // Un mot porte son style ; c'est l'unité que la découpe déplace d'une ligne
-        // à l'autre. Un mot que deux fragments se partagent devient deux unités
-        // insécables — d'où le drapeau.
-        var mots = Decouper(texte, fragments, commun, metriques);
+        // à l'autre. Un mot que deux fragments se partagent devient deux unités, que
+        // le renvoi peut séparer comme deux mots.
+        var mots = Decouper(texte, fragments, commun);
 
         // Le compte des paragraphes sort de la découpe elle-même et non d'un second
         // parcours du texte : c'est elle qui décide où ils commencent, et les deux ne
@@ -173,6 +219,8 @@ public static class Compositeur
         var premiereLigne = true;
         var retrait = 0.0;
         var disponible = largeurColonne;
+        // Où commence, dans le texte, la ligne en cours (poste N3).
+        var debutDeLigne = 0;
         Cadrer();
 
         // Le cadre de la ligne à venir. Il change deux fois : au passage à la ligne,
@@ -190,9 +238,13 @@ public static class Compositeur
 
         ParagrapheEffectif Reglage() => reglages[Math.Min(paragraphe, reglages.Count - 1)];
 
-        void Fermer(bool finDeParagraphe)
+        // Ferme la ligne en cours sur la position <fin> du texte ; la suivante commence à
+        // <suivante> — après le saut qui ferme un paragraphe, ou là même où un mot est
+        // renvoyé.
+        void Fermer(bool finDeParagraphe, int fin, int suivante)
         {
-            // Les blancs de fin de ligne ne comptent ni dans la largeur ni à l'écran.
+            // Les blancs de fin de ligne ne comptent ni dans la largeur ni à l'écran. Ils
+            // restent dans la plage de la ligne : le curseur s'y pose.
             while (courante.Count > 0 && courante[^1].Texte.Trim().Length == 0)
             {
                 largeurCourante -= courante[^1].Largeur;
@@ -227,11 +279,13 @@ public static class Compositeur
                 retrait, disponible,
                 premiereLigne ? reglage.SpaceBefore : 0,
                 finDeParagraphe ? reglage.SpaceAfter : 0,
-                Colonne: 0, Haut: 0, Avance: 0));
+                Colonne: 0, Haut: 0, Avance: 0,
+                Debut: debutDeLigne, Fin: fin, Paragraphe: paragraphe));
 
             courante.Clear();
             largeurCourante = 0;
             coupureCourante = 0;
+            debutDeLigne = suivante;
 
             // Fermer sur une fin de paragraphe ouvre le suivant ; fermer sur un renvoi
             // à la ligne reste dans le même paragraphe, mais n'est plus sa première.
@@ -242,7 +296,13 @@ public static class Compositeur
 
         foreach (var mot in mots)
         {
-            if (mot.FinDeLigne) { Fermer(finDeParagraphe: true); continue; }
+            // Le saut n'est dans aucune ligne : celle-ci finit avant lui, la suivante
+            // commence après.
+            if (mot.FinDeLigne)
+            {
+                Fermer(finDeParagraphe: true, fin: mot.Debut, suivante: mot.Debut + mot.Longueur);
+                continue;
+            }
 
             // Une tabulation n'a pas de largeur propre : elle vaut la distance qui
             // reste jusqu'au prochain taquet, et dépend donc d'où on en est sur la
@@ -269,22 +329,26 @@ public static class Compositeur
             if (!tabulation && courante.Count > 0 &&
                 coupureCourante + metriques.LargeurDeCoupure(mot.Texte.TrimEnd(), mot.Style) > disponible)
             {
-                Fermer(finDeParagraphe: false);
                 var debut = mot.Texte.TrimStart();
+                // Le renvoi rogne la tête blanche du mot — une insécable, des espaces
+                // qu'un changement de style isole. Elle reste au bout de la ligne qu'il
+                // quitte, comme les blancs de fin : le morceau commence après elle.
+                var renvoi = mot.Debut + (mot.Texte.Length - debut.Length);
+                Fermer(finDeParagraphe: false, fin: renvoi, suivante: renvoi);
                 l = metriques.Largeur(debut, mot.Style);
                 c = metriques.LargeurDeCoupure(debut, mot.Style);
-                courante.Add(new Morceau(debut, mot.Style, largeurCourante, l));
+                courante.Add(new Morceau(debut, mot.Style, largeurCourante, l, renvoi));
             }
             else
             {
-                courante.Add(new Morceau(mot.Texte, mot.Style, largeurCourante, l));
+                courante.Add(new Morceau(mot.Texte, mot.Style, largeurCourante, l, mot.Debut));
             }
 
             largeurCourante += l;
             coupureCourante += c;
         }
 
-        Fermer(finDeParagraphe: true);
+        Fermer(finDeParagraphe: true, fin: texte.Length, suivante: texte.Length);
 
         // Chaque morceau porte son abscisse relative au début de la ligne ; on la
         // recalcule ici plutôt que dans la boucle, où la ligne pouvait encore bouger.
@@ -356,52 +420,67 @@ public static class Compositeur
         }
     }
 
-    private readonly record struct Unite(string Texte, StyleEffectif Style, bool FinDeLigne);
+    /// <summary>
+    /// Une unité de la découpe : un mot avec les espaces qui le suivent, une tabulation, ou
+    /// une fin de ligne ; sa place dans le texte d'origine, et sa longueur — celle du saut
+    /// pour une fin de ligne, un ou deux caractères (poste N3).
+    /// </summary>
+    private readonly record struct Unite(string Texte, StyleEffectif Style, bool FinDeLigne, int Debut, int Longueur);
 
     /// <summary>
     /// Le texte réduit à une suite d'unités : des mots avec les espaces qui les
     /// suivent, des marques de fin de ligne, et jamais deux styles dans la même unité.
+    ///
+    /// Le texte se lit tel qu'il est, sans normaliser ses fins de ligne : les fragments y
+    /// repèrent leurs positions, et chaque unité garde la sienne (poste N3). Un saut est un
+    /// « \n », un « \r » seul, ou un « \r\n » pour un seul — la règle de
+    /// <see cref="Recalage"/>, qui compte les paragraphes de la frappe. La découpe d'avant
+    /// N3 normalisait chaque morceau de style à part : un « \r\n » que deux fragments se
+    /// partageaient y faisait deux paragraphes, et l'écart du deuxième se posait sur une
+    /// ligne vide. Aucun document du dépôt n'en porte — l'import retire les « \r ».
     /// </summary>
     private static List<Unite> Decouper(
-        string texte, IReadOnlyList<StyleSpan> fragments, StyleEffectif commun,
-        IMetriques metriques)
+        string texte, IReadOnlyList<StyleSpan> fragments, StyleEffectif commun)
     {
         var unites = new List<Unite>();
-        var normalise = texte.Replace("\r\n", "\n").Replace('\r', '\n');
 
-        // Les fragments repèrent des positions dans le texte d'origine ; la
-        // normalisation des fins de ligne peut les décaler. On découpe donc le texte
-        // d'origine, puis on traite les retours à la ligne dans les morceaux obtenus.
+        // Les morceaux de style se suivent et couvrent le texte : chacun commence où
+        // finit le précédent.
+        var debutDuMorceau = 0;
         foreach (var (morceau, style) in StyleEffectif.Decouper(texte, fragments, commun))
         {
-            var propre = morceau.Replace("\r\n", "\n").Replace('\r', '\n');
-            var debut = 0;
+            var finDuMorceau = debutDuMorceau + morceau.Length;
+            var segment = debutDuMorceau;
 
-            while (debut <= propre.Length)
+            for (var i = debutDuMorceau; i < finDuMorceau; i++)
             {
-                var saut = propre.IndexOf('\n', debut);
-                var segment = saut < 0 ? propre[debut..] : propre[debut..saut];
+                if (texte[i] is not ('\n' or '\r')) continue;
 
-                foreach (var mot in Mots(segment))
+                foreach (var (mot, debut) in Mots(texte, segment, i))
                 {
-                    unites.Add(new Unite(mot, style, FinDeLigne: false));
+                    unites.Add(new Unite(mot, style, FinDeLigne: false, debut, mot.Length));
                 }
 
-                if (saut < 0) break;
-                unites.Add(new Unite(string.Empty, style, FinDeLigne: true));
-                debut = saut + 1;
+                segment = i + 1;
+
+                // Le « \r » d'un « \r\n » ne ferme rien, même au bout d'un fragment : c'est
+                // le « \n » qui ferme, et le saut couvre les deux.
+                if (texte[i] == '\r' && i + 1 < texte.Length && texte[i + 1] == '\n') continue;
+                var saut = texte[i] == '\n' && i > 0 && texte[i - 1] == '\r' ? i - 1 : i;
+                unites.Add(new Unite(string.Empty, style, FinDeLigne: true, saut, i + 1 - saut));
             }
+
+            foreach (var (mot, debut) in Mots(texte, segment, finDuMorceau))
+            {
+                unites.Add(new Unite(mot, style, FinDeLigne: false, debut, mot.Length));
+            }
+
+            debutDuMorceau = finDuMorceau;
         }
 
-        _ = normalise;
         return unites;
     }
 
-    /// <summary>
-    /// Les mots d'un segment, chacun avec les espaces qui le suivent : garder l'espace
-    /// attaché évite de le réinventer au moment de recoller, et de perdre les espaces
-    /// multiples que l'auteur a voulus.
-    /// </summary>
     /// <summary>
     /// Intervalle des taquets par défaut, en points : un demi-pouce, comme Publisher.
     ///
@@ -425,25 +504,29 @@ public static class Compositeur
         return suivant > x ? suivant : x + IntervalleTaquet;
     }
 
-    private static IEnumerable<string> Mots(string segment)
+    /// <summary>
+    /// Les mots du segment [<paramref name="debut"/>, <paramref name="fin"/>) du texte,
+    /// chacun avec les espaces qui le suivent et sa position : garder l'espace attaché
+    /// évite de le réinventer au moment de recoller, et de perdre les espaces multiples
+    /// que l'auteur a voulus.
+    /// </summary>
+    private static IEnumerable<(string Mot, int Debut)> Mots(string texte, int debut, int fin)
     {
-        var debut = 0;
-
-        while (debut < segment.Length)
+        while (debut < fin)
         {
             // La tabulation se détache du mot qui la suit : sa largeur se calcule au
             // moment de la poser, pas au moment de la mesurer.
-            if (segment[debut] == '\t') { yield return "\t"; debut++; continue; }
+            if (texte[debut] == '\t') { yield return ("\t", debut); debut++; continue; }
 
-            var fin = segment.IndexOfAny([' ', '\t'], debut);
-            if (fin < 0) { yield return segment[debut..]; yield break; }
+            var blanc = texte.IndexOfAny([' ', '\t'], debut, fin - debut);
+            if (blanc < 0) { yield return (texte[debut..fin], debut); yield break; }
 
-            if (segment[fin] == '\t') { yield return segment[debut..fin]; debut = fin; continue; }
+            if (texte[blanc] == '\t') { yield return (texte[debut..blanc], debut); debut = blanc; continue; }
 
-            var apres = fin;
-            while (apres < segment.Length && segment[apres] == ' ') apres++;
+            var apres = blanc;
+            while (apres < fin && texte[apres] == ' ') apres++;
 
-            yield return segment[debut..apres];
+            yield return (texte[debut..apres], debut);
             debut = apres;
         }
     }
@@ -589,6 +672,129 @@ public static class Compositeur
 
         return etendues;
     }
+
+    /// <summary>
+    /// L'abscisse du point d'insertion placé avant le caractère <paramref name="position"/>
+    /// du texte, sur une ligne posée : comptée depuis l'origine de la ligne — l'abscisse où
+    /// le rendu pose son premier morceau, fer appliqué —, comme <see cref="Soulignes"/>
+    /// (poste N3). C'est le curseur, le clic, la sélection : la vue y ajoute l'origine et la
+    /// ligne de base qu'elle a posées.
+    ///
+    /// Trois pièges, chacun réglé ici une fois pour toutes plutôt que dans chaque appelant :
+    ///
+    /// **Une tabulation n'a pas de glyphe** : elle avance jusqu'au taquet. Le point qui la
+    /// suit est au début du morceau suivant, là où la composition l'a posé, et non à la
+    /// chasse d'un caractère de tabulation.
+    ///
+    /// **Une ligne justifiée élargit ses blancs** : le point qui suit un blanc élargi est au
+    /// début du mot suivant, décalage compris. À l'intérieur d'un morceau, rien n'est élargi
+    /// — un morceau est un mot suivi de ses espaces, et le blanc élargi est le dernier.
+    ///
+    /// **Les blancs rognés pendent** au bout de la ligne : ceux de sa fin, et la tête
+    /// blanche d'un mot renvoyé. Ils ne comptent pas dans sa largeur et ne se dessinent pas,
+    /// mais chacun a sa place après le dernier morceau, mesurée au style de celui-ci — qu'ils
+    /// prolongent —, une tabulation pendante avançant au taquet. Une ligne sans morceau — un
+    /// paragraphe vide, une ligne de blancs — n'a que des blancs pendants : ils se mesurent
+    /// au style <paramref name="commun"/>, celui que la composition lui donne pour sa
+    /// hauteur.
+    ///
+    /// Une position est ramenée dans la plage de la ligne ; une position au milieu d'une
+    /// paire de substitution ne désigne aucun caractère et se ramène au début de la paire.
+    /// <paramref name="decalages"/> est ce que <see cref="Decalages"/> rend pour une ligne
+    /// justifiée, et des zéros sinon, tels que le rendu les a employés.
+    /// </summary>
+    public static double Abscisse(
+        LigneComposee ligne, IReadOnlyList<double> decalages, int position,
+        string texte, StyleEffectif commun, IMetriques metriques)
+    {
+        position = Math.Clamp(position, ligne.Debut, ligne.Fin);
+        if (position > ligne.Debut && DansUnePaire(texte, position)) position--;
+
+        var morceaux = ligne.Morceaux;
+        for (var m = 0; m < morceaux.Count; m++)
+        {
+            var morceau = morceaux[m];
+            var dedans = position - morceau.Debut;
+            if (dedans >= morceau.Texte.Length) continue;
+
+            // Le début d'un morceau est son abscisse, telle que le rendu la pose ; un point
+            // plus loin dans le morceau, la chasse de ce qui le précède, à la règle du rendu.
+            var avant = dedans <= 0 ? 0 : metriques.Largeur(morceau.Texte[..dedans], morceau.Style);
+            return morceau.X + decalages[m] + avant;
+        }
+
+        if (morceaux.Count == 0)
+        {
+            return Pendants(texte, ligne.Debut, position, commun, depart: 0, metriques);
+        }
+
+        var dernier = morceaux[^1];
+        var bout = dernier.X + dernier.Largeur;
+        return decalages[^1] + bout
+               + Pendants(texte, dernier.Debut + dernier.Texte.Length, position, dernier.Style, bout, metriques);
+    }
+
+    /// <summary>
+    /// La position de la ligne la plus proche d'une abscisse comptée depuis l'origine de la
+    /// ligne — l'inverse de <see cref="Abscisse"/>, qui croît d'une position à la suivante :
+    /// une abscisse avant la ligne rend son début, après elle sa fin, et entre deux
+    /// positions la plus proche, la première à égalité. Les positions sont celles de la
+    /// plage de la ligne, bornes comprises — sa fin aussi pour une ligne renvoyée, où elle
+    /// est le début de la suivante : un clic à droite d'une ligne pose le point au bout de
+    /// ce qu'elle porte. Jamais le milieu d'une paire de substitution.
+    /// </summary>
+    public static int PositionLaPlusProche(
+        LigneComposee ligne, IReadOnlyList<double> decalages, double abscisse,
+        string texte, StyleEffectif commun, IMetriques metriques)
+    {
+        double X(int p) => Abscisse(ligne, decalages, p, texte, commun, metriques);
+
+        var bas = ligne.Debut;
+        var haut = ligne.Fin;
+        if (abscisse <= X(bas)) return bas;
+        if (abscisse >= X(haut)) return haut;
+
+        // X(bas) < abscisse <= X(haut) : on resserre jusqu'à deux positions voisines.
+        while (haut - bas > 1)
+        {
+            var milieu = bas + (haut - bas) / 2;
+            if (X(milieu) < abscisse) bas = milieu;
+            else haut = milieu;
+        }
+
+        // « haut » n'est jamais au milieu d'une paire : son abscisse est celle du début de
+        // la paire, qui est sous l'abscisse cherchée. « bas » peut l'être : on prend le
+        // début de la paire, à la même abscisse.
+        if (bas > ligne.Debut && DansUnePaire(texte, bas)) bas--;
+        return abscisse - X(bas) <= X(haut) - abscisse ? bas : haut;
+    }
+
+    /// <summary>
+    /// La chasse des blancs pendants de <paramref name="depuis"/> à
+    /// <paramref name="jusqua"/>, posés à partir de l'abscisse <paramref name="depart"/>
+    /// de la ligne non justifiée — celle d'où la composition compte ses taquets.
+    /// </summary>
+    private static double Pendants(
+        string texte, int depuis, int jusqua, StyleEffectif style, double depart, IMetriques metriques)
+    {
+        var x = depart;
+        var suite = depuis;
+        for (var i = depuis; i < jusqua; i++)
+        {
+            if (texte[i] != '\t') continue;
+            if (suite < i) x += metriques.Largeur(texte[suite..i], style);
+            x = ProchainTaquet(x);
+            suite = i + 1;
+        }
+
+        if (suite < jusqua) x += metriques.Largeur(texte[suite..jusqua], style);
+        return x - depart;
+    }
+
+    /// <summary>La position tombe-t-elle entre les deux moitiés d'une paire de substitution ?</summary>
+    private static bool DansUnePaire(string texte, int position) =>
+        position > 0 && position < texte.Length
+                     && char.IsLowSurrogate(texte[position]) && char.IsHighSurrogate(texte[position - 1]);
 
     /// <summary>
     /// Hauteur qu'un texte composé réclame, colonnes comprises : celle de la colonne la

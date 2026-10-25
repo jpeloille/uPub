@@ -14,10 +14,11 @@ namespace MyPublisher.Views;
 
 /// <summary>
 /// Ce qu'un contrôle a besoin de savoir d'un bloc de texte pour le dessiner : ses
-/// lignes composées et la zone qu'il leur laisse.
+/// lignes composées, la zone qu'il leur laisse, et le style commun résolu par la charte —
+/// celui d'une ligne sans morceau, que la composition lui donne pour sa hauteur (poste N3).
 /// </summary>
 public readonly record struct TexteMesure(
-    IReadOnlyList<LigneComposee> Lignes, double Largeur, double Hauteur);
+    IReadOnlyList<LigneComposee> Lignes, double Largeur, double Hauteur, StyleEffectif Commun);
 
 /// <summary>
 /// Base des contrôles qui regardent un bloc de texte : le texte lui-même
@@ -138,11 +139,22 @@ public abstract class ControleDeBloc : Control
     /// Compose le bloc pour la place que le bloc se donne. Les deux contrôles
     /// passent par ici : le texte tracé et le marqueur qui dit qu'il déborde doivent
     /// parler de la même composition, sinon l'un signalerait ce que l'autre ne montre
-    /// pas.
+    /// pas. Un texte vide ne compose rien.
     /// </summary>
-    protected TexteMesure? Mesurer(Compositeur.IMetriques metriques)
+    protected TexteMesure? Mesurer(Compositeur.IMetriques metriques) =>
+        Mesurer(metriques, texteVideCompris: false);
+
+    /// <summary>
+    /// La même composition, où un texte vide, si <paramref name="texteVideCompris"/>,
+    /// compose la ligne qu'il aurait (<see cref="Compositeur.LigneDuTexteVide"/>) : rien ne
+    /// s'y dessine, mais le curseur s'y pose (poste N3). Le marqueur de débordement n'en
+    /// veut pas — un bloc vide ne déborde pas.
+    /// </summary>
+    protected TexteMesure? Mesurer(Compositeur.IMetriques metriques, bool texteVideCompris)
     {
-        if (Bloc is not { } bloc || string.IsNullOrEmpty(Contenu)) return null;
+        if (Bloc is not { } bloc) return null;
+        var contenu = Contenu ?? string.Empty;
+        if (contenu.Length == 0 && !texteVideCompris) return null;
 
         // La place est celle du MODÈLE, comme à l'export, et non celle du contrôle : la
         // mise en page arrondit la taille d'un contrôle au pixel supérieur, et un bloc de
@@ -168,11 +180,14 @@ public abstract class ControleDeBloc : Control
         var fragments = Contenu == bloc.Text ? charte.Fragments(bloc.Spans) : (IReadOnlyList<StyleSpan>)[];
         var ecarts = Contenu == bloc.Text ? bloc.Paragraphs : (IReadOnlyList<ParagraphSpan>)[];
 
-        var lignes = Compositeur.Composer(
-            Contenu, fragments, commun, ecarts, bloc.Paragraph,
-            largeur, hauteur, bloc.Colonnage, bloc.LineHeight, metriques);
+        var lignes = contenu.Length == 0
+            ? [Compositeur.LigneDuTexteVide(
+                commun, ecarts, bloc.Paragraph, largeur, hauteur, bloc.Colonnage, bloc.LineHeight, metriques)]
+            : Compositeur.Composer(
+                contenu, fragments, commun, ecarts, bloc.Paragraph,
+                largeur, hauteur, bloc.Colonnage, bloc.LineHeight, metriques);
 
-        return new TexteMesure(lignes, largeur, hauteur);
+        return new TexteMesure(lignes, largeur, hauteur, commun);
     }
 }
 
