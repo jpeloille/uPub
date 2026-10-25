@@ -103,8 +103,8 @@ qui est aussi le seul moyen de les rendre visibles : une page blanche n'apprend 
 La fenêtre suit la maquette de `Maquettes/` (phase I du plan). De haut en bas : la
 **barre de menus**, avec le titre du document au milieu ; la **barre principale**, à
 icônes — document, annulation, alignement, ordre, zoom, et l'export en bouton plein à
-droite ; la **barre contextuelle**, qui dit ce qui est sélectionné ; l'espace de travail ;
-la **barre d'état**. L'espace de travail se lit de gauche à droite : le **rail d'outils**,
+droite ; la **barre contextuelle**, qui suit la sélection ; l'espace de travail ; la
+**barre d'état**. L'espace de travail se lit de gauche à droite : le **rail d'outils**,
 le panneau **Pages**, la **planche**, et le **dock** à quatre onglets — *Propriétés*,
 *Styles*, *Couleurs*, *Document*.
 
@@ -128,12 +128,23 @@ est un schéma, comme celles du catalogue de modèles — le texte en filets, à
 lignes de la page, l'image en cadre barré, les formes et le fond de page dans leurs
 couleurs —, et elle suit chaque retouche, l'annulation comprise.
 
+La **barre contextuelle** dit d'abord ce qui est sélectionné — « Bloc de texte »,
+« Image », « 3 blocs », « Page » quand rien ne l'est — et porte ce qui s'y rapporte. Pour
+un bloc de texte : la police, le corps, le gras, l'italique, le souligné — le bouton S
+bascule le trait simple, le chevron qui le suit propose le double, l'épais et « mots
+seuls » —, les quatre alignements, l'interligne en multiple et la couleur du texte, que
+sa vignette ouvre. Un tableau y a la même mise en forme, sans l'alignement, qui est celui
+de chaque case. Un groupe s'y dissocie, plusieurs blocs s'y alignent et s'y répartissent.
+Ce que la barre porte, le dock ne le porte plus. Chaque clic y est un pas d'annulation ;
+`Échap` quitte un de ses champs et rend les lettres seules aux outils.
+
 L'onglet *Propriétés* montre le bloc sélectionné en sections repliables : Position et
-taille, puis ce qui est propre au type — pour un bloc de texte, Cadre de texte, Caractère,
+taille, puis ce qui est propre au type — pour un bloc de texte, Cadre de texte,
 Paragraphe et Contenu —, puis Fond et contour. Une section fermée le reste d'un bloc à
 l'autre, le temps de la session. Les longueurs portent leur unité dans le champ
 (« 52,0 mm ») ; on les saisit avec ou sans elle, à la virgule comme au point. Chaque champ,
-quel que soit son onglet, est **un pas d'annulation**. La case **Conserver les
+quel que soit son onglet — et chaque champ de la barre contextuelle —, est **un pas
+d'annulation**. La case **Conserver les
 proportions**, réglage de la session et non du document, fait garder au bloc son rapport
 quand on tire un coin ou qu'on saisit sa largeur ou sa hauteur ; les poignées de côté ne le
 gardent pas, et `Maj` pendant le glissé fait l'inverse de la case. *Styles* et *Couleurs* portent les
@@ -205,9 +216,10 @@ Fenêtre masque aussi l'un ou l'autre.
   plus épais, et « mots seuls », qui ne passe pas sous les blancs. Il se pose au bloc ou
   à une portion, se dessine à la place et à l'épaisseur que la police donne (sa table
   `post`), à l'écran comme au PDF, et passe sous les blancs qu'une ligne justifiée
-  élargit. Un `.pub` importé garde le sien. La commande « Souligné » bascule le trait
-  simple du bloc sélectionné ; son bouton et son raccourci viennent avec la barre
-  contextuelle.
+  élargit. Un `.pub` importé garde le sien. Le bouton S de la barre contextuelle,
+  `Ctrl+U` et *Texte ▸ Souligné* basculent le trait simple du bloc sélectionné — ou
+  retirent son souligné, quelle qu'en soit la sorte ; le chevron du bouton pose le
+  double, l'épais ou « mots seuls ».
 - **Retraits et espacement de paragraphe** : retrait à gauche, à droite, et retrait de
   première ligne — négatif, il fait pendre cette ligne à gauche des suivantes, ce qui
   est la façon d'aligner une liste à puces. Plus un espace avant et un espace après le
@@ -287,7 +299,8 @@ Fenêtre masque aussi l'un ou l'autre.
   décochée — par rapport à la page pour un bloc seul et aux blocs entre eux dès
   qu'ils sont plusieurs.
 - Annulation / rétablissement sur 60 pas, couvrant aussi bien les gestes à la
-  souris que les champs du dock, quel que soit leur onglet.
+  souris que les champs du dock, quel que soit leur onglet, et ceux de la barre
+  contextuelle.
 - Enregistrement au format `.mypub` (JSON lisible) et export PDF.
 - **Un dossier de travail se déplace sans casser ses images** : les images rangées à
   côté du document — ou sous son dossier — y sont référencées relativement à lui.
@@ -311,9 +324,9 @@ Fenêtre masque aussi l'un ou l'autre.
   employée ». Une substitution muette ne dégrade pas seulement l'allure — sur une
   fiche de procédure, elle remplace une flèche par une lettre. Il ne nomme que les
   polices qu'il dessine : un fragment entièrement recouvert par un autre ne dit rien.
-  Au dock, la liste des polices propose aussi celles que le document emploie sans
-  que la machine les ait, marquées « (absente) » : sélectionner un tel bloc ne touche
-  pas à sa police.
+  Dans la barre contextuelle, la liste des polices propose aussi celles que le document
+  emploie sans que la machine les ait, marquées « (absente) » : sélectionner un tel bloc
+  ne touche pas à sa police.
 
 ## Raccourcis
 
@@ -326,7 +339,7 @@ Fenêtre masque aussi l'un ou l'autre.
 | `Ctrl+A` | Sélectionner tous les blocs de la page |
 | `Ctrl+Maj+G` / `Ctrl+Maj+H` | Grouper / Dissocier |
 | `Ctrl+Maj+F` / `Ctrl+Maj+B` | Premier plan / Arrière-plan |
-| `Ctrl+G` / `Ctrl+I` | Gras / Italique du bloc de texte sélectionné |
+| `Ctrl+G` / `Ctrl+I` / `Ctrl+U` | Gras / Italique / Souligné du bloc de texte sélectionné |
 | `Ctrl+F1` | Replier les panneaux, puis les rendre |
 | `Suppr` | Supprimer la sélection |
 | Flèches | Déplacer de 3 pt (`Maj` : 0,5 pt) |
@@ -334,7 +347,7 @@ Fenêtre masque aussi l'un ou l'autre.
 | `V` / `T` / `H` / `R` / `E` / `L` / `B` / `Z` | Outil sélection / texte / titre / rectangle / ellipse / ligne / tableau / loupe |
 | `Espace` tenu | La main : un glissé fait défiler la planche, sans changer d'outil (hors saisie, et pas quand un bouton a le focus) |
 | Clic, `Alt` + clic de la loupe | Zoom avant, zoom arrière, autour du point visé |
-| `Échap` | Désarme l'outil, sinon désélectionne |
+| `Échap` | Désarme l'outil, sinon désélectionne ; dans un champ de la barre contextuelle, le quitte |
 | Double-clic | Éditer le texte d'un bloc |
 | `Ctrl` ou `Maj` + clic | Ajoute un bloc à la sélection, ou l'en retire |
 | `Alt` pendant le déplacement | Désactive l'aimantation |
@@ -529,10 +542,11 @@ partout ailleurs — à l'écran, à l'export — un chemin d'image est absolu.
   retape le texte ; l'annulation du document le rend, au caractère près.
 - Les fragments de style se lisent, s'écrivent et se rendent, mais ne se saisissent pas
   encore à la souris : on ne peut pas sélectionner trois mots dans un bloc pour les
-  mettre en gras. Le dock, le menu Texte et `Ctrl+G` agissent sur le bloc entier.
+  mettre en gras. La barre contextuelle, le menu Texte et `Ctrl+G` agissent sur le bloc
+  entier.
 - L'alignement, les retraits et l'espacement varient d'un paragraphe à l'autre — un
-  document Publisher importé les garde, et ils s'affichent et s'exportent —, mais le
-  dock ne règle que le bloc entier.
+  document Publisher importé les garde, et ils s'affichent et s'exportent —, mais la
+  barre contextuelle et le dock ne règlent que le bloc entier.
 - La coupure des lignes se décide, à l'écran comme au PDF, sur la plus large des deux
   mesures, et sur la largeur du bloc telle que le modèle la donne. Ce qui est vérifié,
   par `Scripts/comparer-mots.sh` dans la recette de Q13 : aucune ligne coupée

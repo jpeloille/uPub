@@ -1,15 +1,98 @@
+using System;
+using System.Linq;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
+using Avalonia.Input;
+using Avalonia.Interactivity;
+using Avalonia.VisualTree;
+using MyPublisher.ViewModels;
 
 namespace MyPublisher.Views;
 
 /// <summary>
-/// La barre contextuelle (phase I). Le poste I2 y pose la pastille ; le poste I3 la
+/// La barre contextuelle (phase I). Le poste I2 y a posé la pastille ; le poste I3 la
 /// remplit. Voir l'en-tête de <c>BarreContextuelle.axaml</c>.
 /// </summary>
 public partial class BarreContextuelle : UserControl
 {
+    /// <summary>Le sélecteur de couleur ouvert sous sa vignette, le temps de sa transaction.</summary>
+    private FlyoutBase? _couleurOuverte;
+
     public BarreContextuelle()
     {
         InitializeComponent();
+        AddHandler(KeyDownEvent, SurTouche, RoutingStrategies.Bubble);
+
+        // Le bloc change sous un sélecteur ouvert — un clic sur la planche, une annulation :
+        // le sélecteur se referme avec sa transaction, avant que le gabarit du bloc d'après
+        // ne remplace celui qui le portait.
+        ReglagesDuBloc.PropertyChanged += (_, e) =>
+        {
+            if (e.Property == ContentControl.ContentProperty) FermerLaCouleur();
+        };
+        DetachedFromVisualTree += (_, _) => FermerLaCouleur();
+    }
+
+    /// <summary>
+    /// <c>Échap</c> dans un champ de la barre rend la main à la planche : le champ perd le
+    /// focus, ce qu'on y a tapé est validé comme à toute sortie de champ, et la transaction
+    /// d'édition se referme avec lui en un pas d'annulation (règle 2). Les lettres seules
+    /// redeviennent alors des outils — <c>T</c> arme l'outil texte —, alors que pendant la
+    /// saisie elles s'écrivent dans le champ (règle 9 ; c'est la fenêtre qui les lui laisse,
+    /// <c>ConsumesTyping</c>).
+    ///
+    /// Sans cela, rien ne sortait du champ au clavier : la fenêtre laisse passer toutes les
+    /// touches d'un champ qui a le focus, <c>Échap</c> compris, et la lettre suivante
+    /// s'écrivait encore dans le corps. Une liste ouverte se referme d'abord : elle traite
+    /// son <c>Échap</c>, qui n'arrive pas jusqu'ici, et le suivant quitte le champ.
+    /// </summary>
+    private void SurTouche(object? sender, KeyEventArgs e)
+    {
+        if (e.Handled || e.Key != Key.Escape || e.KeyModifiers != KeyModifiers.None) return;
+        if (TopLevel.GetTopLevel(this)?.FocusManager is not { } focus) return;
+        if (focus.GetFocusedElement() is not Control champ || !champ.GetSelfAndVisualAncestors().Contains(this)) return;
+
+        focus.ClearFocus();
+        e.Handled = true;
+    }
+
+    // ------------------------------------------------------------ la couleur du texte
+
+    /// <summary>
+    /// Le sélecteur de couleur s'ouvre dans sa propre racine, hors de la barre : le focus
+    /// qu'il prend n'arrive pas jusqu'à elle, et la transaction que la fenêtre ouvre au focus
+    /// de la barre (règle 2) ne l'encadrait pas — la pastille choisie changeait le bloc sans
+    /// laisser de pas d'annulation. La transaction s'ouvre donc ici à l'ouverture du
+    /// sélecteur, et se referme à sa fermeture : un passage par le sélecteur est un geste,
+    /// et un pas.
+    ///
+    /// Un champ de la barre qui avait le focus le rend d'abord : sa saisie fait son pas à
+    /// elle, au lieu de se fondre dans celui de la couleur.
+    /// </summary>
+    private void SurCouleurOuverte(object? sender, EventArgs e)
+    {
+        if (_couleurOuverte is not null || DataContext is not MainWindowViewModel vm) return;
+
+        TopLevel.GetTopLevel(this)?.FocusManager?.ClearFocus();
+        _couleurOuverte = sender as FlyoutBase;
+        vm.BeginEdit();
+    }
+
+    private void SurCouleurFermee(object? sender, EventArgs e)
+    {
+        if (!ReferenceEquals(sender, _couleurOuverte)) return;
+
+        _couleurOuverte = null;
+        (DataContext as MainWindowViewModel)?.CommitEdit();
+    }
+
+    private void FermerLaCouleur()
+    {
+        if (_couleurOuverte is not { } volet) return;
+
+        volet.Hide();
+        // Un sélecteur dont la vignette a déjà quitté l'arbre peut se refermer sans le dire :
+        // la transaction ne reste pas ouverte pour autant.
+        SurCouleurFermee(volet, EventArgs.Empty);
     }
 }

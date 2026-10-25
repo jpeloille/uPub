@@ -14,11 +14,11 @@
 #
 #   Scripts/eprouver-le-juge.sh            # tous les sabotages
 #   Scripts/eprouver-le-juge.sh 'motif'    # ceux dont l'intitulé, ou le garde-fou attendu,
-#                                          # répond au motif (grep -E) : « I2|B7 » joue ceux
-#                                          # que la recette I2-B7 doit attraper, « I7 » ceux du
-#                                          # poste I7, dont le garde-fou porte le code
-#                                          # (« I7-souligne »). Un motif qui ne retient rien
-#                                          # est un échec, pas un succès
+#                                          # répond au motif (grep -E) : le garde-fou porte
+#                                          # le code du poste (« I7-souligne »), si bien que
+#                                          # « I7 » retient les sabotages du poste I7, et
+#                                          # « I2|B7 » ceux que la recette I2-B7 doit attraper.
+#                                          # Un motif qui ne retient rien est un échec, pas un succès
 #   Scripts/eprouver-le-juge.sh --cibles   # sans rien saboter : chaque texte visé est-il
 #                                          # présent, et une seule fois ? (quelques secondes)
 #   Scripts/eprouver-le-juge.sh --tranche 2/4 [motif]
@@ -1754,12 +1754,13 @@ if [ -n "$filtre" ] && [ "$rang" = 0 ]; then
 fi
 
 echo
-# Rien d'éprouvé n'est pas une épreuve réussie : un motif qui ne retient aucun sabotage — ou
-# une tranche vide — sortait en vert sur « 0 sabotages, 0 attrapés ».
+# Rien d'éprouvé n'est pas une épreuve réussie : un motif qui ne retient aucun sabotage — une
+# faute de frappe, un motif qui cherche le code du poste là où il n'est pas — ou une tranche
+# vide sortait en vert sur « 0 sabotages, 0 attrapés ».
 if [ "$sabotages" = 0 ]; then
     portee=""
     [ -n "$filtre" ] && portee=" par le motif « $filtre »"
-    [ "$tranches" != 1 ] && portee="$portee dans la tranche $tranche/$tranches"
+    [ "$tranches" != 1 ] && portee="$portee dans la tranche $tranche/$tranches ($rang retenus en tout)"
     echo "ÉCHEC : aucun sabotage retenu$portee — rien n'a été éprouvé." >&2
     exit 1
 fi

@@ -261,7 +261,7 @@ public class JeuxTests
         var pastille = selecteur.GetVisualDescendants().OfType<Button>()
             .Single(b => b.Tag is EmplacementDeCouleur.Accent3);
 
-        Cliquer(fenetre, pastille);
+        Rendu.Cliquer(pastille);
 
         Assert.Equal("scheme:accent3", ((SolidFill)forme.Fill!).Color);
         Assert.Equal("#FF654321", forme.Stroke);
@@ -284,7 +284,7 @@ public class JeuxTests
 
         var selecteur = fenetre.GetVisualDescendants().OfType<SelecteurDeCouleur>()
             .Single(s => ReferenceEquals(s.DataContext, forme) && s.Valeur == "#80123456");
-        Cliquer(fenetre, selecteur.GetVisualDescendants().OfType<Button>()
+        Rendu.Cliquer(selecteur.GetVisualDescendants().OfType<Button>()
             .Single(b => b.Tag is EmplacementDeCouleur.Accent3));
 
         Assert.Equal("scheme:accent3/80", ((SolidFill)forme.Fill!).Color);
@@ -406,18 +406,6 @@ public class JeuxTests
     }
 
     // ------------------------------------------------------------------ outils
-
-    private static void Cliquer(Window fenetre, Control cible)
-    {
-        cible.BringIntoView();
-        Rendu.Battre();
-
-        var centre = cible.TranslatePoint(new Point(cible.Bounds.Width / 2, cible.Bounds.Height / 2), fenetre)
-                     ?? throw new InvalidOperationException("la cible n'est pas dans la fenêtre");
-        fenetre.MouseDown(centre, MouseButton.Left);
-        fenetre.MouseUp(centre, MouseButton.Left);
-        Rendu.Battre();
-    }
 
     private static void AssertProche(string attendue, string obtenue, int seuil)
     {
