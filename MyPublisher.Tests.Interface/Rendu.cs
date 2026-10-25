@@ -4,6 +4,7 @@ using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless;
+using Avalonia.Input;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 using Avalonia.Threading;
@@ -58,6 +59,77 @@ public static class Rendu
     {
         for (var i = 0; i < tours; i++) Dispatcher.UIThread.RunJobs();
     }
+
+    /// <summary>
+    /// Un clic de la souris au centre d'un contrôle, dans la racine qui le porte : la
+    /// fenêtre, menus ouverts compris — le banc les pose sur elle, en surimpression.
+    ///
+    /// Trois copies de ces lignes vivaient dans <c>DispositionTests</c>, <c>JeuxTests</c> et
+    /// <c>BarreContextuelleTests</c>, avec le même défaut, que la suite entière faisait
+    /// tomber trois fois sur quatorze au poste I3 : un clic dans un menu tout juste ouvert,
+    /// ou sur un bouton que la barre venait d'échanger, passait à travers sans rien faire.
+    /// Les bornes n'y étaient pour rien — la mise en page était faite, le centre visé juste.
+    /// Ce qui retardait, c'est l'atteinte : Avalonia ne cherche pas le contrôle sous le
+    /// pointeur dans l'arbre visuel, mais dans la dernière image que le compositeur a
+    /// rendue. Or le compositeur ne prend un lot de changements qu'une fois le précédent
+    /// rendu, et le banc sans tête ne rend qu'une image avant chaque geste, une seule.
+    /// Mesuré le 25 octobre 2026 : au moment de chacun de ces clics, un lot attendait
+    /// encore son image ; il en fallait une, parfois deux, pour que le contrôle soit sous
+    /// son centre. Le menu des sortes du souligné n'était pas encore dans l'image, et la
+    /// pression allait à la règle, dessous. Le minuteur de rendu, à soixante images par
+    /// seconde, rattrapait souvent ce retard pendant un <see cref="Battre"/> — d'où un
+    /// échec qui ne venait qu'en suite entière, où les gestes s'enchaînent en moins d'une
+    /// image. L'application n'a pas ce défaut : son minuteur rend chaque lot à l'image
+    /// suivante, bien avant qu'une main ait pu viser l'entrée d'un menu qui s'ouvre.
+    ///
+    /// Le clic attend donc, image après image comme l'écran les rendrait, que le contrôle
+    /// soit celui que le pointeur atteint à son centre. S'il ne l'est jamais, c'est qu'autre
+    /// chose le couvre, et le test le dit au lieu de cliquer sur cette autre chose.
+    /// </summary>
+    public static void Cliquer(Control controle)
+    {
+        controle.BringIntoView();
+        var racine = controle.GetVisualRoot() as TopLevel ?? throw new InvalidOperationException("hors de l'arbre");
+        var centre = Viser(controle, racine);
+        racine.MouseDown(centre, MouseButton.Left);
+        racine.MouseUp(centre, MouseButton.Left);
+        Battre();
+    }
+
+    /// <summary>
+    /// Le centre d'un contrôle, une fois que l'image rendue l'y montre. L'atteinte est
+    /// cherchée comme la fenêtre la cherche quand un geste lui arrive
+    /// (<c>TopLevel.HandleInput</c>) : sans écarter les contrôles grisés.
+    /// </summary>
+    private static Point Viser(Control controle, TopLevel racine)
+    {
+        for (var image = 0; ; image++)
+        {
+            Battre();
+            var centre = controle.TranslatePoint(new Point(controle.Bounds.Width / 2, controle.Bounds.Height / 2), racine)
+                         ?? throw new InvalidOperationException($"« {Nom(controle)} » n'est pas dans sa racine");
+            var touche = racine.InputHitTest(centre, enabledElementsOnly: false) as Visual;
+            if (touche is not null && (ReferenceEquals(touche, controle) || touche.GetVisualAncestors().Contains(controle)))
+            {
+                return centre;
+            }
+
+            // Une ou deux images rattrapent un menu qui s'ouvre ; dix laissent passer une
+            // transition courte, pas un contrôle couvert.
+            Assert.True(image < 10,
+                $"un clic au centre de « {Nom(controle)} » ({centre}) tomberait sur « {(touche is null ? "rien" : Nom(touche))} »");
+            AvaloniaHeadlessPlatform.ForceRenderTimerTick();
+        }
+    }
+
+    /// <summary>Ce qui désigne un contrôle dans un message : son nom, son libellé de menu ou sa bulle.</summary>
+    private static string Nom(Visual visuel) => visuel switch
+    {
+        Control { Name: { Length: > 0 } nom } => nom,
+        MenuItem { Header: { } entete } => $"{entete}",
+        Control c when ToolTip.GetTip(c) is { } bulle => $"{bulle}",
+        _ => visuel.GetType().Name,
+    };
 
     /// <summary>
     /// Ouvre un onglet du dock — « Propriétés », « Styles », « Couleurs » ou « Document » —,

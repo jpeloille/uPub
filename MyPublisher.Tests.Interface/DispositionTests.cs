@@ -55,20 +55,6 @@ public class DispositionTests
         return new Rect(coin, controle.Bounds.Size);
     }
 
-    /// <summary>
-    /// Un clic de la souris au centre d'un contrôle, dans la racine qui le porte : la
-    /// fenêtre, ou le menu déroulant ouvert, qui est une racine à lui.
-    /// </summary>
-    private static void Cliquer(Control controle)
-    {
-        var racine = controle.GetVisualRoot() as TopLevel ?? throw new InvalidOperationException("hors de l'arbre");
-        var centre = controle.TranslatePoint(new Point(controle.Bounds.Width / 2, controle.Bounds.Height / 2), racine)
-                     ?? throw new InvalidOperationException();
-        racine.MouseDown(centre, MouseButton.Left);
-        racine.MouseUp(centre, MouseButton.Left);
-        Rendu.Battre();
-    }
-
     /// <summary>Le mélange d'une couleur à 40 % sur le blanc : un contrôle grisé, sur un fond blanc.</summary>
     private static Color Grisee(Color couleur)
     {
@@ -537,10 +523,10 @@ public class DispositionTests
             var bord = Trouver<Border>(fenetre, panneau);
             foreach (var visible in new[] { false, true })
             {
-                Cliquer(menu);
+                Rendu.Cliquer(menu);
                 var entree = menu.Items.OfType<MenuItem>().Single(m => m.Name == nom);
                 Assert.True(entree.IsEffectivelyVisible, $"« {entree.Header} » n'est pas à l'écran, menu ouvert");
-                Cliquer(entree);
+                Rendu.Cliquer(entree);
                 Assert.Equal(visible, entree.IsChecked);
                 Assert.Equal(visible, bord.IsVisible);
             }
@@ -549,15 +535,15 @@ public class DispositionTests
         Assert.True(vm.PanneauPagesVisible && vm.DockVisible);
 
         // Masqué à la main, rendu par le raccourci.
-        Cliquer(menu);
-        Cliquer(menu.Items.OfType<MenuItem>().Single(m => m.Name == "MenuDock"));
+        Rendu.Cliquer(menu);
+        Rendu.Cliquer(menu.Items.OfType<MenuItem>().Single(m => m.Name == "MenuDock"));
         Assert.False(Trouver<Border>(fenetre, "Dock").IsVisible);
         fenetre.KeyPressQwerty(PhysicalKey.F1, RawInputModifiers.Control);
         fenetre.KeyPressQwerty(PhysicalKey.F1, RawInputModifiers.Control);
         Rendu.Battre();
         Assert.False(Trouver<Border>(fenetre, "Dock").IsVisible);
-        Cliquer(menu);
-        Cliquer(menu.Items.OfType<MenuItem>().Single(m => m.Name == "MenuDock"));
+        Rendu.Cliquer(menu);
+        Rendu.Cliquer(menu.Items.OfType<MenuItem>().Single(m => m.Name == "MenuDock"));
         Assert.True(Trouver<Border>(fenetre, "Dock").IsVisible);
         Assert.False(vm.CanUndo);
     }
@@ -620,7 +606,7 @@ public class DispositionTests
         Assert.False(retablir.IsEffectivelyEnabled);
         Assert.Equal("banc.mypub — modifié", titre.Text);
 
-        Cliquer(annuler);
+        Rendu.Cliquer(annuler);
         Assert.Equal(60, vm.CurrentPage!.Frames[0].X, precision: 9);
         Assert.False(vm.CanUndo);
         Assert.True(vm.CanRedo);
@@ -772,10 +758,7 @@ public class DispositionTests
         Assert.True(colonnes.IsEffectivelyVisible);
 
         // Un clic sur le titre ferme la section.
-        var centre = Boite(fenetre, cadre).Center;
-        fenetre.MouseDown(centre, MouseButton.Left);
-        fenetre.MouseUp(centre, MouseButton.Left);
-        Rendu.Battre();
+        Rendu.Cliquer(cadre);
         Assert.False(Titre("Cadre de texte").IsChecked);
         Assert.False(Trouver<NumericUpDown>(fenetre, "NombreDeColonnes").IsEffectivelyVisible);
 

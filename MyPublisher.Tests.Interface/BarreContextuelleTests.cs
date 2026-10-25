@@ -44,17 +44,6 @@ public class BarreContextuelleTests
     private static Point Origine(Window fenetre) =>
         Trouver<Panel>(fenetre, "PageRoot").TranslatePoint(new Point(0, 0), fenetre) ?? throw new InvalidOperationException();
 
-    /// <summary>Un clic de la souris au centre d'un contrôle, dans la racine qui le porte : la fenêtre, ou un menu ouvert.</summary>
-    private static void Cliquer(Control controle)
-    {
-        var racine = controle.GetVisualRoot() as TopLevel ?? throw new InvalidOperationException("hors de l'arbre");
-        var centre = controle.TranslatePoint(new Point(controle.Bounds.Width / 2, controle.Bounds.Height / 2), racine)
-                     ?? throw new InvalidOperationException();
-        racine.MouseDown(centre, MouseButton.Left);
-        racine.MouseUp(centre, MouseButton.Left);
-        Rendu.Battre();
-    }
-
     /// <summary>Tape dans un champ numérique, valide, et rend le focus — comme on quitte un champ.</summary>
     private static void Saisir(Window fenetre, NumericUpDown champ, string texte)
     {
@@ -167,7 +156,7 @@ public class BarreContextuelleTests
         var milieu = bloc.X + bloc.Width / 2;
         Assert.True(MilieuDeLEncre(Rendu.Encre(fenetre), bloc) < milieu - 60, "le texte n'était pas à gauche");
 
-        Cliquer(Bouton<ToggleButton>(fenetre, "Centrer le texte")!);
+        Rendu.Cliquer(Bouton<ToggleButton>(fenetre, "Centrer le texte")!);
 
         Assert.Equal(TextAlign.Center, bloc.Align);
         Assert.True(Bouton<ToggleButton>(fenetre, "Centrer le texte")!.IsChecked);
@@ -269,11 +258,11 @@ public class BarreContextuelleTests
         bloc = UnSeulPas(vm, avant, "interligne");
 
         // La couleur : la vignette ouvre le sélecteur, dont une pastille écrit la référence.
-        Cliquer(Trouver<Button>(Barre(fenetre), "CouleurDuTexte"));
+        Rendu.Cliquer(Trouver<Button>(Barre(fenetre), "CouleurDuTexte"));
         var selecteur = SelecteurOuvert(fenetre);
         Assert.Same(bloc, selecteur.DataContext);
-        Cliquer(selecteur.GetVisualDescendants().OfType<Button>().Single(b => b.Tag is EmplacementDeCouleur.Accent1));
-        Cliquer(selecteur.GetVisualDescendants().OfType<Button>().Single(b => b.Tag is EmplacementDeCouleur.Accent3));
+        Rendu.Cliquer(selecteur.GetVisualDescendants().OfType<Button>().Single(b => b.Tag is EmplacementDeCouleur.Accent1));
+        Rendu.Cliquer(selecteur.GetVisualDescendants().OfType<Button>().Single(b => b.Tag is EmplacementDeCouleur.Accent3));
         Assert.Equal("scheme:accent3", bloc.Foreground);
         // Le passage par le sélecteur est un geste : son pas se fait à sa fermeture, et les
         // deux pastilles essayées n'en font qu'un.
@@ -290,7 +279,7 @@ public class BarreContextuelleTests
                      ("Aligner le texte à droite", b => b.Align == TextAlign.Right),
                  })
         {
-            Cliquer(Bouton<ToggleButton>(fenetre, bulle)!);
+            Rendu.Cliquer(Bouton<ToggleButton>(fenetre, bulle)!);
             Assert.True(verifier(bloc), bulle);
             bloc = UnSeulPas(vm, avant, bulle);
         }
@@ -309,8 +298,8 @@ public class BarreContextuelleTests
         Rendu.Battre();
         var avant = DocumentSerializer.ToJson(vm.Document);
 
-        Cliquer(Trouver<Button>(Barre(fenetre), "CouleurDuTexte"));
-        Cliquer(SelecteurOuvert(fenetre).GetVisualDescendants().OfType<Button>().Single(x => x.Tag is EmplacementDeCouleur.Accent2));
+        Rendu.Cliquer(Trouver<Button>(Barre(fenetre), "CouleurDuTexte"));
+        Rendu.Cliquer(SelecteurOuvert(fenetre).GetVisualDescendants().OfType<Button>().Single(x => x.Tag is EmplacementDeCouleur.Accent2));
         Assert.Equal("scheme:accent2", a.Foreground);
 
         var surB = Origine(fenetre) + new Point(b.X + 20, b.Y + 20);
@@ -362,16 +351,16 @@ public class BarreContextuelleTests
         // « Centrer » sur un texte centré : rien ne change, et le bouton reste coché — un
         // bouton à bascule ordinaire se serait décoché tout seul.
         var centre = Bouton<ToggleButton>(fenetre, "Centrer le texte")!;
-        Cliquer(centre);
+        Rendu.Cliquer(centre);
         Assert.True(centre.IsChecked);
         Assert.Equal(TextAlign.Center, bloc.Align);
         Assert.False(vm.CanUndo, "réécrire l'alignement déjà là a fait un pas");
 
         // Deux clics sur G : deux pas, et le bouton suit le bloc à chacun.
         var gras = Bouton<ToggleButton>(fenetre, "Gras (Ctrl+G)")!;
-        Cliquer(gras);
+        Rendu.Cliquer(gras);
         Assert.True(gras.IsChecked);
-        Cliquer(gras);
+        Rendu.Cliquer(gras);
         Assert.False(gras.IsChecked);
         Assert.False(bloc.Bold);
         vm.UndoCommand.Execute(null);
@@ -414,21 +403,21 @@ public class BarreContextuelleTests
         // Les sortes : le chevron ouvre le menu, « Double » pose le double en un pas, et
         // l'entrée est cochée ; le bouton, lui, bascule — il retire le double d'un clic.
         var sortes = Assert.IsType<MenuFlyout>(Trouver<Button>(Barre(fenetre), "SortesDuSouligne").Flyout);
-        Cliquer(Trouver<Button>(Barre(fenetre), "SortesDuSouligne"));
+        Rendu.Cliquer(Trouver<Button>(Barre(fenetre), "SortesDuSouligne"));
         Assert.True(sortes.IsOpen, "le chevron n'ouvre pas les sortes");
         var entrees = sortes.Items.OfType<MenuItem>().ToList();
         Assert.Equal(new[] { "Trait simple", "Double", "Épais", "Mots seuls" }, entrees.Select(e => e.Header as string));
-        Cliquer(entrees[1]);
+        Rendu.Cliquer(entrees[1]);
         Assert.Equal(new Souligne(TraitDeSouligne.Solid, @double: true), bloc.Underline);
         Assert.True(Bouton<ToggleButton>(fenetre, "Souligné (Ctrl+U)")!.IsChecked);
         Assert.True(vm.CanUndo);
         // Rouvert, le menu coche la sorte du bloc.
-        Cliquer(Trouver<Button>(Barre(fenetre), "SortesDuSouligne"));
+        Rendu.Cliquer(Trouver<Button>(Barre(fenetre), "SortesDuSouligne"));
         Assert.Equal(new bool?[] { false, true, false, false }, entrees.Select(e => (bool?)e.IsChecked));
         sortes.Hide();
         Rendu.Battre();
 
-        Cliquer(Bouton<ToggleButton>(fenetre, "Souligné (Ctrl+U)")!);
+        Rendu.Cliquer(Bouton<ToggleButton>(fenetre, "Souligné (Ctrl+U)")!);
         Assert.Equal(Souligne.Aucun, bloc.Underline);
         vm.UndoCommand.Execute(null);
         Rendu.Battre();
@@ -527,7 +516,7 @@ public class BarreContextuelleTests
                 s => s.IsEffectivelyVisible && s.Valeur == "#FF123457");
             var vignette = Barre(fenetre).GetVisualDescendants().OfType<Button>()
                 .Single(b => Equals(ToolTip.GetTip(b), "Couleur du texte") && b.IsEffectivelyVisible);
-            Cliquer(vignette);
+            Rendu.Cliquer(vignette);
             var selecteur = Assert.IsType<SelecteurDeCouleur>(Assert.IsType<Flyout>(vignette.Flyout).Content);
             Assert.Same(frame, selecteur.DataContext);
             Assert.Equal(frame is TextFrame texte ? texte.Foreground : ((TableFrame)frame).Foreground, selecteur.Valeur);
@@ -565,7 +554,7 @@ public class BarreContextuelleTests
         Assert.Null(Bouton<ToggleButton>(fenetre, "Souligné (Ctrl+U)"));
         Assert.Null(Bouton<ToggleButton>(fenetre, "Centrer le texte"));
 
-        Cliquer(Bouton<ToggleButton>(fenetre, "Italique (Ctrl+I)")!);
+        Rendu.Cliquer(Bouton<ToggleButton>(fenetre, "Italique (Ctrl+I)")!);
         Assert.True(tableau.Italic);
         Assert.True(vm.CanUndo);
         vm.UndoCommand.Execute(null);
@@ -619,13 +608,13 @@ public class BarreContextuelleTests
         Voir("2 blocs", police: false, commandes: true, dissocier: false);
         // Aligner en haut, d'un clic dans la barre : les deux blocs ensemble, en un pas.
         b.Y = 80;
-        Cliquer(barre.GetVisualDescendants().OfType<Button>().Single(x => Equals(ToolTip.GetTip(x), "Aligner en haut")));
+        Rendu.Cliquer(barre.GetVisualDescendants().OfType<Button>().Single(x => Equals(ToolTip.GetTip(x), "Aligner en haut")));
         Assert.Equal(a.Y, b.Y);
 
         vm.SelectOnly(groupe);
         Rendu.Battre();
         Voir("Groupe", police: false, commandes: false, dissocier: true);
-        Cliquer(Bouton<Button>(fenetre, "Dissocier (Ctrl+Maj+H)")!);
+        Rendu.Cliquer(Bouton<Button>(fenetre, "Dissocier (Ctrl+Maj+H)")!);
         Assert.DoesNotContain(groupe, vm.CurrentPage!.Frames);
 
         vm.SelectOnly(null);
