@@ -24,7 +24,7 @@ Où en est chaque poste. Une seule règle pour la colonne d'avancement : un post
 on écrit ce qui est fait plutôt qu'un pourcentage inventé — un poste à moitié écrit n'est
 pas un poste à moitié livré. La colonne se met à jour dans le commit qui clôt le poste.
 
-*Dernière mise à jour : 25 octobre 2026 (I2 livré avec B7 : la disposition de la fenêtre, reprise après relecture ; I7 livré : le souligné et ses sortes, le modèle seul ; I6 livré : naviguer dans la planche, et garder les proportions, relecture et juge après fusion).*
+*Dernière mise à jour : 25 octobre 2026 (I2 livré avec B7 : la disposition de la fenêtre ; I4 livré : la planche, et Q10 avec elle ; I6 livré : naviguer dans la planche, et garder les proportions ; I7 livré : le souligné et ses sortes, le modèle seul ; relecture et juge après fusion pour I6).*
 
 | Poste | Intitulé | Avancement | Où ça en est |
 |---|---|:---:|---|
@@ -79,7 +79,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **Q7** | La recette de A6 sur le cas réel | **100 %** | La recette trace ses blocs à l'outil, au pointeur, comme la main ; renommée `A6-Q7-taille-dans-la-barre`, dans `Scripts/recettes/` |
 | **Q8** | N'avertir que des polices dessinées | **100 %** | La passe des polices lit les styles composés (`StyleEffectif.Decouper`) sur le contenu que `DrawText` compose, cases de tableau comprises ; un fragment recouvert, blanc, hors du texte, ou celui d'un champ n'avertit plus. Une seule règle `Fragments` pour la passe et le dessin. Recette dans `Scripts/recettes/` |
 | **Q9** | Retirer `AbsoluteLineHeight` | **100 %** | La vignette des modèles lit les lignes de la composition ; repris après relecture : fer, découpe et filet de champ éprouvés, filets gardés en mémoire ; recette dans `Scripts/recettes/` |
-| **Q10** | Saisir une poignée hors de la page | 0 % | Relevé en A1 |
+| **Q10** | Saisir une poignée hors de la page | **100 %** | Absorbé par I4 : la couche de saisie couvre la planche ; la rotation d'un bloc collé en haut, règles masquées, ou retourné en bas, et la poignée d'angle d'un bloc à Y = 0 se saisissent sur le gris, sans poser de repère, et la règle garde son geste. Recette `I4-Q10-planche` dans `Scripts/recettes/` |
 | **Q11** | La liste des blocs défile pendant le glissé | 0 % | Relevé en A4 |
 | **Q12** | Dépendance vulnérable | **100 %** | `Tmds.DBus.Protocol` relevé à 0.21.3 (correctif rétroporté) par une référence directe dans `MyPublisher` ; Avalonia reste en 11.3.9. Recette à part, `Scripts/verifier-dependances.sh`, parce qu'elle demande le réseau : elle lit la base des vulnérabilités et le prouve sur un projet témoin |
 | **Q13** | Couper la ligne au même mot à l'écran et au PDF | **100 %** | Polices de l'écran résolues par fontconfig, variante par variante (l'italique absent penché des deux côtés) ; coupure sur la plus large des deux mesures, sur la taille du modèle ; 0 ligne coupée autrement sur l'exemple, ATA 21, les fiches et `recette-coupure.mypub`, dans trois ordres de chargement ; outil `comparer-mots.sh`. Recette dans `Scripts/recettes/` |
@@ -96,7 +96,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **I1** | Apparence de l'interface | **100 %** | `Views/Apparence.axaml` — pas « charte », qui nomme le jeu du document —, chargée par `App.axaml` : les 26 couleurs de l'interface de la maquette, une fois chacune et sous leur nom ; cinq classes aux tailles et aux couleurs de la feuille de style de la maquette, dont le bouton-icône de 30 × 30 plein d'accent quand il est actif ; 35 icônes au tracé de la maquette, à la couleur courante, une par emploi. L'écran d'aujourd'hui ne change pas d'un pixel. La recette tient la liste des vues de la phase et le poste de chaque icône, que les postes suivants complètent ; une vue qui cite l'apparence ou écrit en dur une de ses couleurs sans être dans la liste la fait échouer. Recette dans `Scripts/recettes/` |
 | **I2** | Disposition de la fenêtre | **100 %** | La fenêtre de la maquette, de haut en bas. Barre de menus : la marque, le titre du document centré, deux menus neufs — Texte (gras `Ctrl+G`, italique `Ctrl+I`, les quatre alignements, « Importer un te_xte… ») et Fenêtre (les deux panneaux, et B7). Barre principale à icônes : Annuler et Rétablir grisés sur un historique vide, mais pas pendant une saisie qui a déjà changé le bloc ; « Page entière » posé pour I6. La place de la barre contextuelle, de hauteur constante, et sa pastille, dans son propre fichier pour I3. Rail d'outils, sans Main, Zoom ni Ligne avant leur geste. Panneau Pages, dont l'entrée est un contrôle à part pour I5. Dock à quatre onglets, sections repliables retenues le temps de la session, longueurs en millimètres, vignettes de Fond et contour, « Blocs de la page » l'avant en tête. Barre d'état : la page, le format, le zoom en échelle logarithmique. Chaque champ, chaque onglet et chaque geste de la fenêtre fait un seul pas d'annulation ; les vingt-six icônes du poste servent. Repris après relecture : quatorze défauts, tous refermés. Recette dans `Scripts/recettes/` |
 | **I3** | Barre contextuelle | 0 % | Spécifié le 24 octobre 2026 ; lot 1 |
-| **I4** | Planche : règles fixes, projection, bulle de dimensions | 0 % | Spécifié le 24 octobre 2026 ; lot 1 |
+| **I4** | Planche : règles fixes, projection, bulle de dimensions | **100 %** | La planche de la maquette autour d'une page qui ne change pas d'un pixel : fond `#DCDFE4` et ombre double de la feuille ; règles fixes au bord de la zone visible, graduées de part et d'autre de la page — négatives avant elle, en Inter —, leur zéro lu sur `PageRoot` à tout zoom ; projection de l'emprise de la sélection en accent à 14 %, suivie pendant le geste ; repères libres tracés sur toute la planche, retirés dès qu'on les lâche hors de la page ; marges roses d'un pixel, cadre à 4 px qui tourne avec le bloc, poignées blanches bordées d'accent ; bulle de dimensions au tracé et au redimensionnement, d'accord avec la barre d'état. La couche de saisie couvre la planche — Q10 absorbé —, mais blocs et outils s'arrêtent au bord de la page. Repris après relecture, mesuré aussi à l'échelle 2 et à quatre zooms non entiers. Recette dans `Scripts/recettes/` |
 | **I5** | Vignettes de pages | 0 % | Spécifié le 24 octobre 2026 ; lot 1 |
 | **I6** | Main, zoom, page entière, proportions | **100 %** | La main du rail, ou `Espace` tenu hors saisie et hors bouton, fait glisser la planche — son seul défilement, sans bloc touché ni pas d'annulation —, main ouverte puis fermée, deux curseurs dessinés aux pinceaux de l'apparence. La loupe (`Z`) zoome d'un pas au clic, en arrière sous `Alt`, le point visé restant sous le pointeur ; `Ctrl`+molette de même, prise avant que la zone qui défile ne la consomme. « Page entière » tient la page dans la zone, marge de la planche déduite, mesurée après la mise en page, qui arrondit au pixel supérieur ; jamais d'office. « Conserver les proportions », état de la session : cochée, un coin tiré et la saisie de L ou de H — qui passent désormais par le modèle de vue — gardent le rapport du bloc, les côtés non, et `Maj` pendant le glissé fait l'inverse. Les deux icônes du poste servent. Neuf tests ; relecture et juge après fusion. Recette dans `Scripts/recettes/` |
 | **I7** | Souligné | **100 %** | Le souligné porte sa sorte — plein, pointillé, tiret, tiret long, tiret-point, tiret-point-point ou vague ; simple ou double, épais ou non, « mots seuls » — au bloc, au fragment, où `null` laisse celui du bloc, et dans le style effectif. Il s'écrit `false`, `true` pour le trait simple, ou en objet `{ Line, Double, Thick, WordsOnly }` ; `FormatVersion` ne change pas, Samples et Templates sont réenregistrés. Il se trace à l'écran et au PDF à la place et à l'épaisseur de la table `post`, sous la ligne de base de son morceau, exposant compris, et à la couleur de son texte ; seize des dix-sept sortes de libmspub s'importent, le double en double. La commande `SoulignerCommand` est dans `MainWindowViewModel.Souligne.cs`, sans bouton : le bouton S, `Ctrl+U` et le menu viennent de I3. Recette dans `Scripts/recettes/`, vingt-six sabotages au juge |
@@ -105,9 +105,9 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **D** | Moteur de composition | — | Décision non ouverte ; à rouvrir quand A, B et C sont livrées |
 
 **Par phase** — P : 4 sur 4 · A : 7 sur 15 · B : 4 sur 7 · C : 7 sur 9 · R : 5 sur 7 ·
-Q : 16 sur 23 · I : 4 sur 9 · D : non planifié.
+Q : 17 sur 23 · I : 5 sur 9 · D : non planifié.
 
-Soit **47 postes sur 74**. Le 24 octobre 2026, la phase I en a ajouté neuf, tirés de la
+Soit **49 postes sur 74**. Le 24 octobre 2026, la phase I en a ajouté neuf, tirés de la
 maquette de la nouvelle interface. Le compte avait doublé le 11 octobre 2026 sans que rien ne
 recule : il porte désormais les onze postes de l'audit des fiches (A8 à A15, B6, B7,
 C8), deux postes que les documents réels demandaient (R6, R7), et la phase Q, qui
@@ -3463,6 +3463,13 @@ la règle son geste de C2b.
 d'angle redimensionne sans poser de repère ; un clic sur la règle loin de tout bloc
 pose toujours un repère. Effort : moyen.
 
+*Absorbé par I4, le 25 octobre 2026.* La planche de I4 rend les règles fixes, hors de la
+zone qui défile, et étend la couche de saisie à toute la planche : c'était ce poste. Ses
+trois cas sont joués par un test de la planche (`PlancheTests`), et un repère se pose
+toujours d'un clic sur la règle. La règle ne sert plus la poignée de rotation, qui ne
+s'y dessine plus jamais. Les blocs et les outils, eux, s'arrêtent au bord de la page. La
+recette de I4 devient `I4-Q10-planche.sh`.
+
 ### Q11 — La liste des blocs défile pendant le glissé
 
 La liste ne construit que les éléments visibles : on ne peut pas tirer le quarantième
@@ -4770,6 +4777,54 @@ et non celui de l'interface. Le poste dit d'où il le tire, sans changer un pixe
 
 Effort : moyen.
 
+*Repris le 25 octobre 2026, après relecture.* La relecture a trouvé six défauts de
+l'écran et huit trous du filet, chacun montré par une mesure ou par un sabotage qui
+passait ; ils sont refermés.
+- **La couche de saisie étendue faisait du gris un lieu de tracé et de prise.** Elle
+  couvre la planche pour qu'une poignée hors de la page se saisisse. Mais un outil armé
+  y posait, d'un clic à côté de la page, un bloc hors de la page, que `PageRoot` rogne
+  tout entier — et la frappe partait dans un texte caché ; et un clic sur le gris
+  prenait, et menait, la part rognée d'un bloc qui déborde. Blocs et outils s'arrêtent
+  au bord de la page, comme avant le poste : sur le gris, un outil armé reste armé et un
+  clic libère la sélection.
+- **Un repère lâché sur le gris à moins de six pixels de la page restait**, aimanté sur
+  le bord. Le retrait se décide sur la place où le pointeur le mène, et non sur celle où
+  l'aimantation le pose. Et le repère traîné ne se décroche plus du bord un mouvement sur
+  deux : il n'écarte des candidats que lui-même, et non toute valeur égale à la sienne.
+- **Hors de l'échelle 1, repères et zéro des règles tombaient un pixel à côté.** Sous la
+  mise à l'échelle, l'arrondi de mise en page décale `PageRoot` d'un pixel dans ce qui le
+  porte, et une position passée par l'échelle tombe parfois juste sous l'entier —
+  127,9999995 pour 128 à 64 %. Les deux sont lus sur `PageRoot` et arrondis avec un
+  millième de rattrapage. Avalonia se trompe en portant un point de `PageRoot` droit sur
+  une règle, qui n'est pas son ancêtre — 293,6 px au lieu de 281 à 30 % — : le coin est
+  lu dans `Surface`, puis porté.
+- **La bulle se posait décentrée** à la prise d'une poignée et au premier mouvement d'un
+  tracé : mesurée cachée, elle valait zéro ; déjà mesurée, elle gardait la largeur de son
+  texte d'avant. Elle est rendue visible, puis remesurée de force.
+- **Les nombres des règles étaient dans la police du système** — `Typeface.Default`,
+  Noto Sans sur la machine du banc —, et non en Inter, que la règle hérite désormais de
+  la fenêtre, comme la bulle.
+
+Le filet ne mesurait tout qu'à l'échelle 1, où un point vaut un pixel : une marge d'un
+point au lieu d'un pixel, une règle sans l'échelle y passaient. Règles, projection, marge
+et repère sont repris à l'échelle 2, repères et zéro des règles à 30 %, 41 %, 64 % et
+« 100 % » atteint par les pas du zoom. La bulle est comparée à la barre sur un bloc
+tourné, et en français, la culture posée le temps du test (règle 8) ; les libellés des
+règles sont lus, signe compris ; le repère horizontal est lu à droite de la page et le
+vertical sous elle ; la projection couvre une sélection de deux blocs.
+
+Le test du repère qui traverse la planche échouait une passe complète sur deux. La cause
+est établie : l'image composée du banc était en retard d'un tic — le repère manquait tout
+entier à la première image et se trouvait, entier, à la suivante. L'écran était juste ;
+l'image des tests de la planche fait passer un tic de plus, comme celle des tests de
+l'apparence, et trente passes complètes de suite sont vertes.
+
+Dix-sept sabotages de plus au juge, vingt-neuf en tout, chacun attendu par la recette ou
+par `PlancheTests`. `eprouver-le-juge.sh I4` les joue seuls : leurs intitulés portent
+désormais le code du poste, et le juge refuse un motif qui ne désigne aucun sabotage, au
+lieu de se dire satisfait de zéro. Q10 était fait sans être dit : il est clos avec I4,
+dont la recette devient `I4-Q10-planche.sh`.
+
 #### I5 — Les vignettes de pages
 
 Chaque page du panneau Pages se montre en vignette de 96 px de large, au rapport de la
@@ -4975,7 +5030,7 @@ touchent, le second attend la salve suivante.
 | **Lot 2** | I7 · I8 · A10 · I9, en série | Ce que le modèle doit apprendre pour la maquette ; tous touchent `Frame.cs`. *Repris le 24 octobre 2026* : chaque poste part dès que ce qu'il touche est fusionné, sans attendre la fin du lot 1. I7, le modèle seul, part avec I2 et I4 ; I3 part après I2 et I7 et pose le bouton S ; I8 après I7 et I6 ; A10 après I8 ; I9 après A10 |
 | **3** | R6 · A8 · A9 · A15 · B4 | Le paragraphe — dans la barre contextuelle de I3 —, et des postes courts, indépendants les uns des autres. B7 et Q23 sont passés au lot 1 |
 | **4** | R7 · A12 · C7 · B3 + B6 | Le texte riche à la souris, et ce qui reprend les commandes des salves précédentes |
-| **5** | A11 · A13 · Q10 · Q11 · Q21 · Q22 | La géométrie et la couche de saisie. A10 est passé au lot 2 |
+| **5** | A11 · A13 · Q11 · Q21 · Q22 | La géométrie et la couche de saisie. A10 est passé au lot 2 ; Q10, absorbé par I4, est clos |
 | **6** | A14 · C8 · Q18 · Q19 | Les deux postes à risque, chacun précédé de son essai |
 | **D** | Note de décision | Rédigée après la salve 6 ; **la décision revient au propriétaire du projet** |
 
