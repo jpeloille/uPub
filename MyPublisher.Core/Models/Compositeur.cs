@@ -703,6 +703,14 @@ public static class Compositeur
     /// l'avance de la dernière ligne, espace après le paragraphe compris, qui ne sont pas
     /// de l'encre. Un bloc dont seuls ce demi-interligne ou cet espace sortent porte le
     /// marqueur et zéro ligne en excédent ; zéro ne s'annonce pas.
+    ///
+    /// L'encre se compte dans l'avance de la ligne, jamais au-delà. À un interligne
+    /// inférieur à 1 — la barre descend à 0,5 —, la hauteur naturelle déborde l'avance en
+    /// haut et en bas, et ce débord est le chevauchement des lignes d'un titre serré, pas
+    /// une ligne perdue : la première ligne n'est pas comptée pour ce qui sort au-dessus
+    /// du bloc, la dernière ne l'est pas pour ses jambages sous le bord. Compté, il faisait
+    /// annoncer une ligne en excédent sur un bloc que le marqueur laissait en paix
+    /// (relecture du 26 octobre 2026).
     /// </summary>
     public static int LignesEnExcedent(
         IReadOnlyList<LigneComposee> lignes, double disponible, double margeBasse,
@@ -710,7 +718,7 @@ public static class Compositeur
     {
         var descente = Decalage(lignes, disponible, fer);
         var bord = disponible + margeBasse + SeuilDebordement;
-        return lignes.Count(l => descente + l.Haut + (l.Avance + l.Naturelle) / 2 > bord);
+        return lignes.Count(l => descente + l.Haut + (l.Avance + Math.Min(l.Naturelle, l.Avance)) / 2 > bord);
     }
 
     /// <summary>

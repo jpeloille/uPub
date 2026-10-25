@@ -260,6 +260,111 @@ public class ExcedentEcranTests
         Assert.Null(TexteDeLAlerte(fenetre));
     }
 
+    // Les trois tests qui suivent ont été écrits à la relecture du 26 octobre 2026 : le
+    // compte du dock compose le bloc de son côté, et rien ne vérifiait qu'il le compose
+    // avec ce que la planche lui donne — ses fragments, ses écarts de paragraphe, le jeu de
+    // polices du document, le contenu résolu d'un champ —, ni qu'il le recompose quand l'un
+    // d'eux change sans que la sélection change. Neuf sabotages du juge passaient.
+
+    [AvaloniaFact]
+    public void L_alerte_suit_les_fragments_et_les_ecarts_du_bloc()
+    {
+        // Quatre lignes de 12,8 pt dans 60 : tout tient.
+        var bloc = Bloc(Lignes(4));
+        var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(bloc));
+        vm.SelectOnly(bloc);
+        Rendu.Battre();
+        Assert.Null(TexteDeLAlerte(fenetre));
+
+        // La première ligne en corps 40 : haute de 46,6 pt, elle pousse la troisième et la
+        // quatrième hors du bloc. C'est un fragment de style, pas un réglage du bloc.
+        bloc.Spans.Add(new StyleSpan { Start = 0, Length = "Ligne 1".Length, FontSize = 40 });
+        Rendu.Battre();
+        Assert.Equal("Texte en excédent : 2 lignes", TexteDeLAlerte(fenetre));
+        Assert.Equal(CompteALExport(bloc, Charte.Defaut), vm.LignesEnExcedent);
+
+        bloc.Spans.Clear();
+        Rendu.Battre();
+        Assert.Null(TexteDeLAlerte(fenetre));
+
+        // Trente points après le premier paragraphe : la troisième ligne commence à 55,6 et
+        // finit hors du bloc, la quatrième aussi.
+        bloc.Paragraphs.Add(new ParagraphSpan { Start = 0, SpaceAfter = 30 });
+        Rendu.Battre();
+        Assert.Equal("Texte en excédent : 2 lignes", TexteDeLAlerte(fenetre));
+        Assert.Equal(CompteALExport(bloc, Charte.Defaut), vm.LignesEnExcedent);
+
+        bloc.Paragraphs.Clear();
+        Rendu.Battre();
+        Assert.Null(TexteDeLAlerte(fenetre));
+    }
+
+    [AvaloniaFact]
+    public void L_alerte_suit_le_jeu_de_polices_et_son_annulation()
+    {
+        // Un texte dans la police de corps du jeu. « Sobre », le jeu par défaut, le compose en
+        // DejaVu Sans ; « Édition », en Liberation Sans, plus étroite : le même texte y prend
+        // moins de lignes, et en perd moins.
+        var bloc = Bloc(TexteCourant);
+        bloc.FontFamily = ReferenceDuJeu.Police(EmplacementDePolice.Body);
+        var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(bloc));
+        vm.SelectOnly(bloc);
+        Rendu.Battre();
+
+        var sobre = vm.LignesEnExcedent;
+        Assert.True(sobre > 0, "le texte tient déjà dans « Sobre » : le test ne prouve rien");
+        Assert.Equal(CompteALExport(bloc, vm.Document.Charte), sobre);
+
+        vm.ChosenFontScheme = JeuxPredefinis.PolicesNommees("Édition");
+        Rendu.Battre();
+        var edition = vm.LignesEnExcedent;
+        Assert.Same(bloc, vm.SingleSelected);
+        Assert.NotEqual(sobre, edition);
+        Assert.Equal(CompteALExport(bloc, vm.Document.Charte), edition);
+        Assert.Equal(edition == 0 ? null : edition == 1 ? "Texte en excédent : 1 ligne" : $"Texte en excédent : {edition} lignes",
+            TexteDeLAlerte(fenetre));
+
+        // L'annulation relit le document, et son jeu d'avant : le compte revient.
+        vm.UndoCommand.Execute(null);
+        Rendu.Battre();
+        Assert.Equal("Sobre", vm.Document.FontScheme.Name);
+        Assert.Equal(sobre, vm.LignesEnExcedent);
+    }
+
+    [AvaloniaFact]
+    public void Un_champ_se_compte_par_ce_qu_il_affiche_et_suit_les_coordonnees()
+    {
+        // Le texte saisi de ce bloc déborde ; mais il porte le numéro de page, et la planche
+        // n'en montre que « 1 ».
+        var numero = Bloc(Lignes(8));
+        numero.Field = FieldKind.PageNumber;
+        var adresse = Bloc("");
+        adresse.X = 300;
+        adresse.Field = FieldKind.ContactAddress;
+        var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(numero, adresse));
+
+        vm.SelectOnly(numero);
+        Rendu.Battre();
+        Assert.Null(TexteDeLAlerte(fenetre));
+        Assert.Equal(0, vm.LignesEnExcedent);
+
+        // L'adresse vient du jeu de coordonnées : vide, rien ne déborde ; une adresse de huit
+        // lignes, adoptée sans changer la sélection, en perd quatre.
+        vm.SelectOnly(adresse);
+        Rendu.Battre();
+        Assert.Null(TexteDeLAlerte(fenetre));
+
+        vm.ApplyContacts(new BusinessInfoStore { Sets = [new BusinessInfo { Address = Lignes(8) }] });
+        Rendu.Battre();
+        Assert.Same(adresse, vm.SingleSelected);
+        Assert.Equal("Texte en excédent : 4 lignes", TexteDeLAlerte(fenetre));
+    }
+
+    /// <summary>Un paragraphe courant, assez long pour que la largeur de la police décide des lignes.</summary>
+    private const string TexteCourant =
+        "Le compte du dock suit le jeu de polices du document : on le change sans toucher au bloc, " +
+        "et les mots se répartissent autrement sur les lignes, que la police soit large ou étroite.";
+
     [AvaloniaFact]
     public void Le_bloc_quitte_ne_retient_pas_le_modele_de_vue()
     {

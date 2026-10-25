@@ -103,7 +103,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **I6** | Main, zoom, page entière, proportions | **100 %** | La main du rail, ou `Espace` tenu hors saisie et hors bouton, fait glisser la planche — son seul défilement, sans bloc touché ni pas d'annulation —, main ouverte puis fermée, deux curseurs dessinés aux pinceaux de l'apparence. La loupe (`Z`) zoome d'un pas au clic, en arrière sous `Alt`, le point visé restant sous le pointeur ; `Ctrl`+molette de même, prise avant que la zone qui défile ne la consomme. « Page entière » tient la page dans la zone, marge de la planche déduite, mesurée après la mise en page, qui arrondit au pixel supérieur ; jamais d'office. « Conserver les proportions », état de la session : cochée, un coin tiré et la saisie de L ou de H — qui passent désormais par le modèle de vue — gardent le rapport du bloc, les côtés non, et `Maj` pendant le glissé fait l'inverse. Les deux icônes du poste servent. Neuf tests ; relecture et juge après fusion. Recette dans `Scripts/recettes/` |
 | **I7** | Souligné | **100 %** | Le souligné porte sa sorte — plein, pointillé, tiret, tiret long, tiret-point, tiret-point-point ou vague ; simple ou double, épais ou non, « mots seuls » — au bloc, au fragment, où `null` laisse celui du bloc, et dans le style effectif. Il s'écrit `false`, `true` pour le trait simple, ou en objet `{ Line, Double, Thick, WordsOnly }` ; `FormatVersion` ne change pas, Samples et Templates sont réenregistrés. Il se trace à l'écran et au PDF à la place et à l'épaisseur de la table `post`, sous la ligne de base de son morceau, exposant compris, et à la couleur de son texte ; seize des dix-sept sortes de libmspub s'importent, le double en double. La commande `SoulignerCommand` est dans `MainWindowViewModel.Souligne.cs`, sans bouton : le bouton S, `Ctrl+U` et le menu viennent de I3. Recette dans `Scripts/recettes/`, vingt-six sabotages au juge |
 | **I8** | Masquer un bloc | **100 %** | L'œil de « Blocs de la page », à la place que I2 avait réservée : un clic masque le bloc, ou le montre, en un pas d'annulation, même pendant une saisie, sans le sélectionner ni prendre le focus ; le document est « modifié ». `Visible` sur tout bloc, `true` par défaut ; `FormatVersion` ne change pas, Samples et Templates sont réenregistrés — un « Visible » de plus par bloc, rien d'autre. Masqué, le bloc n'est dessiné ni dans `PageRoot` ni au PDF, ni ce que porte un groupe masqué ; rien de lui n'avertit, ni sa police (Q8), ni son image, ni son débordement ; son filet n'élargit plus la découpe d'un groupe. Un clic à sa place prend le bloc d'en dessous ; l'alignement et la répartition ne le voient pas, « Tout sélectionner » non plus. Il reste dans la liste, l'œil fermé, et s'y sélectionne, sans cadre ni poignée sur la planche ; masqué, il quitte une sélection multiple. Une recopie le garde, dissocier un groupe masqué laisse ses blocs masqués ; les cases d'un tableau ne portent pas la propriété. La vignette de la page (I5) ne le dessine pas. L'icône du poste sert. Vingt-cinq tests ; relecture et juge après fusion. Recette dans `Scripts/recettes/` |
-| **I9** | Compter les lignes en excédent | **100 %** | `Compositeur.LignesEnExcedent`, fonction pure du noyau : les lignes dont l'encre — la hauteur naturelle, au milieu de l'avance — sort du bloc, au calage vertical (A7), au bord du bloc et non de la zone (C6), au seuil du marqueur de A2 ; les colonnes et les blocs tournés sans chemin à part. Le dock l'affiche à la section « Cadre de texte », dans la place que I2 avait réservée : « Texte en excédent : 4 lignes » au fond, à la couleur et à l'icône d'alerte de l'apparence, au singulier pour une ligne, rien à zéro ; il suit la frappe et chaque réglage du bloc sans changement de sélection, et ne touche pas au document. Le modèle de vue le porte dans `MainWindowViewModel.Excedent.cs`. Aucune clé sérialisée ; l'avertissement d'export et le relevé de P2 inchangés. Sur `recette-debordement.mypub` et sur une variante en colonnes, marges, interligne 1,5 et rotation, le compte du dock est celui des lignes absentes du PDF, bloc par bloc, lu par la commande `excedent` du banc. Dix-huit tests, douze purs et six sur la fenêtre ; recette dans `Scripts/recettes/`. Relecture et juge après fusion |
+| **I9** | Compter les lignes en excédent | **100 %** | `Compositeur.LignesEnExcedent`, fonction pure du noyau : les lignes dont l'encre — la hauteur naturelle, au milieu de l'avance — sort du bloc, au calage vertical (A7), au bord du bloc et non de la zone (C6), au seuil du marqueur de A2 ; les colonnes et les blocs tournés sans chemin à part. Le dock l'affiche à la section « Cadre de texte », dans la place que I2 avait réservée : « Texte en excédent : 4 lignes » au fond, à la couleur et à l'icône d'alerte de l'apparence, au singulier pour une ligne, rien à zéro ; il suit la frappe et chaque réglage du bloc sans changement de sélection, et ne touche pas au document. Le modèle de vue le porte dans `MainWindowViewModel.Excedent.cs`. Aucune clé sérialisée ; l'avertissement d'export et le relevé de P2 inchangés. Sur `recette-debordement.mypub` et sur une variante en colonnes, marges, interligne 1,5 et rotation, le compte du dock est celui des lignes absentes du PDF, bloc par bloc, lu par la commande `excedent` du banc. Vingt-deux tests, treize purs et neuf sur la fenêtre ; recette dans `Scripts/recettes/`. Relu et jugé le 26 octobre 2026 : à un interligne serré, le compte ne prend plus pour perdue une ligne que le marqueur laisse en paix ; trois tests de la fenêtre pour ce que le compte compose et écoute ; dix-sept sabotages au juge |
 | **N1** | Le banc des gestes | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 1 |
 | **N2** | Mettre en forme une plage, dans le noyau | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 1 |
 | **N3** | Chaque morceau composé sait d'où il vient | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 1 |
@@ -5441,6 +5441,41 @@ et que le dock ne compte rien. La variante de la recette le montre : « Interlig
 trois lignes en interligne 1,5 dans 55 pt, annoncé à 2,6 pt, aucune ligne absente. Aligner
 A2 sur l'encre changerait des avertissements de l'export : c'est au propriétaire d'en
 décider.
+
+*Repris le 26 octobre 2026 après relecture.* Un défaut, montré par un test pur écrit avant
+sa correction, et huit trous du filet.
+
+- **À un interligne serré, le compte annonçait une ligne que le marqueur laissait en
+  paix.** La barre descend à 0,5 ; sous 1, la hauteur naturelle d'une ligne déborde son
+  avance, en haut et en bas — c'est le chevauchement des lignes d'un titre serré. Le compte
+  prenait ce débord pour de l'encre perdue : quatre lignes à 0,8 dans un bloc qui tient
+  leurs avances — ni marqueur, ni avertissement à l'export, seul le bas des jambages de la
+  dernière sous le bord — en comptaient une en excédent. La promesse du poste, « une ligne
+  comptée fait toujours poser le marqueur », ne tenait qu'aux interlignes que son test
+  parcourait (1, 1,15 et 1,5). L'encre se compte désormais dans l'avance de la ligne, jamais
+  au-delà ; à l'interligne 1 et au-dessus rien ne change, et la recette donne contre le PDF
+  les mêmes comptes qu'avant (`Un_interligne_serre_ne_compte_pas_ce_que_le_marqueur_laisse_en_paix`,
+  qui reprend la boucle de la promesse à 0,5, 0,8 et 0,9).
+- **Le juge.** Le poste était fusionné sans un sabotage. Dix-sept sont posés : le compte pur
+  — l'avance pour l'encre, le bord de la zone pour celui du bloc, le seuil, le calage, et
+  l'interligne serré —, puis ce que le modèle de vue compose et écoute, et l'alerte. Huit
+  passaient avant la relecture : le compte compose le bloc de son côté, et rien ne vérifiait
+  qu'il le compose avec ce que la planche lui donne — fragments, écarts de paragraphe, jeu
+  de polices du document, contenu résolu d'un champ —, ni qu'il le recompose quand l'un
+  d'eux change sans que la sélection change. Trois tests d'interface les attrapent :
+  `L_alerte_suit_les_fragments_et_les_ecarts_du_bloc`,
+  `L_alerte_suit_le_jeu_de_polices_et_son_annulation` (« Sobre » puis « Édition », à la
+  police de corps plus étroite) et `Un_champ_se_compte_par_ce_qu_il_affiche_et_suit_les_coordonnees`
+  (le numéro de page d'un bloc dont le texte saisi déborderait ; une adresse de huit lignes
+  adoptée sans changer la sélection). Joué le 26 octobre 2026 : dix-sept sur dix-sept. La suite d'interface passe entière (287 tests), celle du noyau aussi (460), et la recette.
+- *Sans sabotage* : le cas « Document » de l'écoute ne se voit d'aucun geste — l'annulation
+  et l'ouverture changent la sélection après le document, et le compte suit par elle. Il est
+  redondant, et gardé.
+- *Soupçon, non montré* : le compte recompose le bloc à chaque propriété qu'il annonce, sa
+  position comprise ; un glissé le recompose à chaque pas du pointeur, à côté de la planche.
+  Q23 a mesuré une composition de 1 à 2,6 ms sur ATA 21.
+- *Question au propriétaire* : un bloc masqué (I8) pris dans la liste porte encore son
+  alerte au dock, alors que rien de lui ne s'imprime ni n'avertit ailleurs.
 
 ---
 

@@ -177,6 +177,39 @@ public class ExcedentTests
     }
 
     [Fact]
+    public void Un_interligne_serre_ne_compte_pas_ce_que_le_marqueur_laisse_en_paix()
+    {
+        // Interligne 0,8, que la barre permet (jusqu'à 0,5) : chaque ligne avance de 8 et sa
+        // hauteur naturelle, 10, déborde son avance d'un point en haut et en bas — c'est ce
+        // qui fait se chevaucher les lignes d'un titre serré. Quatre lignes dans 32 : leurs
+        // avances tiennent, le marqueur ne se pose pas, et la dernière ligne se lit — seul le
+        // bas de ses jambages passe sous le bord. Elle n'est pas en excédent. Le compte la
+        // disait perdue, et l'alerte annonçait une ligne que ni le marqueur ni l'export ne
+        // signalaient (trouvé par la relecture du 26 octobre 2026).
+        var lignes = Composer(Lignes(4), 32, interligne: 0.8);
+        Assert.False(Compositeur.Deborde(lignes, 32, 0, VerticalAlign.Top));
+        Assert.Equal(0, Excedent(lignes, 32));
+
+        // Une ligne de plus, dont l'avance sort du bloc : elle est en excédent, et le
+        // marqueur se pose.
+        lignes = Composer(Lignes(5), 32, interligne: 0.8);
+        Assert.True(Compositeur.Deborde(lignes, 32, 0, VerticalAlign.Top));
+        Assert.Equal(1, Excedent(lignes, 32));
+
+        // Et la promesse du test suivant tient aux interlignes serrés, sur toutes les
+        // hauteurs et à chaque calage.
+        foreach (var interligne in new[] { 0.5, 0.8, 0.9 })
+        foreach (var fer in Enum.GetValues<VerticalAlign>())
+        for (var hauteur = 1.0; hauteur <= 120; hauteur += 0.25)
+        {
+            var serrees = Composer(Lignes(9), hauteur, interligne: interligne);
+            var compte = Excedent(serrees, hauteur, fer: fer);
+            Assert.True(compte == 0 || Compositeur.Deborde(serrees, hauteur, 0, fer),
+                $"interligne {interligne}, {fer}, hauteur {hauteur} : {compte} ligne(s) sans marqueur");
+        }
+    }
+
+    [Fact]
     public void Une_ligne_comptee_fait_toujours_poser_le_marqueur()
     {
         // Sur toutes les hauteurs, à trois interlignes et trois calages : le compte ne
