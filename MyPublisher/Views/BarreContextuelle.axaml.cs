@@ -24,11 +24,11 @@ public partial class BarreContextuelle : UserControl
         AddHandler(KeyDownEvent, SurTouche, RoutingStrategies.Bubble);
 
         // Le bloc change sous un sélecteur ouvert — un clic sur la planche, une annulation :
-        // le sélecteur se referme avec sa transaction, avant que le gabarit du bloc d'après
-        // ne remplace celui qui le portait.
+        // le sélecteur se referme avec sa transaction, avant que le gabarit qui le portait
+        // ne passe au bloc d'après, ou ne se masque (Q23).
         ReglagesDuBloc.PropertyChanged += (_, e) =>
         {
-            if (e.Property == ContentControl.ContentProperty) FermerLaCouleur();
+            if (e.Property == GabaritsGardes.BlocProperty) FermerLaCouleur();
         };
         DetachedFromVisualTree += (_, _) => FermerLaCouleur();
     }
@@ -83,6 +83,17 @@ public partial class BarreContextuelle : UserControl
         if (!ReferenceEquals(sender, _couleurOuverte)) return;
 
         _couleurOuverte = null;
+
+        // Le volet refermé rend le focus au dernier champ qui l'avait dans la fenêtre. Un champ
+        // de la barre est gardé d'une sélection à l'autre depuis Q23 : il le reprenait, et la
+        // transaction que la fenêtre ouvre à son focus engloutissait celle de la couleur, qui
+        // ne faisait plus son pas. Il le rend aussitôt, comme à l'ouverture du sélecteur.
+        if (TopLevel.GetTopLevel(this)?.FocusManager is { } focus &&
+            focus.GetFocusedElement() is Control champ && champ.GetSelfAndVisualAncestors().Contains(this))
+        {
+            focus.ClearFocus();
+        }
+
         (DataContext as MainWindowViewModel)?.CommitEdit();
     }
 

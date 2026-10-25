@@ -96,10 +96,11 @@ public partial class MainWindow : Window
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        // Changer de sélection reconstruit les champs du panneau : le contrôle qui
-        // avait le focus quitte l'arbre visuel sans émettre LostFocus. Sans cette
-        // remise à zéro, le verrou resterait fermé et plus aucune édition ne serait
-        // annulable pour le reste de la session. Replier le dock fait de même.
+        // Changer de sélection masque les champs du panneau, ou les passe au bloc d'après
+        // (GabaritsGardes, Q23) : le contrôle qui avait le focus ne l'émet pas toujours en
+        // le perdant. Sans cette remise à zéro, le verrou resterait fermé et plus aucune
+        // édition ne serait annulable pour le reste de la session. Replier le dock fait de
+        // même.
         if (e.PropertyName is nameof(MainWindowViewModel.Selected) or nameof(MainWindowViewModel.DockVisible))
         {
             ClosePropertyEdit();
@@ -107,14 +108,25 @@ public partial class MainWindow : Window
 
         // Le bloc choisi sur la planche se montre dans « Blocs de la page », qui n'en
         // montre que six : la liste ne le fait pas d'elle-même quand la sélection lui
-        // arrive avant qu'elle ait construit ses lignes. Après la mise en page, donc.
+        // arrive avant qu'elle ait construit ses lignes. Après la mise en page, donc, et
+        // seulement si sa ligne n'est pas déjà en vue : la liste défile alors par une passe
+        // de mise en page entière, qui recycle et reconstruit chacune de ses lignes, même
+        // quand elle n'a pas à bouger — un dixième de la pression, mesuré au poste Q23.
         if (e.PropertyName == nameof(MainWindowViewModel.Selected) && _vm?.Selected is { } bloc)
         {
             Dispatcher.UIThread.Post(() =>
             {
-                if (ReferenceEquals(_vm?.Selected, bloc)) ListeDesBlocs.ScrollIntoView(bloc);
+                if (ReferenceEquals(_vm?.Selected, bloc) && !LigneEnVue(bloc)) ListeDesBlocs.ScrollIntoView(bloc);
             }, DispatcherPriority.Loaded);
         }
+    }
+
+    /// <summary>La ligne du bloc dans « Blocs de la page » est construite, et entière dans la liste.</summary>
+    private bool LigneEnVue(Frame bloc)
+    {
+        if (ListeDesBlocs.ContainerFromItem(bloc) is not Control { IsVisible: true } ligne) return false;
+        if (ligne.TranslatePoint(new Point(0, 0), ListeDesBlocs) is not { } haut) return false;
+        return haut.Y >= 0 && haut.Y + ligne.Bounds.Height <= ListeDesBlocs.Bounds.Height;
     }
 
     // ---------------------------------------------------------------- fichiers

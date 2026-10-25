@@ -113,9 +113,10 @@
                            Foreground="{StaticResource AccentSurvol}"/>
             </Border>
 
-            <!-- Ce que porte le bloc seul : chaque gabarit se lie au bloc, comme le dock. -->
-            <ContentControl x:Name="ReglagesDuBloc" Content="{Binding SingleSelected}" VerticalAlignment="Center">
-                <ContentControl.DataTemplates>
+            <!-- Ce que porte le bloc seul : chaque gabarit se lie au bloc, et il est gardé d'une
+                 sélection à l'autre, comme ceux du dock (poste Q23). -->
+            <views:GabaritsGardes x:Name="ReglagesDuBloc" Bloc="{Binding SingleSelected}" VerticalAlignment="Center">
+                <views:GabaritsGardes.DataTemplates>
 
                     <DataTemplate DataType="models:TextFrame">
                         <StackPanel Orientation="Horizontal" Spacing="6">
@@ -305,8 +306,8 @@
                     <DataTemplate DataType="models:Frame">
                         <Panel/>
                     </DataTemplate>
-                </ContentControl.DataTemplates>
-            </ContentControl>
+                </views:GabaritsGardes.DataTemplates>
+            </views:GabaritsGardes>
 
             <!-- Plusieurs blocs : les aligner entre eux — ou sur la page, ou les marges, selon
                  la case du menu Disposition — et les répartir, ce que le dock, qui ne montre
