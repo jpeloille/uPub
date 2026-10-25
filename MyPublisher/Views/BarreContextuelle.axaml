@@ -39,8 +39,11 @@
     <UserControl.Styles>
         <!-- Une commande à libellé de la barre — « Dissocier », « Gauche », « Répartir » :
              le « .menu » de la maquette, celui de son « Ajuster le texte » : corps 12,5,
-             rayon 4, sans bord, gris au survol. -->
+             rayon 4, sans bord, gris au survol. Elle ne prend pas le focus, comme les
+             boutons à état : pris, il ouvrait la transaction de la barre, et le pas de la
+             commande attendait que le focus la quitte (BarreContextuelle.axaml.cs). -->
         <Style Selector="Button.menu">
+            <Setter Property="Focusable" Value="False"/>
             <Setter Property="MinHeight" Value="0"/>
             <Setter Property="Padding" Value="8,4"/>
             <Setter Property="FontSize" Value="12.5"/>

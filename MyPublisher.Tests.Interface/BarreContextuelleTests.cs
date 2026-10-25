@@ -471,6 +471,114 @@ public class BarreContextuelleTests
         Assert.False(vm.CanUndo, "deux gestes, plus de deux pas");
     }
 
+    [AvaloniaFact]
+    public void Sans_bloc_de_texte_le_souligne_ne_s_offre_pas()
+    {
+        // Le menu Texte n'offre rien sans bloc de texte : le gras et l'italique s'y grisent
+        // sans un bloc qui porte du texte, les alignements sans un bloc de texte. Repris le
+        // 26 octobre 2026, après relecture : « Souligné », qui y est entré avec la barre,
+        // restait actif sur un tableau, une forme ou sans sélection, où il ne fait rien.
+        var bloc = Texte("Texte", 60, 60);
+        var tableau = Tableau(60, 300);
+        var forme = new ShapeFrame { Name = "Forme", X = 300, Y = 60, Width = 40, Height = 40 };
+        var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(bloc, tableau, forme));
+        var menus = Trouver<Menu>(fenetre, "Menus");
+        var menu = menus.Items.OfType<MenuItem>().Single(m => Equals(m.Header, "_Texte"));
+        var entree = menu.Items.OfType<MenuItem>().Single(m => Equals(m.Header, "_Souligné"));
+
+        // Une entrée de menu fermé ne relit pas sa commande : le menu est ouvert pour la lire.
+        bool Offert()
+        {
+            Rendu.Cliquer(menu);
+            Assert.True(entree.IsEffectivelyVisible, "le menu Texte ne s'est pas ouvert");
+            var offert = entree.IsEffectivelyEnabled;
+            menus.Close();
+            Rendu.Battre();
+            return offert;
+        }
+
+        foreach (var (selection, quoi) in new (Frame?, string)[] { (tableau, "un tableau"), (forme, "une forme"), (null, "rien") })
+        {
+            vm.SelectOnly(selection);
+            Rendu.Battre();
+            Assert.False(vm.SoulignerCommand.CanExecute(null), $"« Souligné » s'offre sur {quoi}");
+            Assert.False(Offert(), $"« Souligné » est actif au menu Texte sur {quoi}");
+        }
+
+        // Le bloc de texte repris, l'entrée se rallume, et le bouton S de la barre — gardé
+        // d'une sélection à l'autre (Q23) — se réactive avec la commande.
+        vm.SelectOnly(bloc);
+        Rendu.Battre();
+        Assert.True(Offert(), "« Souligné » reste grisé au menu Texte sur un bloc de texte");
+        Rendu.Cliquer(Bouton<ToggleButton>(fenetre, "Souligné (Ctrl+U)")!);
+        Assert.Equal(Souligne.Simple, bloc.Underline);
+    }
+
+    [AvaloniaFact]
+    public void Une_commande_de_la_barre_fait_son_pas_au_clic()
+    {
+        // Aligner, Répartir et Dissocier sont des commandes, comme celles de la barre
+        // principale : chaque clic fait son pas, aussitôt. Repris le 26 octobre 2026, après
+        // relecture : le bouton prenait le focus, la fenêtre ouvrait à ce focus la transaction
+        // de la barre (règle 2), et le pas de l'alignement attendait que le focus quitte la
+        // barre — la flèche frappée entre-temps s'y fondait, et une annulation défaisait les
+        // deux gestes à la fois.
+        var a = new ShapeFrame { Name = "A", X = 300, Y = 60, Width = 40, Height = 40 };
+        var b = new ShapeFrame { Name = "B", X = 360, Y = 80, Width = 40, Height = 40 };
+        var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(a, b));
+        vm.SetSelection([a, b]);
+        Rendu.Battre();
+        var avant = DocumentSerializer.ToJson(vm.Document);
+        Button Commande(string bulle) =>
+            Barre(fenetre).GetVisualDescendants().OfType<Button>().Single(x => Equals(ToolTip.GetTip(x), bulle) && x.IsEffectivelyVisible);
+        ShapeFrame Bloc(string nom) => vm.CurrentPage!.Frames.OfType<ShapeFrame>().Single(x => x.Name == nom);
+
+        Rendu.Cliquer(Commande("Aligner en haut"));
+        var haut = a.Y;
+        Assert.Equal(haut, b.Y);
+        Assert.True(vm.CanUndo, "« Aligner en haut » n'a pas fait son pas au clic");
+        fenetre.KeyPressQwerty(PhysicalKey.ArrowRight, RawInputModifiers.None);
+        Rendu.Battre();
+        Assert.Equal(303, a.X);
+
+        // Deux gestes, deux pas : la flèche s'annule seule, puis l'alignement.
+        vm.UndoCommand.Execute(null);
+        Rendu.Battre();
+        Assert.Equal((300.0, haut, haut), (Bloc("A").X, Bloc("A").Y, Bloc("B").Y));
+        vm.UndoCommand.Execute(null);
+        Rendu.Battre();
+        Assert.Equal(avant, DocumentSerializer.ToJson(vm.Document));
+        Assert.False(vm.CanUndo, "deux gestes, plus de deux pas");
+
+        // Un champ du dock en pleine saisie — la marge gauche, à l'onglet Document — ne
+        // laisse pas la commande se fondre dans son pas : il rend le focus avant qu'elle joue.
+        vm.SetSelection([Bloc("A"), Bloc("B")]);
+        Rendu.Onglet(fenetre, "Document");
+        var marge = Trouver<NumericUpDown>(fenetre, "MargeGauche").GetVisualDescendants().OfType<TextBox>().First();
+        marge.Focus();
+        Rendu.Battre();
+        marge.SelectAll();
+        fenetre.KeyTextInput("25");
+        fenetre.KeyPressQwerty(PhysicalKey.Enter, RawInputModifiers.None);
+        Rendu.Battre();
+        var margeSaisie = vm.Document.MarginLeft;
+        Assert.NotEqual(Document.CreateDefault().MarginLeft, margeSaisie);
+        Rendu.Cliquer(Commande("Aligner à gauche"));
+        Assert.Equal(Bloc("A").X, Bloc("B").X, precision: 9);
+        Assert.True(vm.CanUndo, "« Aligner à gauche » n'a pas fait son pas au clic");
+        Quitter(fenetre);
+
+        var aligne = Bloc("A").X;
+        vm.UndoCommand.Execute(null);
+        Rendu.Battre();
+        Assert.Equal((margeSaisie, 300.0, 360.0), (vm.Document.MarginLeft, Bloc("A").X, Bloc("B").X));
+        Assert.NotEqual(300, aligne);
+        vm.UndoCommand.Execute(null);
+        Rendu.Battre();
+        Assert.Equal(avant, DocumentSerializer.ToJson(vm.Document));
+        Assert.False(vm.CanUndo, "la marge et l'alignement, plus de deux pas");
+    }
+
     // ----------------------------------------------------------------- règle 1
 
     [AvaloniaFact]

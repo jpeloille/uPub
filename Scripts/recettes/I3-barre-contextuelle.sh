@@ -22,8 +22,11 @@
 #         souligné. Les colonnes restent au dock seul.
 #      c. Un geste, un pas (règle 2) : chaque bouton à état de la barre joue une commande,
 #         ne prend pas le focus et ne se coche que par sa liaison au bloc, dans un seul
-#         sens ; le sélecteur de couleur, qui s'ouvre hors de la barre, ouvre et ferme sa
-#         propre transaction ; Échap quitte un champ de la barre. Les quatre icônes de
+#         sens ; les commandes à libellé — Aligner, Répartir, Dissocier — ne le prennent pas
+#         non plus, et le champ qui l'a le rend avant qu'elles jouent (repris le 26 octobre
+#         2026, après relecture : pris, il ouvrait la transaction de la barre, où leur pas
+#         attendait) ; le sélecteur de couleur, qui s'ouvre hors de la barre, ouvre et ferme
+#         sa propre transaction ; Échap quitte un champ de la barre. Les quatre icônes de
 #         l'alignement du texte, que la recette I1 attend de ce poste, y servent chacune.
 #      d. Ce que le poste ajoute au modèle de vue est dans son fichier partiel (règle 10), et
 #         les vues qu'il écrit sont dans la liste des vues de la phase de la recette I1, qui
@@ -32,7 +35,9 @@
 #      police, son corps et son alignement ; un clic sur « Centrer le texte » le centre à
 #      l'écran et au PDF, en un pas ; chaque contrôle de la barre fait un pas, deux clics
 #      deux pas, et un bouton coché le reste ; le souligné a son bouton, Ctrl+U, le menu
-#      Texte et ses sortes ; Ctrl+U pendant une saisie de la barre fait son propre pas ; le
+#      Texte et ses sortes, et ne s'offre pas sans bloc de texte ; Ctrl+U pendant une saisie
+#      de la barre fait son propre pas ; une commande de la barre fait son pas au clic, même
+#      un champ du dock en pleine saisie ; le
 #      sélecteur de couleur referme son pas quand le bloc change ; chaque propriété n'a
 #      qu'un contrôle visible ; un tableau a sa mise en forme ; passer d'un texte à une image
 #      — puis à plusieurs blocs, à un groupe, à rien — change la barre sans déplacer la
@@ -161,6 +166,27 @@ for b in boutons:
 souligne = [b for b in boutons if (b.get(A + "ToolTip.Tip") or b.get("ToolTip.Tip")) == "Souligné (Ctrl+U)"]
 if len(souligne) != 1 or "SoulignerCommand" not in souligne[0].get("Command", ""):
     refuser("barre : le bouton S n'est pas posé une fois sur SoulignerCommand.")
+# Les commandes à libellé — Aligner, Répartir, Dissocier — ne prennent pas le focus non plus
+# (repris le 26 octobre 2026, après relecture) : pris, il ouvrait la transaction de la barre,
+# leur pas attendait que le focus la quitte, et la flèche frappée entre-temps s'y fondait. Le
+# style « Button.menu » le leur retire, aucune ne le reprend, et leur clic fait rendre le focus
+# au champ qui l'avait, avant que la commande ne joue.
+commandes = [e for e in barre.iter(A + "Button") if "menu" in (e.get("Classes") or "").split()]
+style_menu = [s for s in barre.iter(A + "Style") if s.get("Selector") == "Button.menu"]
+if len(style_menu) != 1 or not any(s.get("Property") == "Focusable" and s.get("Value") == "False"
+                                   for s in style_menu[0].iter(A + "Setter")):
+    refuser("barre : les commandes à libellé (« Button.menu ») prennent le focus — leur pas attendrait qu'il quitte la barre.")
+if len(commandes) < 9:
+    refuser(f"barre : {len(commandes)} commandes à libellé, neuf attendues (Dissocier, six alignements, deux répartitions).")
+for c in commandes:
+    if c.get("Focusable") not in (None, "False"):
+        refuser(f"barre : la commande « {c.get('Content')} » reprend le focus.")
+# Le corps de la méthode seul : un ClearFocus plus bas, celui du sélecteur de couleur, ne
+# compte pas pour elle.
+sur_commande = re.search(r"void SurCommande\([^)]*\)\s*\{(.*?)\n    \}", code_barre, re.S)
+if not re.search(r"ClickEvent,\s*SurCommande\b", code_barre) or sur_commande is None or \
+        '"menu"' not in sur_commande.group(1) or "ClearFocus();" not in sur_commande.group(1):
+    refuser("barre : le clic d'une commande ne fait pas rendre le focus au champ qui l'a — sa saisie s'y fondrait.")
 bouton_d_etat = (VUES / "BoutonDEtat.cs").read_text(encoding="utf-8")
 if not re.search(r"protected override void Toggle\(\)\s*\{\s*\}", bouton_d_etat):
     refuser("BoutonDEtat : le bouton s'inverse lui-même au clic.")
@@ -175,7 +201,7 @@ if not re.search(r"Key\.Escape.*?ClearFocus\(\)", code_barre, re.S):
 for icone in ("IconeTexteAGauche", "IconeTexteCentre", "IconeTexteADroite", "IconeTexteJustifie"):
     if barre_texte.count("{StaticResource " + icone + "}") != 1:
         refuser(f"icônes : {icone} ne sert pas une fois dans la barre.")
-print(f"    c. {len(boutons)} boutons à état sur leur commande, sans focus ; la couleur dans sa transaction ; Échap ; quatre icônes")
+print(f"    c. {len(boutons)} boutons à état sur leur commande, sans focus ; {len(commandes)} commandes sans focus ; la couleur dans sa transaction ; Échap ; quatre icônes")
 
 # ----------------------------------------------------------- d. le partiel, les listes
 
@@ -217,7 +243,7 @@ jouer() {
     echo "  $quoi ($joues tests)"
 }
 
-jouer "poste=I3" 11 "2. la barre sur la vraie fenêtre : police, corps, alignement ; centré à l'écran et au PDF ; un pas par contrôle ; souligné ; un contrôle par propriété ; planche immobile ; lettres seules"
+jouer "poste=I3" 13 "2. la barre sur la vraie fenêtre : police, corps, alignement ; centré à l'écran et au PDF ; un pas par contrôle et par commande ; souligné ; un contrôle par propriété ; planche immobile ; lettres seules"
 jouer "poste=Q20|poste=Q14|poste=C5b" 20 "   les « .Single() » de la police (Q20), de l'angle (Q14) et de la couleur (C5b), la barre en place"
 
 echo "I3 : la barre contextuelle suit la sélection, et porte la mise en forme du texte que le dock a quittée."
