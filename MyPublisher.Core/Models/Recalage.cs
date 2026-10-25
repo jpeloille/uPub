@@ -373,6 +373,22 @@ public static class Recalage
     }
 
     /// <summary>
+    /// Le paragraphe où tombe <paramref name="position"/> — un caractère, ou le point
+    /// d'insertion qui le précède —, compté comme les écarts le sont : par les sauts qui le
+    /// précèdent. Un saut appartient au paragraphe qu'il clôt, et le point qui le suit ouvre
+    /// le suivant ; les deux caractères d'un « \r\n » sont au paragraphe clos. Une position
+    /// hors du texte est ramenée à ses bornes.
+    ///
+    /// Public depuis le poste N2 : la mise en forme d'un paragraphe (R6) et la sélection du
+    /// texte (N15) doivent compter les paragraphes comme le recalage, et <see cref="Sauts"/>
+    /// reste la seule façon de les compter.
+    /// </summary>
+    public static int ParagrapheDe(string texte, int position) => Sauts(texte, 0, position);
+
+    /// <summary>Le nombre de paragraphes du texte, comptés de même : un de plus que de sauts.</summary>
+    public static int NombreDeParagraphes(string texte) => Sauts(texte, 0, texte.Length) + 1;
+
+    /// <summary>
     /// Les sauts de paragraphe entre <paramref name="debut"/> et <paramref name="fin"/>,
     /// comptés comme la composition les compte : « \n », « \r » seul, et « \r\n » pour
     /// un seul (voir <see cref="Compositeur"/>). Deux façons de compter les paragraphes

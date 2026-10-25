@@ -105,7 +105,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **I8** | Masquer un bloc | **100 %** | L'œil de « Blocs de la page », à la place que I2 avait réservée : un clic masque le bloc, ou le montre, en un pas d'annulation, même pendant une saisie, sans le sélectionner ni prendre le focus ; le document est « modifié ». `Visible` sur tout bloc, `true` par défaut ; `FormatVersion` ne change pas, Samples et Templates sont réenregistrés — un « Visible » de plus par bloc, rien d'autre. Masqué, le bloc n'est dessiné ni dans `PageRoot` ni au PDF, ni ce que porte un groupe masqué ; rien de lui n'avertit, ni sa police (Q8), ni son image, ni son débordement ; son filet n'élargit plus la découpe d'un groupe. Un clic à sa place prend le bloc d'en dessous ; l'alignement et la répartition ne le voient pas, « Tout sélectionner » non plus. Il reste dans la liste, l'œil fermé, et s'y sélectionne, sans cadre ni poignée sur la planche ; masqué, il quitte une sélection multiple. Une recopie le garde, dissocier un groupe masqué laisse ses blocs masqués ; les cases d'un tableau ne portent pas la propriété. La vignette de la page (I5) ne le dessine pas. L'icône du poste sert. Vingt-cinq tests ; relecture et juge après fusion. Recette dans `Scripts/recettes/` |
 | **I9** | Compter les lignes en excédent | **100 %** | `Compositeur.LignesEnExcedent`, fonction pure du noyau : les lignes dont l'encre — la hauteur naturelle, au milieu de l'avance — sort du bloc, au calage vertical (A7), au bord du bloc et non de la zone (C6), au seuil du marqueur de A2 ; les colonnes et les blocs tournés sans chemin à part. Le dock l'affiche à la section « Cadre de texte », dans la place que I2 avait réservée : « Texte en excédent : 4 lignes » au fond, à la couleur et à l'icône d'alerte de l'apparence, au singulier pour une ligne, rien à zéro ; il suit la frappe et chaque réglage du bloc sans changement de sélection, et ne touche pas au document. Le modèle de vue le porte dans `MainWindowViewModel.Excedent.cs`. Aucune clé sérialisée ; l'avertissement d'export et le relevé de P2 inchangés. Sur `recette-debordement.mypub` et sur une variante en colonnes, marges, interligne 1,5 et rotation, le compte du dock est celui des lignes absentes du PDF, bloc par bloc, lu par la commande `excedent` du banc. Dix-huit tests, douze purs et six sur la fenêtre ; recette dans `Scripts/recettes/`. Relecture et juge après fusion |
 | **N1** | Le banc des gestes | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 1 |
-| **N2** | Mettre en forme une plage, dans le noyau | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 1 |
+| **N2** | Mettre en forme une plage, dans le noyau | **100 %** | `MiseEnForme`, fonctions pures du noyau sur le modèle de `Recalage` : `Lire` (la valeur commune de chaque propriété, nulle si mixte, police et couleur comparées résolues par la charte), `Allume`, `Poser`, `Basculer` (Gras, Italique, Souligné ; retirer pose la valeur éteinte, `Bold = false` sur un bloc gras) et `Retirer` (`Ctrl+Espace`), sur les fragments et, à l'échelle du paragraphe, sur les écarts (`Basculer` d'un fer, `Paragraphes` d'une sélection) ; une pose coupe aux bornes par `Clone`, ne tranche « le dernier l'emporte » que dans la plage, rend nulle une valeur égale au bloc comparée brute (`scheme:accent1`), recolle les voisins identiques et retire ce qui ne dit plus rien ; l'écriture passe par les opérations de la collection, sans fragment modifié sur place, et une pose sans changement à l'œil n'écrit rien. `Recalage.ParagrapheDe` et `NombreDeParagraphes` publics ; `StyleEffectif.Etendue` et `ParagrapheEffectif.Etendue` partagées avec la composition. Rien de l'application ne l'appelle encore : R6 et R7. Vingt-six tests purs, dont deux balayages de deux mille poses ; recette dans `Scripts/recettes/`, deux sabotages au juge. Relecture et juge après fusion |
 | **N3** | Chaque morceau composé sait d'où il vient | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 1 |
 | **N4** | L'affichage au clavier | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 1 |
 | **N5** | Quitter la saisie d'un clic qui agit | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 2 |
@@ -5598,6 +5598,51 @@ mixte. Une case de tableau n'a pas de paragraphes.
 
 Fichiers : `MyPublisher.Core/Models/MiseEnForme.cs` (neuf), `Recalage.cs`, `MyPublisher.Tests`.
 Effort : moyen.
+
+*Livré le 26 octobre 2026* ; la relecture adversariale et les sabotages du juge viennent après
+la fusion. `MiseEnForme` porte, sur les fragments, `Lire(texte, fragments, commun, plage,
+charte)`, `Allume(…, bascule)`, `Poser(…, style)`, `Basculer(…, bascule)` et `Retirer` ; sur
+les écarts, `Lire`, `Poser`, `Basculer(…, fer)` et `Retirer`, avec `Paragraphes(texte, plage)`
+qui rend les paragraphes qu'une sélection touche ; `Commun(TextFrame)` et `Commun(TableFrame)`
+donnent le style dont les fragments s'écartent. Ce qu'on lit et ce qu'on pose est un même type,
+`StyleDeLaPlage` (et `ReglagesDeLaPlage`), dont une propriété nulle est mixte à la lecture et
+intouchée à la pose. Le coupage, la superposition, le recollage et l'écriture sont écrits une
+fois pour les fragments et les écarts. Vingt-six tests sous `poste=N2`, dont les quatre de la
+recette chiffre pour chiffre, un test d'exhaustivité par réflexion (une propriété ajoutée au
+fragment ou à l'écart, et oubliée par la mise en forme, le fait tomber) et deux balayages :
+deux mille listes au hasard, recouvrements et débords compris, où hors de la plage rien ne
+change à l'œil et où la pose rejouée n'écrit plus rien. Deux sabotages au juge : la
+normalisation oubliée, et un fragment coupé en le retouchant sur place.
+
+*Ce que l'implémentation a appris.* `StyleEffectif.Decouper` calculait la fin d'un fragment en
+entier : « Start = 2, Length = 2 147 483 647 » débordait, et le fragment, qui court jusqu'au bout
+du texte, ne recouvrait plus rien. Elle se calcule désormais en long, comme celle d'un écart,
+dans `StyleEffectif.Etendue`, que la mise en forme emploie aussi : les deux voient chaque
+fragment au même endroit. Le dessin ne change que pour ces longueurs absurdes.
+
+*Choisi sans certitude* :
+- retirer le gras, l'italique ou le souligné pose la valeur éteinte et non « comme le bloc » :
+  sur un bloc gras, nul rendrait le gras ; la recette le demande. Le souligné basculé est
+  allumé quelle qu'en soit la sorte, comme `Ctrl+U` dans Publisher, et se pose en trait simple ;
+  `Lire` dit mixte une plage qui mêle deux sortes, `Allume` la dit allumée ;
+- une plage vide ne change rien — c'est à R7 de dire sur quel mot porte un geste sans
+  sélection —, et se lit au style que prendrait la frappe (`Recalage.Ancre`) ;
+- `Lire` rend la valeur brute quand toute la plage la porte, la résolue quand seules les
+  résolues s'accordent ; la charte ne résout que la police et la couleur ;
+- le fer basculé de `Ctrl+E`, `Ctrl+R` ou `Ctrl+J` revient au fer à gauche, comme dans Word, et
+  non au fer du bloc ;
+- une sélection qui finit sur un saut de paragraphe ne touche pas le paragraphe d'après : le
+  saut appartient au paragraphe qu'il clôt ;
+- une pose qui ne change rien à l'œil laisse la collection telle quelle, même désordonnée : pas
+  de pas d'historique sans rien à montrer ;
+- une case de tableau s'écarte du style du tableau sans souligné, celui du bloc que
+  `TableFrame.CellFrames` construit.
+
+*Relevé, non corrigé.* Le recollage ne joue qu'aux deux bornes de la plage : deux fragments
+voisins identiques laissés par un import ailleurs dans le bloc restent deux. Un élément qui
+recouvre la plage n'est allongé sur son voisin de droite que s'ils se suivent dans la liste,
+pour ne rien changer de ce qui l'emporte hors de la plage ; la liste peut donc garder deux
+fragments là où un suffirait, sans que rien n'en paraisse.
 
 #### N3 — Chaque morceau composé sait d'où il vient *(fiche 23, a21)*
 

@@ -134,11 +134,7 @@ public readonly record struct ParagrapheEffectif(
 
         foreach (var ecart in ecarts)
         {
-            var debut = Math.Clamp(ecart.Start, 0, reglages.Length);
-            // Le total se calcule en long : un écart écrivant « Start = 2 147 483 647,
-            // Length = 1 » ferait déborder l'addition, et la borne repartirait à
-            // gauche du texte au lieu de le dépasser.
-            var fin = (int)Math.Clamp((long)ecart.Start + ecart.Length, debut, reglages.Length);
+            var (debut, fin) = Etendue(ecart, reglages.Length);
 
             for (var i = debut; i < fin; i++)
             {
@@ -153,5 +149,20 @@ public readonly record struct ParagrapheEffectif(
         }
 
         return reglages;
+    }
+
+    /// <summary>
+    /// Les paragraphes qu'un écart recouvre parmi <paramref name="nombre"/> : ses bornes
+    /// ramenées au bloc, la fin jamais avant le début. C'est là que <see cref="Resoudre"/>
+    /// l'applique, et là que <see cref="MiseEnForme"/> le coupe (poste N2).
+    ///
+    /// Le total se calcule en long : un écart écrivant « Start = 2 147 483 647, Length = 1 »
+    /// ferait déborder l'addition, et la borne repartirait à gauche du texte au lieu de le
+    /// dépasser.
+    /// </summary>
+    internal static (int Debut, int Fin) Etendue(ParagraphSpan ecart, int nombre)
+    {
+        var debut = Math.Clamp(ecart.Start, 0, nombre);
+        return (debut, (int)Math.Clamp((long)ecart.Start + ecart.Length, debut, nombre));
     }
 }

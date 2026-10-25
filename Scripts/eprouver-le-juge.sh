@@ -1755,6 +1755,28 @@ saboter "les réglages du bloc (Q23) se reconstruisent à chaque sélection" \
     'if (gabarit is not null)' \
     'Q23-selection|PressionTests'
 
+# N2 : la mise en forme d'une plage ramène au bloc toute valeur qui lui est égale. Oubliée,
+# la normalisation laisse « Bold = false » sur un bloc maigre : le gras rebasculé laisse un
+# fragment qui ne dit rien de visible, et deux voisins pareils à l'œil ne se recollent plus.
+saboter "la mise en forme (N2) oublie de ramener au bloc une valeur qui lui est égale" \
+    MyPublisher.Core/Models/MiseEnForme.cs \
+    'surcharges => surcharges.Poser(style).Normaliser(commun),' \
+    'surcharges => surcharges.Poser(style),' \
+    'N2-mise-en-forme|MiseEnFormeTests'
+
+# N2 : un fragment coupé à une borne laisse ses bouts du dehors en copies. Retouché sur
+# place, il ne passe plus par la collection — « ControleDeBloc » ne le redessinerait pas —,
+# et l'annulation de R7 n'aurait plus d'objet d'avant à rendre.
+saboter "la mise en forme (N2) coupe un fragment en le retouchant sur place" \
+    MyPublisher.Core/Models/MiseEnForme.cs \
+    'protected override StyleSpan Morceau(StyleSpan modele, int debut, int fin)
+        {
+            var morceau = modele.Clone();' \
+    'protected override StyleSpan Morceau(StyleSpan modele, int debut, int fin)
+        {
+            var morceau = modele;' \
+    'N2-mise-en-forme|MiseEnFormeTests'
+
 # Un motif qui ne désigne aucun sabotage ne prouve rien. « eprouver-le-juge.sh I4 » sortait
 # en 0 sur « 0 sabotages, 0 attrapés », quand les intitulés de la planche ne portaient pas
 # encore le code du poste : le filet passait pour éprouvé sans qu'on l'ait troué.

@@ -113,8 +113,7 @@ public readonly record struct StyleEffectif(
 
         foreach (var fragment in fragments)
         {
-            var debut = Math.Clamp(fragment.Start, 0, texte.Length);
-            var fin = Math.Clamp(fragment.Start + fragment.Length, debut, texte.Length);
+            var (debut, fin) = Etendue(fragment, texte.Length);
 
             for (var i = debut; i < fin; i++)
             {
@@ -139,5 +138,21 @@ public readonly record struct StyleEffectif(
         }
 
         return morceaux;
+    }
+
+    /// <summary>
+    /// Les caractères qu'un fragment recouvre dans un texte de <paramref name="longueur"/>
+    /// caractères : ses bornes ramenées dans le texte, la fin jamais avant le début. C'est là
+    /// que <see cref="Decouper"/> le dessine, et là que <see cref="MiseEnForme"/> le coupe :
+    /// les deux doivent le voir au même endroit (poste N2).
+    ///
+    /// La fin se calcule en long, comme celle d'un écart de paragraphe et comme au
+    /// recalage. En entier, « Start = 2, Length = 2 147 483 647 » faisait déborder
+    /// l'addition : le fragment, qui court jusqu'au bout du texte, ne recouvrait plus rien.
+    /// </summary>
+    internal static (int Debut, int Fin) Etendue(StyleSpan fragment, int longueur)
+    {
+        var debut = Math.Clamp(fragment.Start, 0, longueur);
+        return (debut, (int)Math.Clamp((long)fragment.Start + fragment.Length, debut, longueur));
     }
 }
