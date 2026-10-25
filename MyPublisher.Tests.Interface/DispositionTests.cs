@@ -163,7 +163,9 @@ public class DispositionTests
             .ToArray();
         Assert.Equal(new[]
         {
-            "Sélection (V)", "Bloc de texte (T)", "Titre (H)", "Image…", "Tableau (B)", "Rectangle (R)", "Ellipse (E)",
+            // Main et Zoom sont venus avec leur geste (I6) ; Ligne attend A10.
+            "Sélection (V)", "Main (Espace)", "Bloc de texte (T)", "Titre (H)", "Image…", "Tableau (B)", "Rectangle (R)",
+            "Ellipse (E)", "Zoom (Z)",
         }, outils);
 
         // Le dock : quatre onglets, Propriétés d'abord et choisi ; « Blocs de la page » à son pied.
@@ -632,10 +634,16 @@ public class DispositionTests
     public void Page_entiere_attend_le_geste_qui_l_ecoute()
     {
         // Le bouton est posé par I2 ; le calcul est celui de la planche (I6). Sans personne
-        // pour l'entendre, il est grisé plutôt que de ne rien faire.
+        // pour l'entendre, il est grisé plutôt que de ne rien faire : c'est le cas d'un
+        // modèle de vue que nulle planche n'affiche.
+        var seul = new MainWindowViewModel(contacts: new BusinessInfoStore(), horloge: () => new DateTime(2026, 9, 6));
+        Assert.False(seul.PageEntiereCommand.CanExecute(null));
+
+        // Dans la fenêtre, la planche l'écoute depuis I6 : le bouton est actif dès
+        // l'ouverture, et le reste quand un autre auditeur s'en va.
         var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille());
         var bouton = Trouver<Button>(fenetre, "BoutonPageEntiere");
-        Assert.False(bouton.IsEffectivelyEnabled);
+        Assert.True(bouton.IsEffectivelyEnabled);
 
         var entendu = 0;
         EventHandler ecoute = (_, _) => entendu++;
@@ -647,7 +655,7 @@ public class DispositionTests
 
         vm.PageEntiereDemandee -= ecoute;
         Rendu.Battre();
-        Assert.False(bouton.IsEffectivelyEnabled);
+        Assert.True(bouton.IsEffectivelyEnabled);
     }
 
     // ---------------------------------------------------------- le menu Texte

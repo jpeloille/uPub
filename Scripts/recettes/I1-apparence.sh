@@ -76,20 +76,24 @@ vues_de_la_phase=(
     MyPublisher/Views/MainWindow.axaml
     MyPublisher/Views/BarreContextuelle.axaml
     MyPublisher/Views/EntreeDePage.axaml
+    MyPublisher/Views/PageCanvas.axaml
+    MyPublisher/Views/PageCanvas.axaml.cs
+    MyPublisher/Views/PageCanvas.Planche.cs
+    MyPublisher/Views/Ruler.cs
+    MyPublisher/Views/PageCanvas.Navigation.cs
 )
 
 # Le relevé d'avant la phase : les couleurs de la maquette que des fichiers hors de la
 # liste écrivent en dur aujourd'hui — « fichier couleur nombre », la couleur ramenée à
 # #RRGGBB quelle que soit sa forme (#FFFAFAFB, « White », « Brushes.White »). C'est le gris
-# des panneaux de la fenêtre d'avant la phase, et le blanc de la page, du marqueur de
+# des panneaux de la fenêtre d'avant la phase, et le blanc de la fenêtre, du marqueur de
 # débordement et des vignettes de modèle. Hors de la liste, une vue écrit exactement ce que
 # dit le relevé : ni une couleur de plus — ce serait une vue de la phase qui ne le dit
 # pas —, ni une de moins, qu'un relevé périmé laisserait reprendre en silence. Une vue qui
-# entre dans la liste en sort.
+# entre dans la liste en sort : la planche y est entrée avec I4, et le blanc de sa page —
+# celui du papier, que le document nomme (Document.Papier) — a quitté le relevé.
 releve=(
     "MyPublisher/Views/MarqueurDebordement.cs    #FFFFFF  1"
-    "MyPublisher/Views/PageCanvas.axaml          #FFFFFF  2"
-    "MyPublisher/Views/PageCanvas.axaml.cs       #FFFFFF  1"
     "MyPublisher/Views/TemplatePreview.cs        #FFFFFF  1"
 )
 

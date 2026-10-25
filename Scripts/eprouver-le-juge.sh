@@ -1511,6 +1511,248 @@ saboter "la fenêtre penche le « I » d'Inter pour l'italique" \
     '' \
     'I2-B7-disposition|DispositionTests'
 
+# I4 : la planche. Chaque intitulé dit « la planche (I4) » : « eprouver-le-juge.sh I4 », ou
+# « planche », les joue tous, et eux seuls. Chacun est attendu par la recette du poste ou
+# par ses tests (PlancheTests), qui mesurent l'image que la fenêtre compose.
+
+# La projection lit le cadre du bloc et non son emprise : sur un bloc droit, rien ne
+# change ; sur un bloc tourné, la bande tombe à côté, des deux côtés.
+saboter "la planche (I4) projette le cadre d'un bloc tourné et non son emprise" \
+    MyPublisher/Views/PageCanvas.axaml.cs \
+    'Projeter(Extent.Union(frames.Select(frame => frame.Extent)));' \
+    'Projeter(Extent.Union(frames.Select(frame => new Extent(frame.X, frame.Y, frame.X + frame.Width, frame.Y + frame.Height))));' \
+    'I4-Q10-planche|PlancheTests'
+
+# Les repères repartent du haut de la page, comme quand ils vivaient dans PageRoot : sur la
+# page rien ne change, au-dessus d'elle le cyan manque.
+saboter "la planche (I4) arrête les repères au haut de la page" \
+    MyPublisher/Views/PageCanvas.Planche.cs \
+    'Canvas.SetTop(trait, coin.Y);' \
+    'Canvas.SetTop(trait, 0);' \
+    'I4-Q10-planche|PlancheTests'
+
+# La règle de gauche n'apprend plus où tombe le zéro : elle se gradue depuis son bord, et
+# la page qui défile ne l'entraîne plus.
+saboter "la planche (I4) ne redit plus son zéro à la règle de gauche" \
+    MyPublisher/Views/PageCanvas.Planche.cs \
+    'if (Surface.TranslatePoint(page, LeftRuler) is { } gauche) LeftRuler.Origine = gauche.Y;' \
+    '' \
+    'I4-Q10-planche|PlancheTests'
+
+# La page prend le gris de la planche au lieu du blanc du papier : PageRoot change, ce que
+# la confrontation au PDF voit sur les quatre pages.
+saboter "la planche (I4) peint la page de son propre gris" \
+    MyPublisher/Views/PageCanvas.axaml \
+    'Background="{x:Static conv:Conv.Papier}"
+                               ClipToBounds="True">' \
+    'Background="{StaticResource FondPlanche}"
+                               ClipToBounds="True">' \
+    'I4-Q10-planche|PlancheTests'
+
+# La bulle ne parle plus pendant un redimensionnement : la barre d'état seule dit la taille.
+saboter "la planche (I4) ne montre plus la bulle de dimensions au redimensionnement" \
+    MyPublisher/Views/PageCanvas.axaml.cs \
+    '_mode == DragMode.Resize) MontrerLaBulle(' \
+    '_mode == DragMode.Rotate) MontrerLaBulle(' \
+    'I4-Q10-planche|PlancheTests'
+
+# Le cadre de sélection colle au bloc, comme avant le poste : les poignées reviennent sur
+# les coins, et tous les gestes passent encore.
+saboter "la planche (I4) colle le cadre de sélection au bloc" \
+    MyPublisher/Views/PageCanvas.axaml.cs \
+    'private const double SelectionGap = 3.25;' \
+    'private const double SelectionGap = 0;' \
+    'I4-Q10-planche|PlancheTests'
+
+# Le bord tiré rejoint le pointeur au lieu de suivre son chemin : saisie au coin du bloc,
+# la poignée marche comme avant ; saisie là où elle se dessine, sur le cadre, elle fait
+# sauter le bord de 3,25 px au premier mouvement.
+saboter "la planche (I4) fait sauter le bord d'un bloc vers le pointeur qui tire sa poignée" \
+    MyPublisher/Views/PageCanvas.axaml.cs \
+    'var localX = dx * cos + dy * sin;' \
+    'var localX = dx * cos + dy * sin + _startPointer.X - _startX - _startWidth;' \
+    'I4-Q10-planche|PlancheTests'
+
+# Les poignées pleines d'accent : le geste ne change pas, le dessin n'est plus celui de la
+# maquette.
+saboter "la planche (I4) remplit ses poignées d'accent" \
+    MyPublisher/Views/PageCanvas.axaml \
+    '<Style Selector="Rectangle.poignee, Ellipse.poignee">
+            <Setter Property="Fill" Value="{StaticResource Blanc}"/>' \
+    '<Style Selector="Rectangle.poignee, Ellipse.poignee">
+            <Setter Property="Fill" Value="{StaticResource Accent}"/>' \
+    'I4-Q10-planche|PlancheTests'
+
+# La règle ne se gradue plus avant le zéro : elle redevient la règle qui bordait la page.
+saboter "la planche (I4) ne gradue plus ses règles avant la page" \
+    MyPublisher/Views/Ruler.cs \
+    'if (at < 0 || at > longueur) continue;' \
+    'if (at < Origine || at > longueur) continue;' \
+    'I4-Q10-planche|PlancheTests'
+
+# Les marges reprennent un trait en points, qui suit le zoom : à l'échelle 1, 0,4 px de
+# rose étalé sur deux colonnes, et plus un pixel franc.
+saboter "la planche (I4) trace les marges d'un trait qui suit le zoom" \
+    MyPublisher/Views/PageCanvas.axaml \
+    'StrokeThickness="{Binding RenderScale, Converter={x:Static conv:Conv.UnPixel}}"' \
+    'StrokeThickness="0.4"' \
+    'I4-Q10-planche|PlancheTests'
+
+# La feuille perd son ombre : la page se découpe à plat sur le gris.
+saboter "la planche (I4) pose la feuille sans ombre" \
+    MyPublisher/Views/PageCanvas.axaml \
+    'BoxShadow="0 1 2 0 #1F000000, 0 6 33 0 #1A000000"' \
+    'Tag="sans ombre"' \
+    'I4-Q10-planche|PlancheTests'
+
+# Un repère lâché à gauche de la page, sur la planche où il se voit désormais, y reste.
+saboter "la planche (I4) garde un repère lâché hors de la page" \
+    MyPublisher/Views/PageCanvas.axaml.cs \
+    'if (_cibleDuRepere < 0 || _cibleDuRepere > limit)' \
+    'if (_cibleDuRepere < -1000 || _cibleDuRepere > limit)' \
+    'I4-Q10-planche|PlancheTests'
+
+# Repris après relecture (25 octobre 2026) : chacun ferme un trou que la relecture a montré
+# par un sabotage qui passait.
+
+# Un outil armé trace sur le gris : un bloc posé hors de la page, que PageRoot rogne tout
+# entier, et l'outil désarmé.
+saboter "la planche (I4) laisse un outil armé poser un bloc sur le gris" \
+    MyPublisher/Views/PageCanvas.axaml.cs \
+    'if (!DansLaPage(page)) return;' \
+    '' \
+    'I4-Q10-planche|PlancheTests'
+
+# Un clic sur le gris prend la part rognée d'un bloc qui déborde de la page.
+saboter "la planche (I4) prend sur le gris la part rognée d'un bloc" \
+    MyPublisher/Views/PageCanvas.axaml.cs \
+    'var hit = DansLaPage(page) ? _vm.CurrentPage.Frames' \
+    'var hit = true ? _vm.CurrentPage.Frames' \
+    'I4-Q10-planche|PlancheTests'
+
+# La bulle dit la taille de l'emprise : sur un bloc droit, c'est la même ; tourné, non.
+saboter "la planche (I4) met dans la bulle la taille de l'emprise" \
+    MyPublisher/Views/PageCanvas.axaml.cs \
+    'MontrerLaBulle(single.Extent, single.Width, single.Height)' \
+    'MontrerLaBulle(single.Extent, single.Extent.Width, single.Extent.Height)' \
+    'I4-Q10-planche|PlancheTests'
+
+# La bulle écrit dans la culture invariante : sous LC_ALL=C, c'est la culture courante.
+saboter "la planche (I4) écrit la bulle hors de la culture courante" \
+    MyPublisher/Views/PageCanvas.Planche.cs \
+    'string.Format(CultureInfo.CurrentCulture,' \
+    'string.Format(CultureInfo.InvariantCulture,' \
+    'I4-Q10-planche|PlancheTests'
+
+# La bulle mesurée encore cachée : à sa première apparition, centrée sur une largeur nulle.
+saboter "la planche (I4) mesure la bulle avant de la montrer" \
+    MyPublisher/Views/PageCanvas.Planche.cs \
+    '_bulle.IsVisible = true;
+        _bulle.InvalidateMeasure();
+        _bulle.Measure(Size.Infinity);' \
+    '_bulle.InvalidateMeasure();
+        _bulle.Measure(Size.Infinity);
+        _bulle.IsVisible = true;' \
+    'I4-Q10-planche|PlancheTests'
+
+# La bulle déjà mesurée ne se remesure pas : centrée sur la largeur du texte d'avant.
+saboter "la planche (I4) centre la bulle sur son texte d'avant" \
+    MyPublisher/Views/PageCanvas.Planche.cs \
+    '_bulle.InvalidateMeasure();' \
+    '' \
+    'I4-Q10-planche|PlancheTests'
+
+# Un trait de marge d'un point : à l'échelle 1, un pixel aussi ; à l'échelle 2, deux.
+saboter "la planche (I4) trace les marges d'un point et non d'un pixel" \
+    MyPublisher/Views/PageCanvas.axaml \
+    'StrokeThickness="{Binding RenderScale, Converter={x:Static conv:Conv.UnPixel}}"' \
+    'StrokeThickness="1"' \
+    'I4-Q10-planche|PlancheTests'
+
+# La règle oublie l'échelle : à l'échelle 1, rien ne change ; à l'échelle 2, les
+# graduations se tassent et la projection tombe à mi-chemin.
+saboter "la planche (I4) gradue ses règles sans l'échelle" \
+    MyPublisher/Views/Ruler.cs \
+    'public double ToScreen(double points) => Origine + points * Scale;' \
+    'public double ToScreen(double points) => Origine + points;' \
+    'I4-Q10-planche|PlancheTests'
+
+# Le zéro de la règle du haut repris sur Surface : un pixel avant la page, hors de
+# l'échelle 1.
+saboter "la planche (I4) prend le zéro de la règle sur ce qui porte la page" \
+    MyPublisher/Views/PageCanvas.Planche.cs \
+    'if (Surface.TranslatePoint(page, TopRuler) is { } haut)' \
+    'if (Surface.TranslatePoint(default, TopRuler) is { } haut)' \
+    'I4-Q10-planche|PlancheTests'
+
+# Le repère calculé d'après l'échelle, et non lu sur PageRoot : un pixel avant le bord
+# du bloc qu'il marque, à 30 % et à 41 %.
+saboter "la planche (I4) place les repères sans lire la page" \
+    MyPublisher/Views/PageCanvas.Planche.cs \
+    'var place = PageRoot.TranslatePoint(new Point(repere.Position, repere.Position), Surface) ?? default;' \
+    'var place = new Point(repere.Position * Scale, repere.Position * Scale);' \
+    'I4-Q10-planche|PlancheTests'
+
+# Le repère vertical arrondi sans rattrapage : à 64 %, 127,9999995 tombe en 127.
+saboter "la planche (I4) arrondit un repère tombé juste sous l'entier" \
+    MyPublisher/Views/PageCanvas.Planche.cs \
+    'Canvas.SetLeft(trait, Math.Floor(place.X + Rattrapage));' \
+    'Canvas.SetLeft(trait, Math.Floor(place.X));' \
+    'I4-Q10-planche|PlancheTests'
+
+# Les nombres de la règle dans la police du système, et non dans celle de l'interface.
+saboter "la planche (I4) écrit les nombres des règles dans la police du système" \
+    MyPublisher/Views/Ruler.cs \
+    'public Typeface Police => new(TextElement.GetFontFamily(this));' \
+    'public Typeface Police => Typeface.Default;' \
+    'I4-Q10-planche|PlancheTests'
+
+# Les nombres de la règle sans leur signe : « 10 » à gauche de la page.
+saboter "la planche (I4) écrit les nombres des règles sans leur signe" \
+    MyPublisher/Views/Ruler.cs \
+    'Math.Round(millimetres).ToString(CultureInfo.CurrentCulture);' \
+    'Math.Abs(Math.Round(millimetres)).ToString(CultureInfo.CurrentCulture);' \
+    'I4-Q10-planche|PlancheTests'
+
+# Le repère horizontal s'arrête au bord droit de la page.
+saboter "la planche (I4) arrête le repère horizontal au bord droit de la page" \
+    MyPublisher/Views/PageCanvas.Planche.cs \
+    'trait.Width = etendue.Width;' \
+    'trait.Width = _vm!.Document.PageWidth * Scale - coin.X;' \
+    'I4-Q10-planche|PlancheTests'
+
+# Deux blocs pris : la projection ne couvre que le premier.
+saboter "la planche (I4) ne projette que le premier bloc de la sélection" \
+    MyPublisher/Views/PageCanvas.axaml.cs \
+    'Projeter(Extent.Union(frames.Select(frame => frame.Extent)));' \
+    'Projeter(frames.Count > 0 ? frames[0].Extent : null);' \
+    'I4-Q10-planche|PlancheTests'
+
+# Le retrait se décide sur la position aimantée : lâché à 3 pt de la page, sur le gris, le
+# repère revient au bord et reste.
+saboter "la planche (I4) garde un repère lâché sur le gris tout près de la page" \
+    MyPublisher/Views/PageCanvas.axaml.cs \
+    'if (_cibleDuRepere < 0 || _cibleDuRepere > limit)' \
+    'if (_draggedGuide.Position < 0 || _draggedGuide.Position > limit)' \
+    'I4-Q10-planche|PlancheTests'
+
+# Le repère traîné écarte des candidats toute valeur égale à la sienne : aimanté sur le
+# bord, il s'en décroche au mouvement suivant.
+saboter "la planche (I4) décroche un repère du bord où il vient de s'aimanter" \
+    MyPublisher/Views/PageCanvas.axaml.cs \
+    'var lui = candidates.LastIndexOf(_draggedGuide.Position);
+            if (lui >= 0) candidates.RemoveAt(lui);' \
+    'candidates.RemoveAll(valeur => valeur == _draggedGuide.Position);' \
+    'I4-Q10-planche|PlancheTests'
+
+# Un motif qui ne désigne aucun sabotage ne prouve rien. « eprouver-le-juge.sh I4 » sortait
+# en 0 sur « 0 sabotages, 0 attrapés », quand les intitulés de la planche ne portaient pas
+# encore le code du poste : le filet passait pour éprouvé sans qu'on l'ait troué.
+if [ -n "$filtre" ] && [ "$rang" = 0 ]; then
+    echo "ÉCHEC : le motif « $filtre » ne désigne aucun sabotage." >&2
+    exit 1
+fi
+
 echo
 # Rien d'éprouvé n'est pas une épreuve réussie : un motif qui ne retient aucun sabotage — ou
 # une tranche vide — sortait en vert sur « 0 sabotages, 0 attrapés ».

@@ -13,11 +13,12 @@
     - la barre contextuelle est un contrôle à part (BarreContextuelle.axaml), que I3 remplit ;
     - une entrée du panneau Pages aussi (EntreeDePage.axaml), que I5 change en vignette ;
     - « Page entière » et « Conserver les proportions » sont posés, liés au modèle de vue,
-      dont I6 écoute la demande et lit la case ;
+      dont I6 écoute la demande et lit la case — la planche tient la page, et les champs L
+      et H passent par le modèle de vue pour garder le rapport du bloc ;
     - la place de l'œil dans « Blocs de la page » (I8) et celle de l'alerte d'excédent dans
       « Cadre de texte » (I9) sont réservées, chacune sous son nom.
-    Les boutons Main et Zoom du rail (I6) et Ligne (A10) n'y sont pas : un bouton n'apparaît
-    qu'avec son geste. Leur place est dite dans le rail.
+    Les boutons Main et Zoom du rail sont venus avec leur geste (I6) ; Ligne (A10) n'y est
+    pas encore : un bouton n'apparaît qu'avec son geste. Sa place est dite dans le rail.
 -->
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -813,7 +814,10 @@
                 <StackPanel Spacing="3" Margin="0,8,0,0" HorizontalAlignment="Center">
                     <ToggleButton Classes="ib" ToolTip.Tip="Sélection (V)" Content="{StaticResource IconeSelection}"
                                   IsChecked="{Binding ActiveTool, Converter={x:Static conv:EnumToBool.Instance}, ConverterParameter=Select}"/>
-                    <!-- Ici, Main (Espace), que I6 pose avec son geste. -->
+                    <!-- La main (I6) : elle fait glisser la planche ; Espace tenu fait de même
+                         sans changer d'outil. -->
+                    <ToggleButton x:Name="OutilMain" Classes="ib" ToolTip.Tip="Main (Espace)" Content="{StaticResource IconeMain}"
+                                  IsChecked="{Binding ActiveTool, Converter={x:Static conv:EnumToBool.Instance}, ConverterParameter=Main}"/>
                     <Border Classes="filetDuRail"/>
                     <ToggleButton Classes="ib" ToolTip.Tip="Bloc de texte (T)" Content="{StaticResource IconeBlocDeTexte}"
                                   IsChecked="{Binding ActiveTool, Converter={x:Static conv:EnumToBool.Instance}, ConverterParameter=Text}"/>
@@ -831,8 +835,12 @@
                                   IsChecked="{Binding ActiveTool, Converter={x:Static conv:EnumToBool.Instance}, ConverterParameter=Rectangle}"/>
                     <ToggleButton Classes="ib" ToolTip.Tip="Ellipse (E)" Content="{StaticResource IconeEllipse}"
                                   IsChecked="{Binding ActiveTool, Converter={x:Static conv:EnumToBool.Instance}, ConverterParameter=Ellipse}"/>
-                    <!-- Ici, Ligne (L), que A10 pose avec l'objet trait ; puis un filet et
-                         Zoom (Z), que I6 pose avec son geste. La pipette n'est pas posée. -->
+                    <!-- Ici, Ligne (L), que A10 pose avec l'objet trait. La pipette n'est pas
+                         posée. Puis la loupe (I6) : un clic zoome en avant, Alt + clic en
+                         arrière, le point visé restant sous le pointeur. -->
+                    <Border Classes="filetDuRail"/>
+                    <ToggleButton x:Name="OutilZoom" Classes="ib" ToolTip.Tip="Zoom (Z)" Content="{StaticResource IconeLoupe}"
+                                  IsChecked="{Binding ActiveTool, Converter={x:Static conv:EnumToBool.Instance}, ConverterParameter=Zoom}"/>
                 </StackPanel>
             </Border>
 
@@ -925,13 +933,15 @@
                                                         </DockPanel>
                                                         <DockPanel Grid.Row="2" Grid.Column="0">
                                                             <TextBlock Classes="libelle libelleAGauche" Text="L" Width="12" Margin="0,0,6,0"/>
-                                                            <NumericUpDown Classes="champ" TextConverter="{x:Static conv:Unite.Millimetres}" Increment="1" Minimum="2"
-                                                                           Value="{Binding Width, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
+                                                            <!-- L et H passent par le modèle de vue : la case « Conserver
+                                                                 les proportions » y entraîne l'autre côté (I6). -->
+                                                            <NumericUpDown x:Name="ChampLargeur" Classes="champ" TextConverter="{x:Static conv:Unite.Millimetres}" Increment="1" Minimum="2"
+                                                                           Value="{Binding #Root.((vm:MainWindowViewModel)DataContext).LargeurDuBloc, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
                                                         </DockPanel>
                                                         <DockPanel Grid.Row="2" Grid.Column="2">
                                                             <TextBlock Classes="libelle libelleAGauche" Text="H" Width="12" Margin="0,0,6,0"/>
-                                                            <NumericUpDown Classes="champ" TextConverter="{x:Static conv:Unite.Millimetres}" Increment="1" Minimum="2"
-                                                                           Value="{Binding Height, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
+                                                            <NumericUpDown x:Name="ChampHauteur" Classes="champ" TextConverter="{x:Static conv:Unite.Millimetres}" Increment="1" Minimum="2"
+                                                                           Value="{Binding #Root.((vm:MainWindowViewModel)DataContext).HauteurDuBloc, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
                                                         </DockPanel>
                                                         <DockPanel Grid.Row="4" Grid.Column="0">
                                                             <ContentControl Content="{StaticResource IconeRotation}" Width="12" Margin="0,0,6,0"
@@ -940,7 +950,9 @@
                                                                            Minimum="-360" Maximum="360"
                                                                            Value="{Binding Rotation, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
                                                         </DockPanel>
-                                                        <!-- Posée par I2 ; le geste qui garde le rapport du bloc vient de I6. -->
+                                                        <!-- Posée par I2. Cochée, un coin tiré et la saisie de L ou de H
+                                                             gardent le rapport du bloc (I6) ; Maj, pendant le glissé, fait
+                                                             l'inverse. -->
                                                         <CheckBox Grid.Row="4" Grid.Column="2" x:Name="ConserverLesProportions" Classes="case"
                                                                   IsChecked="{Binding #Root.((vm:MainWindowViewModel)DataContext).ConserverLesProportions}">
                                                             <TextBlock Text="Conserver les proportions" TextWrapping="Wrap"/>

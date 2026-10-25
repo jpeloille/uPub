@@ -116,7 +116,7 @@ public class RotationTests
     [AvaloniaFact]
     public void Une_tige_relie_la_poignee_au_bloc()
     {
-        // Le README promet « un disque vert au bout d'une tige » ; rien ne prouvait que
+        // Le README promet « un disque au bout d'une tige » ; rien ne prouvait que
         // la tige se dessine. Le Polyline est arrangé en (0, 0) avec des points en
         // coordonnées absolues, comme les contours de sélection — un motif qui marche,
         // mais « qui marche » est exactement ce qu'on croyait de l'invalidation avant
@@ -190,14 +190,14 @@ public class RotationTests
     public void Un_bloc_colle_au_haut_de_la_page_se_tourne_quand_meme()
     {
         // La poignée de rotation est la seule qui se pose hors du bloc, donc la seule
-        // qui puisse sortir de la planche. Un bloc posé à 5 pt du haut la met sur la
-        // règle graduée, où elle se voyait sans se laisser prendre : le geste posait un
-        // repère au lieu de tourner. Il ne faisait pas rien, il faisait autre chose.
+        // qui puisse sortir de la page. Un bloc posé à 5 pt du haut la mettait sur la
+        // règle graduée, qui bordait alors la page : elle s'y voyait sans se laisser
+        // prendre, et le geste posait un repère au lieu de tourner.
         //
-        // Ce que ce test ne dit pas, et qui est écrit dans PLAN.md : règles masquées, la
-        // poignée retombe sur le plan de travail, que personne n'écoute, et le clic ne
-        // fait plus rien. Moins nuisible, et non corrigé — la couche de saisie s'arrête
-        // au bord de la page, et l'étendre est affaire de gabarit, pas de code-behind.
+        // Depuis le poste I4, la règle est fixe au bord de la zone visible, et la
+        // poignée tombe sur la planche grise, que la couche de saisie couvre : elle se
+        // prend là, règles affichées ou non (PlancheTests). Le test garde son nom et sa
+        // promesse — le bloc tourne, aucun repère ne se pose.
         var bloc = Bloc();
         bloc.Y = 5;
         var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(bloc));
@@ -370,7 +370,7 @@ public class RotationTests
     /// <summary>
     /// Boîte de l'encre rouge — celle du bloc — dans l'image composée. Le rouge écarte
     /// tout ce que la sélection dessine par-dessus : contour bleu, poignées blanches,
-    /// disque vert et tige.
+    /// disque de rotation et tige.
     ///
     /// La recherche s'en tient à la planche. Depuis la refonte de la fenêtre (poste I2),
     /// le dock montre « Fond et contour » sans défiler, et son sélecteur de couleur peint

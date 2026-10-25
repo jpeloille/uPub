@@ -381,10 +381,10 @@ public class ApparenceTests
         // Écrit d'abord sur la fenêtre principale, quand aucune vue ne se servait de
         // l'apparence. Depuis le poste I2, la fenêtre est de la phase : elle cite
         // l'apparence, et ne s'ouvre plus sans elle. La promesse reste — un style sans
-        // classe rhabillerait ce qui n'en demande rien — et se mesure sur ce qui n'est pas
-        // de la phase : la planche, que I4 refera, ouverte seule sur l'exemple, un bloc de
-        // texte sélectionné ; et les deux dialogues, coordonnées et catalogue des modèles,
-        // avec leurs champs, leurs listes et leurs boutons.
+        // classe rhabillerait ce qui n'en demande rien — et se mesure sur ce qui ne porte
+        // aucune de ses classes : la planche, refaite par I4, ouverte seule sur l'exemple,
+        // un bloc de texte sélectionné ; et les deux dialogues, coordonnées et catalogue des
+        // modèles, avec leurs champs, leurs listes et leurs boutons.
         Rendu.Image Composer(Func<Window> ouvrir)
         {
             var fenetre = ouvrir();
@@ -427,23 +427,29 @@ public class ApparenceTests
             DataContext = new ViewModels.TemplateChooserViewModel(TemplateStore.Load()),
         };
 
-        var styles = Application.Current!.Styles;
+        // Sans ses STYLES, et non sans elle : ses couleurs restent. Depuis le poste I4, la
+        // planche est une vue de la phase et cite les pinceaux de l'apparence — retirée
+        // tout entière, l'apparence emporterait ce que la planche lit, et elle ne
+        // s'ouvrirait plus. Ce que ce test garde n'a pas changé : aucun style de
+        // l'apparence ne rhabille ce qui ne porte pas sa classe. La planche ne porte
+        // aucune classe ; elle reste donc mesurée, avec les deux dialogues. Une clé qui
+        // masquerait une ressource du thème est l'affaire du test précédent.
         var apparence = Apparence();
-        var rang = styles.IndexOf(apparence);
+        var regles = apparence.ToList();
 
         foreach (var (nom, vue) in new (string, Func<Window>)[]
                  { ("la planche", Planche), ("les coordonnées", Coordonnees), ("le catalogue", Catalogue) })
         {
             var avec = Composer(vue);
             Rendu.Image sans;
-            styles.Remove(apparence);
+            apparence.Clear();
             try
             {
                 sans = Composer(vue);
             }
             finally
             {
-                styles.Insert(rang, apparence);
+                apparence.AddRange(regles);
             }
             var encore = Composer(vue);
 

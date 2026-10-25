@@ -114,12 +114,23 @@ désarme tout seul après usage, pour qu'on puisse ajuster immédiatement ce qu'
 poser ; un bloc de texte passe même directement en saisie. L'image y est rangée parmi les
 outils, mais ne se trace pas : elle demande d'abord un fichier.
 
+Deux outils du rail ne posent rien : ils naviguent. La **main** fait glisser la planche,
+sans toucher à aucun bloc ; `Espace` tenu la prête sans changer d'outil. La **loupe**
+zoome d'un pas au clic, en arrière sous `Alt`, et le point visé reste sous le pointeur —
+comme sous `Ctrl` + molette. **Page entière**, dans la barre principale, tient la page
+dans la zone visible. Aucun de ces gestes n'entre dans l'historique ni ne rend le
+document « modifié », et le zoom ne change jamais de lui-même, ni à l'ouverture ni quand
+la fenêtre change de taille.
+
 L'onglet *Propriétés* montre le bloc sélectionné en sections repliables : Position et
 taille, puis ce qui est propre au type — pour un bloc de texte, Cadre de texte, Caractère,
 Paragraphe et Contenu —, puis Fond et contour. Une section fermée le reste d'un bloc à
 l'autre, le temps de la session. Les longueurs portent leur unité dans le champ
 (« 52,0 mm ») ; on les saisit avec ou sans elle, à la virgule comme au point. Chaque champ,
-quel que soit son onglet, est **un pas d'annulation**. *Styles* et *Couleurs* portent les
+quel que soit son onglet, est **un pas d'annulation**. La case **Conserver les
+proportions**, réglage de la session et non du document, fait garder au bloc son rapport
+quand on tire un coin ou qu'on saisit sa largeur ou sa hauteur ; les poignées de côté ne le
+gardent pas, et `Maj` pendant le glissé fait l'inverse de la case. *Styles* et *Couleurs* portent les
 jeux du document ; *Document*, le format, les marges, la grille, les repères de règle et
 le fond de page.
 
@@ -215,24 +226,31 @@ Fenêtre masque aussi l'un ou l'autre.
   jeux de polices sont livrés, et les quatre modèles portent le jeu « Marine ».
 - Rotation libre de n'importe quel bloc, y compris pour la sélection et le
   redimensionnement. Elle se prend **à la souris**, par une neuvième poignée posée
-  au-dessus du bloc — un disque vert au bout d'une tige — ou se saisit au degré près
-  dans le dock. `Maj` pendant le geste tourne par pas de 15°, et remet d'aplomb un
-  bloc qui ne l'est pas.
+  au-dessus du bloc — un disque blanc bordé d'accent, au bout d'une tige — ou se saisit
+  au degré près dans le dock. `Maj` pendant le geste tourne par pas de 15°, et remet
+  d'aplomb un bloc qui ne l'est pas.
 - Groupes : plusieurs blocs réunis se déplacent, se tournent et se redimensionnent
   d'une pièce — le redimensionnement met les blocs du groupe à la même échelle. Un
   bloc d'un groupe ne se sélectionne pas directement : on dissocie pour le retoucher.
 - Sélection d'un bloc ou de plusieurs (`Ctrl` + clic), déplacement d'ensemble,
   redimensionnement par huit poignées, rotation par une neuvième. Les poignées ne
   paraissent que sur un bloc seul : pour tourner ou redimensionner plusieurs blocs, on
-  les groupe.
+  les groupe. Le cadre de sélection passe à 4 px du bloc et tourne avec lui ; pendant
+  qu'on trace un bloc ou qu'on le redimensionne, une bulle sous lui dit sa largeur et
+  sa hauteur — les mêmes que la barre d'état. Un clic sur le gris de la planche libère
+  la sélection, même là où passe la part rognée d'un bloc qui déborde, et une poignée
+  qui sort de la page s'y saisit encore ; un outil armé n'y trace rien et reste armé.
 - Grille de composition : colonnes et lignes avec leur gouttière, grille de ligne de
   base réglée en points. L'aimantation s'y accroche comme aux marges, aux bords et à
   l'axe médian de la page.
-- Règles graduées bordant la planche, et repères libres posés où l'on veut : on les
-  glisse depuis une règle, on les déplace, on les retire en les ramenant hors de la
-  page, et l'aimantation s'y accroche. Aucun repère ne s'imprime ; *Affichage ▸
-  Repères* et *Règles* les effacent de l'écran — et *Repères* efface aussi le marqueur
-  de débordement, qui ne s'imprime pas davantage.
+- Règles fixes au bord haut et au bord gauche de la planche, graduées en millimètres de
+  part et d'autre de la page — négatives à gauche et au-dessus, le zéro au coin de la
+  page —, où la sélection se projette en bande bleue pâle. Repères libres posés où l'on
+  veut, et tracés sur toute la planche : on les glisse depuis une règle, on les déplace,
+  on les retire en les lâchant hors de la page, et l'aimantation s'y accroche. Aucun
+  repère ne s'imprime ; *Affichage ▸ Repères* et *Règles* les effacent de l'écran — et
+  *Repères* efface aussi les marges en pointillé et le marqueur de débordement, qui ne
+  s'impriment pas davantage.
 - Édition du texte directement sur la page (double-clic).
 - **Importer un texte** — *Texte ▸ Importer un texte…*, ou le bouton du même nom à la
   section Contenu d'un bloc de texte : un fichier texte remplit le bloc sélectionné, au style du
@@ -297,13 +315,15 @@ Fenêtre masque aussi l'un ou l'autre.
 | `Ctrl+F1` | Replier les panneaux, puis les rendre |
 | `Suppr` | Supprimer la sélection |
 | Flèches | Déplacer de 3 pt (`Maj` : 0,5 pt) |
-| `Ctrl` + molette, `Ctrl` `+`/`-`/`0` | Zoom |
-| `V` / `T` / `H` / `R` / `E` / `B` | Outil sélection / texte / titre / rectangle / ellipse / tableau |
+| `Ctrl` + molette, `Ctrl` `+`/`-`/`0` | Zoom — à la molette, le point visé reste sous le pointeur |
+| `V` / `T` / `H` / `R` / `E` / `B` / `Z` | Outil sélection / texte / titre / rectangle / ellipse / tableau / loupe |
+| `Espace` tenu | La main : un glissé fait défiler la planche, sans changer d'outil (hors saisie, et pas quand un bouton a le focus) |
+| Clic, `Alt` + clic de la loupe | Zoom avant, zoom arrière, autour du point visé |
 | `Échap` | Désarme l'outil, sinon désélectionne |
 | Double-clic | Éditer le texte d'un bloc |
 | `Ctrl` ou `Maj` + clic | Ajoute un bloc à la sélection, ou l'en retire |
 | `Alt` pendant le déplacement | Désactive l'aimantation |
-| `Maj` sur une poignée d'angle | Conserve les proportions |
+| `Maj` sur une poignée d'angle | Conserve les proportions — ou les libère, quand « Conserver les proportions » est cochée |
 | `Maj` sur la poignée de rotation | Tourne par pas de 15° |
 
 ## Choix techniques

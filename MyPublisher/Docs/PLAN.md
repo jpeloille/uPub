@@ -24,7 +24,7 @@ Où en est chaque poste. Une seule règle pour la colonne d'avancement : un post
 on écrit ce qui est fait plutôt qu'un pourcentage inventé — un poste à moitié écrit n'est
 pas un poste à moitié livré. La colonne se met à jour dans le commit qui clôt le poste.
 
-*Dernière mise à jour : 25 octobre 2026 (I2 livré avec B7 : la disposition de la fenêtre, reprise après relecture ; I7 livré : le souligné et ses sortes, le modèle seul).*
+*Dernière mise à jour : 25 octobre 2026 (I2 livré avec B7 : la disposition de la fenêtre, reprise après relecture ; I7 livré : le souligné et ses sortes, le modèle seul ; I6 livré : naviguer dans la planche, et garder les proportions, relecture et juge après fusion).*
 
 | Poste | Intitulé | Avancement | Où ça en est |
 |---|---|:---:|---|
@@ -98,16 +98,16 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **I3** | Barre contextuelle | 0 % | Spécifié le 24 octobre 2026 ; lot 1 |
 | **I4** | Planche : règles fixes, projection, bulle de dimensions | 0 % | Spécifié le 24 octobre 2026 ; lot 1 |
 | **I5** | Vignettes de pages | 0 % | Spécifié le 24 octobre 2026 ; lot 1 |
-| **I6** | Main, zoom, page entière, proportions | 0 % | Spécifié le 24 octobre 2026 ; lot 1 |
+| **I6** | Main, zoom, page entière, proportions | **100 %** | La main du rail, ou `Espace` tenu hors saisie et hors bouton, fait glisser la planche — son seul défilement, sans bloc touché ni pas d'annulation —, main ouverte puis fermée, deux curseurs dessinés aux pinceaux de l'apparence. La loupe (`Z`) zoome d'un pas au clic, en arrière sous `Alt`, le point visé restant sous le pointeur ; `Ctrl`+molette de même, prise avant que la zone qui défile ne la consomme. « Page entière » tient la page dans la zone, marge de la planche déduite, mesurée après la mise en page, qui arrondit au pixel supérieur ; jamais d'office. « Conserver les proportions », état de la session : cochée, un coin tiré et la saisie de L ou de H — qui passent désormais par le modèle de vue — gardent le rapport du bloc, les côtés non, et `Maj` pendant le glissé fait l'inverse. Les deux icônes du poste servent. Neuf tests ; relecture et juge après fusion. Recette dans `Scripts/recettes/` |
 | **I7** | Souligné | **100 %** | Le souligné porte sa sorte — plein, pointillé, tiret, tiret long, tiret-point, tiret-point-point ou vague ; simple ou double, épais ou non, « mots seuls » — au bloc, au fragment, où `null` laisse celui du bloc, et dans le style effectif. Il s'écrit `false`, `true` pour le trait simple, ou en objet `{ Line, Double, Thick, WordsOnly }` ; `FormatVersion` ne change pas, Samples et Templates sont réenregistrés. Il se trace à l'écran et au PDF à la place et à l'épaisseur de la table `post`, sous la ligne de base de son morceau, exposant compris, et à la couleur de son texte ; seize des dix-sept sortes de libmspub s'importent, le double en double. La commande `SoulignerCommand` est dans `MainWindowViewModel.Souligne.cs`, sans bouton : le bouton S, `Ctrl+U` et le menu viennent de I3. Recette dans `Scripts/recettes/`, vingt-six sabotages au juge |
 | **I8** | Masquer un bloc | 0 % | Spécifié le 24 octobre 2026 ; lot 2 |
 | **I9** | Compter les lignes en excédent | 0 % | Spécifié le 24 octobre 2026 ; lot 2 |
 | **D** | Moteur de composition | — | Décision non ouverte ; à rouvrir quand A, B et C sont livrées |
 
 **Par phase** — P : 4 sur 4 · A : 7 sur 15 · B : 4 sur 7 · C : 7 sur 9 · R : 5 sur 7 ·
-Q : 16 sur 23 · I : 3 sur 9 · D : non planifié.
+Q : 16 sur 23 · I : 4 sur 9 · D : non planifié.
 
-Soit **46 postes sur 74**. Le 24 octobre 2026, la phase I en a ajouté neuf, tirés de la
+Soit **47 postes sur 74**. Le 24 octobre 2026, la phase I en a ajouté neuf, tirés de la
 maquette de la nouvelle interface. Le compte avait doublé le 11 octobre 2026 sans que rien ne
 recule : il porte désormais les onze postes de l'audit des fiches (A8 à A15, B6, B7,
 C8), deux postes que les documents réels demandaient (R6, R7), et la phase Q, qui
@@ -4824,6 +4824,24 @@ quand un bouton a le focus, puisque `Espace` l'actionnerait.
   d'annulation, et la case ne rend pas le document « modifié ».
 
 Effort : moyen.
+
+*Livré le 25 octobre 2026* ; la relecture adversariale et les sabotages du juge viennent
+après la fusion. *Choisi sans certitude* :
+- la case reste décochée au départ, comme I2 l'a posée : la maquette la montre cochée,
+  mais elle ne fait pas foi pour un état. Décochée, un coin se tire librement, comme avant
+  le poste, et `Maj` garde le rapport ;
+- `Maj` inverse la case pendant le glissé d'un coin ; à la saisie de L ou de H, la case
+  seule décide — une touche tenue ne se lit pas au moment où un champ valide ;
+- la main fermée n'est ni dans le jeu de curseurs d'Avalonia ni dans la maquette : la
+  planche la dessine, d'après la main ouverte de l'apparence ; la loupe porte un « + », ou
+  un « − » sous `Alt`. Le zoom au clic suit le pas des boutons de la barre (× 1,25), la
+  molette garde le sien (× 1,1).
+
+*Relevé, non corrigé.* Une prise de la main suivie, au même point et dans le délai du
+double-clic, d'un clic ordinaire fait un double-clic, qui ouvre la saisie du bloc
+sélectionné ; le banc, dont l'horloge n'avance pas, l'a montré. Et le curseur du zoom de
+la barre d'état (I2), lié dans les deux sens en échelle logarithmique, rend
+7,999999999999998 pour la borne de 8.
 
 ### Lot 2 — Ce que le modèle doit apprendre
 
