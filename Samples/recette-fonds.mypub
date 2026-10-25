@@ -55,7 +55,9 @@
           "StrokeThickness": 1,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
-          "Shape": "Rectangle"
+          "Shape": "Rectangle",
+          "StartArrow": false,
+          "EndArrow": false
         },
         {
           "$kind": "shape",
@@ -73,7 +75,9 @@
           "StrokeThickness": 2,
           "StrokeStyle": "Solid",
           "CornerRadius": 10,
-          "Shape": "Rectangle"
+          "Shape": "Rectangle",
+          "StartArrow": false,
+          "EndArrow": false
         },
         {
           "$kind": "shape",
@@ -93,7 +97,9 @@
           "StrokeThickness": 1,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
-          "Shape": "Rectangle"
+          "Shape": "Rectangle",
+          "StartArrow": false,
+          "EndArrow": false
         },
         {
           "$kind": "shape",
@@ -113,7 +119,9 @@
           "StrokeThickness": 3,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
-          "Shape": "Ellipse"
+          "Shape": "Ellipse",
+          "StartArrow": false,
+          "EndArrow": false
         },
         {
           "$kind": "shape",
@@ -133,7 +141,9 @@
           "StrokeThickness": 1,
           "StrokeStyle": "Solid",
           "CornerRadius": 30,
-          "Shape": "Rectangle"
+          "Shape": "Rectangle",
+          "StartArrow": false,
+          "EndArrow": false
         }
       ]
     }

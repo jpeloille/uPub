@@ -576,6 +576,7 @@
                         <Separator/>
                         <MenuItem Header="_Rectangle" Command="{Binding AddRectangleCommand}"/>
                         <MenuItem Header="_Ellipse" Command="{Binding AddEllipseCommand}"/>
+                        <MenuItem Header="Tr_ait" Command="{Binding AddLineCommand}"/>
                     </MenuItem>
 
                     <MenuItem Header="_Disposition">
@@ -835,9 +836,12 @@
                                   IsChecked="{Binding ActiveTool, Converter={x:Static conv:EnumToBool.Instance}, ConverterParameter=Rectangle}"/>
                     <ToggleButton Classes="ib" ToolTip.Tip="Ellipse (E)" Content="{StaticResource IconeEllipse}"
                                   IsChecked="{Binding ActiveTool, Converter={x:Static conv:EnumToBool.Instance}, ConverterParameter=Ellipse}"/>
-                    <!-- Ici, Ligne (L), que A10 pose avec l'objet trait. La pipette n'est pas
-                         posée. Puis la loupe (I6) : un clic zoome en avant, Alt + clic en
-                         arrière, le point visé restant sous le pointeur. -->
+                    <!-- La ligne (A10) : un trait, tracé d'une extrémité à l'autre ; Maj le tient
+                         à 0, 45 ou 90°. -->
+                    <ToggleButton x:Name="OutilLigne" Classes="ib" ToolTip.Tip="Ligne (L)" Content="{StaticResource IconeLigne}"
+                                  IsChecked="{Binding ActiveTool, Converter={x:Static conv:EnumToBool.Instance}, ConverterParameter=Line}"/>
+                    <!-- La pipette n'est pas posée. Puis la loupe (I6) : un clic zoome en avant,
+                         Alt + clic en arrière, le point visé restant sous le pointeur. -->
                     <Border Classes="filetDuRail"/>
                     <ToggleButton x:Name="OutilZoom" Classes="ib" ToolTip.Tip="Zoom (Z)" Content="{StaticResource IconeLoupe}"
                                   IsChecked="{Binding ActiveTool, Converter={x:Static conv:EnumToBool.Instance}, ConverterParameter=Zoom}"/>
@@ -921,24 +925,24 @@
                                                     </ToggleButton>
                                                     <Grid Classes="contenuDeSection" ColumnDefinitions="*,8,*" RowDefinitions="Auto,8,Auto,8,Auto,8,Auto"
                                                           IsVisible="{Binding #Root.((vm:MainWindowViewModel)DataContext).SectionPositionOuverte}">
-                                                        <DockPanel Grid.Row="0" Grid.Column="0">
+                                                        <DockPanel Grid.Row="0" Grid.Column="0" IsVisible="{Binding !IsLine}">
                                                             <TextBlock Classes="libelle libelleAGauche" Text="X" Width="12" Margin="0,0,6,0"/>
                                                             <NumericUpDown x:Name="ChampX" Classes="champ" TextConverter="{x:Static conv:Unite.Millimetres}" Increment="1"
                                                                            Value="{Binding X, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
                                                         </DockPanel>
-                                                        <DockPanel Grid.Row="0" Grid.Column="2">
+                                                        <DockPanel Grid.Row="0" Grid.Column="2" IsVisible="{Binding !IsLine}">
                                                             <TextBlock Classes="libelle libelleAGauche" Text="Y" Width="12" Margin="0,0,6,0"/>
                                                             <NumericUpDown x:Name="ChampY" Classes="champ" TextConverter="{x:Static conv:Unite.Millimetres}" Increment="1"
                                                                            Value="{Binding Y, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
                                                         </DockPanel>
-                                                        <DockPanel Grid.Row="2" Grid.Column="0">
+                                                        <DockPanel Grid.Row="2" Grid.Column="0" IsVisible="{Binding !IsLine}">
                                                             <TextBlock Classes="libelle libelleAGauche" Text="L" Width="12" Margin="0,0,6,0"/>
                                                             <!-- L et H passent par le modèle de vue : la case « Conserver
                                                                  les proportions » y entraîne l'autre côté (I6). -->
                                                             <NumericUpDown x:Name="ChampLargeur" Classes="champ" TextConverter="{x:Static conv:Unite.Millimetres}" Increment="1" Minimum="2"
                                                                            Value="{Binding #Root.((vm:MainWindowViewModel)DataContext).LargeurDuBloc, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
                                                         </DockPanel>
-                                                        <DockPanel Grid.Row="2" Grid.Column="2">
+                                                        <DockPanel Grid.Row="2" Grid.Column="2" IsVisible="{Binding !IsLine}">
                                                             <TextBlock Classes="libelle libelleAGauche" Text="H" Width="12" Margin="0,0,6,0"/>
                                                             <NumericUpDown x:Name="ChampHauteur" Classes="champ" TextConverter="{x:Static conv:Unite.Millimetres}" Increment="1" Minimum="2"
                                                                            Value="{Binding #Root.((vm:MainWindowViewModel)DataContext).HauteurDuBloc, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
@@ -953,10 +957,33 @@
                                                         <!-- Posée par I2. Cochée, un coin tiré et la saisie de L ou de H
                                                              gardent le rapport du bloc (I6) ; Maj, pendant le glissé, fait
                                                              l'inverse. -->
-                                                        <CheckBox Grid.Row="4" Grid.Column="2" x:Name="ConserverLesProportions" Classes="case"
+                                                        <CheckBox Grid.Row="4" Grid.Column="2" x:Name="ConserverLesProportions" Classes="case" IsVisible="{Binding !IsLine}"
                                                                   IsChecked="{Binding #Root.((vm:MainWindowViewModel)DataContext).ConserverLesProportions}">
                                                             <TextBlock Text="Conserver les proportions" TextWrapping="Wrap"/>
                                                         </CheckBox>
+                                                        <!-- Un trait n'a pas de cadre à saisir, mais deux extrémités (A10) :
+                                                             elles prennent la place de X, Y, L et H, et la case des
+                                                             proportions se tait. L'angle reste, que le trait suit. -->
+                                                        <DockPanel Grid.Row="0" Grid.Column="0" IsVisible="{Binding IsLine}">
+                                                            <TextBlock Classes="libelle libelleAGauche" Text="X1" Width="16" Margin="0,0,4,0"/>
+                                                            <NumericUpDown x:Name="ChampDebutX" Classes="champ" TextConverter="{x:Static conv:Unite.Millimetres}" Increment="1"
+                                                                           Value="{Binding #Root.((vm:MainWindowViewModel)DataContext).DebutDuTraitX, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
+                                                        </DockPanel>
+                                                        <DockPanel Grid.Row="0" Grid.Column="2" IsVisible="{Binding IsLine}">
+                                                            <TextBlock Classes="libelle libelleAGauche" Text="Y1" Width="16" Margin="0,0,4,0"/>
+                                                            <NumericUpDown x:Name="ChampDebutY" Classes="champ" TextConverter="{x:Static conv:Unite.Millimetres}" Increment="1"
+                                                                           Value="{Binding #Root.((vm:MainWindowViewModel)DataContext).DebutDuTraitY, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
+                                                        </DockPanel>
+                                                        <DockPanel Grid.Row="2" Grid.Column="0" IsVisible="{Binding IsLine}">
+                                                            <TextBlock Classes="libelle libelleAGauche" Text="X2" Width="16" Margin="0,0,4,0"/>
+                                                            <NumericUpDown x:Name="ChampFinX" Classes="champ" TextConverter="{x:Static conv:Unite.Millimetres}" Increment="1"
+                                                                           Value="{Binding #Root.((vm:MainWindowViewModel)DataContext).FinDuTraitX, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
+                                                        </DockPanel>
+                                                        <DockPanel Grid.Row="2" Grid.Column="2" IsVisible="{Binding IsLine}">
+                                                            <TextBlock Classes="libelle libelleAGauche" Text="Y2" Width="16" Margin="0,0,4,0"/>
+                                                            <NumericUpDown x:Name="ChampFinY" Classes="champ" TextConverter="{x:Static conv:Unite.Millimetres}" Increment="1"
+                                                                           Value="{Binding #Root.((vm:MainWindowViewModel)DataContext).FinDuTraitY, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
+                                                        </DockPanel>
                                                         <DockPanel Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="3">
                                                             <TextBlock Classes="libelle libelleAGauche" Text="Nom" Margin="0,0,6,0"/>
                                                             <TextBox x:Name="ChampNom" Classes="champ" Text="{Binding Name}"/>
@@ -1221,12 +1248,34 @@
                                                 </StackPanel>
                                             </DataTemplate>
 
-                                            <!-- Rien de propre à la forme : tout ce qu'elle avait — fond,
-                                                 contour, épaisseur, arrondi — est commun à tous les blocs et
-                                                 se règle plus bas. Le gabarit vide évite que le contrôle
-                                                 n'affiche le nom du type faute de gabarit. -->
+                                            <!-- Rien de propre au rectangle ni à l'ellipse : tout ce qu'ils
+                                                 avaient — fond, contour, épaisseur, arrondi — est commun à tous
+                                                 les blocs et se règle plus bas. Un trait (A10), lui, a ses
+                                                 pointes de flèche, une à chaque bout ; son épaisseur et sa
+                                                 couleur sont celles du contour. -->
                                             <DataTemplate DataType="models:ShapeFrame">
-                                                <Panel/>
+                                                <StackPanel IsVisible="{Binding IsLine}">
+                                                    <ToggleButton Classes="titreSection"
+                                                                  IsChecked="{Binding #Root.((vm:MainWindowViewModel)DataContext).SectionTraitOuverte}">
+                                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                                            <Panel>
+                                                                <ContentControl Classes="chevronOuvert" Content="{StaticResource IconeSectionOuverte}"/>
+                                                                <ContentControl Classes="chevronFerme" Content="{StaticResource IconeSectionFermee}"/>
+                                                            </Panel>
+                                                            <TextBlock Text="Trait"/>
+                                                        </StackPanel>
+                                                    </ToggleButton>
+                                                    <StackPanel Classes="contenuDeSection" Spacing="6"
+                                                                IsVisible="{Binding #Root.((vm:MainWindowViewModel)DataContext).SectionTraitOuverte}">
+                                                        <CheckBox x:Name="PointeAuDebut" Classes="case" IsChecked="{Binding StartArrow}">
+                                                            <TextBlock Text="Pointe de flèche au début"/>
+                                                        </CheckBox>
+                                                        <CheckBox x:Name="PointeALaFin" Classes="case" IsChecked="{Binding EndArrow}">
+                                                            <TextBlock Text="Pointe de flèche à la fin"/>
+                                                        </CheckBox>
+                                                        <TextBlock Classes="aide" Text="L'épaisseur, le tracé et la couleur du trait sont ceux du contour, plus bas. Maj, sur une extrémité, le tient à 0, 45 ou 90°."/>
+                                                    </StackPanel>
+                                                </StackPanel>
                                             </DataTemplate>
 
                                             <DataTemplate DataType="models:GroupFrame">
@@ -1494,7 +1543,7 @@
                                                                 IsVisible="{Binding #Root.((vm:MainWindowViewModel)DataContext).SectionFondOuverte}">
                                                         <!-- Le fond : « Aucun », ou l'une des quatre sortes. Sans fond,
                                                              ce qui passe sous le bloc reste visible. -->
-                                                        <DockPanel>
+                                                        <DockPanel IsVisible="{Binding !IsLine}">
                                                             <TextBlock Classes="libelle libelleAGauche" Text="Fond" Width="52" Margin="0,0,8,0"/>
                                                             <!-- La vignette montre le fond ; elle ne le règle pas : la
                                                                  liste et le sélecteur au-dessous le font, un contrôle par
@@ -1562,7 +1611,7 @@
                                                         <views:SelecteurDeCouleur IsVisible="{Binding HasStroke}" Valeur="{Binding StrokeColor}"
                                                                Jeu="{Binding #Root.((vm:MainWindowViewModel)DataContext).Document.ColorScheme}"/>
 
-                                                        <DockPanel>
+                                                        <DockPanel IsVisible="{Binding !IsLine}">
                                                             <TextBlock Classes="libelle libelleAGauche" Text="Arrondi" Width="52" Margin="0,0,8,0"/>
                                                             <NumericUpDown Classes="champ" Width="64" HorizontalAlignment="Left"
                                                                            TextConverter="{x:Static conv:Unite.Points}"

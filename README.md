@@ -171,7 +171,13 @@ Fenêtre masque aussi l'un ou l'autre.
 - Blocs de texte (police système, corps, gras, italique, alignement dont justifié,
   calage vertical du texte dans son bloc — haut, milieu, bas —, interligne, marges
   intérieures réglées côté par côté, couleur), images (trois modes de cadrage) et
-  formes (rectangle, ellipse).
+  formes (rectangle, ellipse, trait).
+- **Le trait, et la flèche** : l'outil Ligne (`L`) le trace d'une extrémité à l'autre,
+  `Maj` le tenant à 0, 45 ou 90° ; *Insertion ▸ Trait* le pose à plat. Il se reprend par
+  ses deux extrémités, à la planche ou au dock, se prend à trois points de son encre, et
+  porte une pointe de flèche facultative à chaque bout. Son épaisseur, son tracé et sa
+  couleur sont ceux du contour. Un trait horizontal n'a pas de hauteur, et n'en reçoit
+  jamais : il ne se redimensionne pas comme un cadre.
 - **Tableaux** : des bandes de cases, avec leurs colonnes et leurs lignes. Chaque case
   porte son texte, son alignement, son fond et son contour ; la grille se règle d'un
   geste pour toutes. Les colonnes et les lignes font la taille du bloc : élargir une
@@ -322,7 +328,7 @@ Fenêtre masque aussi l'un ou l'autre.
 | `Suppr` | Supprimer la sélection |
 | Flèches | Déplacer de 3 pt (`Maj` : 0,5 pt) |
 | `Ctrl` + molette, `Ctrl` `+`/`-`/`0` | Zoom — à la molette, le point visé reste sous le pointeur |
-| `V` / `T` / `H` / `R` / `E` / `B` / `Z` | Outil sélection / texte / titre / rectangle / ellipse / tableau / loupe |
+| `V` / `T` / `H` / `R` / `E` / `L` / `B` / `Z` | Outil sélection / texte / titre / rectangle / ellipse / ligne / tableau / loupe |
 | `Espace` tenu | La main : un glissé fait défiler la planche, sans changer d'outil (hors saisie, et pas quand un bouton a le focus) |
 | Clic, `Alt` + clic de la loupe | Zoom avant, zoom arrière, autour du point visé |
 | `Échap` | Désarme l'outil, sinon désélectionne |
@@ -331,6 +337,7 @@ Fenêtre masque aussi l'un ou l'autre.
 | `Alt` pendant le déplacement | Désactive l'aimantation |
 | `Maj` sur une poignée d'angle | Conserve les proportions — ou les libère, quand « Conserver les proportions » est cochée |
 | `Maj` sur la poignée de rotation | Tourne par pas de 15° |
+| `Maj` en traçant un trait, ou sur l'une de ses extrémités | Tient le trait à 0, 45 ou 90° |
 
 ## Choix techniques
 
@@ -470,6 +477,10 @@ Le souligné, `Underline`, s'écrit sur le bloc et sur chaque portion : `false` 
 réglages — `{ "Line": "Dotted", "Double": false, "Thick": true, "WordsOnly": false }`, le
 trait étant l'un de `Solid`, `Dotted`, `Dash`, `LongDash`, `DotDash`, `DotDotDash`,
 `Wave`. Sur une portion, `null` laisse celui du bloc.
+
+Un trait est une forme, `"Shape": "Line"`, couchée et sans hauteur : sa largeur est sa
+longueur, sa rotation son angle, et son milieu le centre du bloc. `StartArrow` et
+`EndArrow` portent ses pointes de flèche ; elles valent `false` sur toute autre forme.
 
 Chaque bloc porte un discriminant `$kind` (`text`, `image`, `shape`, `group`, `table`)
 et, pour

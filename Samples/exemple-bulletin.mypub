@@ -49,7 +49,9 @@
           "StrokeThickness": 0,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
-          "Shape": "Rectangle"
+          "Shape": "Rectangle",
+          "StartArrow": false,
+          "EndArrow": false
         },
         {
           "$kind": "shape",
@@ -67,7 +69,9 @@
           "StrokeThickness": 0,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
-          "Shape": "Rectangle"
+          "Shape": "Rectangle",
+          "StartArrow": false,
+          "EndArrow": false
         },
         {
           "$kind": "text",
@@ -275,7 +279,9 @@
           "StrokeThickness": 1.5,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
-          "Shape": "Ellipse"
+          "Shape": "Ellipse",
+          "StartArrow": false,
+          "EndArrow": false
         },
         {
           "$kind": "text",
@@ -331,7 +337,9 @@
           "StrokeThickness": 1,
           "StrokeStyle": "Solid",
           "CornerRadius": 8,
-          "Shape": "Rectangle"
+          "Shape": "Rectangle",
+          "StartArrow": false,
+          "EndArrow": false
         },
         {
           "$kind": "text",
@@ -387,7 +395,9 @@
           "StrokeThickness": 0,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
-          "Shape": "Rectangle"
+          "Shape": "Rectangle",
+          "StartArrow": false,
+          "EndArrow": false
         },
         {
           "$kind": "text",
@@ -486,7 +496,9 @@
           "StrokeThickness": 0,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
-          "Shape": "Rectangle"
+          "Shape": "Rectangle",
+          "StartArrow": false,
+          "EndArrow": false
         },
         {
           "$kind": "text",
@@ -542,7 +554,9 @@
           "StrokeThickness": 0,
           "StrokeStyle": "Solid",
           "CornerRadius": 10,
-          "Shape": "Rectangle"
+          "Shape": "Rectangle",
+          "StartArrow": false,
+          "EndArrow": false
         },
         {
           "$kind": "text",
@@ -712,7 +726,9 @@
           "StrokeThickness": 0,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
-          "Shape": "Rectangle"
+          "Shape": "Rectangle",
+          "StartArrow": false,
+          "EndArrow": false
         },
         {
           "$kind": "text",

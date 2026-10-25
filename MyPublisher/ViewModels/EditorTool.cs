@@ -18,6 +18,8 @@ public enum EditorTool
     Heading,
     Rectangle,
     Ellipse,
+    /// <summary>Le trait (poste A10) : il se trace d'une extrémité à l'autre, et non en cadre.</summary>
+    Line,
     Table,
     Main,
     Zoom

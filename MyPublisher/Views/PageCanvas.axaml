@@ -69,6 +69,11 @@
             <Setter Property="StrokeThickness" Value="1"/>
             <Setter Property="Fill" Value="{StaticResource Projection}"/>
         </Style>
+        <!-- Le trait qu'on trace à l'outil Ligne (poste A10) : le même pointillé d'accent. -->
+        <Style Selector="Line.traitEnCours">
+            <Setter Property="Stroke" Value="{StaticResource Accent}"/>
+            <Setter Property="StrokeThickness" Value="1"/>
+        </Style>
         <!-- Un repère libre : un pixel de cyan, à tous les zooms, sur toute la planche. -->
         <Style Selector="Rectangle.repereLibre">
             <Setter Property="Fill" Value="{StaticResource Repere}"/>
@@ -154,7 +159,7 @@
                      dégradé ou une image, qu'un « Fill » de rectangle ne saurait pas
                      poser. C'est aussi l'ordre de l'export, qui a cessé pour cela de
                      tracer la forme d'un seul trait. -->
-                <views:FondBloc Classes="frameFill" Ellipse="{Binding IsEllipse}"/>
+                <views:FondBloc Classes="frameFill" Ellipse="{Binding IsEllipse}" IsVisible="{Binding !IsLine}"/>
                 <!-- Centrés sur le bord, comme le filet de tout bloc (poste Q4), et pour la
                      même raison sans arrondi de mise en page. -->
                 <Rectangle IsVisible="{Binding IsRectangle}"
@@ -183,6 +188,18 @@
                         </MultiBinding>
                     </Ellipse.Stroke>
                 </Ellipse>
+                <!-- Le trait (poste A10) : ni fond ni contour de cadre, son propre tracé, au
+                     milieu d'un panneau sans hauteur que la rotation oriente. -->
+                <views:TraitBloc IsVisible="{Binding IsLine}" IsHitTestVisible="False"
+                                 Epaisseur="{Binding StrokeThickness}" Motif="{Binding StrokeStyle}"
+                                 PointeAuDebut="{Binding StartArrow}" PointeALaFin="{Binding EndArrow}">
+                    <views:TraitBloc.Couleur>
+                        <MultiBinding Converter="{x:Static conv:CouleurDuJeu.Pinceau}">
+                            <Binding Path="Stroke"/>
+                            <Binding Path="$self.(views:JeuAffiche.Charte)"/>
+                        </MultiBinding>
+                    </views:TraitBloc.Couleur>
+                </views:TraitBloc>
             </Panel>
         </DataTemplate>
 

@@ -154,7 +154,7 @@ public class DispositionTests
         Assert.Equal(Couleur("CouleurFilet"), Pixel(fenetre, 700, 873));
 
         // Le rail : les outils seuls, dans l'ordre de la maquette — Main, Ligne et Zoom
-        // n'y sont pas avant leur geste (I6, A10), la pipette jamais.
+        // n'y étaient pas avant leur geste (I6, A10), la pipette jamais.
         // « ToggleButton » dérive de « Button » : les outils armables y sont compris.
         var outils = Trouver<Border>(fenetre, "RailDOutils").GetVisualDescendants().OfType<Button>()
             .Where(b => b.Classes.Contains("ib"))
@@ -163,9 +163,9 @@ public class DispositionTests
             .ToArray();
         Assert.Equal(new[]
         {
-            // Main et Zoom sont venus avec leur geste (I6) ; Ligne attend A10.
+            // Main et Zoom sont venus avec leur geste (I6), Ligne avec le trait (A10).
             "Sélection (V)", "Main (Espace)", "Bloc de texte (T)", "Titre (H)", "Image…", "Tableau (B)", "Rectangle (R)",
-            "Ellipse (E)", "Zoom (Z)",
+            "Ellipse (E)", "Ligne (L)", "Zoom (Z)",
         }, outils);
 
         // Le dock : quatre onglets, Propriétés d'abord et choisi ; « Blocs de la page » à son pied.

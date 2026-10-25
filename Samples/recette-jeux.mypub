@@ -53,7 +53,9 @@
           "StrokeThickness": 6,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
-          "Shape": "Rectangle"
+          "Shape": "Rectangle",
+          "StartArrow": false,
+          "EndArrow": false
         },
         {
           "$kind": "shape",
@@ -71,7 +73,9 @@
           "StrokeThickness": 6,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
-          "Shape": "Rectangle"
+          "Shape": "Rectangle",
+          "StartArrow": false,
+          "EndArrow": false
         },
         {
           "$kind": "shape",
@@ -91,7 +95,9 @@
           "StrokeThickness": 1,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
-          "Shape": "Rectangle"
+          "Shape": "Rectangle",
+          "StartArrow": false,
+          "EndArrow": false
         },
         {
           "$kind": "shape",
@@ -110,7 +116,9 @@
           "StrokeThickness": 1,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
-          "Shape": "Rectangle"
+          "Shape": "Rectangle",
+          "StartArrow": false,
+          "EndArrow": false
         },
         {
           "$kind": "shape",
@@ -129,7 +137,9 @@
           "StrokeThickness": 1,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
-          "Shape": "Rectangle"
+          "Shape": "Rectangle",
+          "StartArrow": false,
+          "EndArrow": false
         },
         {
           "$kind": "shape",
@@ -147,7 +157,9 @@
           "StrokeThickness": 1,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
-          "Shape": "Rectangle"
+          "Shape": "Rectangle",
+          "StartArrow": false,
+          "EndArrow": false
         },
         {
           "$kind": "text",

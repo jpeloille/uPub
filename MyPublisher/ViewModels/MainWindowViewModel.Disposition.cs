@@ -223,6 +223,7 @@ public partial class MainWindowViewModel
         TableFrame => "Tableau",
         GroupFrame => "Groupe",
         ShapeFrame { IsEllipse: true } => "Ellipse",
+        ShapeFrame { IsLine: true } => "Trait",
         ShapeFrame => "Rectangle",
         _ => bloc.Kind,
     };

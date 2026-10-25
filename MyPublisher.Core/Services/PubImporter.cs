@@ -688,7 +688,7 @@ public static class PubImporter
             {
                 Avertissements.Add(
                     $"Polygone à {points.Count} points rendu par son cadre : le modèle ne " +
-                    "porte que rectangles et ellipses.");
+                    "porte que rectangles, ellipses et traits.");
             }
 
             var forme = new ShapeFrame
@@ -725,20 +725,19 @@ public static class PubImporter
                     $"Chemin à {points.Count} points ramené à un trait entre ses extrémités.");
             }
 
-            var gauche = points.Min(p => p.X);
-            var haut = points.Min(p => p.Y);
-
-            // Un trait est un rectangle sans épaisseur : c'est son contour qu'on voit,
-            // avec ses tirets s'il en a. Le modèle n'a pas encore d'objet trait
-            // (poste A10) ; celui-ci s'en approche sans rien inventer.
-            var trait = new ShapeFrame
-            {
-                Name = "Trait", Shape = ShapeKind.Rectangle,
-                X = gauche, Y = haut,
-                Width = points.Max(p => p.X) - gauche,
-                Height = points.Max(p => p.Y) - haut,
-            };
+            // Un trait, défini par ses deux extrémités (poste A10). Il était rendu jusque-là
+            // par un rectangle sans épaisseur, juste à l'œil mais qui se manipulait mal, et
+            // perdait son sens : un trait montant et un trait descendant avaient le même
+            // cadre. Le début reste le premier point du chemin.
+            //
+            // Aucune pointe de flèche ne se lit : libmspub n'en transmet pas — son relevé ne
+            // porte aucune clé « draw:marker-* » —, et les deux documents ATR n'en ont pas.
+            var trait = new ShapeFrame { Name = "Trait", Shape = ShapeKind.Line };
+            trait.PoserLesExtremites(points[0].X, points[0].Y, points[^1].X, points[^1].Y);
             Habiller(trait);
+            // Un trait n'a pas de fond : il ne le dessinerait pas, et le dock ne le montre
+            // pas. L'en laisser porter un, ce serait un réglage que rien ne fait voir.
+            trait.Fill = null;
             Page().Frames.Add(trait);
         }
 

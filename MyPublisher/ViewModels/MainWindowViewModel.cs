@@ -207,6 +207,8 @@ public partial class MainWindowViewModel : ViewModelBase
             // Les deux outils de la planche (poste I6) ne tracent rien.
             EditorTool.Main => "Glissez pour faire défiler la planche.",
             EditorTool.Zoom => "Cliquez pour zoomer en avant, Alt + clic pour zoomer en arrière.",
+            // Le trait se trace d'une extrémité à l'autre, et non en cadre (poste A10).
+            EditorTool.Line => "Tracez le trait d'une extrémité à l'autre — Maj le tient à 0, 45 ou 90° ; un simple clic le pose à sa longueur par défaut.",
             _ => "Tracez le cadre sur la page — un simple clic pose le bloc à sa taille par défaut.",
         };
     }
@@ -585,6 +587,8 @@ public partial class MainWindowViewModel : ViewModelBase
         // Les champs L et H du dock, qui passent par le modèle de vue (poste I6).
         OnPropertyChanged(nameof(LargeurDuBloc));
         OnPropertyChanged(nameof(HauteurDuBloc));
+        // Les extrémités d'un trait, au dock (poste A10).
+        NotifierLesExtremites();
     }
 
     /// <summary>La sélection dans l'ordre de superposition de la page, du fond vers l'avant.</summary>
@@ -896,6 +900,7 @@ public partial class MainWindowViewModel : ViewModelBase
             Name = "Ellipse", Shape = ShapeKind.Ellipse, Width = 160, Height = 160
         }),
         EditorTool.Table => BuildTable(),
+        EditorTool.Line => NouveauTrait(),
         _ => throw new ArgumentOutOfRangeException(nameof(tool), tool, "Outil sans gabarit de bloc.")
     };
 
@@ -970,6 +975,9 @@ public partial class MainWindowViewModel : ViewModelBase
     public Frame? DrawWithActiveTool(double x, double y, double width, double height)
     {
         if (!IsDrawing || CurrentPage is null) return null;
+
+        // Un trait n'a pas de cadre : il va du coin de départ au coin d'arrivée (A10).
+        if (ActiveTool == EditorTool.Line) return TracerUnTrait(x, y, x + width, y + height);
 
         var frame = BuildFrame(ActiveTool);
 

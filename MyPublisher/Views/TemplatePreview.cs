@@ -258,6 +258,11 @@ public class TemplatePreview : Control
 
         switch (frame)
         {
+            // Un trait (poste A10) : son tracé et ses pointes, par la fonction de la page.
+            case ShapeFrame { IsLine: true } trait:
+                if (pen is not null) TraitBloc.Tracer(context, trait.Dessin(), pen, pen.Brush!, rect.TopLeft);
+                return;
+
             case ShapeFrame { Shape: ShapeKind.Ellipse }:
                 context.DrawEllipse(fill, pen, rect.Center, rect.Width / 2, rect.Height / 2);
                 return;

@@ -20,7 +20,11 @@ public enum VerticalAlign { Top, Middle, Bottom }
 
 public enum ImageFit { Uniform, UniformToFill, Fill }
 
-public enum ShapeKind { Rectangle, Ellipse }
+/// <summary>
+/// La figure d'une forme. <see cref="Line"/> est le trait du poste A10 : il se définit par
+/// ses deux extrémités et non par un cadre (voir <see cref="ShapeFrame.PoserLesExtremites"/>).
+/// </summary>
+public enum ShapeKind { Rectangle, Ellipse, Line }
 
 /// <summary>Continu, tirets ou points. Les motifs sont en multiples de l'épaisseur.</summary>
 public enum StrokeStyle { Solid, Dashed, Dotted }
@@ -399,7 +403,7 @@ public abstract partial class Frame : ObservableObject
     /// Teste si un point (en coordonnées document) tombe dans le bloc, en tenant
     /// compte de la rotation : on ramène le point dans le repère local du bloc.
     /// </summary>
-    public bool HitTest(double px, double py)
+    public virtual bool HitTest(double px, double py)
     {
         var (lx, ly) = ToLocal(px, py);
         return lx >= 0 && ly >= 0 && lx <= Width && ly <= Height;
@@ -787,11 +791,17 @@ public partial class ShapeFrame : Frame
     [JsonIgnore] public bool IsRectangle => Shape == ShapeKind.Rectangle;
     [JsonIgnore] public bool IsEllipse => Shape == ShapeKind.Ellipse;
 
-    [JsonIgnore] public override string Kind => Shape == ShapeKind.Ellipse ? "Ellipse" : "Rectangle";
+    [JsonIgnore]
+    public override string Kind => Shape switch
+    {
+        ShapeKind.Ellipse => "Ellipse",
+        ShapeKind.Line => "Trait",
+        _ => "Rectangle",
+    };
 
     public override Frame Clone()
     {
-        var c = new ShapeFrame { Shape = Shape };
+        var c = new ShapeFrame { Shape = Shape, StartArrow = StartArrow, EndArrow = EndArrow };
         CopyBaseTo(c);
         return c;
     }

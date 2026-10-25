@@ -16,7 +16,7 @@ public sealed record ExportReport(int PageCount, IReadOnlyList<string> Warnings)
 /// l'axe Y descendant, il se transpose tel quel dans le repère PDFsharp : aucune
 /// mise à l'échelle, donc aucune dérive d'arrondi.
 /// </summary>
-public static class PdfExporter
+public static partial class PdfExporter
 {
     /// <summary>
     /// Écrit le PDF. Les coordonnées sont passées par l'appelant et non lues ici : elles
@@ -258,6 +258,14 @@ public static class PdfExporter
             gfx.TranslateTransform(frame.CenterX, frame.CenterY);
             gfx.RotateTransform(frame.Rotation);
             gfx.TranslateTransform(-frame.CenterX, -frame.CenterY);
+        }
+
+        // Un trait n'a ni fond ni contour de cadre : il est son propre tracé (poste A10).
+        if (frame is ShapeFrame { IsLine: true } trait)
+        {
+            DessinerLeTrait(gfx, trait, charte);
+            gfx.Restore(state);
+            return;
         }
 
         // Fond dessous, contenu, contour dessus : un filet posé sur une image passe sur
