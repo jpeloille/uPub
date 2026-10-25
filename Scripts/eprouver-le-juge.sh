@@ -1755,6 +1755,20 @@ saboter "les réglages du bloc (Q23) se reconstruisent à chaque sélection" \
     'if (gabarit is not null)' \
     'Q23-selection|PressionTests'
 
+# N4 : F9 bascule entre l'affichage courant et la taille réelle, et le second F9 rend
+# l'affichage d'avant. Oublié, le second F9 n'a rien à rendre et la page reste à 100 % ;
+# rendu sans son défilement, le zoom revient, mais pas ce qu'on regardait.
+saboter "F9 (N4) ne rend pas l'affichage d'avant" \
+    MyPublisher/ViewModels/MainWindowViewModel.Affichage.cs \
+    '_affichageDAvant = (zoom, demande.DefilementDAvant);' \
+    '_affichageDAvant = null;' \
+    'N4-affichage-au-clavier|AffichageTests'
+saboter "le second F9 (N4) rend le zoom d'avant sans son défilement" \
+    MyPublisher/ViewModels/MainWindowViewModel.Affichage.cs \
+    'DemanderLeZoom(avant.Zoom, avant.Defilement);' \
+    'DemanderLeZoom(avant.Zoom);' \
+    'N4-affichage-au-clavier|AffichageTests'
+
 # Un motif qui ne désigne aucun sabotage ne prouve rien. « eprouver-le-juge.sh I4 » sortait
 # en 0 sur « 0 sabotages, 0 attrapés », quand les intitulés de la planche ne portaient pas
 # encore le code du poste : le filet passait pour éprouvé sans qu'on l'ait troué.
