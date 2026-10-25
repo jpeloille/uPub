@@ -931,9 +931,13 @@
                                         <TextBlock Classes="aide" Text="Alignement, répartition, ordre et déplacement valent pour l'ensemble. Les propriétés s'éditent bloc par bloc."/>
                                     </StackPanel>
 
-                                    <!-- Position et taille, commune à tous les blocs. -->
-                                    <ContentControl Content="{Binding SingleSelected}">
-                                        <ContentControl.DataTemplates>
+                                    <!-- Position et taille, commune à tous les blocs. Chaque section du
+                                         bloc est tirée d'un gabarit par sorte de bloc, construit une
+                                         fois et gardé, masqué sans bloc de sa sorte : la reconstruire à
+                                         chaque sélection figeait la pression du pointeur (poste Q23,
+                                         voir GabaritsGardes). -->
+                                    <views:GabaritsGardes Bloc="{Binding SingleSelected}">
+                                        <views:GabaritsGardes.DataTemplates>
                                             <DataTemplate DataType="models:Frame">
                                                 <StackPanel>
                                                     <ToggleButton Classes="titreSection premiere"
@@ -1014,12 +1018,12 @@
                                                     </Grid>
                                                 </StackPanel>
                                             </DataTemplate>
-                                        </ContentControl.DataTemplates>
-                                    </ContentControl>
+                                        </views:GabaritsGardes.DataTemplates>
+                                    </views:GabaritsGardes>
 
                                     <!-- Les sections propres au type de bloc. -->
-                                    <ContentControl Content="{Binding SingleSelected}">
-                                        <ContentControl.DataTemplates>
+                                    <views:GabaritsGardes Bloc="{Binding SingleSelected}">
+                                        <views:GabaritsGardes.DataTemplates>
 
                                             <DataTemplate DataType="models:TextFrame">
                                                 <StackPanel>
@@ -1429,14 +1433,14 @@
                                                 </StackPanel>
                                             </DataTemplate>
 
-                                        </ContentControl.DataTemplates>
-                                    </ContentControl>
+                                        </views:GabaritsGardes.DataTemplates>
+                                    </views:GabaritsGardes>
 
                                     <!-- Fond et contour, communs à tous les blocs. En dernier, après ce
                                          qui est propre au type : d'abord ce qu'est le bloc, ensuite
                                          comment il est habillé. -->
-                                    <ContentControl Content="{Binding SingleSelected}">
-                                        <ContentControl.DataTemplates>
+                                    <views:GabaritsGardes Bloc="{Binding SingleSelected}">
+                                        <views:GabaritsGardes.DataTemplates>
                                             <DataTemplate DataType="models:Frame">
                                                 <StackPanel>
                                                     <ToggleButton Classes="titreSection"
@@ -1531,8 +1535,8 @@
                                                     </StackPanel>
                                                 </StackPanel>
                                             </DataTemplate>
-                                        </ContentControl.DataTemplates>
-                                    </ContentControl>
+                                        </views:GabaritsGardes.DataTemplates>
+                                    </views:GabaritsGardes>
                                 </StackPanel>
                             </ScrollViewer>
 

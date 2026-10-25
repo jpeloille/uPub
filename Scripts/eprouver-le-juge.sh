@@ -1745,6 +1745,16 @@ saboter "la planche (I4) décroche un repère du bord où il vient de s'aimanter
     'candidates.RemoveAll(valeur => valeur == _draggedGuide.Position);' \
     'I4-Q10-planche|PlancheTests'
 
+# Q23 : les réglages du bloc — les trois sections du dock, la barre contextuelle — sont
+# construits une fois par sorte de bloc et gardés. Reconstruits à chaque sélection, ils
+# figeaient la pression : c'est la cause du poste. Le chronomètre la verrait sur une machine
+# calme ; le compte des champs la voit sur toutes.
+saboter "les réglages du bloc (Q23) se reconstruisent à chaque sélection" \
+    MyPublisher/Views/GabaritsGardes.cs \
+    'if (gabarit is not null && !_construits.TryGetValue(gabarit, out montre))' \
+    'if (gabarit is not null)' \
+    'Q23-selection|PressionTests'
+
 # Un motif qui ne désigne aucun sabotage ne prouve rien. « eprouver-le-juge.sh I4 » sortait
 # en 0 sur « 0 sabotages, 0 attrapés », quand les intitulés de la planche ne portaient pas
 # encore le code du poste : le filet passait pour éprouvé sans qu'on l'ait troué.

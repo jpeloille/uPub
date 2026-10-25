@@ -24,7 +24,7 @@ Où en est chaque poste. Une seule règle pour la colonne d'avancement : un post
 on écrit ce qui est fait plutôt qu'un pourcentage inventé — un poste à moitié écrit n'est
 pas un poste à moitié livré. La colonne se met à jour dans le commit qui clôt le poste.
 
-*Dernière mise à jour : 25 octobre 2026 (I2 livré avec B7 : la disposition de la fenêtre ; I4 livré : la planche, et Q10 avec elle ; I6 livré : naviguer dans la planche, et garder les proportions ; I7 livré : le souligné et ses sortes, le modèle seul ; I5 livré : les vignettes de pages ; I8 livré : masquer un bloc ; I9 livré : les lignes en excédent au dock ; A10 livré : le trait et la flèche, avec l'outil Ligne ; I3 livré : la barre contextuelle ; relecture et juge après fusion pour I3, I5, I6, I8, I9 et A10).*
+*Dernière mise à jour : 25 octobre 2026 (I2 livré avec B7 : la disposition de la fenêtre ; I4 livré : la planche, et Q10 avec elle ; I6 livré : naviguer dans la planche, et garder les proportions ; I7 livré : le souligné et ses sortes, le modèle seul ; I5 livré : les vignettes de pages ; I8 livré : masquer un bloc ; I9 livré : les lignes en excédent au dock ; A10 livré : le trait et la flèche, avec l'outil Ligne ; I3 livré : la barre contextuelle ; Q23 livré : sélectionner un bloc ne fige plus la fenêtre ; relecture et juge après fusion pour I3, I5, I6, I8, I9, A10 et Q23).*
 
 | Poste | Intitulé | Avancement | Où ça en est |
 |---|---|:---:|---|
@@ -92,7 +92,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **Q20** | La liste des polices garde la police du bloc | **100 %** | Trouvé par la relecture de C5b. La liste propose les polices du document absentes de la machine, libellées « (absente) », et la liaison ne renvoie jamais null au bloc. Recette dans `Scripts/recettes/` |
 | **Q21** | Un tremblement ne déplace pas le bloc | 0 % | Trouvé par la relecture de Q14 : un pixel de mouvement pendant le clic, près d'une marge, fait sauter le bloc de 3 pt par l'aimantation |
 | **Q22** | Un clic sur une poignée ne redimensionne pas | 0 % | Trouvé par la relecture de Q14 : une pression sans mouvement près d'un coin fait passer le bloc de 100 à 96 pt et empile un pas d'annulation |
-| **Q23** | Sélectionner un bloc ne fige pas la fenêtre | 0 % | Trouvé à la fusion de Q14 : une pression sur un bloc non sélectionné rend la main après 170 à 470 ms, le temps de recomposer le panneau ; les tests du double-clic s'en écartent en sélectionnant d'abord. Repris en fin de lot 1 |
+| **Q23** | Sélectionner un bloc ne fige pas la fenêtre | **100 %** | La cause, mesurée : les trois sections du dock et les réglages de la barre contextuelle étaient des `ContentControl` liés au bloc seul, qu'une sélection vide vidait et que la pression suivante reconstruisait — mille visuels, vingt-quatre champs numériques —, dans la pression même ; la liste des polices n'y était pour rien. Ils sont construits une fois par sorte de bloc et gardés, masqués sans bloc de leur sorte (`Views/GabaritsGardes.cs`) : sur ATA 21, une pression sur un bloc non sélectionné rend la main en 30 à 52 ms au lieu de 107 à 136, l'image comprise, et n'ajoute plus qu'un visuel à la fenêtre. « Blocs de la page » ne défile plus que si la ligne du bloc n'est pas en vue ; le sélecteur de couleur refermé ne rend plus le focus à un champ de la barre, qui engloutissait son pas. Les deux tests du double-clic reprennent le geste entier et passent vingt fois de suite, chacun dans un processus neuf. Quatre tests ; relecture et juge après fusion. Recette dans `Scripts/recettes/` |
 | **I1** | Apparence de l'interface | **100 %** | `Views/Apparence.axaml` — pas « charte », qui nomme le jeu du document —, chargée par `App.axaml` : les 26 couleurs de l'interface de la maquette, une fois chacune et sous leur nom ; cinq classes aux tailles et aux couleurs de la feuille de style de la maquette, dont le bouton-icône de 30 × 30 plein d'accent quand il est actif ; 35 icônes au tracé de la maquette, à la couleur courante, une par emploi. L'écran d'aujourd'hui ne change pas d'un pixel. La recette tient la liste des vues de la phase et le poste de chaque icône, que les postes suivants complètent ; une vue qui cite l'apparence ou écrit en dur une de ses couleurs sans être dans la liste la fait échouer. Recette dans `Scripts/recettes/` |
 | **I2** | Disposition de la fenêtre | **100 %** | La fenêtre de la maquette, de haut en bas. Barre de menus : la marque, le titre du document centré, deux menus neufs — Texte (gras `Ctrl+G`, italique `Ctrl+I`, les quatre alignements, « Importer un te_xte… ») et Fenêtre (les deux panneaux, et B7). Barre principale à icônes : Annuler et Rétablir grisés sur un historique vide, mais pas pendant une saisie qui a déjà changé le bloc ; « Page entière » posé pour I6. La place de la barre contextuelle, de hauteur constante, et sa pastille, dans son propre fichier pour I3. Rail d'outils, sans Main, Zoom ni Ligne avant leur geste. Panneau Pages, dont l'entrée est un contrôle à part pour I5. Dock à quatre onglets, sections repliables retenues le temps de la session, longueurs en millimètres, vignettes de Fond et contour, « Blocs de la page » l'avant en tête. Barre d'état : la page, le format, le zoom en échelle logarithmique. Chaque champ, chaque onglet et chaque geste de la fenêtre fait un seul pas d'annulation ; les vingt-six icônes du poste servent. Repris après relecture : quatorze défauts, tous refermés. Recette dans `Scripts/recettes/` |
 | **I3** | Barre contextuelle | **100 %** | La barre suit la sélection, à la suite de la pastille de I2. Pour un bloc de texte : la police avec la garde de Q20, le corps, le gras, l'italique, le souligné — bouton S, `Ctrl+U` et « Souligné » au menu Texte sur la commande de I7, qui retire le souligné quelle qu'en soit la sorte ou pose le trait simple, et un chevron qui propose le double, l'épais et « mots seuls » —, les quatre alignements, la droite comprise, l'interligne en multiple, et la couleur du texte, dont la vignette ouvre le sélecteur du jeu ; un tableau a la même mise en forme, sans l'alignement ni le souligné ; un groupe se dissocie, plusieurs blocs s'alignent et se répartissent ; une image, une forme ou la page n'ont que la pastille. Ce que la barre porte a quitté le dock : la section Caractère, l'alignement et l'interligne de Paragraphe, la mise en forme du tableau. Chaque bouton joue la commande du menu Texte sans prendre le focus et ne se coche que par le bloc, si bien que chaque clic fait son pas, même pendant une saisie ; le sélecteur de couleur, ouvert hors de la barre, tient sa propre transaction ; `Échap` quitte un champ de la barre et rend les lettres seules aux outils. Un clic sur « Centrer le texte » centre le bloc à l'écran et au PDF en un pas. Onze tests ; relecture et juge après fusion. Repris après le contrôle indépendant : deux de ces tests tombaient trois fois sur quatorze en suite entière — un clic dans un menu tout juste ouvert, ou sur un bouton que la barre venait d'échanger, cherchait sa cible dans la dernière image rendue, où elle n'était pas encore ; le banc, pas le produit. Le clic au centre d'un contrôle n'a plus qu'une aide, `Rendu.Cliquer`, pour les trois classes qui en avaient chacune une copie : elle attend que l'image montre le contrôle sous son centre, et échoue en nommant ce qui le couvre. Recette dans `Scripts/recettes/` |
@@ -105,9 +105,9 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **D** | Moteur de composition | — | Décision non ouverte ; à rouvrir quand A, B et C sont livrées |
 
 **Par phase** — P : 4 sur 4 · A : 8 sur 15 · B : 4 sur 7 · C : 7 sur 9 · R : 5 sur 7 ·
-Q : 17 sur 23 · I : 9 sur 9 · D : non planifié.
+Q : 18 sur 23 · I : 9 sur 9 · D : non planifié.
 
-Soit **54 postes sur 74**. Le 24 octobre 2026, la phase I en a ajouté neuf, tirés de la
+Soit **55 postes sur 74**. Le 24 octobre 2026, la phase I en a ajouté neuf, tirés de la
 maquette de la nouvelle interface. Le compte avait doublé le 11 octobre 2026 sans que rien ne
 recule : il porte désormais les onze postes de l'audit des fiches (A8 à A15, B6, B7,
 C8), deux postes que les documents réels demandaient (R6, R7), et la phase Q, qui
@@ -4269,6 +4269,85 @@ fois de suite. Effort : à mesurer — la cause d'abord.
 *Repris le 24 octobre 2026 en fin de lot 1 de la phase I* : la barre contextuelle et les
 onglets ajoutent des contrôles recomposés à chaque sélection, et le défaut se mesure sur
 l'interface qui restera.
+
+*Livré le 25 octobre 2026*, sur l'interface de la phase I entière (`0ab3395`). La cause
+d'abord, cherchée par trois diagnostics indépendants qui se sont recoupés.
+
+**La cause : le panneau reconstruit à chaque sélection prise à vide.** Les trois sections
+de l'onglet Propriétés — « Position et taille », les sections propres au type, « Fond et
+contour » — et les réglages du bloc dans la barre contextuelle (`ReglagesDuBloc`) étaient
+des `ContentControl` liés à `SingleSelected`. Un `ContentControl` ne garde son contenu
+que d'un bloc au suivant tiré du même gabarit : la sélection vide lui donnait `null`, il
+jetait ses champs, et la pression suivante les reconstruisait tous, styles et gabarits de
+contrôle compris, avant de rendre la main. Un bloc de texte faisait passer la fenêtre de
+735 à 1 795 visuels — 920 au dock, dont 24 `NumericUpDown` et 21 `TextBox`, 144 à la
+barre. Passer d'un bloc de texte à un cadre les jetait de même. Chiffré :
+
+- au processus chaud, la pression sur un bloc non sélectionné coûtait 47 à 55 ms, contre
+  moins d'une milliseconde sur un bloc déjà pris ; sa mise en page en faisait la moitié,
+  dont 80 % pour le dock ;
+- retirer les trois sections du dock la ramenait de 47,6 à 7,7 ms, et la barre avec elles
+  à 3,9 ms ; aucun autre retrait ne changeait la pression de plus que la mesure n'en
+  distingue (± 1,5 ms) ;
+- au processus froid, où les tests du double-clic cliquent chaque bloc une seule fois, la
+  même reconstruction tournait en code non optimisé : la première pression d'un processus
+  dépassait 300 ms, les suivantes 125 à 200 — les 170 à 470 ms du 12 octobre.
+
+**Ce qui n'y était pour rien**, mesuré par retrait : la liste des polices de la machine,
+premier suspect — elle n'est faite qu'au changement de document, et la liste n'en
+construit les lignes qu'à son ouverture —, les vignettes de pages (I5), la projection sur
+les règles, les onglets Styles, Couleurs et Document. Le compte des lignes en excédent
+(I9) recompose le bloc à chaque sélection : 1 à 2,6 ms. « Blocs de la page » défilait à
+chaque sélection par une passe de mise en page entière qui reconstruisait ses lignes,
+même quand la ligne du bloc était en vue : 5 à 10 ms.
+
+**La correction.** `Views/GabaritsGardes.cs` remplace les quatre `ContentControl` : un
+panneau qui tire les réglages du bloc du premier gabarit qui l'accepte, comme le
+`ContentControl` le choisissait, les construit à la première sélection d'un bloc de leur
+sorte, puis les garde, masqués tant qu'aucun bloc de leur sorte n'est seul sélectionné. Une
+sélection ne fait plus que montrer le bon et lui donner le bloc. Le gabarit masqué garde
+son dernier bloc : il ne prend aucune entrée, et Avalonia reprend le focus à un champ qui
+cesse d'être visible, comme il le perdait en quittant l'arbre. Deux retouches en
+découlent. « Blocs de la page » ne défile plus que si la ligne du bloc n'est pas entière
+dans la liste. Et le sélecteur de couleur de la barre, refermé, rendait le focus au dernier
+champ de la fenêtre qui l'avait — un champ de la barre, désormais gardé : la transaction
+ouverte à son focus engloutissait celle de la couleur, qui ne faisait plus son pas
+(`BarreContextuelleTests` l'a vu) ; il le rend aussitôt.
+
+**Mesuré après**, au pointeur synthétisé, sur ATA 21, chaque pression chronométrée jusqu'à
+ce que la fenêtre n'ait plus rien à faire, image comprise, médiane de trois passes dans un
+processus neuf, charge moyenne de la machine 1,2 à 2 : 30 à 52 ms par bloc de texte au lieu
+de 107 à 136, 36 ms au lieu de 54 pour le cadre. Une pression ajoute un visuel à la fenêtre
+(1 700 → 1 701). Ce qui reste, au profileur : l'image elle-même pour 40 % — le banc la
+rend sur le fil de l'interface, où l'application ne paie que la remise au compositeur —,
+la mise en page pour un quart, le défilement de la liste quand la ligne n'est pas en vue,
+le compte de I9. La première pression d'un processus reste vers 300 ms : la compilation à
+la volée, que la médiane écarte. La suite d'interface passe de 1 min 16 à 1 min 01.
+
+*Recette jouée* : `Scripts/recettes/Q23-selection.sh`. Les sources d'abord : aucun réglage
+du bloc n'est plus un contenu lié au bloc seul, et les deux tests du double-clic ne
+sélectionnent plus par le modèle de vue. Puis quatre tests sous `poste=Q23`
+(`PressionTests`) : le chronomètre de la recette, sous 100 ms sur chacun des huit blocs ;
+les mêmes champs du dock et de la barre d'une sélection à l'autre, masqués sans bloc, et
+une pression qui n'ajoute pas cinquante visuels ; un champ masqué qui rend le focus ; la
+liste qui ne défile que pour montrer le bloc. Enfin les deux tests du double-clic, rendus
+au geste entier — le premier clic prend le bloc —, vingt fois de suite, chacun dans un
+processus neuf : la première pression y prend 185 à 195 ms, loin des 500 ms d'Avalonia.
+
+*La marge du chronomètre.* Le seuil de 100 ms laisse un facteur de deux au moins à la
+charge des autres sessions ; une collecte forcée avant chaque pression écarte celles que
+le banc déclenche en allouant une image par rendu, et la médiane, une passe ralentie. Sur
+le code d'avant, il tombe, mais pas sur chaque bloc ni avec la même marge d'une exécution à
+l'autre — trois blocs sur huit, à 104 à 138 ms, à la dernière : c'est le compte des visuels
+qui voit le retour de la cause, sur toute machine, et le sabotage du juge (« les réglages
+du bloc se reconstruisent à chaque sélection ») est pris par lui.
+
+*Laissé tel quel.* Le compte de I9 reste synchrone, dans la pression ; le remettre à plus
+tard ne gagnerait rien que la recette mesure. `BeginEdit` sérialise tout le document à la
+pression (0,5 ms sur ATA 21, 63 ms à la première d'un processus). La première sélection
+après le lancement paie la compilation à la volée : une publication précompilée
+(`PublishReadyToRun`) la réduirait, au prix d'un exécutable plus lourd — un choix de
+publication, qui revient au propriétaire.
 
 ---
 

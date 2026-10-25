@@ -65,20 +65,21 @@ public class DoubleClicTests
         fenetre.MouseUp(point, MouseButton.Left);
     }
 
-    // Pourquoi les deux tests du double-clic sélectionnent le bloc AVANT le geste, par le
-    // modèle de vue, au lieu de laisser le premier clic le prendre.
+    // Le geste entier : le premier clic prend le bloc, le second ouvre la saisie.
     //
-    // Avalonia reconnaît un double-clic à l'horloge : deux pressions à moins de 500 ms. Le
-    // banc sans tête date chaque pression du moment où il la livre, et une pression sur un
-    // bloc non sélectionné ne rend la main qu'une fois le panneau recomposé — mesuré le
-    // 12 octobre 2026 : 170 à 470 ms la pression, sur une machine au repos (poste Q23).
-    // Le test du bloc tourné tombait une fois sur deux. Le bloc déjà sélectionné, chaque
-    // pression tient sous 130 ms.
+    // Avalonia reconnaît un double-clic à l'horloge — deux pressions à moins de 500 ms —, et
+    // le banc sans tête date chaque pression du moment où il la livre. Une pression sur un
+    // bloc non sélectionné rendait la main une fois le panneau recomposé : 170 à 470 ms,
+    // mesurés le 12 octobre 2026, et le test du bloc tourné tombait une fois sur deux. Les
+    // deux tests sélectionnaient donc le bloc par le modèle de vue avant le geste. Le poste
+    // Q23 a ôté la cause — les réglages du bloc sont construits une fois et gardés
+    // (GabaritsGardes) — et rendu aux tests leur premier clic ; sa recette les joue vingt
+    // fois de suite, chacun dans un processus neuf, où la première pression est la plus
+    // lente.
     //
-    // Rien de ce que Q14 éprouve n'est perdu : le relevé d'avant est pris avant cette
-    // sélection — un panneau qui réécrirait le bloc en l'affichant serait vu —, et le
-    // geste passe toujours par la pression, le mouvement nul et le relâchement, où
-    // l'aimantation mordait.
+    // Le relevé d'avant est pris avant le premier clic : un panneau qui réécrirait le bloc
+    // en l'affichant serait vu, et le geste passe par la pression, le mouvement nul et le
+    // relâchement, où l'aimantation mordait.
 
     [AvaloniaFact]
     [Trait("poste", "Q14")]
@@ -96,20 +97,18 @@ public class DoubleClicTests
 
         foreach (var bloc in blocs)
         {
-            // Rien n'est sélectionné au relevé ; puis le bloc l'est, comme le premier clic
-            // l'aurait fait (voir plus haut pourquoi pas par lui). Le premier clic arme
-            // le déplacement, le second ouvre la saisie.
+            // Rien n'est sélectionné au relevé. Le premier clic prend le bloc et arme le
+            // déplacement, le second ouvre la saisie.
             vm.SetSelection([]);
             Rendu.Battre();
             Assert.False(vm.CanUndo);
             Assert.False(vm.IsDirty);
 
             var avant = DocumentSerializer.ToJson(vm.Document);
-            vm.SetSelection([bloc]);
-            Rendu.Battre(8);
             var centre = SurLaPage(fenetre, bloc.X + bloc.Width / 2, bloc.Y + bloc.Height / 2);
 
             Cliquer(fenetre, centre);
+            Assert.Same(bloc, vm.SingleSelected);
             Cliquer(fenetre, centre);
             Rendu.Battre(8);
 
@@ -146,11 +145,11 @@ public class DoubleClicTests
         };
         var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(bloc));
         var avant = DocumentSerializer.ToJson(vm.Document);
+        Assert.False(vm.HasSelection);
 
-        vm.SetSelection([bloc]);
-        Rendu.Battre(8);
         var centre = SurLaPage(fenetre, bloc.X + bloc.Width / 2, bloc.Y + bloc.Height / 2);
         Cliquer(fenetre, centre);
+        Assert.Same(bloc, vm.SingleSelected);
         Cliquer(fenetre, centre);
         Rendu.Battre(8);
 
