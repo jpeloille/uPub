@@ -53,6 +53,7 @@
           "StrokeThickness": 6,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
+          "Visible": true,
           "Shape": "Rectangle"
         },
         {
@@ -71,6 +72,7 @@
           "StrokeThickness": 6,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
+          "Visible": true,
           "Shape": "Rectangle"
         },
         {
@@ -91,6 +93,7 @@
           "StrokeThickness": 1,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
+          "Visible": true,
           "Shape": "Rectangle"
         },
         {
@@ -110,6 +113,7 @@
           "StrokeThickness": 1,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
+          "Visible": true,
           "Shape": "Rectangle"
         },
         {
@@ -129,6 +133,7 @@
           "StrokeThickness": 1,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
+          "Visible": true,
           "Shape": "Rectangle"
         },
         {
@@ -147,6 +152,7 @@
           "StrokeThickness": 1,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
+          "Visible": true,
           "Shape": "Rectangle"
         },
         {
@@ -162,6 +168,7 @@
           "StrokeThickness": 1,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
+          "Visible": true,
           "Text": "███ ███ ███",
           "FontFamily": "DejaVu Sans",
           "FontSize": 60,
@@ -223,6 +230,7 @@
           "StrokeThickness": 1,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
+          "Visible": true,
           "FontFamily": "DejaVu Sans",
           "FontSize": 10,
           "Bold": false,
@@ -285,6 +293,7 @@
           "StrokeThickness": 1,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
+          "Visible": true,
           "Text": "Titre du jeu",
           "FontFamily": "scheme:heading",
           "FontSize": 36,
@@ -323,6 +332,7 @@
           "StrokeThickness": 1,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
+          "Visible": true,
           "Text": "Corps du jeu",
           "FontFamily": "scheme:body",
           "FontSize": 20,
@@ -361,6 +371,7 @@
           "StrokeThickness": 1,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
+          "Visible": true,
           "Text": "Police libre",
           "FontFamily": "DejaVu Serif",
           "FontSize": 20,

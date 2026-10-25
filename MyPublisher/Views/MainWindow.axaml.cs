@@ -389,6 +389,9 @@ public partial class MainWindow : Window
 
         if (!e.GetCurrentPoint(ListeDesBlocs).Properties.IsLeftButtonPressed) return;
         if (e.Source is not Visual source) return;
+        // L'œil d'une ligne (poste I8) est un bouton, pas une prise : on ne tire pas un bloc
+        // par son œil.
+        if (source.GetSelfAndVisualAncestors().OfType<Button>().Any()) return;
         if (source.GetSelfAndVisualAncestors().OfType<ListBoxItem>().FirstOrDefault()
             is not { DataContext: Frame frame }) return;
 

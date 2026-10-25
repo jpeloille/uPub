@@ -596,7 +596,10 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         if (CurrentPage is null) return;
 
-        SetSelection(CurrentPage.Frames.ToList());
+        // Les blocs visibles seuls (poste I8) : ce qu'on ne voit pas ne se prend pas d'un
+        // geste de la planche, et Suppr ou les flèches ne le toucheraient pas à l'insu de
+        // qui a tout sélectionné.
+        SetSelection(CurrentPage.Frames.Where(frame => frame.Visible).ToList());
         Status = SelectionLabel;
     }
 
@@ -1365,6 +1368,11 @@ public partial class MainWindowViewModel : ViewModelBase
     /// Défait les groupes sélectionnés. Chaque bloc retrouve sa place sur la page : son
     /// centre est celui que le repère du groupe lui donnait, et la rotation du groupe
     /// s'ajoute à la sienne. Un groupe tourné se dissocie donc sans que rien ne bouge.
+    ///
+    /// Un groupe masqué laisse ses blocs masqués (poste I8) : dissocier ne fait rien
+    /// paraître, pas plus que cela ne fait rien bouger. Ils restent dans la liste, l'œil
+    /// fermé ; seuls les blocs visibles restent sélectionnés, comme après « Tout
+    /// sélectionner ».
     /// </summary>
     [RelayCommand(CanExecute = nameof(CanUngroup))]
     private void UngroupSelected()
@@ -1396,13 +1404,14 @@ public partial class MainWindowViewModel : ViewModelBase
                 child.Rotation += group.Rotation;
                 child.X = centreX - child.Width / 2;
                 child.Y = centreY - child.Height / 2;
+                child.Visible = child.Visible && group.Visible;
 
                 CurrentPage.Frames.Insert(index + i, child);
                 released.Add(child);
             }
         }
 
-        SetSelection(released);
+        SetSelection(released.Where(frame => frame.Visible).ToList());
         CommitEdit();
         Status = "Groupe dissocié";
     }
@@ -1425,9 +1434,9 @@ public partial class MainWindowViewModel : ViewModelBase
                 Document.PageHeight - Document.MarginBottom);
         }
 
-        if (Selection.Count > 1)
+        if (BlocsAlignables.Count > 1)
         {
-            return Extent.Union(Selection.Select(frame => frame.Extent)) ?? default;
+            return Extent.Union(BlocsAlignables.Select(frame => frame.Extent)) ?? default;
         }
 
         return new Extent(0, 0, Document.PageWidth, Document.PageHeight);
@@ -1440,7 +1449,11 @@ public partial class MainWindowViewModel : ViewModelBase
     /// </summary>
     private void AlignEach(Func<Extent, Extent, (double Dx, double Dy)> shift, string label)
     {
-        if (Selection.Count == 0) return;
+        if (BlocsAlignables.Count == 0)
+        {
+            if (Selection.Count > 0) Status = "Un bloc masqué ne s'aligne pas.";
+            return;
+        }
 
         var reference = AlignmentReference();
 
@@ -1448,6 +1461,9 @@ public partial class MainWindowViewModel : ViewModelBase
         foreach (var frame in Selection)
         {
             var (dx, dy) = shift(frame.Extent, reference);
+            // Un bloc masqué ne s'aligne pas (poste I8) ; il ne sert pas non plus de
+            // repère : AlignmentReference ne lit que les blocs visibles.
+            if (!frame.Visible) continue;
             frame.X += dx;
             frame.Y += dy;
         }
@@ -1477,7 +1493,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private void AlignBottom() => AlignEach((f, r) => (0, r.Bottom - f.Bottom), "Alignés en bas");
 
     /// <summary>Répartir demande trois blocs : deux extrêmes et au moins un à placer entre eux.</summary>
-    public bool CanDistribute => Selection.Count > 2;
+    public bool CanDistribute => BlocsAlignables.Count > 2;
 
     [RelayCommand(CanExecute = nameof(CanDistribute))]
     private void DistributeHorizontally() => Distribute(horizontal: true);
@@ -1493,9 +1509,9 @@ public partial class MainWindowViewModel : ViewModelBase
     /// </summary>
     private void Distribute(bool horizontal)
     {
-        if (Selection.Count < 3) return;
+        if (BlocsAlignables.Count < 3) return;
 
-        var ordered = Selection
+        var ordered = BlocsAlignables
             .Select(frame => (Frame: frame, Extent: frame.Extent))
             .OrderBy(item => horizontal ? item.Extent.Left : item.Extent.Top)
             .ToList();

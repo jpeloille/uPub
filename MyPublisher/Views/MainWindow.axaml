@@ -15,8 +15,8 @@
     - « Page entière » et « Conserver les proportions » sont posés, liés au modèle de vue,
       dont I6 écoute la demande et lit la case — la planche tient la page, et les champs L
       et H passent par le modèle de vue pour garder le rapport du bloc ;
-    - la place de l'œil dans « Blocs de la page » (I8) et celle de l'alerte d'excédent dans
-      « Cadre de texte » (I9) sont réservées, chacune sous son nom.
+    - la place de l'œil dans « Blocs de la page », où I8 a posé l'œil, et celle de l'alerte
+      d'excédent dans « Cadre de texte » (I9) sont réservées, chacune sous son nom.
     Les boutons Main et Zoom du rail sont venus avec leur geste (I6) ; Ligne (A10) n'y est
     pas encore : un bouton n'apparaît qu'avec son geste. Sa place est dite dans le rail.
 -->
@@ -348,6 +348,24 @@
         </Style>
         <Style Selector="ListBox.blocs ListBoxItem:selected">
             <Setter Property="FontWeight" Value="Medium"/>
+        </Style>
+        <!-- L'œil d'une ligne (poste I8) : l'icône seule, 14 px, sans fond ni bord, au survol
+             comme à la pression — c'est la ligne qui se colore sous le pointeur. Il ne prend
+             pas le focus : la frappe en cours garde le sien. -->
+        <Style Selector="Button.oeil">
+            <Setter Property="Width" Value="14"/>
+            <Setter Property="Height" Value="14"/>
+            <Setter Property="MinWidth" Value="0"/>
+            <Setter Property="MinHeight" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+        <Style Selector="Button.oeil:pointerover /template/ ContentPresenter#PART_ContentPresenter,
+                         Button.oeil:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="Transparent"/>
         </Style>
         <!-- Le panneau Pages ne peint rien sur ses conteneurs : l'entrée dit elle-même la
              page courante (EntreeDePage.axaml), et I5 en fera une vignette bordée d'accent
@@ -1599,9 +1617,33 @@
                                             <ListBox.ItemTemplate>
                                                 <DataTemplate DataType="models:Frame">
                                                     <StackPanel Orientation="Horizontal" Spacing="8">
-                                                        <!-- La place de l'œil, que I8 pose : un bloc masqué
-                                                             reste dans la liste, l'œil fermé. -->
-                                                        <Panel x:Name="PlaceDeLOeil" Width="14" Height="14"/>
+                                                        <!-- L'œil (poste I8) : un clic masque le bloc, ou le
+                                                             montre, en un pas d'annulation, sans le
+                                                             sélectionner ni prendre le focus. Un bloc masqué
+                                                             reste dans la liste, l'œil fermé, et s'y
+                                                             sélectionne. L'œil ouvert est celui de la
+                                                             maquette ; elle n'a pas d'œil fermé, qui en
+                                                             garde le trait et la couleur : la paupière
+                                                             baissée, trois cils. -->
+                                                        <Panel x:Name="PlaceDeLOeil" Width="14" Height="14">
+                                                            <Button x:Name="OeilDuBloc" Classes="oeil"
+                                                                    ToolTip.Tip="Masquer ou afficher le bloc"
+                                                                    Command="{Binding #Root.((vm:MainWindowViewModel)DataContext).BasculerLaVisibiliteCommand}"
+                                                                    CommandParameter="{Binding}">
+                                                                <Panel>
+                                                                    <ContentControl Content="{StaticResource IconeOeil}"
+                                                                                    IsVisible="{Binding Visible}"/>
+                                                                    <Viewbox x:Name="OeilFerme" Width="14" Height="14"
+                                                                             IsVisible="{Binding !Visible}">
+                                                                        <Canvas Width="24" Height="24">
+                                                                            <Path StrokeThickness="1.8" StrokeLineCap="Round"
+                                                                                  Stroke="{StaticResource Libelle}"
+                                                                                  Data="M2 10s3.5 6 10 6 10-6 10-6M5.5 13.2 4 15.8M12 16v2.8M18.5 13.2 20 15.8"/>
+                                                                        </Canvas>
+                                                                    </Viewbox>
+                                                                </Panel>
+                                                            </Button>
+                                                        </Panel>
                                                         <Border Width="14" Height="14" CornerRadius="3"
                                                                 Background="{StaticResource FondInitiale}">
                                                             <TextBlock Text="{Binding Converter={x:Static conv:InitialeDuType.Instance}}"

@@ -49,6 +49,7 @@
           "StrokeThickness": 0,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
+          "Visible": true,
           "Shape": "Rectangle"
         },
         {
@@ -64,6 +65,7 @@
           "StrokeThickness": 1,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
+          "Visible": true,
           "Path": "",
           "Fit": "UniformToFill",
           "Field": "None"
@@ -84,6 +86,7 @@
           "StrokeThickness": 0,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
+          "Visible": true,
           "Shape": "Rectangle"
         },
         {
@@ -99,6 +102,7 @@
           "StrokeThickness": 1,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
+          "Visible": true,
           "Text": "Le titre de\nvotre affiche",
           "FontFamily": "scheme:heading",
           "FontSize": 62,
@@ -137,6 +141,7 @@
           "StrokeThickness": 1,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
+          "Visible": true,
           "Text": "Le sous-titre précise le lieu et le propos.",
           "FontFamily": "scheme:body",
           "FontSize": 22,
@@ -178,6 +183,7 @@
           "StrokeThickness": 0,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
+          "Visible": true,
           "Shape": "Rectangle"
         },
         {
@@ -193,6 +199,7 @@
           "StrokeThickness": 1,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
+          "Visible": true,
           "Text": "",
           "FontFamily": "scheme:heading",
           "FontSize": 18,
@@ -231,6 +238,7 @@
           "StrokeThickness": 1,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
+          "Visible": true,
           "Text": "Les renseignements pratiques : horaires, tarif, accès. Un bloc de texte ordinaire, que vous remplacez par le vôtre.",
           "FontFamily": "scheme:body",
           "FontSize": 14,
@@ -269,6 +277,7 @@
           "StrokeThickness": 1,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
+          "Visible": true,
           "Children": [
             {
               "$kind": "shape",
@@ -286,6 +295,7 @@
               "StrokeThickness": 0,
               "StrokeStyle": "Solid",
               "CornerRadius": 0,
+              "Visible": true,
               "Shape": "Rectangle"
             },
             {
@@ -301,6 +311,7 @@
               "StrokeThickness": 1,
               "StrokeStyle": "Solid",
               "CornerRadius": 0,
+              "Visible": true,
               "Path": "",
               "Fit": "Uniform",
               "Field": "ContactLogo"
@@ -318,6 +329,7 @@
               "StrokeThickness": 1,
               "StrokeStyle": "Solid",
               "CornerRadius": 0,
+              "Visible": true,
               "Text": "",
               "FontFamily": "scheme:heading",
               "FontSize": 18,
@@ -356,6 +368,7 @@
               "StrokeThickness": 1,
               "StrokeStyle": "Solid",
               "CornerRadius": 0,
+              "Visible": true,
               "Text": "",
               "FontFamily": "scheme:body",
               "FontSize": 11,
@@ -394,6 +407,7 @@
               "StrokeThickness": 1,
               "StrokeStyle": "Solid",
               "CornerRadius": 0,
+              "Visible": true,
               "Text": "",
               "FontFamily": "scheme:body",
               "FontSize": 11,

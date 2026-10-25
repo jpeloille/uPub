@@ -49,6 +49,7 @@
           "StrokeThickness": 0,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
+          "Visible": true,
           "Shape": "Rectangle"
         },
         {
@@ -64,6 +65,7 @@
           "StrokeThickness": 1,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
+          "Visible": true,
           "Path": "",
           "Fit": "Uniform",
           "Field": "ContactLogo"
@@ -81,6 +83,7 @@
           "StrokeThickness": 1,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
+          "Visible": true,
           "Text": "",
           "FontFamily": "scheme:heading",
           "FontSize": 11,
@@ -119,6 +122,7 @@
           "StrokeThickness": 1,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
+          "Visible": true,
           "Text": "",
           "FontFamily": "scheme:body",
           "FontSize": 7,
@@ -160,6 +164,7 @@
           "StrokeThickness": 0,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
+          "Visible": true,
           "Shape": "Rectangle"
         },
         {
@@ -175,6 +180,7 @@
           "StrokeThickness": 1,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
+          "Visible": true,
           "Text": "",
           "FontFamily": "scheme:heading",
           "FontSize": 12,
@@ -213,6 +219,7 @@
           "StrokeThickness": 1,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
+          "Visible": true,
           "Text": "",
           "FontFamily": "scheme:body",
           "FontSize": 8,
@@ -251,6 +258,7 @@
           "StrokeThickness": 1,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
+          "Visible": true,
           "Text": "",
           "FontFamily": "scheme:body",
           "FontSize": 7,
@@ -289,6 +297,7 @@
           "StrokeThickness": 1,
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
+          "Visible": true,
           "Text": "",
           "FontFamily": "scheme:body",
           "FontSize": 7,

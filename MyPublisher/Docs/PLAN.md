@@ -24,7 +24,7 @@ Où en est chaque poste. Une seule règle pour la colonne d'avancement : un post
 on écrit ce qui est fait plutôt qu'un pourcentage inventé — un poste à moitié écrit n'est
 pas un poste à moitié livré. La colonne se met à jour dans le commit qui clôt le poste.
 
-*Dernière mise à jour : 25 octobre 2026 (I2 livré avec B7 : la disposition de la fenêtre ; I4 livré : la planche, et Q10 avec elle ; I6 livré : naviguer dans la planche, et garder les proportions ; I7 livré : le souligné et ses sortes, le modèle seul ; I5 livré : les vignettes de pages ; relecture et juge après fusion pour I5 et I6).*
+*Dernière mise à jour : 25 octobre 2026 (I2 livré avec B7 : la disposition de la fenêtre ; I4 livré : la planche, et Q10 avec elle ; I6 livré : naviguer dans la planche, et garder les proportions ; I7 livré : le souligné et ses sortes, le modèle seul ; I5 livré : les vignettes de pages ; I8 livré : masquer un bloc ; relecture et juge après fusion pour I5, I6 et I8).*
 
 | Poste | Intitulé | Avancement | Où ça en est |
 |---|---|:---:|---|
@@ -100,14 +100,14 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **I5** | Vignettes de pages | **100 %** | Chaque page du panneau Pages en vignette de 96 px au rapport de la page, son numéro dessous, la page courante bordée de 2 px d'accent ; un clic y mène, sans rien mettre à l'historique. `Views/VignetteDePage.cs` dérive de la vignette des modèles : un schéma tiré de la composition, sans contrôle de bloc, qui dessine sa page — et non la première — avec le fond de page. Elle suit le document qui se modifie en place : elle écoute sa page bloc par bloc, comme la planche, et ne recompose que les filets du bloc retouché ; une annulation rend ses pixels. Sur ATA 21, redessiner les vignettes prend 14 ms après une retouche du plus long texte, 43 ms quand le jeu de polices fait tout recomposer. Les sept cibles du juge dans `TemplatePreview.cs` restent, `DetachementTests` et `VignetteTests` passent inchangés. Neuf tests ; recette dans `Scripts/recettes/`. Relecture et juge après fusion |
 | **I6** | Main, zoom, page entière, proportions | **100 %** | La main du rail, ou `Espace` tenu hors saisie et hors bouton, fait glisser la planche — son seul défilement, sans bloc touché ni pas d'annulation —, main ouverte puis fermée, deux curseurs dessinés aux pinceaux de l'apparence. La loupe (`Z`) zoome d'un pas au clic, en arrière sous `Alt`, le point visé restant sous le pointeur ; `Ctrl`+molette de même, prise avant que la zone qui défile ne la consomme. « Page entière » tient la page dans la zone, marge de la planche déduite, mesurée après la mise en page, qui arrondit au pixel supérieur ; jamais d'office. « Conserver les proportions », état de la session : cochée, un coin tiré et la saisie de L ou de H — qui passent désormais par le modèle de vue — gardent le rapport du bloc, les côtés non, et `Maj` pendant le glissé fait l'inverse. Les deux icônes du poste servent. Neuf tests ; relecture et juge après fusion. Recette dans `Scripts/recettes/` |
 | **I7** | Souligné | **100 %** | Le souligné porte sa sorte — plein, pointillé, tiret, tiret long, tiret-point, tiret-point-point ou vague ; simple ou double, épais ou non, « mots seuls » — au bloc, au fragment, où `null` laisse celui du bloc, et dans le style effectif. Il s'écrit `false`, `true` pour le trait simple, ou en objet `{ Line, Double, Thick, WordsOnly }` ; `FormatVersion` ne change pas, Samples et Templates sont réenregistrés. Il se trace à l'écran et au PDF à la place et à l'épaisseur de la table `post`, sous la ligne de base de son morceau, exposant compris, et à la couleur de son texte ; seize des dix-sept sortes de libmspub s'importent, le double en double. La commande `SoulignerCommand` est dans `MainWindowViewModel.Souligne.cs`, sans bouton : le bouton S, `Ctrl+U` et le menu viennent de I3. Recette dans `Scripts/recettes/`, vingt-six sabotages au juge |
-| **I8** | Masquer un bloc | 0 % | Spécifié le 24 octobre 2026 ; lot 2 |
+| **I8** | Masquer un bloc | **100 %** | L'œil de « Blocs de la page », à la place que I2 avait réservée : un clic masque le bloc, ou le montre, en un pas d'annulation, même pendant une saisie, sans le sélectionner ni prendre le focus ; le document est « modifié ». `Visible` sur tout bloc, `true` par défaut ; `FormatVersion` ne change pas, Samples et Templates sont réenregistrés — un « Visible » de plus par bloc, rien d'autre. Masqué, le bloc n'est dessiné ni dans `PageRoot` ni au PDF, ni ce que porte un groupe masqué ; rien de lui n'avertit, ni sa police (Q8), ni son image, ni son débordement ; son filet n'élargit plus la découpe d'un groupe. Un clic à sa place prend le bloc d'en dessous ; l'alignement et la répartition ne le voient pas, « Tout sélectionner » non plus. Il reste dans la liste, l'œil fermé, et s'y sélectionne, sans cadre ni poignée sur la planche ; masqué, il quitte une sélection multiple. Une recopie le garde, dissocier un groupe masqué laisse ses blocs masqués ; les cases d'un tableau ne portent pas la propriété. La vignette de la page (I5) ne le dessine pas. L'icône du poste sert. Vingt-cinq tests ; relecture et juge après fusion. Recette dans `Scripts/recettes/` |
 | **I9** | Compter les lignes en excédent | 0 % | Spécifié le 24 octobre 2026 ; lot 2 |
 | **D** | Moteur de composition | — | Décision non ouverte ; à rouvrir quand A, B et C sont livrées |
 
 **Par phase** — P : 4 sur 4 · A : 7 sur 15 · B : 4 sur 7 · C : 7 sur 9 · R : 5 sur 7 ·
-Q : 17 sur 23 · I : 6 sur 9 · D : non planifié.
+Q : 17 sur 23 · I : 7 sur 9 · D : non planifié.
 
-Soit **50 postes sur 74**. Le 24 octobre 2026, la phase I en a ajouté neuf, tirés de la
+Soit **51 postes sur 74**. Le 24 octobre 2026, la phase I en a ajouté neuf, tirés de la
 maquette de la nouvelle interface. Le compte avait doublé le 11 octobre 2026 sans que rien ne
 recule : il porte désormais les onze postes de l'audit des fiches (A8 à A15, B6, B7,
 C8), deux postes que les documents réels demandaient (R6, R7), et la phase Q, qui
@@ -5063,6 +5063,18 @@ texte jetables, ne voient pas la propriété.
 - un pas d'annulation rouvre l'œil.
 
 Effort : faible à moyen.
+
+*Tranché à la livraison*, là où la section se taisait. La maquette ne dessine que l'œil
+ouvert : l'œil fermé en garde le trait et la couleur, paupière baissée et trois cils, dans
+la fenêtre et non dans l'apparence, dont la recette ne relève que les icônes de la
+maquette. Un bloc masqué sélectionné dans la liste n'a ni cadre ni poignée sur la planche —
+une poignée tirée retoucherait ce que rien ne dessine ; il reste sélectionné seul, mais
+quitte une sélection multiple quand on ferme son œil, et « Tout sélectionner » ne le prend
+pas : une sélection de plusieurs blocs ne porte que ce que la planche saisit, et Suppr ou
+un glissé n'emportent rien qu'on ne voie. Dissocier un groupe masqué laisse ses blocs
+masqués : dissocier ne fait rien paraître. L'aimantation n'est pas touchée : elle ne vise
+encore aucun bloc (A11), et un bloc masqué ne se tire pas ; A11 dira qu'un bloc masqué
+n'attire rien. libmspub ne transmet aucun bloc masqué : un `.pub` s'importe tout visible.
 
 #### I9 — Compter les lignes en excédent
 
