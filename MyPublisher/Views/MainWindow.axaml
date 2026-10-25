@@ -883,8 +883,12 @@
                                 ToolTip.Tip="Ajouter une page" Command="{Binding AddPageCommand}"
                                 Content="{StaticResource IconeAjouterPage}"/>
                     </Grid>
+                    <!-- Toujours une page choisie (relecture de I5) : un Ctrl + clic sur la
+                         vignette courante la désélectionnait, et laissait la fenêtre sans
+                         page courante — plus de planche, plus de cadre d'accent. -->
                     <ListBox x:Name="ListeDesPages" Classes="pages" Margin="0,6,0,12"
                              ItemsSource="{Binding Document.Pages}"
+                             SelectionMode="AlwaysSelected"
                              SelectedItem="{Binding CurrentPage}">
                         <ListBox.ItemsPanel>
                             <ItemsPanelTemplate>
