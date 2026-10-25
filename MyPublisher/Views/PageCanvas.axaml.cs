@@ -248,6 +248,7 @@ public partial class PageCanvas : UserControl
             _vm.PropertyChanged -= OnViewModelPropertyChanged;
             _vm.Selection.CollectionChanged -= OnSelectionChanged;
             _vm.PageEntiereDemandee -= OnPageEntiereDemandee;
+            _vm.TransactionsRefermees -= OnTransactionsRefermees;
         }
 
         _vm = DataContext as MainWindowViewModel;
@@ -262,6 +263,9 @@ public partial class PageCanvas : UserControl
             // « Page entière » est un calcul de la planche, qui seule connaît sa taille à
             // l'écran : le bouton reste grisé tant qu'elle ne l'écoute pas (poste I6).
             _vm.PageEntiereDemandee += OnPageEntiereDemandee;
+
+            // Annuler et Rétablir referment la saisie et le glissé avec le reste (Q24).
+            _vm.TransactionsRefermees += OnTransactionsRefermees;
         }
 
         TrackFrames();
@@ -328,6 +332,29 @@ public partial class PageCanvas : UserControl
     }
 
     private void OnFramePropertyChanged(object? sender, PropertyChangedEventArgs e) => RefreshOverlay();
+
+    /// <summary>
+    /// Annuler ou Rétablir a refermé les transactions de la planche avec les autres (poste
+    /// Q24). Chacun de ses deux propriétaires encore actif rouvre la sienne, et lui seul.
+    ///
+    /// La saisie, si elle est toujours ouverte : c'est qu'il n'y avait rien à défaire —
+    /// <c>Ctrl+Z</c> sur un historique vide, <c>Ctrl+Y</c> après une frappe. Une annulation
+    /// qui relit le document l'a refermée par le changement de sélection, et rien ne se
+    /// rouvre pour elle : une transaction rouverte à l'aveugle resterait sans propriétaire, et
+    /// chaque geste suivant y fondrait son pas.
+    ///
+    /// Le glissé, si le bouton est toujours tenu : son relâché refermera ce qu'il rouvre. Après
+    /// une annulation qui a relu le document, il tire des blocs que la page n'a plus, et ne
+    /// change rien.
+    /// </summary>
+    private void OnTransactionsRefermees(object? sender, EventArgs e)
+    {
+        if (_editing is not null) _vm?.BeginEdit();
+        if (_mode is DragMode.Move or DragMode.Resize or DragMode.Rotate or DragMode.Guide or DragMode.Extremite)
+        {
+            _vm?.BeginEdit();
+        }
+    }
 
     // ---------------------------------------------------------------- poignées
 

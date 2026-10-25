@@ -46,6 +46,12 @@ public partial class MainWindow : Window
     /// </summary>
     private bool _propertyEditOpen;
 
+    /// <summary>
+    /// Le panneau — la barre ou un onglet du dock — dont un champ a pris le focus en dernier :
+    /// celui qu'on interroge quand Annuler ou Rétablir a refermé sa transaction (poste Q24).
+    /// </summary>
+    private Control? _panneauDuChamp;
+
     private MainWindowViewModel? _vm;
 
     public MainWindow()
@@ -89,9 +95,18 @@ public partial class MainWindow : Window
 
     private void AttachViewModel()
     {
-        if (_vm is not null) _vm.PropertyChanged -= OnViewModelPropertyChanged;
+        if (_vm is not null)
+        {
+            _vm.PropertyChanged -= OnViewModelPropertyChanged;
+            _vm.TransactionsRefermees -= OnTransactionsRefermees;
+        }
+
         _vm = DataContext as MainWindowViewModel;
-        if (_vm is not null) _vm.PropertyChanged += OnViewModelPropertyChanged;
+        if (_vm is not null)
+        {
+            _vm.PropertyChanged += OnViewModelPropertyChanged;
+            _vm.TransactionsRefermees += OnTransactionsRefermees;
+        }
     }
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -361,10 +376,29 @@ public partial class MainWindow : Window
         ClosePropertyEdit();
 
         _propertyEditOpen = true;
+        _panneauDuChamp = sender as Control;
         Vm?.BeginEdit();
     }
 
     private void OnPropertyPanelLostFocus(object? sender, RoutedEventArgs e) => ClosePropertyEdit();
+
+    /// <summary>
+    /// Annuler ou Rétablir a refermé la transaction du champ avec toutes les autres (poste
+    /// Q24). Le champ qui a toujours le focus rouvre la sienne, et la suite de sa saisie fait
+    /// son pas. Sans cela, il la croyait ouverte quand il n'y avait rien à défaire, et ce
+    /// qu'on y tapait n'entrait dans aucun pas ; et quand l'annulation relit le document, un
+    /// champ que la sélection ne masque pas — une marge de l'onglet Document — gardait le
+    /// focus sans transaction. Les champs du bloc, eux, le perdent : la sélection se vide en
+    /// passant, et leurs réglages se masquent un instant.
+    /// </summary>
+    private void OnTransactionsRefermees(object? sender, EventArgs e)
+    {
+        _propertyEditOpen = false;
+        if (_panneauDuChamp is not { IsKeyboardFocusWithin: true }) return;
+
+        _propertyEditOpen = true;
+        Vm?.BeginEdit();
+    }
 
     private void ClosePropertyEdit()
     {

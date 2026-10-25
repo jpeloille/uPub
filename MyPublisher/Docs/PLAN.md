@@ -93,7 +93,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **Q21** | Un tremblement ne déplace pas le bloc | 0 % | Trouvé par la relecture de Q14 : un pixel de mouvement pendant le clic, près d'une marge, fait sauter le bloc de 3 pt par l'aimantation. Repris en phase N (salve Saisie 3, avec Q22) |
 | **Q22** | Un clic sur une poignée ne redimensionne pas | 0 % | Trouvé par la relecture de Q14 : une pression sans mouvement près d'un coin fait passer le bloc de 100 à 96 pt et empile un pas d'annulation. Repris en phase N (salve Saisie 3) : toujours présent sur un bloc tourné, et Maj arrondit l'angle sans mouvement |
 | **Q23** | Sélectionner un bloc ne fige pas la fenêtre | **100 %** | La cause, mesurée : les trois sections du dock et les réglages de la barre contextuelle étaient des `ContentControl` liés au bloc seul, qu'une sélection vide vidait et que la pression suivante reconstruisait — mille visuels, vingt-quatre champs numériques —, dans la pression même ; la liste des polices n'y était pour rien. Ils sont construits une fois par sorte de bloc et gardés, masqués sans bloc de leur sorte (`Views/GabaritsGardes.cs`) : sur ATA 21, une pression sur un bloc non sélectionné rend la main en 30 à 52 ms au lieu de 107 à 136, l'image comprise, et n'ajoute plus qu'un visuel à la fenêtre. « Blocs de la page » ne défile plus que si la ligne du bloc n'est pas en vue ; le sélecteur de couleur refermé ne rend plus le focus à un champ de la barre, qui engloutissait son pas. Les deux tests du double-clic reprennent le geste entier et passent vingt fois de suite, chacun dans un processus neuf. Quatre tests ; relecture et juge après fusion. Recette dans `Scripts/recettes/` |
-| **Q24** | Annuler ou Rétablir ne laisse plus une saisie hors de toute transaction | 0 % | Trouvé par la relecture du cours (fiche 23) : `Ctrl+Z` sans rien à annuler, ou `Ctrl+Y` après une frappe, sort la frappe de toute transaction — elle ne s'annule plus et ne marque pas le document. Phase N, salve Saisie 1 |
+| **Q24** | Annuler ou Rétablir ne laisse plus une saisie hors de toute transaction | **100 %** | `Undo` et `Redo` referment ce qui est ouvert, comme avant, puis lèvent un avis sur chaque chemin, rien à défaire compris (`MainWindowViewModel.Transactions.cs`), sans rien rouvrir eux-mêmes : chaque propriétaire encore actif rouvre sa propre transaction, et lui seul — la saisie sur la page si elle l'est toujours, le champ du dock ou de la barre s'il a toujours le focus, et deux que le plan ne nommait pas, le glissé dont le bouton est tenu et le sélecteur de couleur resté ouvert. Une annulation qui relit le document referme la saisie, et rien ne se rouvre pour elle. Les trois cas du plan se montraient, le déduit compris : un champ de la barre sous un `Ctrl+Z` sans rien à annuler, une marge de l'onglet Document sous une vraie annulation ; les champs du bloc, eux, perdent le focus à une annulation, la sélection se vidant en passant. Huit tests, dont sept tombaient sur le code d'avant ; relecture et juge après fusion. Recette dans `Scripts/recettes/` |
 | **Q25** | Un réglage fait pendant une saisie a son propre pas | 0 % | Trouvé par la même relecture : un champ de la barre ouvert pendant la frappe se fond dans son pas. Phase N, salve Saisie 1, après Q24 dans la même copie |
 | **I1** | Apparence de l'interface | **100 %** | `Views/Apparence.axaml` — pas « charte », qui nomme le jeu du document —, chargée par `App.axaml` : les 26 couleurs de l'interface de la maquette, une fois chacune et sous leur nom ; cinq classes aux tailles et aux couleurs de la feuille de style de la maquette, dont le bouton-icône de 30 × 30 plein d'accent quand il est actif ; 35 icônes au tracé de la maquette, à la couleur courante, une par emploi. L'écran d'aujourd'hui ne change pas d'un pixel. La recette tient la liste des vues de la phase et le poste de chaque icône, que les postes suivants complètent ; une vue qui cite l'apparence ou écrit en dur une de ses couleurs sans être dans la liste la fait échouer. Recette dans `Scripts/recettes/` |
 | **I2** | Disposition de la fenêtre | **100 %** | La fenêtre de la maquette, de haut en bas. Barre de menus : la marque, le titre du document centré, deux menus neufs — Texte (gras `Ctrl+G`, italique `Ctrl+I`, les quatre alignements, « Importer un te_xte… ») et Fenêtre (les deux panneaux, et B7). Barre principale à icônes : Annuler et Rétablir grisés sur un historique vide, mais pas pendant une saisie qui a déjà changé le bloc ; « Page entière » posé pour I6. La place de la barre contextuelle, de hauteur constante, et sa pastille, dans son propre fichier pour I3. Rail d'outils, sans Main, Zoom ni Ligne avant leur geste. Panneau Pages, dont l'entrée est un contrôle à part pour I5. Dock à quatre onglets, sections repliables retenues le temps de la session, longueurs en millimètres, vignettes de Fond et contour, « Blocs de la page » l'avant en tête. Barre d'état : la page, le format, le zoom en échelle logarithmique. Chaque champ, chaque onglet et chaque geste de la fenêtre fait un seul pas d'annulation ; les vingt-six icônes du poste servent. Repris après relecture : quatorze défauts, tous refermés. Recette dans `Scripts/recettes/` |
@@ -4542,6 +4542,72 @@ champ » de Q14 et de I2 reste intacte.
 
 Fichiers : `MainWindowViewModel.cs` (`Undo`, `Redo`, l'avis), `MainWindow.axaml.cs` et
 `PageCanvas.axaml.cs` (le réarmement). Part dans la même copie que Q25, avant lui (salve Saisie 1). Effort : faible.
+
+*Fait le 26 octobre 2026.* Les trois cas se montrent, chacun par un test qui tombait sur le code
+d'avant : `Ctrl+Z` sans rien à annuler pendant la saisie, puis « abc » — Annuler grisé, le titre
+sans marque, aucun pas ; « abc », `Ctrl+Y`, « d » — un seul pas ; et le cas déduit, dans un champ
+de la barre qui garde le focus sous un `Ctrl+Z` sans rien à annuler : la fenêtre croyait sa
+transaction ouverte, la profondeur était à zéro, et le corps saisi ensuite ne faisait aucun pas.
+
+`Undo` et `Redo` referment ce qui est ouvert, comme avant, puis lèvent l'avis
+`TransactionsRefermees` sur chaque chemin — ils n'ont plus de retour anticipé — et ne rouvrent rien
+eux-mêmes. L'avis est déclaré dans `MainWindowViewModel.Transactions.cs` (règle 10). Chaque
+propriétaire y répond pour lui seul : la planche rouvre la transaction de la saisie si elle est
+toujours ouverte, et celle du glissé si le bouton est toujours tenu, que son relâché refermera ;
+la fenêtre, celle du champ si le panneau où il a pris le focus — la barre ou un onglet du dock — le
+garde (`IsKeyboardFocusWithin`) ; la barre, celle du sélecteur de couleur s'il est toujours ouvert.
+Une annulation qui relit le document referme la saisie par le changement de sélection, et le
+sélecteur avec le bloc : rien ne se rouvre pour eux. La règle « un pas par champ » de Q14 et de I2
+reste intacte : `UnGesteUnPas` et ses deux recopies (I7, I8) n'ont pas changé, et la recette
+rejoue les tests voisins qui la tiennent.
+
+*Recette jouée* : `Scripts/recettes/Q24-Q25-transactions.sh`. Les sources d'abord : `Undo` et
+`Redo` commencent par refermer, finissent par l'avis, hors de toute condition, sans retour ni
+`BeginEdit` ; l'avis est dans le partiel du poste et n'est levé que par eux ; la fenêtre, la
+planche et la barre s'y abonnent et s'en désabonnent. Puis huit tests sous `poste=Q24`
+(`TransactionsDeSaisieTests`), au clavier sur la vraie fenêtre : les deux premiers cas du plan ;
+le champ de la barre sous un `Ctrl+Z` sans rien à annuler ; le champ Contenu sous `Ctrl+Y` ; une
+marge de l'onglet Document sous un `Ctrl+Z` qui la défait ; un glissé, et le sélecteur de couleur,
+sous un `Ctrl+Z` sans rien à annuler ; et le piège — après une annulation qui referme la saisie, un
+glissé de 1 pt, `Alt` tenu, fait encore son propre pas. Ce dernier passait sur le code d'avant, les
+sept autres tombaient. Enfin cinq tests voisins : aucun pas à l'entrée en saisie (Q14), un par
+champ du dock et de la barre (I2, I3), un par raccourci pendant la saisie d'un champ. Cinq
+sabotages au juge : l'avis qui n'est plus levé, une transaction rouverte pour une saisie refermée,
+et chacun des trois autres propriétaires qui ne rouvre plus la sienne.
+
+*Ce que l'implémentation a appris.*
+- Les champs du bloc — la barre, les sections du dock — perdent le focus à une vraie annulation :
+  `Restore` change de page avant de rendre la sélection, changer de page la vide, et les réglages du
+  bloc se masquent un instant (Q23) ; Avalonia reprend le focus à un champ qui cesse d'être visible.
+  La recette du plan, « dans le champ Contenu, frappe, `Ctrl+Z`, frappe », ne se joue donc pas telle
+  quelle : la seconde frappe n'arrive nulle part, et rien ne se perd. Elle se joue sous `Ctrl+Y`
+  dans le champ Contenu, qui garde le focus, et sous `Ctrl+Z` dans une marge de l'onglet Document,
+  que la sélection ne masque pas : l'annulation l'y laissait, sans transaction.
+- Deux propriétaires de plus que les deux du plan, vus à la lecture du code et confirmés chacun par
+  un test qui tombait : le glissé, de la pression au relâché — `Ctrl+Z` le bouton tenu, sur un
+  historique vide, et le déplacement qui suivait n'entrait dans aucun pas —, et le sélecteur de
+  couleur de la barre, qui tient sa transaction de son ouverture à sa fermeture (I3) — la pastille
+  choisie après un `Ctrl+Z` ne faisait aucun pas. Sur le banc, le volet s'ouvre dans la fenêtre, et
+  la touche atteint ses raccourcis ; sur une plate-forme où il a sa propre fenêtre, ce n'est pas
+  éprouvé.
+- Les liaisons de la fenêtre prennent `Ctrl+Z` et `Ctrl+Y` même quand un champ ou la zone de
+  saisie a le focus : c'est l'historique du document qui annule, et le défaut passait par lui.
+
+*Choisi sans certitude.*
+- « Document neuf, bloc tracé » est lu comme un bloc posé dans le document à l'ouverture : tracé
+  dans la session, le bloc fait son pas, et `Ctrl+Z` défait le tracé — l'historique n'est plus vide,
+  et ce n'est plus le cas du défaut.
+- L'avis est levé à chaque Annuler et Rétablir, même quand rien n'était ouvert : chaque propriétaire
+  se règle sur ce qu'il voit, et un champ resté au focus sans transaction en retrouve une.
+
+*Relevé, non corrigé.* Un changement de sélection pendant qu'un champ que la sélection ne masque
+pas a le focus referme sa transaction sans qu'il la rouvre : `Ctrl+A` dans une marge de l'onglet
+Document sélectionne les blocs (la liaison de la fenêtre prend la touche), le champ garde le focus,
+et la marge saisie ensuite n'entre dans aucun pas ni ne marque le document — mesuré. N6, qui laisse
+la touche au champ, en ôte ce chemin ; un changement de sélection venu d'ailleurs le garderait.
+`ImporterTexte`, au modèle de vue, referme aussi tout ce qui est ouvert sans rien rouvrir : le geste
+de la fenêtre referme la saisie et le champ avant de l'appeler, si bien que rien n'est laissé ouvert
+— un appel venu d'ailleurs le ferait.
 
 ### Q25 — Un réglage fait pendant une saisie a son propre pas
 

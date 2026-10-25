@@ -31,6 +31,29 @@ public partial class BarreContextuelle : UserControl
             if (e.Property == GabaritsGardes.BlocProperty) FermerLaCouleur();
         };
         DetachedFromVisualTree += (_, _) => FermerLaCouleur();
+
+        DataContextChanged += (_, _) => EcouterLAvis();
+        EcouterLAvis();
+    }
+
+    private MainWindowViewModel? _vm;
+
+    private void EcouterLAvis()
+    {
+        if (_vm is not null) _vm.TransactionsRefermees -= OnTransactionsRefermees;
+        _vm = DataContext as MainWindowViewModel;
+        if (_vm is not null) _vm.TransactionsRefermees += OnTransactionsRefermees;
+    }
+
+    /// <summary>
+    /// Annuler ou Rétablir a refermé la transaction du sélecteur de couleur avec les autres
+    /// (poste Q24). Encore ouvert — il n'y avait rien à défaire —, il rouvre la sienne, que sa
+    /// fermeture refermera : la pastille choisie ensuite fait son pas. Une annulation qui relit
+    /// le document l'a refermé avec le bloc, et rien ne se rouvre pour lui.
+    /// </summary>
+    private void OnTransactionsRefermees(object? sender, EventArgs e)
+    {
+        if (_couleurOuverte is not null) _vm?.BeginEdit();
     }
 
     /// <summary>
