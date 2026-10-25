@@ -28,6 +28,11 @@ Point important pour nous (p. 58) : **l'élément inséré est un groupe**. Pour
 taille ou remplacer son image, il faut le dissocier (`Arrange/Ungroup`), agir, puis le
 regrouper (`Arrange/Regroup`).
 
+*Repris le 25 octobre 2026* ([23](23-modalites-de-saisie.md)). Relu, le livre ne fait
+dissocier que pour **redimensionner** un membre (p. 58) : l'image se remplace d'un clic sur
+elle, et le texte se surligne et se retape **dans le groupe** (p. 58-60). C'est le poste N26 du
+plan.
+
 ## État dans MyPublisher
 
 Absent. Aucune notion d'élément composé ni de bibliothèque.

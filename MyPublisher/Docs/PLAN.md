@@ -24,7 +24,7 @@ Où en est chaque poste. Une seule règle pour la colonne d'avancement : un post
 on écrit ce qui est fait plutôt qu'un pourcentage inventé — un poste à moitié écrit n'est
 pas un poste à moitié livré. La colonne se met à jour dans le commit qui clôt le poste.
 
-*Dernière mise à jour : 25 octobre 2026 (I2 livré avec B7 : la disposition de la fenêtre ; I4 livré : la planche, et Q10 avec elle ; I6 livré : naviguer dans la planche, et garder les proportions ; I7 livré : le souligné et ses sortes, le modèle seul ; I5 livré : les vignettes de pages ; I8 livré : masquer un bloc ; I9 livré : les lignes en excédent au dock ; A10 livré : le trait et la flèche, avec l'outil Ligne ; I3 livré : la barre contextuelle ; Q23 livré : sélectionner un bloc ne fige plus la fenêtre ; relecture et juge après fusion pour I3, I5, I6, I8, I9, A10 et Q23).*
+*Dernière mise à jour : 26 octobre 2026 (phase N ouverte, la saisie de Publisher : N1 à N28, et Q24 et Q25 en phase Q ; A8, A9, A11, A12, A13, Q21, Q22, R6 et R7 repris par elle). Le 25 octobre 2026 : I2 livré avec B7 : la disposition de la fenêtre ; I4 livré : la planche, et Q10 avec elle ; I6 livré : naviguer dans la planche, et garder les proportions ; I7 livré : le souligné et ses sortes, le modèle seul ; I5 livré : les vignettes de pages ; I8 livré : masquer un bloc ; I9 livré : les lignes en excédent au dock ; A10 livré : le trait et la flèche, avec l'outil Ligne ; I3 livré : la barre contextuelle ; Q23 livré : sélectionner un bloc ne fige plus la fenêtre ; relecture et juge après fusion pour I3, I5, I6, I8, I9, A10 et Q23).*
 
 | Poste | Intitulé | Avancement | Où ça en est |
 |---|---|:---:|---|
@@ -39,12 +39,12 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **A5** | Formats de page | **100 %** | B4, B5, Executive, Tabloid au catalogue, et largeur/hauteur libres au panneau. `FormatVersion` reste à 3 |
 | **A6** | Taille du bloc dans la barre d'état | **100 %** | Position **et** taille du bloc, suivies pendant le geste et non seulement à sa fin |
 | **A7** | Alignement vertical du texte | **100 %** | Haut, milieu, bas sur le bloc de texte ; le calage est borné à zéro. `FormatVersion` reste à 3 |
-| **A8** | Insérer des pages : nombre, position, contenu | 0 % | Spécifié le 11 octobre 2026 |
-| **A9** | Rotation par quart de tour | 0 % | Spécifié le 11 octobre 2026 |
+| **A8** | Insérer des pages : nombre, position, contenu | 0 % | Spécifié le 11 octobre 2026 ; livré avec N18 (phase N, salve Saisie 5) |
+| **A9** | Rotation par quart de tour | 0 % | Spécifié le 11 octobre 2026 ; livré avec N18 (phase N, salve Saisie 5) |
 | **A10** | Objet trait, et flèche | **100 %** | `ShapeKind.Line` : un trait est une forme couchée, sans hauteur, longue de sa largeur, que sa rotation oriente autour de son milieu ; il se définit par ses deux extrémités (`PoserLesExtremites`), et la taille minimale d'un bloc ne s'y applique jamais. `StartArrow` et `EndArrow`, une pointe pleine facultative à chaque bout ; `FormatVersion` ne change pas, Samples et Templates réenregistrés. L'outil Ligne (`L`) du rail, entre Ellipse et la loupe, trace d'une extrémité à l'autre, `Maj` à 0, 45 ou 90°, la bulle disant longueur et angle ; *Insertion ▸ Trait*. Deux poignées sur les extrémités, sans rotation ; survol à 3 pt de l'encre. Au dock, X1, Y1, X2, Y2 à la place du cadre, les pointes, et le contour pour l'épaisseur et la couleur. Un coup de crayon `m … l S` au PDF, au même endroit qu'à l'écran ; les vignettes le dessinent. L'import des Fiches rend 5 traits et 0 rectangle de substitution, R5 compte les traits à part. L'icône du poste sert. Treize tests d'interface, vingt-six du noyau ; relecture et juge après fusion. Recette dans `Scripts/recettes/` |
-| **A11** | Aimantation réglable, et aux autres blocs | 0 % | Spécifié le 11 octobre 2026 |
-| **A12** | Menu contextuel du bloc | 0 % | Spécifié le 11 octobre 2026 |
-| **A13** | Rognage manuel de l'image | 0 % | Spécifié le 11 octobre 2026 |
+| **A11** | Aimantation réglable, et aux autres blocs | 0 % | Spécifié le 11 octobre 2026 ; repris en phase N (salve Saisie 13) : au redimensionnement et au tracé, préférences de N11 |
+| **A12** | Menu contextuel du bloc | 0 % | Spécifié le 11 octobre 2026 ; repris et élargi en phase N (salve Saisie 6) : presse-papiers, Format du bloc… vers le dock, double-clic sur une image ou une forme |
+| **A13** | Rognage manuel de l'image | 0 % | Spécifié le 11 octobre 2026 ; repris en phase N (salve Saisie 14) : Rogner au menu contextuel |
 | **A14** | Contour et ombre du caractère | 0 % | Spécifié le 11 octobre 2026 ; PDFsharp à éprouver d'abord |
 | **A15** | Sections : numérotation qui repart | 0 % | Spécifié le 11 octobre 2026 |
 | **B1** | Modèles | **100 %** | Catalogue au démarrage et sur `Ctrl+N` ; quatre modèles composés dans `Templates/` ; recette dans `Scripts/recettes/`, qui a remis le nom de la carte de visite à la taille de son texte |
@@ -68,8 +68,8 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **R3** | Colonnes à l'intérieur d'un bloc | **100 %** | Nombre et gouttière sur le bloc ; la ligne composée porte sa colonne et son ordonnée. Autre chose que C2a |
 | **R4** | Interligne : une seule mesure | **100 %** | Multiple de la hauteur naturelle ; écran et PDF concordent à 0,05 pt près ; recette dans `Scripts/recettes/` |
 | **R5** | **Ouvrir un `.pub`** | **100 %** | Lecture déléguée à libmspub. Les deux documents ATR s'ouvrent objet pour objet, sans perdre un style |
-| **R6** | Alignement par paragraphe | 0 % | Spécifié le 11 octobre 2026 |
-| **R7** | Éditer le texte riche à la souris | 0 % | Spécifié le 11 octobre 2026 ; attend Q1 |
+| **R6** | Alignement par paragraphe | 0 % | Spécifié le 11 octobre 2026 ; repris en phase N (salve Saisie 7), sur N2, N15 et N21 |
+| **R7** | Éditer le texte riche à la souris | 0 % | Spécifié le 11 octobre 2026 ; repris en phase N (salve Saisie 8) : la mesure est N7, le gras `Ctrl+G` ; attend la décision de voie |
 | **Q1** | Les styles suivent la frappe | **100 %** | Fragments et écarts recalés à la saisie par une fonction pure du noyau (`Recalage`), à la règle de Publisher : le style qui précède, celui qui suit en tête de paragraphe, le premier remplacé pour une sélection retapée. Seules les zones de saisie s'y lient ; lecture, import, copie et annulation ne recalent rien. `FormatVersion` reste à 4 ; recette dans `Scripts/recettes/` |
 | **Q2** | Le texte composé se détache de son bloc | **100 %** | `ControleDeBloc` suit l'attachement, comme `FondBloc`, et lâche l'ancien bloc quand on lui en donne un autre. Mesuré : le changement de page ne fuyait pas ; la fuite ne frappait qu'un contrôle sorti de l'arbre avec son bloc. Recette dans `Scripts/recettes/` |
 | **Q3** | Le cache d'images oublie ses échecs | **100 %** | L'ouverture d'un document (fichier ou modèle) oublie les échecs du cache, et eux seuls ; insérer une image ou la choisir pour un fond relit le fichier. L'annulation ne relit pas le disque. Recette dans `Scripts/recettes/` |
@@ -90,9 +90,11 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **Q18** | Paquets marqués « Legacy » | 0 % | Trouvé par Q12 : `Avalonia.Diagnostics` et xunit 2 ont des remplaçants ; aucun n'est vulnérable |
 | **Q19** | Les autres collections ne se remplacent plus | 0 % | Trouvé par Q17 : `Page.Frames`, `GroupFrame.Children`, `Document.Pages` et les listes de repères ont un setter public que des `ItemsControl` lient sans l'écouter |
 | **Q20** | La liste des polices garde la police du bloc | **100 %** | Trouvé par la relecture de C5b. La liste propose les polices du document absentes de la machine, libellées « (absente) », et la liaison ne renvoie jamais null au bloc. Recette dans `Scripts/recettes/` |
-| **Q21** | Un tremblement ne déplace pas le bloc | 0 % | Trouvé par la relecture de Q14 : un pixel de mouvement pendant le clic, près d'une marge, fait sauter le bloc de 3 pt par l'aimantation |
-| **Q22** | Un clic sur une poignée ne redimensionne pas | 0 % | Trouvé par la relecture de Q14 : une pression sans mouvement près d'un coin fait passer le bloc de 100 à 96 pt et empile un pas d'annulation |
+| **Q21** | Un tremblement ne déplace pas le bloc | 0 % | Trouvé par la relecture de Q14 : un pixel de mouvement pendant le clic, près d'une marge, fait sauter le bloc de 3 pt par l'aimantation. Repris en phase N (salve Saisie 3, avec Q22) |
+| **Q22** | Un clic sur une poignée ne redimensionne pas | 0 % | Trouvé par la relecture de Q14 : une pression sans mouvement près d'un coin fait passer le bloc de 100 à 96 pt et empile un pas d'annulation. Repris en phase N (salve Saisie 3) : toujours présent sur un bloc tourné, et Maj arrondit l'angle sans mouvement |
 | **Q23** | Sélectionner un bloc ne fige pas la fenêtre | **100 %** | La cause, mesurée : les trois sections du dock et les réglages de la barre contextuelle étaient des `ContentControl` liés au bloc seul, qu'une sélection vide vidait et que la pression suivante reconstruisait — mille visuels, vingt-quatre champs numériques —, dans la pression même ; la liste des polices n'y était pour rien. Ils sont construits une fois par sorte de bloc et gardés, masqués sans bloc de leur sorte (`Views/GabaritsGardes.cs`) : sur ATA 21, une pression sur un bloc non sélectionné rend la main en 30 à 52 ms au lieu de 107 à 136, l'image comprise, et n'ajoute plus qu'un visuel à la fenêtre. « Blocs de la page » ne défile plus que si la ligne du bloc n'est pas en vue ; le sélecteur de couleur refermé ne rend plus le focus à un champ de la barre, qui engloutissait son pas. Les deux tests du double-clic reprennent le geste entier et passent vingt fois de suite, chacun dans un processus neuf. Quatre tests ; relecture et juge après fusion. Recette dans `Scripts/recettes/` |
+| **Q24** | Annuler ou Rétablir ne laisse plus une saisie hors de toute transaction | 0 % | Trouvé par la relecture du cours (fiche 23) : `Ctrl+Z` sans rien à annuler, ou `Ctrl+Y` après une frappe, sort la frappe de toute transaction — elle ne s'annule plus et ne marque pas le document. Phase N, salve Saisie 1 |
+| **Q25** | Un réglage fait pendant une saisie a son propre pas | 0 % | Trouvé par la même relecture : un champ de la barre ouvert pendant la frappe se fond dans son pas. Phase N, salve Saisie 1, après Q24 dans la même copie |
 | **I1** | Apparence de l'interface | **100 %** | `Views/Apparence.axaml` — pas « charte », qui nomme le jeu du document —, chargée par `App.axaml` : les 26 couleurs de l'interface de la maquette, une fois chacune et sous leur nom ; cinq classes aux tailles et aux couleurs de la feuille de style de la maquette, dont le bouton-icône de 30 × 30 plein d'accent quand il est actif ; 35 icônes au tracé de la maquette, à la couleur courante, une par emploi. L'écran d'aujourd'hui ne change pas d'un pixel. La recette tient la liste des vues de la phase et le poste de chaque icône, que les postes suivants complètent ; une vue qui cite l'apparence ou écrit en dur une de ses couleurs sans être dans la liste la fait échouer. Recette dans `Scripts/recettes/` |
 | **I2** | Disposition de la fenêtre | **100 %** | La fenêtre de la maquette, de haut en bas. Barre de menus : la marque, le titre du document centré, deux menus neufs — Texte (gras `Ctrl+G`, italique `Ctrl+I`, les quatre alignements, « Importer un te_xte… ») et Fenêtre (les deux panneaux, et B7). Barre principale à icônes : Annuler et Rétablir grisés sur un historique vide, mais pas pendant une saisie qui a déjà changé le bloc ; « Page entière » posé pour I6. La place de la barre contextuelle, de hauteur constante, et sa pastille, dans son propre fichier pour I3. Rail d'outils, sans Main, Zoom ni Ligne avant leur geste. Panneau Pages, dont l'entrée est un contrôle à part pour I5. Dock à quatre onglets, sections repliables retenues le temps de la session, longueurs en millimètres, vignettes de Fond et contour, « Blocs de la page » l'avant en tête. Barre d'état : la page, le format, le zoom en échelle logarithmique. Chaque champ, chaque onglet et chaque geste de la fenêtre fait un seul pas d'annulation ; les vingt-six icônes du poste servent. Repris après relecture : quatorze défauts, tous refermés. Recette dans `Scripts/recettes/` |
 | **I3** | Barre contextuelle | **100 %** | La barre suit la sélection, à la suite de la pastille de I2. Pour un bloc de texte : la police avec la garde de Q20, le corps, le gras, l'italique, le souligné — bouton S, `Ctrl+U` et « Souligné » au menu Texte sur la commande de I7, qui retire le souligné quelle qu'en soit la sorte ou pose le trait simple, et un chevron qui propose le double, l'épais et « mots seuls » —, les quatre alignements, la droite comprise, l'interligne en multiple, et la couleur du texte, dont la vignette ouvre le sélecteur du jeu ; un tableau a la même mise en forme, sans l'alignement ni le souligné ; un groupe se dissocie, plusieurs blocs s'alignent et se répartissent ; une image, une forme ou la page n'ont que la pastille. Ce que la barre porte a quitté le dock : la section Caractère, l'alignement et l'interligne de Paragraphe, la mise en forme du tableau. Chaque bouton joue la commande du menu Texte sans prendre le focus et ne se coche que par le bloc, si bien que chaque clic fait son pas, même pendant une saisie ; le sélecteur de couleur, ouvert hors de la barre, tient sa propre transaction ; `Échap` quitte un champ de la barre et rend les lettres seules aux outils. Un clic sur « Centrer le texte » centre le bloc à l'écran et au PDF en un pas. Onze tests ; relecture et juge après fusion. Repris après le contrôle indépendant : deux de ces tests tombaient trois fois sur quatorze en suite entière — un clic dans un menu tout juste ouvert, ou sur un bouton que la barre venait d'échanger, cherchait sa cible dans la dernière image rendue, où elle n'était pas encore ; le banc, pas le produit. Le clic au centre d'un contrôle n'a plus qu'une aide, `Rendu.Cliquer`, pour les trois classes qui en avaient chacune une copie : elle attend que l'image montre le contrôle sous son centre, et échoue en nommant ce qui le couvre. Recette dans `Scripts/recettes/` |
@@ -102,12 +104,42 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **I7** | Souligné | **100 %** | Le souligné porte sa sorte — plein, pointillé, tiret, tiret long, tiret-point, tiret-point-point ou vague ; simple ou double, épais ou non, « mots seuls » — au bloc, au fragment, où `null` laisse celui du bloc, et dans le style effectif. Il s'écrit `false`, `true` pour le trait simple, ou en objet `{ Line, Double, Thick, WordsOnly }` ; `FormatVersion` ne change pas, Samples et Templates sont réenregistrés. Il se trace à l'écran et au PDF à la place et à l'épaisseur de la table `post`, sous la ligne de base de son morceau, exposant compris, et à la couleur de son texte ; seize des dix-sept sortes de libmspub s'importent, le double en double. La commande `SoulignerCommand` est dans `MainWindowViewModel.Souligne.cs`, sans bouton : le bouton S, `Ctrl+U` et le menu viennent de I3. Recette dans `Scripts/recettes/`, vingt-six sabotages au juge |
 | **I8** | Masquer un bloc | **100 %** | L'œil de « Blocs de la page », à la place que I2 avait réservée : un clic masque le bloc, ou le montre, en un pas d'annulation, même pendant une saisie, sans le sélectionner ni prendre le focus ; le document est « modifié ». `Visible` sur tout bloc, `true` par défaut ; `FormatVersion` ne change pas, Samples et Templates sont réenregistrés — un « Visible » de plus par bloc, rien d'autre. Masqué, le bloc n'est dessiné ni dans `PageRoot` ni au PDF, ni ce que porte un groupe masqué ; rien de lui n'avertit, ni sa police (Q8), ni son image, ni son débordement ; son filet n'élargit plus la découpe d'un groupe. Un clic à sa place prend le bloc d'en dessous ; l'alignement et la répartition ne le voient pas, « Tout sélectionner » non plus. Il reste dans la liste, l'œil fermé, et s'y sélectionne, sans cadre ni poignée sur la planche ; masqué, il quitte une sélection multiple. Une recopie le garde, dissocier un groupe masqué laisse ses blocs masqués ; les cases d'un tableau ne portent pas la propriété. La vignette de la page (I5) ne le dessine pas. L'icône du poste sert. Vingt-cinq tests ; relecture et juge après fusion. Recette dans `Scripts/recettes/` |
 | **I9** | Compter les lignes en excédent | **100 %** | `Compositeur.LignesEnExcedent`, fonction pure du noyau : les lignes dont l'encre — la hauteur naturelle, au milieu de l'avance — sort du bloc, au calage vertical (A7), au bord du bloc et non de la zone (C6), au seuil du marqueur de A2 ; les colonnes et les blocs tournés sans chemin à part. Le dock l'affiche à la section « Cadre de texte », dans la place que I2 avait réservée : « Texte en excédent : 4 lignes » au fond, à la couleur et à l'icône d'alerte de l'apparence, au singulier pour une ligne, rien à zéro ; il suit la frappe et chaque réglage du bloc sans changement de sélection, et ne touche pas au document. Le modèle de vue le porte dans `MainWindowViewModel.Excedent.cs`. Aucune clé sérialisée ; l'avertissement d'export et le relevé de P2 inchangés. Sur `recette-debordement.mypub` et sur une variante en colonnes, marges, interligne 1,5 et rotation, le compte du dock est celui des lignes absentes du PDF, bloc par bloc, lu par la commande `excedent` du banc. Dix-huit tests, douze purs et six sur la fenêtre ; recette dans `Scripts/recettes/`. Relecture et juge après fusion |
+| **N1** | Le banc des gestes | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 1 |
+| **N2** | Mettre en forme une plage, dans le noyau | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 1 |
+| **N3** | Chaque morceau composé sait d'où il vient | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 1 |
+| **N4** | L'affichage au clavier | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 1 |
+| **N5** | Quitter la saisie d'un clic qui agit | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 2 |
+| **N6** | Les raccourcis de la fenêtre laissent la touche au champ | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 2 |
+| **N7** | Mesurer l'écart de la première voie, et s'arrêter | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 2. **Arrêt** : la voie de R7 revient au propriétaire |
+| **N8** | Couper, copier, coller des blocs | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 2 |
+| **N9** | La langue du texte | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 2 |
+| **N10** | Les raccourcis de Publisher en français | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 3 ; écrit la fiche 24 |
+| **N11** | Ne rien perdre en fermant, retrouver ses documents | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 3 |
+| **N12** | Entrer dans le texte d'un clic, le curseur au point visé | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 4 |
+| **N13** | Les menus de Publisher | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 4 |
+| **N14** | Les champs | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 4 |
+| **N15** | L'application connaît la sélection du texte | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 5 |
+| **N16** | Tabulation et saut de ligne forcé | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 5, après N15 dans la même copie |
+| **N17** | Les modificateurs du glisser, et le rectangle de sélection | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 5 |
+| **N18** | Les menus vers le dock, et les pages, avec A8 et A9 | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 5 |
+| **N19** | Le corps et la police : une liste, et une frappe | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 5 |
+| **N20** | Rechercher et remplacer | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 6 |
+| **N21** | La saisie montre le texte composé | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 6 ; attend la décision de voie |
+| **N22** | Les caractères spéciaux | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 7 |
+| **N23** | Puces et numérotation | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 8 |
+| **N24** | Exposant, indice, capitales | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 9 |
+| **N25** | La vérification orthographique | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 9 ; dépendance neuve à éprouver d'abord |
+| **N26** | Taper dans le texte d'un groupe, et prendre un membre seul | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 10 |
+| **N27** | Taper dans une case, sur la page | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 11 ; revient sur un choix écrit en C9 |
+| **N28** | Lignes et colonnes à l'endroit choisi, et plusieurs cases à la fois | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 12 |
 | **D** | Moteur de composition | — | Décision non ouverte ; à rouvrir quand A, B et C sont livrées |
 
 **Par phase** — P : 4 sur 4 · A : 8 sur 15 · B : 4 sur 7 · C : 7 sur 9 · R : 5 sur 7 ·
-Q : 18 sur 23 · I : 9 sur 9 · D : non planifié.
+Q : 18 sur 25 · I : 9 sur 9 · N : 0 sur 28 · D : non planifié.
 
-Soit **55 postes sur 74**. Le 24 octobre 2026, la phase I en a ajouté neuf, tirés de la
+Soit **55 postes sur 104**. Le 25 octobre 2026, la phase N en a ajouté vingt-huit, et la phase Q
+deux (Q24, Q25), tirés de la relecture du cours sous l'angle de la saisie (fiche 23). Le
+24 octobre 2026, la phase I en avait ajouté neuf, tirés de la
 maquette de la nouvelle interface. Le compte avait doublé le 11 octobre 2026 sans que rien ne
 recule : il porte désormais les onze postes de l'audit des fiches (A8 à A15, B6, B7,
 C8), deux postes que les documents réels demandaient (R6, R7), et la phase Q, qui
@@ -626,6 +658,12 @@ avant la colonne de droite.
 | **Mesure du texte** (seuil D) | ajustement automatique, chaînage, habillage |
 | **Charte de l'interface** (I1) | toute la phase I |
 | **Disposition de la fenêtre** (I2) | barre contextuelle (I3), vignettes (I5), navigation (I6), puis le lot 2 |
+| **Banc des gestes** (N1) | toute la phase N |
+| **Position de chaque morceau composé** (N3) | la mesure de la saisie (N7), le clic simple (N12), les caractères spéciaux (N22), l'orthographe (N25) |
+| **Mesure de la saisie** (N7), puis la décision du propriétaire | le texte tel qu'il s'imprime pendant la frappe (N21), puis R6, R7 et tout le lot 3 de la phase N |
+| **Seuil du pointeur** (Q21) | le clic simple (N12), les modificateurs du glisser (N17) |
+| **Presse-papiers** (N8) et **chemins vers le dock** (N18) | le menu contextuel (A12) |
+| **Préférences de l'utilisateur** (N11) | l'aimantation réglable (A11), le dictionnaire de l'utilisateur (N25) |
 | **P1 + P2** | toute la phase C |
 
 Deux remarques que le graphe rend visibles :
@@ -1340,6 +1378,11 @@ page 1, en instances distinctes. Les noms sont renumérotés, et une seule annul
 les 3 pages. L'option « zone de texte » pose exactement un bloc de texte, égal à la zone
 des marges. Effort : faible.
 
+*Rattaché le 25 octobre 2026 à N18*, qui le livre avec cette recette et y ajoute : la touche
+`Ctrl+Maj+N`, comme Publisher ; le champ « dupliquer les objets de la page », grisé tant que son
+option n'est pas choisie (p. 22) ; `Ctrl+Maj+U`, qui duplique la page. Ce dialogue ne double aucun
+champ du dock (décision 5 de la phase N).
+
 #### A9 — Rotation par quart de tour *(fiches 14, 22)*
 
 Deux commandes, +90° et −90°, au menu Disposition et au panneau. La rotation, sa poignée
@@ -1348,6 +1391,11 @@ et l'export tourné existent depuis A1 : il manque le geste rapide.
 *Recette* : 350° plus 90° donne 80°, et 0° moins 90° donne 270°. Une image tournée d'un
 quart de tour passe `comparer-rendus.sh` sous la tolérance, et chaque commande
 s'annule en un pas. Effort : faible.
+
+*Rattaché le 25 octobre 2026 à N18*, qui le livre avec cette recette : les deux commandes au
+sous-menu *Faire pivoter ou retourner ▸* de Disposition, comme Publisher (p. 16), et deux boutons
+au dock, sans icône, la recette I1 n'admettant que celles de la maquette. A12 reprend le
+sous-menu.
 
 #### A10 — Objet trait, et flèche *(fiche 02)*
 
@@ -1402,6 +1450,12 @@ se cale à 150 quand l'aimantation aux objets est active, et reste à 148 sinon.
 l'aimantation coupée, rien ne se cale, pas même sur la marge. Le réglage survit à la
 relecture des préférences. Effort : moyen.
 
+*Repris le 25 octobre 2026, dans la phase N (salve Saisie 13).* La fiche 23 (c22) ajoute ce que le
+poste ne visait pas : l'aimantation au **redimensionnement** et au **tracé**, absente aujourd'hui,
+et *Disposition ▸ Aligner sur ▸* — repères de règle, repères de mise en page, objets —, le *Snap ▸*
+de Publisher. Le réglage est rangé dans `Services/Preferences.cs`, que N11 crée : c'est le magasin
+que la recette suppose et qui n'existait pas. Dépend de N17 et N11.
+
 #### A12 — Menu contextuel du bloc *(fiche 11)*
 
 Un clic droit sur un bloc le sélectionne et ouvre un menu qui reprend les commandes
@@ -1416,6 +1470,36 @@ faire **après** A9 et B2, pour reprendre leurs commandes.
 
 Effort : faible.
 
+*Repris et élargi le 25 octobre 2026, dans la phase N (salve Saisie 6).* Le menu de Publisher (p. 34,
+fiche 11) commence par Couper, Copier, Coller, et mène au dialogue de format ; le relevé de la
+fiche 23 (c3, c16, c25, e1, e2, f16) en fait le geste réflexe d'un utilisateur d'Office.
+- **La pression du bouton droit** suit le chemin de celle du gauche jusqu'à la sélection, puis
+  s'arrête sans glissé : un bloc hors de la sélection est pris seul ; une sélection qui contient le
+  bloc reste ; un clic dans le vide vide la sélection.
+- **Le `ContextMenu` est posé sur `PageCanvas`**, et non sur `InputLayer` : la touche Menu lève
+  l'événement sur le contrôle qui a le focus, et la couche ne l'a jamais. Il s'ouvre aussi par
+  `Maj+F10`, sous la sélection au clavier, et se tait sur les règles et les barres de défilement.
+- **Ses entrées, selon la sélection** : Couper, Copier, Coller (N8) ; Supprimer le texte, une
+  commande neuve, grisée si le bloc est vide ou à champ ; Supprimer ; Ordre ▸ ; Faire pivoter ▸
+  (A9) ; Grouper, Dissocier, Regrouper ; Aligner ou répartir ▸ ; Modifier le texte ▸ Importer un
+  texte… (B2) ; **Format du bloc…**, qui ouvre la section du dock propre à sa sorte (N18) ; Zoom ▸.
+  Sur un bloc de coordonnées, les entrées de la balise de Publisher (p. 54) : Modifier les
+  coordonnées…, Convertir en texte. Dans le vide : Coller, Repères de mise en page…,
+  Arrière-plan….
+- **Un double-clic sur une image ou une forme** ouvre sa section du dock (décision 5).
+- **En saisie**, le menu du texte garde Couper, Copier et Coller, et ajoute Format du bloc… ; N25
+  y mettra les suggestions d'orthographe en tête.
+
+*Piège* : `ContextRequested` n'est levé qu'au relâché, et seulement si la source est le contrôle
+lui-même ; la ligne du juge `var hit =` ne doit pas être recopiée ; rien du seuil D n'apparaît —
+« Ajuster le texte », « Habillage » — : la recette étend à `PageCanvas.axaml` la liste d'interdits
+de I2 ; N5 doit aussi rendre au bouton droit la pression qui sort de la saisie.
+
+*Recette*, en plus de celle d'origine : chaque entrée liée à la même commande que son pendant aux
+menus, avec le même geste affiché ; `Maj+F10` ouvre le menu ; un clic droit sur une règle n'ouvre
+rien ; un double-clic sur une image ouvre la section Image. Dépend de N8, N17 et N18. Des deux
+postes qu'il attendait, B2 est livré, et A9 l'est avec N18. Effort : moyen.
+
 #### A13 — Rognage manuel de l'image *(fiche 14)*
 
 Un rognage facultatif sur les quatre côtés d'un `ImageFrame`, réglé au panneau puis par
@@ -1425,6 +1509,10 @@ deux doivent partager le même calcul, dans le noyau.
 *Recette* : une image de 200 × 100 px rognée de 50 % à gauche. À l'écran comme au PDF,
 le rendu est la moitié droite de la source (écart ImageMagick sous un seuil). Un
 fichier sans rognage reste identique octet pour octet. Effort : moyen.
+
+*Repris le 25 octobre 2026, dans la phase N (salve Saisie 14).* En plus : « Rogner » au menu contextuel
+de l'image (A12) entre dans le mode de rognage, où les poignées rognent au lieu de redimensionner,
+comme l'outil de la barre Picture de Publisher (fiche 14) ; Échap en sort. Dépend de A12.
 
 #### A14 — Contour et ombre du caractère *(fiche 17)*
 
@@ -1681,6 +1769,9 @@ avoir à le savoir.
 
 *Recette* : `Ctrl+P` sort le document sur une imprimante système.
 
+*Précisé le 25 octobre 2026 par la phase N* : `Ctrl+P` est réservé à ce poste par la table française
+(N10), à côté de `Ctrl+Maj+P`, l'export.
+
 ### B4 — Archive `.mypubz` *(fiche 21)*
 
 Un zip contenant le JSON, un dossier `images/` et la liste des polices employées. Le
@@ -1780,6 +1871,9 @@ le même rendu, montré au lieu d'être comparé. À faire avec B3 ou juste apr�
 *Recette* : chaque page de l'aperçu, comparée au `pdftoppm` de l'export par la logique
 de `comparer-rendus.sh`, reste sous la tolérance. Aucun pixel n'a la couleur des
 repères ni celle du marqueur rouge. Effort : faible à moyen.
+
+*Précisé le 25 octobre 2026 par la phase N* : dans l'aperçu, `F9` bascule en taille réelle et Échap
+le ferme, comme dans Publisher (aide en français).
 
 ### B7 — Replier les panneaux *(fiche 04)*
 
@@ -2366,6 +2460,10 @@ dans le même panneau qu'une éventuelle bibliothèque d'images locale (fiche 13
 
 *Recette* : enregistrer un bloc-titre composé, ouvrir un autre document, le reposer.
 
+*Précisé le 25 octobre 2026 par la phase N* : `Ctrl+Maj+E`, la touche de la bibliothèque dans
+Publisher (p. 22, 39), lui est réservée par la table française (N10), et le menu contextuel (A12)
+reçoit l'entrée « Ajouter à la bibliothèque… ».
+
 ### C8 — Miroir horizontal et vertical *(fiche 22)*
 
 La notion n'existe pas dans le modèle. Elle traverse le cœur géométrique — survol,
@@ -2385,6 +2483,9 @@ Dépend de C3c, A1 et A9.
 - `comparer-rendus.sh` passe sous la tolérance.
 
 Effort : moyen à lourd.
+
+*Précisé le 25 octobre 2026 par la phase N* : les deux miroirs entrent au sous-menu *Faire pivoter
+ou retourner ▸* de Disposition (N18) et du menu contextuel (A12).
 
 ### C9 — Le bloc tableau
 
@@ -2782,6 +2883,23 @@ un écart posé à la main glisse sur le paragraphe voisin à la frappe suivante
 
 Effort : moyen.
 
+*Repris le 25 octobre 2026, dans la phase N (salve Saisie 7).* Les préalables sont devenus des postes :
+la fonction de plage du noyau (N2), la sélection du texte connue de l'application (N15), le
+curseur posé au clic (N12), et la saisie qui montre la composition (N21). Ce que la fiche 23
+ajoute (b8, b9, b11) :
+- les alignements de la barre et du menu, `Ctrl+L`, `Ctrl+E`, `Ctrl+R` et `Ctrl+J` (N10), les
+  retraits et les espacements du dock passent par un `ParagrapheVise`, qui lit le bloc hors saisie
+  et la sélection en saisie, et qui est nul quand les paragraphes visés diffèrent : alors aucun
+  bouton n'est allumé. Les liaisons s'écrivent comme aujourd'hui, si bien que les comptes de la
+  recette I3 tiennent ;
+- deux boutons de retrait, « Diminuer » et « Augmenter le retrait », d'un taquet de 36 pt, au dock
+  à côté des retraits, la maquette ne les montrant pas ;
+- l'interligne reste un réglage du bloc : c'est un écart avec Publisher, qui le règle par
+  paragraphe, écrit et assumé.
+
+*Recette*, en plus : le curseur posé au clic ; l'état mixte n'allume aucun bouton ; un retrait
+saisi au dock fait un pas à lui (Q25). Dépend de N2, N15, N21 et Q25.
+
 ### R7 — Éditer le texte riche à la souris
 
 *Spécifié le 11 octobre 2026.* Le pendant de R6 à l'échelle du caractère, et la limite
@@ -2818,6 +2936,31 @@ Dépend de Q1.
 - un pas d'annulation par commande.
 
 Effort : lourd.
+
+*Repris le 25 octobre 2026, dans la phase N (salve Saisie 8).* **La mesure qui commence le poste est
+devenue N7**, avec sa recette et sa note de décision ; le choix de voie, qui reste un arrêt
+obligatoire, se fait sur ses chiffres, et N21 porte la voie choisie. **La recette se trompait de
+touche** : `Ctrl+B` n'est lié à rien, `Ctrl+Maj+B` est l'arrière-plan, et dans Publisher en
+français `Ctrl+B` est « Atteindre la page ». Le gras est `Ctrl+G` : partout où la recette écrit
+`Ctrl+B`, lire `Ctrl+G`.
+
+Ce que la fiche 23 ajoute (b1, b4, b13, b18, b19) :
+- la police, le corps (et ses deux touches, N10), le gras, l'italique, le souligné et ses sortes,
+  la couleur et `Ctrl+Espace` s'appliquent à la sélection, par un `MiseEnFormeVisee` qui lit N15
+  et écrit par N2 ; sans sélection, au mot du curseur (étude de 98) ; `Ctrl+Maj+C` et
+  `Ctrl+Maj+V` copient et appliquent la mise en forme ;
+- la barre montre l'état de la sélection : champs vides quand il est mixte, bouton d'état à
+  `IsChecked = null`, avec son style ;
+- **hors saisie, « le bloc » veut dire tous ses caractères, fragments compris** : aujourd'hui,
+  `Ctrl+G` n'atteint pas le gras écrit explicitement dans un fragment importé, alors que la saisie
+  montre tout en gras.
+
+*Piège*, en plus : la garde `JamaisNul` de Q20 face à une police mixte ; la mémoire d'une case de
+Q14 face à une valeur nulle ; les comptes de la recette I3.
+
+*Recette*, en plus : sur une sélection mixte, `Ctrl+G` met le gras partout ; le corps 14 posé à la
+barre fait un pas. Dépend de R6, N10, N19 et N21. Effort : moyen, les préalables portant
+l'essentiel.
 
 ---
 
@@ -4232,6 +4375,12 @@ glissé — l'aimantation ne joue qu'au-delà.
 le bloc à sa place et n'empile rien ; un glissé de 1 pt, mené au-delà du seuil puis
 ramené, déplace encore le bloc de 1 pt. Effort : faible.
 
+*Repris le 25 octobre 2026, dans la phase N (salve Saisie 3, avec Q22).* Le seuil, 3 px d'écran, vaut pour
+tout glissé : déplacement, poignées, rotation et extrémités de trait (`PageCanvas.Trait.cs`) ; N12
+le reprend pour la sélection de texte, N17 pour Ctrl+glisser. Le test de Q14 « un glissé d'un
+point » est mené au-delà du seuil puis ramené. Les cibles du juge `if (dx == 0 && dy == 0)` et
+`frame.X = startX;` restent, une fois chacune. Dépend de N1 et N5.
+
 ### Q22 — Un clic sur une poignée ne redimensionne pas
 
 *Trouvé le 12 octobre 2026 par la relecture de Q14.* La garde du mouvement nul de Q14
@@ -4242,6 +4391,14 @@ pointeur pour le coin, au lieu d'appliquer un écart au coin d'origine.
 
 *Recette* : au pointeur synthétisé, une pression puis un relâchement sur chacune des
 huit poignées laissent le bloc identique et l'historique vide. Effort : faible.
+
+*Repris le 25 octobre 2026, dans la phase N (salve Saisie 3, avec Q21).* La relecture du cours l'avait
+cru réglé depuis I4 — le redimensionnement suit le chemin du pointeur, et un chemin nul rend le
+cadre — : il ne l'est pas. Une pression sans mouvement sur une poignée repasse par `ApplyResize`
+et ses cosinus, et un bloc tourné en ressort décalé, avec un pas empilé ; `ApplyRotate` arrondit
+l'angle sous Maj sans le moindre mouvement — un bloc à 7° passe à 0°. *Recette*, en plus : la
+poignée de rotation pressée sous Maj laisse 7° à 7° ; un bloc tourné de 12,3456789°, pressé sur
+chaque poignée sans mouvement, ne bouge pas.
 
 ### Q23 — Sélectionner un bloc ne fige pas la fenêtre
 
@@ -4348,6 +4505,67 @@ pression (0,5 ms sur ATA 21, 63 ms à la première d'un processus). La première
 après le lancement paie la compilation à la volée : une publication précompilée
 (`PublishReadyToRun`) la réduirait, au prix d'un exécutable plus lourd — un choix de
 publication, qui revient au propriétaire.
+
+### Q24 — Annuler ou Rétablir ne laisse plus une saisie hors de toute transaction
+
+*Trouvé le 25 octobre 2026 par la relecture du cours sous l'angle de la saisie (fiche 23, a14),
+confirmé à la lecture du code.* C'est le seul défaut de la phase N qui peut perdre des données.
+`Undo` et `Redo` referment d'abord ce qui est ouvert (`EndPendingEdit`), puis rendent la main s'il
+n'y a rien à défaire. Trois cas laissent alors la saisie ouverte sans transaction :
+- `Ctrl+Z` quand rien n'a changé et que rien n'est à annuler ;
+- `Ctrl+Y` après **n'importe quelle** frappe, que l'historique soit plein ou vide : `CommitEdit`
+  vide la pile de rétablissement, et `Redo` la trouve vide — le cas le plus fréquent ;
+- (déduit) une annulation pendant qu'un champ du dock ou de la barre garde le focus :
+  `_propertyEditOpen` reste vrai alors que la profondeur est retombée à zéro.
+
+`RemarquerUneRetouche` exige une transaction ouverte et ne voit rien ; la transaction suivante
+prend pour référence un document qui contient déjà la frappe. Cette frappe ne s'annulera jamais, et
+elle ne marque pas le document « modifié » — une fermeture la perdrait sans question.
+
+La correction : `Undo` et `Redo` referment ce qui est ouvert, comme aujourd'hui, puis lèvent un
+avis ; **chaque propriétaire encore actif rouvre sa propre transaction** — la saisie de la page si
+elle est toujours ouverte, le champ du dock ou de la barre s'il a toujours le focus.
+
+*Piège* : ne jamais rouvrir à l'aveugle. Une boucle qui rouvrirait autant de transactions qu'il y
+en avait, après une restauration qui referme la saisie par le changement de sélection, laisserait
+une transaction sans propriétaire, où chaque geste suivant fondrait son pas. La règle « un pas par
+champ » de Q14 et de I2 reste intacte.
+
+*Recette* :
+- document neuf, bloc tracé, `Ctrl+Z`, frappe « abc », Échap : `CanUndo`, le document modifié, le
+  titre marqué, et un `Ctrl+Z` rend le texte d'avant la frappe ;
+- frappe « abc », `Ctrl+Y`, frappe « d », Échap : deux pas, et la saisie ne s'est pas refermée au
+  `Ctrl+Y` ;
+- dans le champ Contenu, frappe, `Ctrl+Z`, frappe : la seconde frappe fait un pas ;
+- après une annulation, un glissé de 1 pt, `Alt` tenu, empile encore son propre pas ;
+- au juge : l'avis qui n'est plus levé.
+
+Fichiers : `MainWindowViewModel.cs` (`Undo`, `Redo`, l'avis), `MainWindow.axaml.cs` et
+`PageCanvas.axaml.cs` (le réarmement). Part dans la même copie que Q25, avant lui (salve Saisie 1). Effort : faible.
+
+### Q25 — Un réglage fait pendant une saisie a son propre pas
+
+*Trouvé le 25 octobre 2026 par la même relecture, à confirmer d'abord par un test.* Les champs de
+la barre ouvrent leur transaction au focus, et celle-ci s'emboîte dans celle de la saisie, ouverte
+par `BeginTextEdit` : changer le corps pendant qu'on tape se fond dans le pas de la frappe, contre
+la règle 2 de la phase I. Aucun test ne joue la barre pendant une saisie sur la page.
+
+La correction : la transaction de la saisie **suit le focus du champ de la page** — elle s'ouvre
+quand il le prend, se ferme quand il le perd, et à `EndTextEdit`. Les boutons G, I et S, qui ne
+prennent pas le focus, gardent `UnGesteUnPas`.
+
+*Piège* : le sélecteur de couleur retire le focus en s'ouvrant, ce qui clôt la frappe d'abord — le
+comportement voulu ; quand le focus revient au champ de la page, la transaction se rouvre ; la
+saisie reste ouverte quand on clique dans le dock, comme aujourd'hui.
+
+*Recette* :
+- frappe « abc », corps 14 à la barre puis Entrée, clic dans le texte, frappe « d », Échap : trois
+  pas, défaits un à un et dans l'ordre (un seul aujourd'hui) ;
+- de même avec un retrait saisi au dock ; la couleur prise pendant la saisie fait son propre pas ;
+- au juge : la transaction de la saisie ouverte au début de la saisie et non au focus.
+
+Fichiers : `PageCanvas.axaml.cs` (`BeginTextEdit`, `EndTextEdit`), tests. Dépend de Q24, dans la
+même copie. Effort : faible.
 
 ---
 
@@ -5226,6 +5444,1081 @@ décider.
 
 ---
 
+## Phase N — La saisie de Publisher
+
+*Ouverte le 25 octobre 2026*, à la demande du propriétaire : « atteindre les mêmes modalités de
+saisie que Publisher », en s'aidant de l'étude du cours de 2007. La relecture du livre sous cet
+angle est la [fiche 23](Publisher2007/23-modalites-de-saisie.md) : 158 modalités, dont 31 faites,
+12 où MyPublisher fait mieux, 55 partielles et 60 manquantes. Elle renverse un verdict des
+fiches. Le geste qui **pose** un bloc est meilleur que celui de Publisher ; celui qui
+**l'écrit**, non. Pendant l'édition, l'écran montre un `TextBox` en texte brut à la place de
+`TexteCompose` ; on y entre au double-clic, et tout le texte est alors sélectionné ; la barre, le
+menu Texte et `Ctrl+G` ne visent que le bloc entier. Il n'y a ni clic droit, ni presse-papiers
+des blocs, ni Ctrl+glisser, ni rectangle de sélection, et les champs refusent en silence.
+
+La phase reprend les postes ouverts qui sont déjà des modalités de saisie — A8, A9, A11, A12,
+A13, Q21, Q22, R6, R7 — avec ce que la fiche 23 leur ajoute, écrit dans leur propre section, et
+ouvre vingt-huit postes N, numérotés dans l'ordre où ils partent. Les deux défauts qu'elle a
+trouvés en chemin sont rangés dans la phase Q : Q24, le seul qui peut perdre des données, et Q25.
+
+**Six décisions du propriétaire, le 25 octobre 2026.**
+
+1. **Le périmètre est tout, le texte en tête.**
+2. **La voie de R7 se mesure, puis se décide.** N7 mesure l'écart entre le curseur du `TextBox` et
+   le caractère composé ; sous le pixel, le `TextBox` transparent posé sur `TexteCompose` ;
+   au-dessus, on s'arrête et le propriétaire choisit. C'est l'arrêt de la phase.
+3. **On entre dans le texte d'un clic simple**, comme Publisher : le curseur tombe au point visé,
+   un glissé dans le texte sélectionne du texte, le bloc se déplace par son bord. La fiche 10, qui
+   comptait le double-clic parmi les acquis, est reprise.
+4. **Les raccourcis sont ceux de Publisher 2007 en français**, relevés sur l'aide de Microsoft en
+   français et écrits dans la fiche 24 (N10).
+5. **Le dock reste.** Les chemins de Publisher y mènent : clic droit ▸ « Format du bloc… »,
+   double-clic sur une image ou une forme, entrées « … » des menus. Aucun dialogue OK/Annuler ne
+   double un champ du dock (règle 1).
+6. **Quatre fonctions entrent dans la phase** : puces et numérotation ; exposant, indice et
+   capitales ; rechercher et remplacer ; vérification orthographique.
+
+**Les règles de la phase.** Les onze règles de la phase I valent pour chaque poste. S'y ajoutent :
+
+12. **La touche de Publisher en français l'emporte quand sa fonction existe dans MyPublisher.**
+    Une touche que le bureau capte garde son remplaçant : Premier plan et Arrière-plan restent sur
+    `Ctrl+Maj+F` et `Ctrl+Maj+B`, `Alt+F6` étant pris (A4). Une touche dont la fonction n'existe
+    pas reste réservée et libre, jusqu'au poste qui la sert : `Ctrl+M`, `Ctrl+K`, `Ctrl+Maj+E`,
+    `Ctrl+Maj+H`. Il s'ensuit que `Ctrl+E` centre et que l'export passe sur `Ctrl+Maj+P`,
+    que `Ctrl+Maj+G` groupe et dissocie, que `Ctrl+B` est « Atteindre la page », et que `Ctrl+=`
+    passe à l'indice avec N24.
+13. **Échap dans un champ renonce** à la valeur non validée, comme Office, puis rend la main à la
+    planche. C'est l'inverse de ce que I3 avait choisi pour la barre ; N14 le reprend.
+14. **Un poste qui change le sens d'un geste réécrit les tests qui le jouaient**, et le dit ; il ne
+    les retire pas. Quand une cible du juge perd sa prise, le poste lui en rend une.
+15. **`FormatVersion` reste à 5.** Les clés de la phase — langue, puces, capitales — sont
+    additives, au précédent de `Columns`, et chaque poste qui en ajoute une réenregistre `Samples/`
+    et `Templates/`. Le saut de ligne forcé est un caractère, U+2028, et non une clé.
+16. **Jamais deux postes d'une même salve dans `PageCanvas.axaml.cs`** : la planche se modifie en
+    série. `MainWindow.axaml`, `MainWindow.axaml.cs` et le README se partagent quand les postes y
+    touchent des régions différentes, nommées dans chaque poste ; leurs conflits se règlent à la
+    fusion. C'est pour cela que le tableau des raccourcis du README est rangé, depuis
+    l'ouverture de la phase, en sous-tableaux par domaine.
+
+**Ce que la phase ne fait pas.** Ce qu'Office 2007 apportait et qui a vieilli, ce que les
+décisions excluent, et ce qui reste au seuil D, est écrit dans
+[Ce que ce plan ne fait pas](#ce-que-ce-plan-ne-fait-pas). Le style nommé, la graisse et les pages
+maîtres restent non planifiés, comme en phase I.
+
+**Quatre lots**, en quatorze salves (voir [Ordre d'exécution](#ordre-dexécution)) : la sûreté et
+les préalables ; le clavier et le clic de Publisher ; le clic droit, la recherche et le texte tel
+qu'il s'imprime ; les postes lourds de fin.
+
+### Lot 1 — Sûreté et préalables
+
+Rien de ce lot ne change ce qu'on voit, sauf N4, N5, N6 et N8 ; tout ce qui suit en dépend. Q24 et
+Q25, qui partent dans la même copie, sont décrits dans la phase Q.
+
+#### N1 — Le banc des gestes *(fiche 23)*
+
+*Spécifié le 25 octobre 2026.* Les tests d'interface synthétisent leurs gestes par des aides
+recopiées de classe en classe :
+- `SurLaPage`, treize fois, toutes à l'échelle 1, dont dix retombent en silence sur (0, 0) quand
+  `PageRoot` manque ;
+- `Cliquer`, six fois, dont deux sans l'attente d'image de `Rendu.Cliquer` (`NavigationTests`,
+  `VignettesDePagesTests`) — le défaut que I3 a payé ;
+- `Glisser`, trois fois, dont deux sans `LeftMouseButton` pendant le mouvement (`NavigationTests`,
+  `ReperesTests`) ; or un `TextBox` n'étend une sélection que si le mouvement dit le bouton tenu ;
+- `UnSeulPas`, quatre fois ; l'entrée en saisie par double-clic, cinq fois.
+
+L'en-tête de `Rendu` pose la doctrine contraire : « deux copies, et la seconde oublie
+l'assertion ». La phase va changer le sens de ces gestes (N12) : il faut qu'elle le fasse à un
+seul endroit.
+
+Le poste remonte dans `Rendu.cs` une aide par geste : `SurLaPage`, à l'échelle, qui échoue si
+`PageRoot` manque ; `Centre`, `Coin`, `Poignee` ; `Cliquer(point, touches, bouton, mouvementNul)` ;
+`CliquerDroit`, qui rend le `ContextMenu` ouvert ; `DoubleCliquer` ; `Glisser`, toujours bouton
+tenu ; `Touche` et `ToucheAzerty` ; `SelectionnerDuTexte(zone, début, fin)` ; `EntrerEnSaisie`,
+le seul endroit que N12 changera ; `ZoneDeSaisie` ; `UnSeulPas` ; `TexteCopie`. Les copies sont
+retirées, et aucun test ne change d'issue.
+
+Ce qu'Avalonia 11.3.9 permet sans affichage, lu dans son code : un `ContextMenu` s'ouvre au
+relâché d'un clic droit dont la source est le contrôle lui-même, en surimpression dans la fenêtre
+(`HeadlessWindowImpl.CreatePopup` rend `null`), et `Rendu.Cliquer` atteint ses entrées ; la touche
+Menu l'ouvre aussi, `Maj+F10` non. Le presse-papiers est un magasin en mémoire, formats propres
+compris. `KeyPress(Key, modificateurs, PhysicalKey, symbole)` simule une touche AZERTY. L'horloge
+est un vrai chronomètre : un double-clic, ce sont deux pressions à moins de 500 ms et de 2 px. Ce
+qui ne s'éprouve pas : le presse-papiers du système, les touches que prend le bureau, la touche
+que X11 livre pour « < » sur un AZERTY, l'allure d'un curseur.
+
+*Piège* : migrer copie pour copie. Le `Cliquer` de `DoubleClicTests` envoie volontairement un
+mouvement nul, celui de Q14 ; l'aide le garde, en paramètre.
+
+*Recette* :
+- `BancTests`, sous `poste=N1` : un clic droit ouvre un `ContextMenu` en moins de dix images, et
+  son entrée joue sa commande ; la touche Menu l'ouvre ; un texte et un format propre font
+  l'aller-retour par le presse-papiers ; `Ctrl+C` dans un `TextBox` y met la sélection ; un glissé
+  du 4ᵉ au 7ᵉ caractère sélectionne [4, 7), et le même glissé sans le bouton tenu ne sélectionne
+  rien ; `Key.A` sur `PhysicalKey.Q` sous Ctrl déclenche une liaison `Ctrl+A` ; deux clics à 3 px
+  ne font pas un double-clic ;
+- la suite garde son nombre de tests sous chaque `poste=`, et les recettes Q14 et Q23 leurs vingt
+  passages ;
+- un contrôle des sources : aucune aide de geste n'est plus définie hors de `Rendu.cs` ;
+- au juge : `Glisser` sans `LeftMouseButton` ; `EntrerEnSaisie` qui ne clique qu'une fois.
+
+Fichiers : `MyPublisher.Tests.Interface/` seul. Effort : faible à moyen.
+
+#### N2 — Mettre en forme une plage, dans le noyau *(fiche 23, b1, b9)*
+
+*Spécifié le 25 octobre 2026.* Les fragments ne sont écrits aujourd'hui que par la copie, l'import
+et le recalage de Q1 ; rien n'applique un style à une plage. Le poste crée `MiseEnForme`, des
+fonctions pures du noyau, sur le modèle de `Recalage` :
+- `Lire` : sur une plage, la valeur commune de chaque propriété, ou l'état mixte ;
+- `Poser` : découper aux bornes les fragments qui chevauchent (`StyleSpan.Clone`), poser la valeur
+  à l'intérieur, combler les trous par des fragments neufs, recoller les voisins identiques aux
+  bornes, rendre nulle une valeur égale à celle du bloc, retirer les fragments vides. La règle
+  « le dernier l'emporte » de `StyleEffectif.Decouper` n'est tranchée que dans la plage touchée ;
+- `Basculer` : si toute la plage porte la valeur, la retirer, sinon la poser ;
+- `Retirer`, pour `Ctrl+Espace` : rendre à la plage le style du bloc ;
+- les mêmes fonctions sur `ParagraphSpan`, pour R6.
+
+`Recalage.ParagrapheDe(texte, position)` devient public : `Sauts` et `EstSaut` sont privés
+aujourd'hui. L'écriture passe par les opérations de la collection, jamais par son remplacement
+(Q17) ; sans changement réel, l'opération ne fait rien.
+
+*Piège* : `ControleDeBloc` n'écoute que la collection, et un fragment modifié sur place ne serait
+pas redessiné. `BaselineShift` n'est pas nullable : 0 veut dire « comme le bloc ». On compare les
+valeurs brutes (`scheme:accent1`) pour écrire, mais les valeurs résolues par la charte pour l'état
+mixte. Une case de tableau n'a pas de paragraphes.
+
+*Recette* (tests purs) :
+- sur « abc def », le gras posé sur [4, 7) donne `{4, 3, Bold}` ; basculé de nouveau, il ne laisse
+  aucun fragment ;
+- une plage à cheval sur deux fragments importés qui se recouvrent rend les mêmes styles effectifs
+  hors de la plage ;
+- un gras explicite retiré sur un bloc gras devient `Bold = false` ;
+- sur trois paragraphes, le centrage posé sur le deuxième donne `{Start 1, Length 1, Align
+  Center}` ; posé ensuite sur le troisième, les deux écarts fusionnent ;
+- au juge : la normalisation oubliée.
+
+Fichiers : `MyPublisher.Core/Models/MiseEnForme.cs` (neuf), `Recalage.cs`, `MyPublisher.Tests`.
+Effort : moyen.
+
+#### N3 — Chaque morceau composé sait d'où il vient *(fiche 23, a21)*
+
+*Spécifié le 25 octobre 2026.* C'est le préalable commun à la mesure de N7, au clic simple de N12,
+aux deux voies de R7 et aux marques de N22. `Morceau(Texte, Style, X, Largeur)` ne dit pas d'où il
+vient ; `Decouper` normalise le texte par `Replace` ; `Fermer` rogne les blancs de fin de ligne, et
+le renvoi rogne la tête du mot renvoyé ; `TexteCompose.Disposer` ne pose que l'encre et saute les
+lignes vides — une tabulation, un blanc rogné, un paragraphe vide n'y ont aucune place.
+
+Le poste :
+- `Morceau` gagne, en dernier membre, `int Debut` ; `LigneComposee` gagne `Debut`, `Fin` — la
+  plage de la ligne, blancs rognés compris, saut exclu — et `Paragraphe` ;
+- `Decouper` suit les positions du texte d'origine ;
+- `TexteCompose.Disposer` expose, depuis la même passe que le dessin, une `LignePosee` par ligne,
+  lignes vides comprises : la ligne, son origine après le fer, son sommet, sa ligne de base et les
+  décalages de justification ;
+- dans le noyau, deux fonctions pures sur une ligne : l'abscisse d'une position, et la position la
+  plus proche d'une abscisse, taquets, justification et blancs pendants compris ; dans la vue,
+  `TexteCompose.PointDe(index)` et `IndexSous(point)`, en coordonnées du bloc, colonnes, calage
+  vertical et texte vide compris ; un bloc tourné y entre par `Frame.ToLocal`.
+
+**La sortie du compositeur ne change pas** : coupures, largeurs, abscisses, `LigneComposee.Texte`,
+écran et PDF restent identiques ; `Mots.cs` lit `MorceauPose` par le nom de ses membres, et le
+banc, Q13 et les recettes de rendu ne bougent pas. Seule exception, déclarée : un « \r\n » coupé
+entre deux fragments compte deux paragraphes dans `Compositeur` et un seul dans `Recalage` ; il
+s'aligne sur `Recalage`. Aucun document du dépôt n'en porte, l'import retirant les « \r ».
+
+*Piège* : les cibles du juge dans `Compositeur` et `TexteCompose` restent présentes, une seule fois
+chacune ; la géométrie lit `LignePosee` au lieu de recopier leurs lignes (règle 7). Un bloc à champ
+n'a pas de géométrie, son `Contenu` différant de `Text`.
+
+*Recette* :
+- tests purs sur des textes faits pour : espaces multiples, tabulations, renvois, paragraphes
+  vides, « \r\n », « \r » seul, paires de substitution, colonnes. Pour chaque morceau,
+  `texte.Substring(m.Debut, m.Texte.Length) == m.Texte` ; les lignes se suivent et couvrent tout le
+  texte ; entre le dernier morceau d'une ligne et `Fin`, il n'y a que du blanc ; `Paragraphe` égale
+  le compte de `Recalage` ;
+- tests d'interface sur l'exemple, ATA 21 et les Fiches : `PointDe(m.Debut).X` égale l'abscisse de
+  l'ancre à 10⁻⁶ près, et `IndexSous(PointDe(i)) == i` ;
+- `verifier.sh` vert sans retouche d'aucune autre recette, Q13 compris (aucune ligne coupée
+  autrement) ;
+- au juge : un mot renvoyé garde la position de son blanc de tête.
+
+Fichiers : `Compositeur.cs`, `Views/TexteCompose.cs`, tests. Effort : moyen.
+
+#### N4 — L'affichage au clavier *(fiche 23, d10, d11, d13, e14, f24)*
+
+*Spécifié le 25 octobre 2026.* Publisher zoome par `F9` (p. 36), qui bascule entre l'affichage
+courant et la taille réelle, et tient la page entière par `Ctrl+Maj+L` (aide en français) ; on y
+tape le zoom dans sa liste (p. 8, 24) ; « Limites et repères » (`Ctrl+Maj+O`) et « Repères de
+lignes de base » (`Ctrl+F7`) sont deux bascules distinctes (p. 9, 15). MyPublisher n'a qu'une case
+« Repères », le zoom au curseur et le bouton « Page entière ».
+
+Le poste :
+- `F9` bascule entre l'affichage courant et 100 %, autour du centre de la sélection, ou de la
+  zone visible sans sélection ; un second `F9` rend l'affichage d'avant. La commande est dans
+  `MainWindowViewModel.Affichage.cs` ; la planche fait le calcul (`PageCanvas.Navigation.cs`) ;
+- `Ctrl+Maj+L` joue `PageEntiereCommand` ;
+- la valeur du zoom devient une liste éditable : Page entière, Objets sélectionnés, de 400 % à
+  10 % ; la valeur part à Entrée, Échap renonce et rend la planche ;
+- « _Limites et repères » (`Ctrl+Maj+O`) reprend la case d'aujourd'hui ; « Repères de lignes de
+  _base » (`Ctrl+F7`) est une bascule neuve, `ShowBaselines`, que `PageCanvas.axaml` lit ;
+- le menu Affichage montre ses gestes.
+
+*Piège* : la maquette fait foi pour les tailles — le champ garde l'allure du libellé tant qu'il n'a
+pas le focus ; règle 5, jamais de zoom d'office ; le champ n'ouvre aucune transaction. À vérifier
+avant : que ni GNOME ni KDE ne prennent `F9`, `Ctrl+F7`, `Ctrl+Maj+L` ou `Ctrl+Maj+O`.
+
+*Recette* :
+- `F9` sur une page à 50 % la met à 100 %, la sélection sous le même point de la zone visible à
+  1 px près ; un second `F9` rend 50 % ; rien n'entre à l'historique ;
+- `Ctrl+Maj+L` donne le zoom du bouton ; « 150 » puis Entrée donne 150 % ; « 1000 » est refusé,
+  avec un message ;
+- `Ctrl+F7` ne masque que les lignes de base ;
+- A4 passe ; au juge : `F9` qui ne rend pas l'affichage d'avant.
+
+Fichiers : `MainWindow.axaml` (barre principale, menu Affichage, liaisons), `PageCanvas.axaml`,
+`PageCanvas.Navigation.cs`, `MainWindowViewModel.Affichage.cs` (neuf), README (Affichage).
+Effort : faible.
+
+#### N5 — Quitter la saisie d'un clic qui agit *(fiche 23, a8, a9)*
+
+*Spécifié le 25 octobre 2026.* `BeginTextEdit` retire la couche de saisie du test de survol. Le
+gestionnaire descendant referme bien la saisie au clic suivant, mais la pression va ensuite à
+`PageRoot` : rien n'est sélectionné, il faut recliquer, et les poignées dessinées autour du bloc
+en saisie sont inertes. Publisher, lui, sélectionne l'objet cliqué d'un seul geste.
+
+Le poste fait de `InputLayer` une `CoucheDeSaisie : Border, ICustomHitTest`. Pendant la saisie,
+la couche reste atteignable partout, **sauf sur la zone du texte en saisie**, qu'elle laisse au
+champ. `OnPointerPressed` appelle `EndTextEdit`, puis agit comme d'habitude : il prend une poignée,
+un repère, un autre bloc, ou vide la sélection. Rien n'est rejoué, aucun double-clic n'est
+fabriqué. Le gestionnaire descendant reste, pour les règles.
+
+*Piège* : l'espace de coordonnées de `HitTest` est à vérifier par le test ; la couche dérive de
+`Border`, que `NavigationTests` cherche par `Trouver<Border>("InputLayer")` ; elle garde
+`Name="InputLayer"` (règle 6).
+
+*Recette* :
+- en saisie, un clic sur un autre bloc le sélectionne en un seul geste : la frappe fait un pas, la
+  sélection aucun ;
+- une poignée du bloc en saisie se tire : un pas pour la frappe, un pour le redimensionnement ;
+- un clic dans le texte en saisie déplace le curseur et laisse la saisie ouverte ; un clic dans le
+  vide désélectionne ;
+- au juge : `return` juste après `EndTextEdit`.
+
+Fichiers : `Views/CoucheDeSaisie.cs` (neuf), `PageCanvas.axaml`, `PageCanvas.axaml.cs`.
+Dépend de Q25, même fichier, et de N1. Effort : faible.
+
+#### N6 — Les raccourcis de la fenêtre laissent la touche au champ *(fiche 23, a13, d2, d21)*
+
+*Spécifié le 25 octobre 2026.* Les liaisons de la fenêtre passent avant le champ qui a le focus et
+ne lui rendent la touche que si leur commande ne peut pas s'exécuter. En saisie, `Ctrl+A`
+sélectionne donc tous les blocs et referme la saisie, et `Ctrl+D` duplique le bloc et fond la
+frappe et la copie en un seul pas — de même dans les champs Contenu et Nom et dans les champs
+numériques.
+
+Le poste pose une règle : **tant qu'un champ de texte a le clavier, les commandes d'objet se
+taisent** — `SelectAll`, `DuplicateSelected`, `GroupSelected`, `UngroupSelected`, `BringToFront`,
+`SendToBack`, et demain le presse-papiers de N8. Leur touche revient au champ. Le mécanisme : un
+`CanExecute` qui interroge le focus de la fenêtre (`ConsumesTyping`), et `NotifyCanExecuteChanged`
+à chaque changement de focus, pour que les menus suivent. `Ctrl+A`, en saisie sur la page,
+sélectionne alors tout le texte, comme l'aide en français le dit « dans une zone de texte ».
+`Alt`+flèches, en saisie, déplace le bloc dans un pas à lui (aide en français : « déplacer l'objet
+dont le texte a le curseur »). Annuler et Rétablir ne changent pas de sens ; Q24 les rend sûrs.
+
+*Piège* : les menus ne se grisent que sur `CanExecuteChanged`. Ne pas déclarer un second `Ctrl+A`
+sur le champ : la recette A4 refuse les doublons. La cible du juge `PageView.EndTextEdit();` reste,
+une seule fois.
+
+*Recette* :
+- en saisie, `Ctrl+A` sélectionne le texte, la saisie reste ouverte et la sélection des blocs ne
+  change pas ; de même dans Contenu, Nom et un champ numérique ;
+- `Ctrl+D`, `Ctrl+Maj+G`, `H`, `F` et `B` ne font rien et n'empilent rien ;
+- `Alt+→` déplace le bloc de 3 pt, en un pas, et la saisie continue ;
+- hors saisie, tout se joue comme avant : les tests de A4 passent ;
+- au juge : `SelectAll` qui ne lit plus le focus.
+
+Fichiers : `MainWindowViewModel.cs` (attributs `CanExecute`), `MainWindowViewModel.Clavier.cs`
+(neuf), `MainWindow.axaml.cs` (changement de focus). Dépend de Q24. Effort : faible.
+
+#### N7 — Mesurer l'écart de la première voie, et s'arrêter *(fiche 23, a21 ; R7)*
+
+*Spécifié le 25 octobre 2026*, comme R7 le prévoit : « le poste commence par mesurer l'écart de la
+première voie sur les documents réels ». La mesure devient un poste, pour qu'elle ait sa recette
+et qu'on puisse la rejouer — après une montée de version d'Avalonia, ou pour un prototype de la
+voie 1 renforcée.
+
+**L'outil.** Une commande du banc, `MyPublisher.Banc saisie <doc> --sortie <écarts.json>
+[--au-mieux]`, sur le modèle de `mots`, qui lit les vrais contrôles de la vraie fenêtre, et
+`Scripts/mesurer-la-saisie.sh`, qui la lance sur le corpus. Ce n'est pas un test : il faut ouvrir
+les `.pub` par pub2raw et lire l'écran tel qu'il est, comme `comparer-mots.sh`.
+
+**Les blocs.** Tous les blocs de texte visibles, sans champ, au premier niveau, de quatre
+documents : `Samples/exemple-bulletin.mypub`, ses deux pages ; ATA 21 par pub2raw, 9 blocs dont
+2 tournés, mesurés dans leur repère ; les Fiches, 18 blocs ; `Samples/recette-coupure.mypub`,
+74 blocs aux limites. Les cases et les membres de groupe sont comptés, sans mesure (N26, N27).
+
+**La grandeur.** Pour chaque position du curseur *i*, de 0 à n — hors de l'intérieur d'une paire
+de substitution ou d'un « \r\n » —, dans le repère du bloc, en points : côté champ,
+`TextLayout.HitTestTextPosition(i)` et la ligne de base de sa ligne, lus sur le
+`PART_TextPresenter` d'une saisie ouverte par le banc, sans transaction ; côté composition,
+`PointDe(i)` et la `LignePosee` de N3. L'écart vaut `max(|Δx|, |Δ ligne de base|)`. Par bloc :
+l'écart maximal, son 95ᵉ centile, le nombre de positions au-dessus du seuil, la première qui
+diverge, le nombre de lignes de chaque côté, et **les causes présentes** — fragments d'un autre
+corps, d'une autre police ou d'une autre graisse ; écarts de paragraphe ; retraits ou espaces du
+bloc ; interligne différent de 1 ; colonnes ; tabulations ; calage autre qu'en haut ; débordement ;
+police de symboles ; coupure différente.
+
+**Deux configurations** : A, le champ tel qu'il est ; B, « au mieux de la voie 1 », posée par le
+banc sur l'instance du champ sans rien changer à l'application — `LineHeight` à la hauteur
+naturelle résolue multipliée par l'interligne du bloc, et `UseLayoutRounding=False` sur le champ et
+ses parties, l'arrondi de mise en page se faisant au point à tous les zooms (jusqu'à 0,5 pt
+d'écart, comme Q4 l'avait trouvé pour les filets).
+
+**Le zoom et le seuil.** L'écart en points ne dépend pas du zoom ; il se mesure au zoom du banc,
+et une contre-épreuve au zoom 2 sur l'exemple doit donner les mêmes écarts à 0,01 pt près. Le
+seuil est **0,75 pt**, un pixel au zoom 100 % ; le relevé donne aussi la valeur rapportée à 200 %.
+Si le maximum de B, sur toutes les positions des quatre documents, est sous le seuil, on prend la
+voie 1 ; sinon, on s'arrête.
+
+**L'étalonnage.** `Samples/recette-saisie.mypub` porte trois blocs dont l'écart est connu : un bloc
+d'un seul style, sans retrait, à interligne 1, dont l'écart en B reste sous 0,1 pt ; le même, avec
+6 pt d'espace après chacun de ses trois paragraphes — environ 6 pt, puis 12 pt ; un fragment de
+16 pt dans un texte de 10 pt — un écart non nul.
+
+*Recette* : `N7-mesure-de-la-saisie.sh` contrôle les trois nombres de l'étalonnage, puis lance le
+corpus, qui ne la fait pas échouer : ce qu'il donne est une décision, non un résultat à atteindre.
+Au juge : la mesure oublie l'ordonnée.
+
+**Ce que livre la mesure** : la commande et son script, le document d'étalonnage, et, dans la
+section R7, un *Mesuré le …* qui donne les chiffres par document et par cause, suivi de la note de
+décision. Aucune ligne de l'application.
+
+**La note de décision** dira, chiffres à l'appui, ce que chaque voie suit et ce qu'elle ne suivra
+pas.
+- *Voie 1* : lier l'interligne (`InterligneConverter` donne exactement `Compositeur.Avance`, sur la
+  famille résolue par la charte), couper l'arrondi, empêcher le champ de défiler vers le curseur
+  quand le texte déborde, `NewLine` à « \n », lier le calage vertical sans le rendre négatif (A7),
+  mettre les retraits **du bloc** dans le `Padding`, poser un pinceau de curseur, surligner la
+  sélection d'une teinte translucide — une vidéo inverse redessinerait les glyphes du champ,
+  décalés de l'écart.
+- *Voie 1 renforcée* : un présentateur dérivé (`TextPresenter.CreateTextLayout` est
+  `protected virtual`) suivrait en plus les fragments et les taquets ; fragile, `_constraint` étant
+  privé et le gabarit Fluent à recopier.
+- *Ce qu'aucune voie 1 ne suivra jamais* : les écarts de paragraphe (ATA 21 mêle 31 paragraphes
+  justifiés et 21 au fer à gauche), le retrait négatif de première ligne de ses 36 listes, les 29
+  espaces après paragraphe des Fiches, les colonnes, la règle de coupure de Q13, et, pour la voie
+  simple, les polices de symboles des Fiches.
+- *Voie 2a* : un champ caché fait la frappe, la méthode d'entrée et le presse-papiers ; curseur,
+  sélection, souris et navigation dépendante de la mise en page se calculent sur la composition et
+  se dessinent dans l'`Overlay`. Environ la voie 1 plus un poste moyen ; un seul champ caché hors
+  de `PageRoot` servirait aussi aux groupes et aux cases.
+- *Voie 2b* : un éditeur complet sur `Compositeur`, frappe et méthode d'entrée comprises ; très
+  lourd, il rejoint le seuil D.
+
+Rien de ce qui dépend de la voie ne part avant la réponse du propriétaire : N21, R6, R7, N22 à
+N28. Les salves Saisie 3 à 5 et A12 continuent pendant ce temps.
+
+Fichiers : `MyPublisher.Banc/`, `Scripts/mesurer-la-saisie.sh`, `Samples/recette-saisie.mypub`,
+la recette. Dépend de N3. Effort : moyen.
+
+#### N8 — Couper, copier, coller des blocs *(fiche 23, a17, a18, c21, d7)*
+
+*Spécifié le 25 octobre 2026.* Le livre fait entrer le contenu par copier-coller (p. 21, 23, 38),
+et le menu contextuel de Publisher commence par Couper, Copier, Coller (p. 34). MyPublisher n'a
+aucune commande de presse-papiers hors du `TextBox` : hors saisie, `Ctrl+C` et `Ctrl+V` ne font
+rien, et le menu Édition n'a pas ces entrées.
+
+Le poste, dans `MainWindowViewModel.PressePapiers.cs` :
+- le format `mypublisher-blocs` est le JSON d'un document d'une page qui porte des clones de la
+  sélection (`Frame.Clone` copie en profondeur), dans l'ordre de la page ; s'y ajoute le texte brut
+  des blocs, pour les autres logiciels ;
+- le collage pose les blocs au même endroit, ou 12 pt plus loin si l'original y est encore, comme
+  `Ctrl+D` ; un texte seul crée un bloc de texte ; Couper fait un seul pas ;
+- **les touches sont traitées dans `OnKeyDown`, après la garde de la saisie, jamais en
+  `KeyBinding`** : une liaison passerait avant le `TextBox` et lui volerait la touche, alors que le
+  `TextBox` marque toujours `Ctrl+C`, `X` et `V` comme traitées — la fenêtre ne les voit jamais en
+  saisie. Les gestionnaires s'appellent `OnCouper`, `OnCopier`, `OnColler`, pour que la recette A4
+  les voie ;
+- les entrées du menu Édition passent par la fenêtre, qui les rend au `TextBox` en saisie.
+
+*Piège* : le presse-papiers est asynchrone ; les références au jeu (`scheme:accent1`) se résolvent
+dans le document d'arrivée ; un collage d'une version plus récente du format est refusé ; les
+chemins d'images relatifs (A3) se rebasent sur le document d'arrivée.
+
+*Recette* :
+- copier puis coller sur une autre page donne des instances distinctes, au même endroit, en un
+  pas ; sur la même page, à +12 pt ;
+- en saisie, `Ctrl+C` met le texte au presse-papiers, sans format de bloc, et le document ne
+  change pas ;
+- un texte brut collé hors saisie devient un bloc ;
+- au juge : le collage réutilise l'instance copiée au lieu d'un clone.
+
+Fichiers : `MainWindowViewModel.PressePapiers.cs` (neuf), `MainWindow.axaml` (menu Édition),
+`MainWindow.axaml.cs` (`OnKeyDown`), README (Édition). Dépend de N1. Effort : moyen.
+
+#### N9 — La langue du texte *(fiche 23, a26)*
+
+*Spécifié le 25 octobre 2026.* Un correcteur (N25) doit savoir en quelle langue est chaque mot ; le
+modèle n'en porte aucune. Les documents réels en ont une : libmspub transmet la langue de chaque
+fragment — ATA 21 en déclare 73 en `fr-FR`, les Fiches 298 en `en-US` et 31 en `fr-FR`, selon le
+relevé de l'étude de Publisher 98 (F2) —, et l'import la perd.
+
+Le poste : `Document.Langue`, une étiquette BCP 47 ; `TextFrame.Langue` et `StyleSpan.Langue`,
+facultatives — nulle veut dire celle du bloc, puis celle du document. Ce sont des clés additives
+(règle 15). L'import `.pub` lit la langue des fragments dans le relevé de libmspub. Le dock
+Document règle la langue du document, en un pas. Un document neuf prend la langue de son modèle ;
+un document vierge prend `fr-FR`, jamais la langue de la machine : la culture reste la culture
+courante (règle 8), mais la langue du document n'en dépend pas. La langue n'a aucun effet sur le
+rendu : elle ne sert qu'à N25.
+
+*Piège* : le nom des clés de langue dans le relevé de libmspub se vérifie sur `pub2raw` avant
+d'écrire l'import ; une langue inconnue reste écrite telle quelle ; Samples et Templates sont
+réenregistrés.
+
+*Recette* :
+- ATA 21 importé : 73 fragments portent `fr-FR` ; les Fiches, 298 `en-US` et 31 `fr-FR` ;
+- l'aller-retour JSON garde chaque langue ; un document vierge est en `fr-FR` quel que soit
+  `LC_ALL` ;
+- le dock change la langue du document en un pas ;
+- l'écran et le PDF ne changent pas d'un pixel (`comparer-rendus.sh`) ;
+- au juge : l'import oublie la langue d'un fragment.
+
+Fichiers : `Frame.cs`, `StyleSpan.cs`, `Document.cs`, `PubImporter.cs`, `MainWindow.axaml` (dock
+Document), Samples, Templates. Effort : faible à moyen.
+
+### Lot 2 — Le clavier et le clic de Publisher
+
+Le lot où l'application change de main : le clic simple dans le texte (N12), les raccourcis
+français (N10), les menus (N13), les champs (N14), Ctrl+glisser et le rectangle (N17). Q21 et Q22,
+qui ouvrent le lot, sont repris dans leur section de la phase Q.
+
+#### N10 — Les raccourcis de Publisher en français *(fiche 23, b2, b7, b8, b10, d8, d20)*
+
+*Spécifié le 25 octobre 2026, sur la décision 4.* MyPublisher suit déjà le français pour `Ctrl+G`
+et `Ctrl+I`. Il lui manque le reste de la table, et deux de ses touches la contredisent : `Ctrl+E`
+exporte en PDF là où Publisher centre — même pendant une saisie, la touche étant traitée avant la
+garde —, et `Ctrl+Maj+H` dissocie là où Publisher dissocie par `Ctrl+Maj+G`, la touche qui groupe.
+
+**La table.** Elle s'établit d'abord, et devient la **fiche 24**,
+`Docs/Publisher2007/24-raccourcis-clavier-francais.md` : l'aide de Microsoft en français,
+*Raccourcis clavier dans Publisher*, relue mot pour mot, avec son adresse et sa date de
+consultation ; pour chaque touche, la fonction, la page du livre de 2007 qui la montre en anglais
+(p. 9, 10, 16, 22, 61), et le sort retenu par la règle 12. L'aide vaut pour Publisher 2013 à 365 ;
+ses touches sont celles de 2007, sauf celles du ruban, écartées.
+
+**Ce que le poste lie** :
+- `Ctrl+E`, `Ctrl+L`, `Ctrl+R`, `Ctrl+J` : centrer, aligner à gauche, à droite, justifier — sur le
+  bloc aujourd'hui, sur le paragraphe une fois R6 livré ;
+- `Ctrl+]` et `Ctrl+[` : le corps d'un point de plus, d'un point de moins ; `Ctrl+Maj+>` et
+  `Ctrl+Maj+<` : la taille suivante ou précédente de la liste standard, que le poste définit dans
+  le noyau (8 à 72 pt, celle d'Office) et que N19 reprend ;
+- les préréglages d'interligne, si la fiche 24 les donne ;
+- `Ctrl+Maj+P` : exporter en PDF. L'export devient une commande du modèle de vue qui lève une
+  demande à la fenêtre, comme `PageEntiereDemandee` ; le `case Key.E` sort de `OnKeyDown`.
+  `Ctrl+Maj+P` est libre dans la table française, voisin de `Ctrl+P` (Imprimer, réservé à B3) ;
+  `Ctrl+Maj+E` est la bibliothèque (C7), `Ctrl+Maj+S` reviendra à « Enregistrer sous », et
+  `Ctrl+Alt` écrit un caractère sous AltGr sur un AZERTY ;
+- `Ctrl+Maj+G` groupe ou dissocie selon la sélection ; `Ctrl+Maj+H` est libéré (la coupure de mots,
+  réservée) ;
+- `Alt+Retour arrière` et `F4` : annuler et rétablir, en plus de `Ctrl+Z` et `Ctrl+Y` ;
+  `Ctrl+Maj+X` : supprimer l'objet, même en saisie.
+
+**L'AZERTY.** `KeyGesture` compare la *touche* et les modificateurs exacts, jamais le caractère :
+sur un AZERTY, « < » et « > » partagent une touche, « ] » et « [ » demandent AltGr, et Maj+« = »
+donne « + ». Le poste commence donc par **une sonde** sur la machine du propriétaire : une
+variable d'environnement qui écrit, pour chaque frappe, la touche, la touche physique, le
+caractère et les modificateurs. Les raccourcis par caractère (`<`, `>`, `]`, `[`) passent par une
+table unique, `RaccourcisParCaractere`, lue sur le caractère produit, Maj et AltGr ignorés ; les
+lettres et les touches nommées restent des `KeyBinding`. Les tests rejouent les triplets relevés
+par la sonde, par `ToucheAzerty` (N1). `Ctrl+0`, qui demande Maj sur un AZERTY, est vérifié du
+même coup.
+
+**La recette A4 étendue**, par ce poste seul : chaque geste reste déclaré une fois, en `KeyBinding`
+ou dans la table ; chaque touche traitée dans `OnKeyDown` figure au README, comme les liaisons ;
+chaque liaison qui a une entrée de menu l'y affiche, et chaque geste affiché à un menu est une
+vraie liaison ; les touches réservées restent libres ; `Ctrl+E` n'exporte plus ; `Ctrl+Shift+F` et
+`Ctrl+Shift+B` restent exigés. Le contrôle « `Ctrl`+lettre interceptée » ne vise plus que N, O, S
+et les touches du presse-papiers.
+
+*Piège* : `Ctrl+Maj+F` est la boîte Police dans l'aide, `Ctrl+Maj+B` le carnet d'adresses ; ils
+restent Premier plan et Arrière-plan (règle 12), et la fiche 24 le dit. Les infobulles
+« Dissocier (Ctrl+Maj+H) » de la barre et le libellé du menu Texte changent : `DispositionTests`
+et `BarreContextuelleTests` les lisent. La recette I3 garde `Ctrl+U`. Reste à vérifier que ni GNOME
+ni KDE ne prennent `Ctrl+Maj+P`, comme B7 l'a fait pour `Ctrl+F1`.
+
+*Recette* :
+- `Ctrl+E` centre le texte en un pas et n'exporte plus ; `Ctrl+Maj+P` exporte, même en saisie ;
+- `Ctrl+L`, `R`, `J` alignent ; `Ctrl+]` et `Ctrl+[` changent le corps d'un point, en un pas ; les
+  triplets AZERTY de « < » et « > » changent la taille ;
+- `Ctrl+Maj+G` groupe, puis dissocie ; `Alt+Retour arrière` annule, `F4` rétablit ; `Ctrl+Maj+X`
+  supprime le bloc en saisie ;
+- tout cela sur le bloc, hors saisie et en saisie ;
+- A4 étendue passe ; au juge : `Ctrl+E` rendu à l'export.
+
+Fichiers : `MainWindow.axaml` (liaisons, gestes des menus), `MainWindow.axaml.cs` (`OnKeyDown`,
+demande d'export), `MainWindowViewModel.Raccourcis.cs` (neuf), `BarreContextuelle.axaml`
+(infobulles), README (tous les sous-tableaux), `A4-superposition.sh`, la fiche 24. Dépend de N4,
+N6 et N8. Effort : moyen.
+
+#### N11 — Ne rien perdre en fermant, retrouver ses documents *(fiche 23, d19, e19, f25)*
+
+*Spécifié le 25 octobre 2026.* Ni Nouveau, ni Ouvrir, ni Quitter, ni la fermeture de la fenêtre ne
+demandent rien : `Alt+F4` jette les modifications sans un mot. Le menu Fichier de Publisher a
+Fermer (`Ctrl+F4`) et les six derniers documents (p. 61).
+
+Le poste :
+- Nouveau, Ouvrir, Fermer (`Ctrl+W`, `Ctrl+F4`), Quitter et la fermeture de la fenêtre
+  (`Closing`) demandent avant de perdre des modifications : Enregistrer, Ne pas enregistrer,
+  Annuler, avec un bouton par défaut et un bouton d'annulation (`IsDefault`, `IsCancel`). Une
+  saisie ouverte est d'abord refermée, pour que sa frappe compte. Fermer ferme le document et rend
+  le catalogue des modèles, comme Publisher rend son écran d'accueil ;
+- les six derniers documents ouverts ou enregistrés sont au menu Fichier, numérotés, gardés dans
+  `Services/Preferences.cs`, le magasin des réglages de l'utilisateur, hors du document, que A11
+  et N25 reprennent.
+
+*Piège* : les tests ferment des fenêtres modifiées (par exemple `MasquerEcranTests`) ; la question
+n'est donc branchée que par `App.axaml.cs`, jamais par la fenêtre elle-même. Q24 passe avant, pour
+que `IsDirty` dise vrai.
+
+*Recette* :
+- les trois réponses, sur Nouveau, Ouvrir, Fermer et la fenêtre : Enregistrer écrit puis ferme,
+  Ne pas enregistrer ferme, Annuler laisse tout tel quel ;
+- aucune question sur un document intact ;
+- les documents récents survivent à un redémarrage, sans doublon, le plus récent en tête ;
+- au juge : la question oubliée à la fermeture de la fenêtre.
+
+Fichiers : `MainWindow.axaml` (menu Fichier), `MainWindow.axaml.cs` (`Closing`), `App.axaml.cs`,
+un dialogue neuf, `Services/Preferences.cs` (neuf). Dépend de Q24. Effort : moyen.
+
+#### N12 — Entrer dans le texte d'un clic, le curseur au point visé *(fiche 10 ; fiche 23, a2 à a5, a10)*
+
+*Spécifié le 25 octobre 2026, sur la décision 3.* Aujourd'hui, un bloc de texte ne s'ouvre qu'au
+double-clic (`OnDoubleTapped`), puis `BeginTextEdit` sélectionne tout ; un bloc neuf porte
+« Saisissez votre texte. » ou « Titre », tout sélectionné ; *Insertion ▸ Bloc de texte* pose le bloc
+sans ouvrir la saisie ; le curseur est la croix de déplacement sur toute la surface du bloc.
+Publisher pose le point d'insertion au premier clic, à l'endroit visé ; un bloc neuf est vide, le
+curseur dedans (p. 33).
+
+**La mécanique** vit dans un fichier partiel neuf, `PageCanvas.Saisie.cs`. `OnPointerPressed` teste
+dans l'ordre : la main et la loupe ; un outil armé ; les poignées, puis les repères ; puis la
+**zone** sous le point.
+- **La zone de texte** est l'intérieur d'un bloc de texte visible et sans champ, moins une **bande
+  de bord** de 5 px d'écran, au plus un quart du côté ; pour un bloc sélectionné, la bande s'étend
+  jusqu'au cadre de sélection. La bande de bord, et tout objet qui n'est pas du texte, se
+  sélectionnent et se déplacent comme aujourd'hui.
+- **Curseurs** : `Ibeam` sur le texte, `SizeAll` sur le bord.
+- **Une pression dans la zone de texte, sans Ctrl ni Maj**, sélectionne ce bloc seul ; calcule la
+  position visée sur la composition, `IndexSous` (N3) après `ToLocal`, c'est-à-dire sur ce qui
+  était à l'écran ; ouvre la saisie **sans** tout sélectionner, focus puis `CaretIndex` à cette
+  position ; et passe le glissé au champ, dont la sélection suit le pointeur depuis l'ancre. Un
+  glissé de moins de 3 px ne sélectionne rien (le seuil de Q21).
+- `Ctrl`+clic et `Maj`+clic dans un bloc non sélectionné l'ajoutent ou le retirent, sans saisie ;
+  dans le texte en saisie, `Maj`+clic étend la sélection. Le double-clic sélectionne un mot ; il
+  n'ouvre plus la saisie.
+- **Un bloc neuf est vide**, le curseur dedans ; *Insertion ▸ Bloc de texte* ouvre la saisie comme
+  l'outil.
+- Les traits, les blocs masqués et les blocs tournés suivent la règle générale, ces derniers dans
+  leur repère.
+
+Le curseur tombe au bon caractère dès ce poste, puisqu'il est calculé sur la composition. Ce qu'on
+voit *après* l'entrée dépend de la voie de R7 (N21) : jusque-là, le champ en texte brut.
+
+**Les tests qui changent de sens** (règle 14) : dans `DoubleClicTests`, le premier clic ouvre déjà
+la saisie, et le glissé d'un point prend le bloc par sa bande de bord ; dans `PressionTests`, le
+chronomètre presse le bord et un test neuf chronomètre l'entrée en saisie ; dans
+`BarreContextuelleTests`, le clic qui suit le sélecteur de couleur ; les aides d'entrée de N1 font
+un seul clic. Les recettes `Q14-double-clic.sh` et `Q23-selection.sh` sont reprises, et la ligne
+« Double-clic » du README devient « Clic ».
+
+*Piège* : la cible du juge « un mouvement nul du pointeur aimante le bloc cliqué » n'est plus prise
+quand le test presse le centre : le test réécrit presse la **bande de bord** de chaque bloc d'ATA 21
+avec un mouvement nul, et cela s'éprouve à la main. La cible « les réglages du bloc se
+reconstruisent » de Q23 se reprend par le bord. La ligne `var hit = DansLaPage(page) ?
+_vm.CurrentPage.Frames…` reste une seule fois. Le temps de la pression qui ouvre la saisie se
+mesure : moins de 100 ms en médiane sur ATA 21.
+
+*Recette* :
+- un clic sur le 5ᵉ caractère d'un bloc non sélectionné donne ce bloc seul, en saisie, avec
+  `CaretIndex` 4 ; de même sur un bloc tourné de 30°, et sur un caractère d'ATA 21 repéré par N3 ;
+- un glissé du centre du 3ᵉ au centre du 7ᵉ caractère sélectionne [2, 7) ;
+- un glissé de 1 pt par le bord, `Alt` tenu, déplace le bloc, en un pas ; `Ctrl`+clic dans le texte
+  ajoute le bloc à la sélection, sans saisie ;
+- entrer puis sortir sans taper n'empile aucun pas ; taper en empile un ; un bloc tracé à l'outil
+  est vide et la frappe y entre ;
+- un double-clic sur un mot, joué vingt fois par la recette, sélectionne le mot ;
+- au juge : la pression qui ouvre la saisie sélectionne encore tout.
+
+Fichiers : `PageCanvas.axaml.cs`, `PageCanvas.Saisie.cs` (neuf), `MainWindowViewModel.cs`
+(`BuildFrame`, le texte d'attente), les tests ci-dessus, les recettes Q14 et Q23, README (Souris).
+Dépend de N1, N3, N5 et Q21. Effort : moyen.
+
+#### N13 — Les menus de Publisher *(fiche 23, d3, d23, e4, e7, e10, e21)*
+
+*Spécifié le 25 octobre 2026.* Les menus de MyPublisher portent des lettres d'accès en double —
+Disposition : G quatre fois, D, H et L deux fois ; Insertion : T deux fois ; Texte : G deux fois ;
+Affichage : R trois fois —, qui font tourner le focus d'une entrée à l'autre sans rien déclencher,
+et « _Édition » est injoignable : `AccessKeyHandler` compare `Key.ToString()`, et aucune touche ne
+s'appelle « É ». Les gestes s'affichent « Ctrl+Shift+G » aux menus et « Ctrl+Maj+G » dans les
+bulles. Tab, sur la planche, est la navigation du focus d'Avalonia ; Publisher y passe d'un objet à
+l'autre.
+
+Le poste :
+- des lettres d'accès uniques à chaque niveau, aucune accentuée ; « _Edition », comme les menus
+  d'Office 2003 et 2007 en français (à vérifier) ;
+- les gestes affichés en français, « Ctrl+Maj+G », « Suppr », par
+  `AppBuilder.With(new KeyGestureFormatInfo(…))`, dans `Program.cs` et les deux hôtes `Banc.cs` ;
+  un style ne battrait pas la liaison du gabarit ;
+- Disposition rangée comme Publisher : « Ordre ▸ », « Aligner ou répartir ▸ » ; « Regrouper »
+  refait le dernier groupe dissous, en un pas ;
+- **Tab et Maj+Tab** passent au bloc suivant ou précédent dans l'ordre de la page, en sautant les
+  masqués, quand la planche a le focus ; Tab dans le dock continue d'aller au champ suivant.
+
+*Piège* : la cible du juge « Ajuster aux _marges », la ligne « Tr_ait » qu'exige A10 et le menu
+Fenêtre que vérifie I2 restent tels quels. La navigation du focus est un gestionnaire d'instance de
+la fenêtre ; `OnKeyDown` passe avant elle.
+
+*Recette* :
+- un contrôle des sources : aucune lettre d'accès en double à un même niveau, aucune accentuée ;
+- `Alt`, `D`, `O`, `P` joue Premier plan ; le menu Disposition affiche « Ctrl+Maj+G » ;
+- Regrouper refait le groupe en un pas ;
+- Tab et Maj+Tab sautent un bloc masqué ; Tab dans le dock va au champ suivant ;
+- au juge : une lettre d'accès en double.
+
+Fichiers : `MainWindow.axaml` (menus), `MainWindow.axaml.cs` (Tab), `MainWindowViewModel.cs` (une
+ligne, le groupe retenu), `Program.cs`, les deux `Banc.cs`, README (Objets), les recettes I2 et
+I3, `DispositionTests`. Dépend de N10. Effort : moyen.
+
+#### N14 — Les champs *(fiche 23, f2, f5, f7, f8, f10, f11)*
+
+*Spécifié le 25 octobre 2026.* Les champs numériques sont des `NumericUpDown` d'Avalonia, qui
+poussent la valeur à chaque frappe lisible — taper « 210 » dans la largeur de la page passe par
+21 mm — et refusent en silence une saisie illisible ou hors bornes, sans la ramener à la borne. Un
+seul suffixe, celui du champ, est retiré avant la lecture. Échap valide dans la barre (I3) et ne
+fait rien au dock ; le catalogue et le dialogue des coordonnées ne se ferment pas par Échap.
+
+Le poste :
+- **`ChampNumerique`**, dérivé de `NumericUpDown` (`StyleKeyOverride`), ne pousse plus la valeur à
+  chaque frappe : elle part à Entrée, à Tab, à la sortie du champ, à ↑ et ↓, à la molette ;
+- **`Unite.Convert`** accepte mm, cm, pt, pi et pouces (« po », « in », `"`), à la virgule comme
+  au point ; l'affichage reste en mm (décision du 24 octobre) ;
+- **un refus** rend la valeur d'avant et le dit dans la barre d'état, bornes comprises ;
+- **Échap** abandonne ce qui n'est pas validé et rend la main à la planche (règle 13) ; Entrée
+  dans la barre valide et rend la planche ;
+- les deux dialogues reçoivent leur bouton d'annulation (`IsCancel`) ;
+- l'ordre de Tab au dock est éprouvé : il ne s'arrête plus sur les titres de section.
+
+*Piège* : `ClosePropertyEdit` doit d'abord valider le champ en attente — `DispositionTests` garde
+« 40 » au changement d'onglet. La cible du juge `texte = separateur == ","…` reste. Le test de
+`BarreContextuelleTests` qui veut qu'Échap valide est réécrit (règle 14). La mémoire d'une case de
+Q14 garde la valeur affichée exacte.
+
+*Recette* :
+- « 2 cm » dans X donne 20,0 mm ; « 12 pt » dans une marge donne 4,23 mm ; « 1" » donne 25,4 mm ;
+- en tapant « 210 », la largeur de la page n'est écrite qu'une fois, en un pas ;
+- « trente » laisse la valeur et le dit ; ↑ fait un pas ;
+- Échap dans le corps rend la valeur d'avant ; Échap ferme le catalogue ;
+- au juge : la valeur poussée à chaque frappe.
+
+Fichiers : `Views/ChampNumerique.cs` (neuf), `MainWindow.axaml` (les champs du dock),
+`BarreContextuelle.axaml` et son code, `MainWindow.axaml.cs` (`ClosePropertyEdit`),
+`Converters/UnitConverters.cs`, les deux dialogues. Dépend de N9, pour le dock Document. Effort :
+moyen.
+
+#### N15 — L'application connaît la sélection du texte *(fiche 23, b1, b4)*
+
+*Spécifié le 25 octobre 2026.* `CaretIndex` et `SelectionStart` n'apparaissent aujourd'hui que dans
+les tests : seule la planche tient le `TextBox`, et le modèle de vue ne sait pas ce qui est
+sélectionné dans le texte. R6, R7, N20 et N22 en ont besoin.
+
+Le poste ajoute `SelectionDuTexte` — le bloc ou la case, le début, la fin, le curseur —, que la
+planche tient et vide à la sortie de la saisie, et `ParagraphesDeLaSelection`, par
+`Recalage.ParagrapheDe`. La sélection survit quand le focus va à la barre.
+
+*Recette* : un glissé sur les caractères 4 à 7 donne (4, 7) ; `Maj+→` donne (4, 8) ; une frappe
+donne (5, 5) ; le focus pris par le champ Corps ne change rien ; Échap vide la sélection. Au juge :
+la sélection oubliée quand la barre prend le focus.
+
+Fichiers : `PageCanvas.Saisie.cs`, `MainWindowViewModel.Saisie.cs` (neuf). Dépend de N12 et N2.
+Effort : faible.
+
+#### N16 — Tabulation et saut de ligne forcé *(fiche 23, a15, a16)*
+
+*Spécifié le 25 octobre 2026.* Tab n'est pas inséré — `AcceptsTab` n'est pas posé — : il emmène le
+focus au contrôle suivant et laisse la saisie ouverte, orpheline. Entrée, Maj+Entrée et Ctrl+Entrée
+insèrent toutes un « \n », c'est-à-dire un paragraphe ; `TextBox.NewLine` vaut
+`Environment.NewLine`, donc « \r\n » sous Windows. Publisher distingue la fin de paragraphe du saut
+de ligne forcé (Maj+Entrée).
+
+Le poste : `AcceptsTab="True"` sur le champ de la page ; `NewLine="\n"` sur ce champ et sur le champ
+Contenu du dock ; Maj+Tab, en saisie, ne sort plus du bloc ; Maj+Entrée pose U+2028, que
+`Compositeur` coupe sans fermer le paragraphe et que `Recalage` ne compte pas comme un saut. L'import
+ne change pas : il rend aujourd'hui le saut forcé de Publisher par un paragraphe, et T1 de l'étude
+de 98 l'en corrigera. Dans le dock, Tab reste la navigation entre champs.
+
+*Piège* : la cible du juge `Text="{Binding Saisie, Mode=TwoWay}"` reste. Avant N21, le champ montre
+la tabulation d'Avalonia et non le taquet de 36 pt.
+
+*Recette* :
+- Tab dans le 2ᵉ paragraphe met « \t » au curseur ; le mot suivant tombe au taquet de 36 pt, à
+  l'écran comme au PDF, à 0,05 pt près (`pdftotext -bbox`) ; la saisie et le focus restent dans le
+  champ ;
+- Maj+Entrée coupe la ligne sans créer de paragraphe : le retrait de première ligne ne s'y applique
+  pas, et le compte des paragraphes ne change pas ;
+- la frappe fait un pas ;
+- au juge : U+2028 compté comme un saut de paragraphe.
+
+Fichiers : `PageCanvas.axaml`, `MainWindow.axaml` (champ Contenu), `PageCanvas.Saisie.cs`,
+`Compositeur.cs`, `Recalage.cs`. Dépend de N15, dans la même copie, et de N3. Effort : faible à
+moyen.
+
+#### N17 — Les modificateurs du glisser, et le rectangle de sélection *(fiche 23, c8, c10 à c14)*
+
+*Spécifié le 25 octobre 2026.* `ApplyMove` ne lit qu'`Alt` ; Ctrl et Maj font la sélection
+additive et rien d'autre ; la seule copie est `Ctrl+D`, décalée de 12 pt ; une pression dans le
+vide vide la sélection ; le curseur de rotation est une main.
+
+Le poste :
+- **Ctrl+glisser copie** : la bascule de Ctrl+clic attend le relâché, et si le geste passe le
+  seuil de Q21, les clones bougent et les originaux restent, en un pas ;
+- **Maj+glisser** tient l'axe dominant ;
+- **au tracé**, Maj donne un carré ou un cercle, Ctrl trace depuis le centre ; **Ctrl sur une
+  poignée** redimensionne depuis le centre ;
+- **un rectangle de sélection**, tiré dans le vide ou depuis le gris, prend les blocs visibles dont
+  l'emprise est tout entière dedans ; Maj ou Ctrl ajoute ;
+- **Échap annule un glissé** en cours, bloc rendu à sa place, sans pas ;
+- **le curseur de rotation** est dessiné avec le tracé de l'icône de rotation de l'apparence.
+
+*Piège* : Ctrl et Maj changent de sens à la pression, et le test C3 du Maj+clic doit rester vert.
+Les cibles du juge `var hit = DansLaPage(page) ? _vm.CurrentPage.Frames`, `if (!DansLaPage(page))
+return;` et `var localX = dx * cos + dy * sin;` restent, une fois chacune. Le rectangle se dessine
+dans l'`Overlay`, aux pinceaux de l'apparence lus par le code (règle 4).
+
+*Recette* :
+- Ctrl+glisser donne deux blocs en un pas ; Maj+glisser garde Y ;
+- un tracé sous Maj a une largeur égale à sa hauteur ; Ctrl sur une poignée garde le centre ;
+- un rectangle prend deux blocs sur trois, même tiré depuis le gris ;
+- Échap après un glissé rend le bloc à sa place, sans pas d'annulation ;
+- au juge : Ctrl+glisser qui déplace l'original.
+
+Fichiers : `PageCanvas.axaml.cs`, `PageCanvas.Gestes.cs` (neuf), README (Souris). Dépend de Q21 et
+N12. Effort : moyen.
+
+#### N18 — Les menus vers le dock, et les pages, avec A8 et A9 *(fiche 23, b17, d16, e5, e8, e9, e12, e15, e16, e18, f17, f18)*
+
+*Spécifié le 25 octobre 2026, sur la décision 5.* Publisher règle un objet par ses dialogues
+*Format…* ; MyPublisher les a dans le dock, mais aucune entrée de menu n'y mène : les repères de
+mise en page, le format des repères de règle, l'arrière-plan et le format de page ne s'atteignent
+qu'en ouvrant le bon onglet et la bonne section.
+
+Le poste :
+- **le chemin vers le dock** : `MainWindowViewModel.VersLeDock.cs` lève une `DockDemande`, que la
+  fenêtre traite — rouvrir le dock s'il est replié, choisir l'onglet, ouvrir la section, mettre le
+  focus dans son premier champ. Il sert à *Disposition ▸ Repères de mise en page…*, *Repères de
+  règle ▸ Format…*, *Page ▸ Arrière-plan…*, *Fichier ▸ Mise en page…*, *Texte ▸ Police…*,
+  *Texte ▸ Paragraphe…* et *Rotation personnalisée…* ; A12 et le double-clic y prendront leur
+  « Format du bloc… » ;
+- **A8**, avec sa recette d'origine : le dialogue *Insérer des pages*, sur `Ctrl+Maj+N`, dont le
+  champ « dupliquer les objets de la page » reste grisé tant que son option n'est pas choisie
+  (p. 22) — un dialogue qui ne double aucun champ du dock ; `Ctrl+Maj+U` duplique la page ;
+- **A9**, avec sa recette d'origine : *Faire pivoter ou retourner ▸* au menu Disposition, et deux
+  boutons −90° et +90° au dock, sans icône, la recette I1 n'en admettant que de la maquette ;
+- *Insertion ▸ Numéro de page, Date, Coordonnées* posent un bloc à champ (C4) ;
+- **les pages au clavier** : `Ctrl+Pg. suiv.` et `Ctrl+Pg. préc.` changent de page ; `F5` et
+  `Ctrl+B` (« Atteindre la page ») mettent le focus sur le numéro de page de la barre d'état, devenu
+  un champ.
+
+*Piège* : `GabaritsGardes` masque les sections d'une autre sorte de bloc ; la section se vise après
+la mise en page. Le dialogue neuf s'inscrit dans `vues_de_la_phase` de la recette I1.
+
+*Recette* :
+- celles de A8 et de A9 ;
+- chaque entrée « … » ouvre la bonne section, même dock replié, et n'empile aucun pas ;
+- « 3 » puis Entrée dans le numéro de page mène à la page 3 ; « 99 » est refusé, avec un message ;
+- au juge : une entrée « … » qui ouvre l'onglet sans la section.
+
+Fichiers : `MainWindowViewModel.VersLeDock.cs` (neuf), `MainWindow.axaml` (menus, barre d'état),
+`MainWindow.axaml.cs` (`DockDemande`), un dialogue neuf, la recette I1, README (Pages). Dépend de
+N13. Effort : moyen.
+
+#### N19 — Le corps et la police : une liste, et une frappe *(fiche 23, b6)*
+
+*Spécifié le 25 octobre 2026.* Publisher propose le corps dans une liste de tailles, où l'on peut
+aussi taper, et la police dans une liste où l'on tape son nom (p. 10, 48). Le corps de la barre est
+un champ numérique sans liste ; la liste des polices n'est pas éditable.
+
+Le poste : le corps devient une liste éditable des tailles standard — celle que N10 a définie dans
+le noyau —, où l'on tape aussi une valeur décimale, au pas de 0,5 ; la police se tape, et la liste
+propose les familles qui commencent par la frappe — « Geo » propose Georgia —, Entrée posant la
+première. Une police tapée que le système n'a pas est refusée, avec un message (N14).
+
+*Piège* : la garde de Q20 (`JamaisNul`, les polices du document absentes de la machine, libellées
+« (absente) ») et la règle 1 (`.Single()` sur le corps et la police de la barre) tiennent ; la
+mémoire d'une case de Q14 vaut pour le corps ; l'édition d'une `ComboBox` d'Avalonia 11.3 est à
+éprouver d'abord.
+
+*Recette* : taper « Geo » propose Georgia, et Entrée la pose en un pas ; la liste pose 14 pt en un
+pas ; « 10,5 » tapé donne 10,5 pt ; une police absente du document reste proposée « (absente) » ;
+au juge : la frappe qui pose la police à chaque lettre.
+
+Fichiers : `BarreContextuelle.axaml` et son code. Dépend de N10. Effort : moyen.
+
+### Lot 3 — Le clic droit, la recherche, et le texte tel qu'il s'imprime
+
+A12, R6 et R7 sont repris dans leur section ; leurs ajouts y sont écrits. N21 attend la décision
+de la voie (N7).
+
+#### N20 — Rechercher et remplacer *(fiche 23, e23)*
+
+*Spécifié le 25 octobre 2026, sur la décision 6.* Le livre ne le montre pas ; Publisher le fait
+par *Edition ▸ Rechercher* et *Remplacer*, sur `Ctrl+F`, `F3`, `Maj+F4` et `Ctrl+H` dans l'aide en
+français — touches réservées jusqu'ici, confirmées par la fiche 24.
+
+Le poste :
+- une **barre de recherche**, vue neuve posée sur la planche, en haut à droite, sans la déplacer
+  (règle 3) et hors de `PageRoot` (règle 4), aux couleurs de l'apparence : le texte cherché, le
+  texte de remplacement, *Respecter la casse*, *Mot entier*, Suivant, Remplacer, Remplacer tout ;
+- le parcours va de bloc en bloc dans l'ordre des pages, puis de haut en bas et de gauche à droite
+  sur la page : blocs de texte visibles et sans champ, cases de tableau comprises ; le texte trouvé
+  est sélectionné en saisie (N12, N15), la page courante suivant ; un texte trouvé dans un groupe
+  sélectionne le groupe et le dit, jusqu'à N26 ;
+- *Remplacer* fait un pas ; *Remplacer tout* en fait un seul, pour tout le document ; le texte
+  remplacé prend son style selon la règle de Q1 — celui du premier caractère remplacé — par
+  `Recalage`, sans passer par l'écran.
+
+*Piège* : la barre ne prend pas les lettres seules des outils, ni Échap au dock (règle 13 : Échap la
+ferme et rend la planche). Elle s'inscrit dans `vues_de_la_phase` de la recette I1.
+
+*Recette* :
+- sur l'exemple, « bulletin » trouvé à chaque `F3`, chaque fois sélectionné en saisie à la bonne
+  plage, la page suivant ;
+- *Remplacer tout* « bulletin » par « journal » en un pas, les fragments gardés (le titre gras
+  reste gras) ; une annulation rend le document ;
+- la casse et le mot entier ; sur ATA 21, le compte égale celui d'une recherche sur le texte des
+  blocs ;
+- au juge : *Remplacer tout* qui empile un pas par occurrence.
+
+Fichiers : `Views/BarreDeRecherche.axaml` (neuve), `MainWindowViewModel.Rechercher.cs` (neuf),
+`MainWindow.axaml` (menu Edition, liaisons), README (Édition), la recette I1. Dépend de N15.
+Effort : moyen.
+
+#### N21 — La saisie montre le texte composé *(fiche 23, a10, a11, a20, a21)*
+
+*Spécifié le 25 octobre 2026 ; sa forme dépend de la voie que le propriétaire choisit sur la
+mesure de N7.* Le poste porte la voie choisie. Commun à toutes : `TexteCompose` reste visible
+pendant la saisie, et ce qu'on édite est ce qui s'imprime ; le triple-clic sélectionne le
+paragraphe (Avalonia sélectionne tout le texte) ; la sélection se montre sur le texte composé.
+- **Voie 1** : le champ est transparent, posé sur la composition, avec les réglages que la note de
+  N7 a mesurés — interligne lié, arrondi coupé, `NewLine`, calage, retraits du bloc dans le
+  `Padding`, défilement empêché, curseur et sélection aux couleurs de l'apparence, la sélection en
+  teinte translucide.
+- **Voie 2a** : le champ est caché, hors du test de survol, de préférence unique et hors de
+  `PageRoot` ; le curseur, la sélection, le triple-clic et le pré-édit se dessinent dans
+  l'`Overlay` sur la composition. La navigation au clavier sur les lignes composées (Début, Fin,
+  haut, bas, page) s'ouvre alors en poste à part, à la décision.
+- **Voie 2b** ouvrirait en plus la frappe, la méthode d'entrée et le presse-papiers sans champ :
+  le seuil D.
+
+*Piège* : les couleurs viennent de l'apparence (recette I1) ; `Rendu.ZoneDeSaisie` (N1) suit le
+champ là où il va ; en voie 2b, la cible Q1 de `PageCanvas.axaml` doit être déplacée.
+
+*Recette* (commune) : pendant la saisie, `Rendu.Encre` de la page égale celle d'avant l'entrée, au
+pixel, sur l'exemple et ATA 21 ; un clic sur le *k*-ième caractère d'ATA 21 met le curseur dessous,
+à moins du seuil de N7 ; le triple-clic sélectionne le paragraphe ; au juge : `TexteCompose`
+masqué de nouveau pendant la saisie.
+
+Fichiers : `PageCanvas.axaml`, `PageCanvas.Saisie.cs`, `TexteCompose.cs`, l'apparence. Dépend de N7
+et de la décision, et de N15. Effort : moyen en voie 1, lourd en voie 2.
+
+#### N22 — Les caractères spéciaux *(fiche 23, a27, d14)*
+
+*Spécifié le 25 octobre 2026.* Publisher montre les espaces, les tabulations et les fins de
+paragraphe par *Affichage ▸ Caractères spéciaux* (`Ctrl+Maj+Y`, p. 9) et le bouton ¶ (p. 24).
+
+Le poste : une bascule de la session, *Affichage ▸ Caractères spéciaux* et `Ctrl+Maj+Y`, qui
+dessine dans l'`Overlay` un point pour chaque espace, une flèche pour chaque tabulation, ¶ à chaque
+fin de paragraphe et ↵ à chaque saut forcé, aux positions de N3, à l'échelle et tournés avec le
+bloc, d'une couleur de l'apparence ; rien dans `PageRoot`, rien au PDF ; en saisie, sur le texte
+composé (N21). La maquette n'a pas d'icône ¶ : le menu et la touche suffisent.
+
+*Recette* : sur `recette-texte-riche.mypub`, autant de ¶ que de paragraphes, chacun à
+`PointDe(index du saut)` à 0,01 pt près ; `Rendu.Encre` de la page identique, bascule ouverte ou
+fermée ; le PDF identique octet pour octet ; la bascule n'entre pas à l'historique ; au juge : une
+marque dessinée dans `PageRoot`.
+
+Fichiers : un fichier partiel de la planche pour les marques (neuf), `MainWindow.axaml` (menu
+Affichage, liaison), README (Affichage). Dépend de N3 et N21. Effort : moyen.
+
+#### N23 — Puces et numérotation *(fiche 23, b12)*
+
+*Spécifié le 25 octobre 2026, sur la décision 6.* Publisher met en liste par les boutons Puces et
+Numérotation (p. 10) et *Format ▸ Puces et numéros…* (p. 24). Les deux documents ATR s'en passent —
+leurs listes tiennent par un retrait négatif et un caractère tapé —, mais un document neuf n'a
+aucun moyen d'en faire une qui se renumérote.
+
+Le poste : une propriété de paragraphe, `Liste`, sur le bloc et sur `ParagraphSpan` (clé additive,
+règle 15) : aucune, puce (le caractère, « • » par défaut), ou numéros (« 1. », « a) », « i. ») avec
+leur premier numéro. Poser une liste sur un paragraphe sans retrait lui donne le retrait suspendu
+d'Office, par les réglages de R2. La composition dessine la marque dans le retrait de première
+ligne, au style du premier caractère du paragraphe : un morceau sans position dans `Text`. Les
+paragraphes consécutifs d'une même liste se numérotent de proche en proche ; un paragraphe hors
+liste interrompt la suite ; le premier numéro la fait repartir. L'écran et le PDF passent par la
+même composition. Entrée dans un élément continue la liste, par la règle de Q1 (le paragraphe
+d'au-dessus) ; Entrée dans un élément vide le sort de la liste au lieu d'insérer un saut. Le
+réglage vit dans la section Paragraphe du dock, et *Texte ▸ Puces et numéros…* y mène (N18) ; la
+maquette n'a pas de bouton pour lui.
+
+*Piège* : la marque n'a pas de position dans `Text` — `IndexSous` (N3) y rend le début du
+paragraphe, N22 n'y dessine rien ; le compte de I9 voit les mêmes lignes ; une liste ne court pas
+d'un bloc à l'autre (pas de chaînage) ; l'import ne change pas.
+
+*Recette* :
+- trois paragraphes, numéros posés sur le 2ᵉ et le 3ᵉ : « 1. » et « 2. » au PDF, au retrait de
+  première ligne (`pdftotext -bbox`), et l'écran égal au PDF à 0,05 pt ;
+- Entrée à la fin de l'élément 2 donne un élément « 3. », en un pas ; Entrée dans l'élément vide le
+  sort de la liste ;
+- l'aller-retour JSON ; les documents sans liste se rendent à l'identique ;
+- au juge : la numérotation qui ne s'interrompt pas.
+
+Fichiers : `ParagraphSpan.cs`, `Frame.cs`, `Compositeur.cs`, `Recalage.cs`, `PageCanvas.Saisie.cs`
+(Entrée), `MainWindow.axaml` (dock Paragraphe), Samples, Templates. Dépend de R6. Effort : moyen à
+lourd.
+
+#### N24 — Exposant, indice, capitales *(fiche 23, b14)*
+
+*Spécifié le 25 octobre 2026, sur la décision 6.* La barre Formatting de Publisher porte, absents
+par défaut, Exposant, Indice, Petites majuscules et Majuscules (p. 10). Le modèle connaît déjà le
+décalage de ligne de base, `BaselineShift`, que l'import remplit ; rien ne le pose, et les
+capitales n'existent pas.
+
+Le poste, sur la sélection (R7) ou le bloc entier hors saisie :
+- **exposant et indice** posent le décalage et le corps que l'import écrit pour ceux d'Office ;
+- **capitales et petites capitales** : une clé `Capitales` (aucune, capitales, petites capitales)
+  sur le bloc et le fragment (règle 15). La composition dessine en capitales sans toucher à `Text`,
+  et fabrique les petites capitales à 70 % de la hauteur des capitales (T10 de l'étude de 98) ; un
+  caractère dont la capitale change de longueur (« ß ») reste tel quel, pour que les positions de
+  N3 tiennent. L'import lit l'effet de libmspub ;
+- `Ctrl+=` pour l'indice, `Ctrl+Maj+=` pour l'exposant, les touches des capitales de la fiche 24 ;
+  au menu Texte et au menu contextuel du texte, la maquette n'ayant pas de bouton pour eux. Le zoom
+  garde `Ctrl`+molette, `F9`, `Ctrl+Maj+L`, `Ctrl+−` et `Ctrl+0`.
+
+*Recette* : « x2 » mis en exposant sur le « 2 » : au PDF, le glyphe à la ligne de base et au corps
+attendus ; les petites capitales à 0,1 pt de 70 % de la hauteur des capitales ; `comparer-rendus.sh`
+sous la tolérance ; chaque commande bascule, en un pas ; la recette R5 ajustée à ce que l'import
+lit désormais ; au juge : les petites capitales à la hauteur des capitales.
+
+Fichiers : `StyleSpan.cs`, `Frame.cs`, `Compositeur.cs`, `PubImporter.cs`,
+`MainWindowViewModel.Raccourcis.cs`, `MainWindow.axaml` (menu Texte), Samples, Templates. Dépend de
+R7. Effort : moyen.
+
+#### N25 — La vérification orthographique *(fiche 23, a26)*
+
+*Spécifié le 25 octobre 2026, sur la décision 6.* Publisher souligne les fautes pendant la frappe,
+les propose au clic droit et les parcourt par `F7` ; MyPublisher n'a rien.
+
+**À éprouver d'abord, et s'arrêter si l'une coince** : la bibliothèque, un Hunspell en code géré
+(WeCantSpell.Hunspell), sa licence et sa version ; `Scripts/verifier-dependances.sh` (Q12) la
+couvre. Les dictionnaires sont ceux du système, `/usr/share/hunspell` : `en_US` est installé, le
+français demande `apt install hunspell-fr`, que le README dit comme il dit `libmspub`.
+
+Le poste :
+- un service du noyau, `Orthographe`, qui rend les plages fautives d'un texte dans une langue, mot
+  par mot, avec un cache par mot ; la langue vient de N9 ; un dictionnaire absent le dit une fois, et
+  rien n'est souligné dans cette langue ;
+- un trait ondulé sous chaque faute des blocs visibles de la page courante, dans l'`Overlay`, aux
+  positions de N3 — jamais dans `PageRoot` ni au PDF —, recalculé peu après la frappe ;
+- `F7` ouvre la barre de N20 en mode orthographe : la faute suivante sélectionnée en saisie, ses
+  suggestions, Ignorer, Ignorer tout, Remplacer, Ajouter au dictionnaire — le dictionnaire de
+  l'utilisateur, par langue, dans les préférences de N11 ; au clic droit sur une faute en saisie,
+  les suggestions viennent en tête du menu (A12) ;
+- une case des préférences, « Vérifier pendant la frappe ».
+
+*Piège* : les tests ne dépendent pas des paquets du système : un petit dictionnaire de test, écrit
+pour, est rangé dans `Scripts/fixtures/`. Le soulignement d'une faute dans un bloc tourné tourne
+avec lui.
+
+*Recette* : avec le dictionnaire de test, « recieve » souligné et « receive » non ; `F7` parcourt
+les fautes dans l'ordre de lecture ; Remplacer fait un pas ; un mot ajouté au dictionnaire survit à
+un redémarrage ; `Rendu.Encre` de la page et le PDF identiques, vérification ouverte ou fermée ; sur
+ATA 21 en `en-US`, le nombre de mots signalés est relevé et stable ; au juge : un trait ondulé dans
+`PageRoot`.
+
+Fichiers : `MyPublisher.Core/Services/Orthographe.cs` (neuf), le paquet, le fichier partiel des
+marques de N22, la barre de N20, `MainWindow.axaml` (menu, liaison), README, `Scripts/fixtures/`.
+Dépend de N9, N20, N21 et N22. Effort : lourd.
+
+### Lot 4 — Les postes lourds de fin
+
+Un par salve : tous les trois, et A11 et A13 qui les suivent, touchent `PageCanvas.axaml.cs`.
+
+#### N26 — Taper dans le texte d'un groupe, et prendre un membre seul *(fiche 20 ; fiche 23, a6, c15)*
+
+*Spécifié le 25 octobre 2026.* Le livre retape le texte d'un élément de la bibliothèque **dans le
+groupe**, sans le dissocier (p. 58-60), et prend un membre d'un clic pour en remplacer l'image
+(p. 58) ; seul le redimensionnement d'un membre demande de dissocier. La sélection de MyPublisher
+ne voit que le premier niveau, et la saisie exige un `TextFrame` seul : il faut dissocier.
+
+Le poste :
+- un clic dans la zone de texte d'un membre traverse le groupe — `GroupFrame.Children`, puis
+  `ToLocal` à chaque niveau — et ouvre la saisie de ce membre. **Le groupe reste la sélection** ;
+  le texte en saisie est un autre état, `TexteEnSaisie`, distinct de `SingleSelected`, que la
+  barre suit ;
+- un clic sur un membre d'un groupe déjà sélectionné le prend seul : poignées, dock et barre le
+  visent, et un clic hors du groupe rend la sélection ordinaire.
+
+*Piège* : la recette Q23 exige `GabaritsGardes Bloc="{Binding SingleSelected}"` dans la barre, à
+mettre à jour ; la découpe de Q5 ; les repères locaux et les rotations imbriquées ; la suppression,
+les flèches et l'alignement d'un membre pris seul restent dans son groupe.
+
+*Recette* : un clic sur le 3ᵉ caractère du texte d'un groupe ouvre sa saisie, curseur à 2, le groupe
+restant sélectionné ; la frappe fait un pas, le groupe garde ses enfants ; un clic sur l'image d'un
+groupe sélectionné la prend seule, et Suppr ne retire qu'elle ; au juge : la saisie qui dissocie
+le groupe.
+
+Fichiers : `PageCanvas.axaml.cs`, `PageCanvas.Saisie.cs`, `MainWindowViewModel.cs` (la sélection),
+la barre, la recette Q23. Dépend de N12, N21 et R7. Effort : lourd.
+
+#### N27 — Taper dans une case, sur la page *(fiche 23, g2 à g4)*
+
+*Spécifié le 25 octobre 2026.* **Revient sur un choix écrit en C9** : « une case ne se choisit pas
+sur la page ». On n'y saisit aujourd'hui qu'au dock, dans un champ de 54 px en police de
+l'interface. Publisher y tape au clic, et Tab passe de case en case.
+
+Une case n'existe qu'à la lecture : `CellFrames` reconstruit ses blocs à chaque changement, si bien
+qu'un champ posé dans le gabarit serait détruit à chaque frappe. La saisie écrit donc
+`TableCell.Saisie`. C'est direct en voie 2a, avec le champ unique hors de la page ; en voie 1, il
+faut des cases stables, contraires au parti de C9, et le poste le tranche d'abord.
+
+Les gestes : un clic dans une case y pose le curseur ; Tab passe à la case suivante, Maj+Tab à la
+précédente ; Tab dans la dernière case ajoute une ligne, en un pas ; Ctrl+Tab insère une
+tabulation ; les flèches passent d'une case à la voisine au bord du texte.
+
+*Recette* : un clic dans la 2ᵉ case d'une bande, frappe « 12 » : le PDF porte « 12 » dans la case ;
+Tab, Maj+Tab, puis la ligne ajoutée ; un pas par case ; au juge : Tab qui sort du tableau.
+
+Fichiers : `PageCanvas.axaml.cs`, `PageCanvas.Saisie.cs`, `MainWindow.axaml`, `Table.cs`. Dépend de
+N26 et N16. Effort : lourd.
+
+#### N28 — Lignes et colonnes à l'endroit choisi, et plusieurs cases à la fois *(fiche 23, g5 à g7)*
+
+*Spécifié le 25 octobre 2026.* Les compteurs du dock ajoutent et retirent des lignes et des
+colonnes en fin seulement ; largeurs et hauteurs se règlent au dock ; la mise en forme vise le
+tableau entier ou une case.
+
+Le poste : insérer ou supprimer une ligne ou une colonne avant ou après la case du curseur, au menu
+contextuel d'une case (A12) ; tirer une frontière de colonne ou de ligne à la souris ; sélectionner
+plusieurs cases d'un glissé pour leur donner fond, alignement et mise en forme ensemble.
+
+*Piège* : la somme des largeurs reste celle du tableau, au demi-point près (C9).
+
+*Recette* : une colonne insérée avant la 2ᵉ décale les contenus, en un pas ; une frontière tirée de
+10 pt rend 10 pt à la voisine ; trois cases sélectionnées prennent un fond en un pas ; au juge : la
+somme des largeurs qui dérive.
+
+Fichiers : `PageCanvas.axaml.cs`, `Table.cs`, `PageCanvas.axaml`. Dépend de N27 et A12. Effort :
+moyen.
+
+A11 et A13 ferment la phase, chacun dans sa salve : leurs ajouts sont écrits dans leur section.
+
+---
+
 ## Ordre d'exécution
 
 *Arrêté le 11 octobre 2026.* Les postes partent par **salves** de quatre à huit, chacun
@@ -5233,21 +6526,39 @@ dans sa copie de travail, et sont fusionnés après relecture adversariale. Une 
 réunit que des postes qui ne touchent pas les mêmes fichiers ; quand deux postes se
 touchent, le second attend la salve suivante.
 
+*Repris le 25 octobre 2026.* Depuis la phase I, un poste se fusionne dans `interface` **dès que
+`Scripts/verifier.sh` passe** sur le résultat de la fusion ; la relecture adversariale et le juge
+viennent après, en parallèle, et leurs corrections arrivent par des commits ultérieurs. La phase N
+passe avant ce qui restait des salves 3 à 6, comme les deux lots de la phase I l'avaient fait, et
+y prend R6, R7, A8, A9, A11, A12, A13, Q21 et Q22. Ses salves partagent `MainWindow.axaml`,
+`MainWindow.axaml.cs` et le README quand les postes y touchent des régions différentes, jamais
+`PageCanvas.axaml.cs` (règle 16).
+
 | Salve | Postes | Pourquoi ensemble |
 |---|---|---|
 | **1** | Q1 · les sept recettes de P3 · Q2 · Q3 · Q12 | La dette qui abîme des données, le banc complet, et trois réparations courtes. **Fusionnée le 11 octobre 2026** |
 | **2** | Q4 à Q9 · Q13 à Q17 · B2 · C5b · Q20 | Les écarts écran ↔ PDF, et les deux postes d'usage qui ne demandent rien. **Fusionnée le 13 octobre 2026** (juge 107/107) |
-| **Lot 1** | I1 · puis I2 + B7 ∥ I4 · puis I3 ∥ I5 ∥ I6 · puis Q23 | La nouvelle interface, vue seule, en quatre vagues : la fenêtre et la planche sont chacune un seul fichier. Décidé le 24 octobre 2026 |
-| **Lot 2** | I7 · I8 · A10 · I9, en série | Ce que le modèle doit apprendre pour la maquette ; tous touchent `Frame.cs`. *Repris le 24 octobre 2026* : chaque poste part dès que ce qu'il touche est fusionné, sans attendre la fin du lot 1. I7, le modèle seul, part avec I2 et I4 ; I3 part après I2 et I7 et pose le bouton S ; I8 après I7 et I6 ; A10 après I8 ; I9 après A10 |
-| **3** | R6 · A8 · A9 · A15 · B4 | Le paragraphe — dans la barre contextuelle de I3 —, et des postes courts, indépendants les uns des autres. B7 et Q23 sont passés au lot 1 |
-| **4** | R7 · A12 · C7 · B3 + B6 | Le texte riche à la souris, et ce qui reprend les commandes des salves précédentes |
-| **5** | A11 · A13 · Q11 · Q21 · Q22 | La géométrie et la couche de saisie. A10 est passé au lot 2 ; Q10, absorbé par I4, est clos |
-| **6** | A14 · C8 · Q18 · Q19 | Les deux postes à risque, chacun précédé de son essai |
-| **D** | Note de décision | Rédigée après la salve 6 ; **la décision revient au propriétaire du projet** |
+| **Lot 1** | I1 · puis I2 + B7 ∥ I4 · puis I3 ∥ I5 ∥ I6 · puis Q23 | La nouvelle interface, vue seule, en quatre vagues : la fenêtre et la planche sont chacune un seul fichier. Décidé le 24 octobre 2026. **Fusionné le 25 octobre 2026** |
+| **Lot 2** | I7 · I8 · A10 · I9, en série | Ce que le modèle doit apprendre pour la maquette ; tous touchent `Frame.cs`. *Repris le 24 octobre 2026* : chaque poste part dès que ce qu'il touche est fusionné, sans attendre la fin du lot 1. I7, le modèle seul, part avec I2 et I4 ; I3 part après I2 et I7 et pose le bouton S ; I8 après I7 et I6 ; A10 après I8 ; I9 après A10. **Fusionné le 25 octobre 2026** |
+| **Saisie 1** | Q24 puis Q25 (une copie) · N1 · N2 · N3 · N4 | La perte de frappe d'abord ; le banc des gestes ; les deux préalables du texte riche, dans le noyau et `TexteCompose` ; l'affichage au clavier, qui ne touche rien d'autre |
+| **Saisie 2** | N5 · N6 · N7 · N8 · N9 | La sortie de saisie qui agit (`PageCanvas`) ; la touche laissée au champ (modèle de vue, changement de focus) ; la mesure de R7, au banc → **arrêt** ; le presse-papiers (`OnKeyDown`, menu Édition) ; la langue (noyau, import, dock Document) |
+| **Saisie 3** | Q21 + Q22 · N10 · N11 | Le seuil du pointeur (`PageCanvas`) ; la table française et la recette A4 ; la question à la fermeture et les documents récents |
+| **Saisie 4** | N12 · N13 · N14 | Le clic simple (`PageCanvas`) ; les menus ; les champs du dock et de la barre |
+| **Saisie 5** | N15 puis N16 (une copie) · N17 · N18 · N19 | La sélection du texte, puis Tab et le saut forcé ; Ctrl+glisser et le rectangle (`PageCanvas`) ; les menus vers le dock, avec A8 et A9 ; le corps et la police, dans la barre |
+| **Saisie 6** | A12 · N20 · N21 | Le clic droit (`PageCanvas`) ; rechercher ; la voie choisie — si N21 doit toucher `PageCanvas.axaml.cs`, il passe après A12 |
+| **Saisie 7** | R6 · N22 | Le paragraphe du curseur ; les caractères spéciaux, dans l'`Overlay` |
+| **Saisie 8** | R7 · N23 | Le texte riche à la souris ; les puces |
+| **Saisie 9** | N24 · N25 | Exposant et capitales ; l'orthographe |
+| **Saisie 10 à 14** | N26 · N27 · N28 · A11 · A13, un par salve | Tous dans `PageCanvas.axaml.cs` |
+| **3** | A15 · B4 · Q11 | Ce qui reste des anciennes salves 3 et 5 : des postes courts, indépendants les uns des autres. B7 et Q23 étaient passés au lot 1, A10 au lot 2 ; Q10, absorbé par I4, est clos |
+| **4** | B3 + B6 · C7 · A14 | L'impression et son aperçu, la bibliothèque, le contour du caractère, chacun précédé de son essai |
+| **5** | C8 · Q18 · Q19 | Le miroir, et deux dettes sans urgence |
+| **D** | Note de décision | Rédigée après la salve 5 ; **la décision revient au propriétaire du projet** |
 
 Trois points où l'on s'arrête pour demander, plutôt que de décider seul : le choix de
-voie au début de R7, toute rupture de `FormatVersion` sans migration, et la recette de
-B3, qui demande une vraie imprimante.
+voie, sur la mesure de N7 (salve Saisie 2) ; toute rupture de `FormatVersion` sans migration ;
+et la recette de B3, qui demande une vraie imprimante. S'y ajoute, pour N25, la licence de la
+bibliothèque d'orthographe, éprouvée avant d'écrire une ligne.
 
 ---
 
@@ -5312,6 +6623,14 @@ par l'usage des modèles de B1, si le besoin est réel.
 | Embarquer les polices | 21 | Licences. B4 écrit la liste des polices employées, et B5 avertit de leur substitution. |
 | Bibliothèque de conception (*Design Gallery*) | 20 | Contenu à dessiner et à maintenir. C7 en offre l'usage, avec le contenu de l'utilisateur. |
 | Pages maîtres | 22 | Non écarté sur le fond — simplement non planifié. À reconsidérer avec C4, dont il partage la logique de contenu répété. La maquette de la phase I montre une section « Gabarits » ; elle n'est pas dessinée. |
+| Aide « Tapez une question », Business Contact Manager, « Show Buttons on One Row », onglet Web | 23 | Office 2007, sans objet pour un logiciel local qui produit un document imprimé. Ajouté le 25 octobre 2026, avec la phase N. |
+| Emboss, Engrave, 3-D, ombres de forme | 23 | Effets datés. A14 garde le contour et l'ombre du caractère, qui servent un titre. |
+| Look Up, synonymes, Save as Picture, Edit Story in Word, macros, touches du ruban | 23 | Hors de ce qu'un poseur de blocs saisit ; les touches du ruban n'existent pas en 2007. |
+| Dialogue Options, unité d'affichage réglable | 23 | Décision du 24 octobre 2026 : l'affichage est en mm. Une autre unité se tape et se convertit (N14). |
+| Dialogues OK/Annuler qui doubleraient le dock : Format de la zone de texte, Police, Paragraphe | 11, 23 | Décision du 25 octobre 2026 : le dock reste, et les chemins de Publisher y mènent (N18, A12). Un dialogue qui ne double rien — Insérer des pages (A8) — reste un dialogue. |
+| Barre de menus calquée sur celle de Publisher | 23 | La maquette fait foi pour les menus ; N13 range Disposition à la manière de Publisher, sans renommer la barre. |
+| Pousser ▸, pas de déplacement réglable | 22, 23 | Les flèches, `Maj` et `Alt` suffisent. |
+| Unité px, expressions dans les champs (« 210/2 ») | 23 | Le pixel n'a pas de sens pour un document imprimé ; une expression se calcule ailleurs. |
 
 ---
 
@@ -5327,9 +6646,10 @@ finissent toujours par se contredire.
 | **A** | A1 rotation · A2 débordement · A3 chemins relatifs · A4 superposition · A5 formats · A6 barre d'état · A7 alignement vertical · A8 insertion de pages · A9 quart de tour · A10 trait · A11 aimantation · A12 menu contextuel · A13 rognage · A14 contour du caractère · A15 sections | finitions | — |
 | **B** | B1 modèles · B2 import texte · B3 impression · B4 archive · B5 polices · B6 aperçu · B7 panneaux repliables | usage | — |
 | **C** | C1 remplissage · C2 repères · C3 sélection multiple · C4 champs · C5 couleurs · C6 marges · C7 bibliothèque · C8 miroir · C9 tableau | structure | P1, P2 |
-| **R** | R1 texte riche · R2 retraits · R3 colonnes · R4 interligne · R5 import `.pub` · R6 paragraphe au panneau · R7 texte riche à la souris | documents réels | R6 et R7 : Q1 |
-| **Q** | Q1 à Q23 | dettes consignées | — |
+| **R** | R1 texte riche · R2 retraits · R3 colonnes · R4 interligne · R5 import `.pub` · R6 paragraphe au panneau · R7 texte riche à la souris | documents réels | R6 et R7 : la phase N (N2, N15, N21) |
+| **Q** | Q1 à Q25 | dettes consignées | — |
 | **I** | I1 apparence · I2 fenêtre · I3 barre contextuelle · I4 planche · I5 vignettes · I6 navigation et proportions · I7 souligné · I8 masquer un bloc · I9 lignes en excédent | nouvelle interface | I2 : I1 · I3, I5, I6 : I2 · lot 2 : lot 1 |
+| **N** | N1 banc des gestes · N2 plage · N3 position des morceaux · N4 affichage au clavier · N5 clic de sortie · N6 touche au champ · N7 mesure de la saisie · N8 presse-papiers · N9 langue · N10 raccourcis français · N11 fermer sans perdre · N12 clic simple · N13 menus · N14 champs · N15 sélection du texte · N16 Tab et saut forcé · N17 modificateurs du glisser · N18 menus vers le dock · N19 corps et police · N20 rechercher · N21 texte composé en saisie · N22 caractères spéciaux · N23 puces · N24 exposant et capitales · N25 orthographe · N26 groupes · N27 cases · N28 lignes et colonnes | la saisie de Publisher | N21, R6, R7, N22 à N28 : la décision de voie sur N7 · N25 : la licence de sa bibliothèque |
 | **D** | moteur de composition | décision | Q13, puis A, B, C |
 
 Trois postes à faire en premier si l'on ne devait en retenir que trois, au

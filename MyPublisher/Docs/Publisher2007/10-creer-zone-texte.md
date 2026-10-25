@@ -41,6 +41,14 @@ Tout y est, et le geste est même mieux fini que dans Publisher :
   Publisher.
 - Édition du texte au double-clic, directement sur la page.
 
+*Repris le 25 octobre 2026, à la relecture du cours sous l'angle de la saisie
+([23](23-modalites-de-saisie.md)).* Le verdict `fait` vaut pour la **création** du bloc. Le
+double-clic n'est pas le geste de Publisher : celui-ci pose le point d'insertion dès le premier
+clic dans le texte, à l'endroit visé, et le bloc se déplace par son bord. MyPublisher, lui,
+sélectionne tout le texte à l'entrée, et un bloc neuf porte un texte d'attente là où celui de
+Publisher est vide (p. 33). Le propriétaire a retenu le clic simple le 25 octobre 2026 : c'est le
+poste N12 du plan.
+
 ## Écart / ce qu'il faudrait
 
 Un seul manque, mais c'est le geste le plus attendu : **la poignée de rotation**.

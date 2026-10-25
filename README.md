@@ -330,24 +330,60 @@ Fenêtre masque aussi l'un ou l'autre.
 
 ## Raccourcis
 
+Rangés par domaine, chacun dans son sous-tableau. Les recettes lisent tous les
+sous-tableaux comme un seul : un geste n'y figure qu'une fois, quel que soit le
+domaine où il est rangé.
+
+### Fichier
+
 | Raccourci | Action |
 |---|---|
 | `Ctrl+N` / `Ctrl+O` / `Ctrl+S` | Nouveau (catalogue de modèles) / Ouvrir / Enregistrer |
 | `Ctrl+E` | Exporter en PDF |
+
+### Édition
+
+| Raccourci | Action |
+|---|---|
 | `Ctrl+Z` / `Ctrl+Y` (ou `Ctrl+Maj+Z`) | Annuler / Rétablir |
 | `Ctrl+D` | Dupliquer la sélection |
 | `Ctrl+A` | Sélectionner tous les blocs de la page |
+| `Échap` | Désarme l'outil, sinon désélectionne ; dans un champ de la barre contextuelle, le quitte |
+
+### Objets
+
+| Raccourci | Action |
+|---|---|
 | `Ctrl+Maj+G` / `Ctrl+Maj+H` | Grouper / Dissocier |
 | `Ctrl+Maj+F` / `Ctrl+Maj+B` | Premier plan / Arrière-plan |
-| `Ctrl+G` / `Ctrl+I` / `Ctrl+U` | Gras / Italique / Souligné du bloc de texte sélectionné |
-| `Ctrl+F1` | Replier les panneaux, puis les rendre |
 | `Suppr` | Supprimer la sélection |
 | Flèches | Déplacer de 3 pt (`Maj` : 0,5 pt) |
+
+### Texte
+
+| Raccourci | Action |
+|---|---|
+| `Ctrl+G` / `Ctrl+I` / `Ctrl+U` | Gras / Italique / Souligné du bloc de texte sélectionné |
+
+### Affichage
+
+| Raccourci | Action |
+|---|---|
+| `Ctrl+F1` | Replier les panneaux, puis les rendre |
 | `Ctrl` + molette, `Ctrl` `+`/`-`/`0` | Zoom — à la molette, le point visé reste sous le pointeur |
-| `V` / `T` / `H` / `R` / `E` / `L` / `B` / `Z` | Outil sélection / texte / titre / rectangle / ellipse / ligne / tableau / loupe |
 | `Espace` tenu | La main : un glissé fait défiler la planche, sans changer d'outil (hors saisie, et pas quand un bouton a le focus) |
 | Clic, `Alt` + clic de la loupe | Zoom avant, zoom arrière, autour du point visé |
-| `Échap` | Désarme l'outil, sinon désélectionne ; dans un champ de la barre contextuelle, le quitte |
+
+### Outils
+
+| Raccourci | Action |
+|---|---|
+| `V` / `T` / `H` / `R` / `E` / `L` / `B` / `Z` | Outil sélection / texte / titre / rectangle / ellipse / ligne / tableau / loupe |
+
+### Souris
+
+| Raccourci | Action |
+|---|---|
 | Double-clic | Éditer le texte d'un bloc |
 | `Ctrl` ou `Maj` + clic | Ajoute un bloc à la sélection, ou l'en retire |
 | `Alt` pendant le déplacement | Désactive l'aimantation |

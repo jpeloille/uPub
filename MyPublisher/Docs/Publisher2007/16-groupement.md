@@ -15,7 +15,9 @@ celui qu'on rencontre dès le premier document sérieux.
 
 1. **Ctrl + clic gauche** pour sélectionner plusieurs objets.
 2. `Arrange/Group` — `Ctrl+Shift+G`.
-3. `Arrange/Ungroup` pour dissocier, `Arrange/Regroup` pour reformer le dernier groupe.
+3. `Arrange/Ungroup` pour dissocier — la capture lui donne la même touche, `Ctrl+Shift+G`
+   (p. 44, 46) —, `Arrange/Regroup` pour reformer le dernier groupe. *Group* est grisé tant
+   qu'un seul objet est sélectionné.
 
 Le groupe se déplace, se redimensionne et se tourne comme un objet unique. Le livre
 signale p. 58 la conséquence pratique : pour retoucher une partie d'un élément de la

@@ -40,8 +40,11 @@ de dialogues relevés à l'image.
 | [20](20-bibliotheque-conception.md) | Bibliothèque de conception | 56–60 | `manquant` |
 | [21](21-pack-and-go.md) | Pack and Go : emporter les ressources | 61–67 | `manquant` |
 | [22](22-fonctions-hors-sommaire.md) | Fonctions vues dans les captures, hors sommaire | diverses | `mixte` |
+| [23](23-modalites-de-saisie.md) | Modalités de saisie : texte, souris, clavier, menus, champs | toutes | `mixte` |
 
 Sur 21 fonctions comparables : 2 faites, 5 partielles, 10 manquantes, 4 hors périmètre.
+La fiche 23 n'entre pas dans ce compte : elle ne recense pas des fonctions mais des gestes,
+158 en tout, relevés le 25 octobre 2026.
 
 ## Ce qui ressort du dépouillement
 
@@ -50,6 +53,13 @@ simple qui pose la taille par défaut, désarmement automatique de l'outil, huit
 aimantation, panneau de calques, annulation sur 60 pas couvrant aussi les champs du
 panneau : sur les fiches 10 et 15, MyPublisher fait mieux que Publisher 2007. Il n'y a
 rien à rattraper de ce côté.
+
+*Repris le 25 octobre 2026.* C'est vrai du geste qui **pose** un bloc, pas de celui qui
+**l'écrit**. Relu sous l'angle de la saisie ([23](23-modalites-de-saisie.md)), le livre
+montre une édition en place : on surligne le texte tel qu'il s'imprime, on le met en forme,
+on tape par-dessus. MyPublisher entre au double-clic, sélectionne tout, édite un champ en
+texte brut et ne met en forme que le bloc entier. La phase N du plan en fait son premier
+chantier.
 
 **2. Ce qui manque n'est pas l'édition, c'est la mise en page.** Les dix fonctions
 `manquantes` se regroupent en trois familles :
