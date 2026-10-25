@@ -244,6 +244,68 @@ public class TraitTests
         Assert.Equal(3, Decoupe.DemiFilet(trait));
     }
 
+    // ------------------------------------------------------------------ groupe
+
+    /// <summary>Un groupe de 100 × 100 en (50, 50), et les traits qu'on lui donne, en coordonnées relatives.</summary>
+    private static GroupFrame Groupe(params ShapeFrame[] traits)
+    {
+        // La géométrie d'abord, comme Clone et la relecture : poser la taille d'un groupe
+        // met ses enfants à l'échelle.
+        var groupe = new GroupFrame { X = 50, Y = 50, Width = 100, Height = 100 };
+        foreach (var trait in traits) groupe.Children.Add(trait);
+        return groupe;
+    }
+
+    private static void ExtremitesAttendues(ShapeFrame trait, double x1, double y1, double x2, double y2)
+    {
+        Assert.Equal(x1, trait.Debut.X, 9);
+        Assert.Equal(y1, trait.Debut.Y, 9);
+        Assert.Equal(x2, trait.Fin.X, 9);
+        Assert.Equal(y2, trait.Fin.Y, 9);
+        Assert.Equal(0, trait.Height);
+    }
+
+    [Fact]
+    public void Un_groupe_etire_garde_ses_traits_dun_bord_a_lautre()
+    {
+        // Le groupe le sert « sans rien apprendre », disait la livraison ; mais il met ses
+        // blocs à l'échelle par leur largeur et leur hauteur, et un trait n'a que sa largeur,
+        // que sa rotation oriente. Étiré en hauteur, le filet vertical gardait sa longueur et
+        // ne touchait plus les bords ; étiré en largeur, il s'allongeait et sortait du
+        // groupe (trouvé par la relecture du 26 octobre 2026).
+        var vertical = Trait(20, 0, 20, 100);
+        var horizontal = Trait(0, 50, 100, 50);
+        var groupe = Groupe(vertical, horizontal);
+
+        groupe.Height = 200;
+        ExtremitesAttendues(vertical, 20, 0, 20, 200);
+        ExtremitesAttendues(horizontal, 0, 100, 100, 100);
+
+        groupe.Width = 300;
+        ExtremitesAttendues(vertical, 60, 0, 60, 200);
+        ExtremitesAttendues(horizontal, 0, 100, 300, 100);
+    }
+
+    [Fact]
+    public void Un_trait_oblique_suit_le_groupe_etire_et_garde_son_sens()
+    {
+        // Une flèche du coin haut gauche au coin bas droit le reste quand on double la
+        // largeur du groupe : son angle change, son début reste son début.
+        var fleche = Trait(0, 0, 100, 100);
+        fleche.EndArrow = true;
+        var groupe = Groupe(fleche);
+
+        groupe.Width = 200;
+        ExtremitesAttendues(fleche, 0, 0, 200, 100);
+        Assert.Equal(Math.Atan2(100, 200) * 180 / Math.PI, fleche.Rotation, 6);
+        Assert.True(fleche.EndArrow);
+
+        // Et un pas en arrière la ramène où elle était.
+        groupe.Width = 100;
+        ExtremitesAttendues(fleche, 0, 0, 100, 100);
+        Assert.Equal(45, fleche.Rotation, 9);
+    }
+
     // ------------------------------------------------------------------ export
 
     [Fact]

@@ -39,7 +39,8 @@
 #         écrit sont à la liste de la recette I1.
 #      c. Les tests du noyau (« TraitTests ») : extrémités, angle, contrainte à 0, 45 ou
 #         90°, survol à moins de 3 pt de l'encre et pas au-delà (clause 3), aller-retour,
-#         pointes, découpe d'un groupe, flux PDF.
+#         pointes, découpe d'un groupe, groupe étiré — repris à la relecture du
+#         26 octobre 2026 —, flux PDF.
 #      d. Les tests d'interface « poste=A10 », sur la vraie fenêtre : l'outil et sa touche,
 #         le tracé en un pas et Maj, le clic qui pose à plat, le menu, le survol au
 #         pointeur (clause 3), les deux poignées d'extrémité sans rotation, Maj sur une
@@ -504,11 +505,11 @@ if ! dotnet test MyPublisher.Tests/MyPublisher.Tests.csproj ${MYPUBLISHER_DEJA_C
     exit 1
 fi
 noyau="$(sed -n 's/.*Passed: *\([0-9][0-9]*\).*/\1/p' "$travail/noyau.txt" | head -1)"
-if [ "${noyau:-0}" -lt 26 ]; then
-    echo "ÉCHEC : 26 tests du noyau attendus sous TraitTests, ${noyau:-0} joués." >&2
+if [ "${noyau:-0}" -lt 28 ]; then
+    echo "ÉCHEC : 28 tests du noyau attendus sous TraitTests, ${noyau:-0} joués." >&2
     exit 1
 fi
-echo "    c. le noyau : extrémités, angle, Maj, survol à 3 pt, aller-retour, pointes, découpe, flux PDF ($noyau tests)"
+echo "    c. le noyau : extrémités, angle, Maj, survol à 3 pt, aller-retour, pointes, découpe, groupe étiré, flux PDF ($noyau tests)"
 
 # d. Les tests d'interface.
 attendus=13
