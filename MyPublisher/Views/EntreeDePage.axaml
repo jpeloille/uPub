@@ -1,20 +1,44 @@
 <!--
     Une entrée du panneau Pages (phase I). Un contrôle à part, dans son propre fichier :
-    c'est le point d'accroche des vignettes du poste I5, qui le remplit sans toucher à
+    c'est le point d'accroche que I2 a posé, et que le poste I5 remplit sans toucher à
     MainWindow.axaml.
 
-    D'ici là, le numéro de la page, comme la maquette l'écrit sous sa vignette : corps 11,
-    au gris de la barre d'état, et en demi-gras à l'accent pour la page courante — la liste
-    le dit par sa sélection, que l'entrée lit sur son conteneur.
+    La vignette de la page, puis son numéro, comme la maquette les dessine : une feuille
+    blanche de 96 px de large, au rapport de la page, bordée d'un filet de 1 px au bord des
+    champs et d'une ombre légère ; la page courante bordée de 2 px d'accent. Dessous, à
+    5 px, le numéro, corps 11, au gris de la barre d'état, et en demi-gras pour la page
+    courante. La liste dit la page courante par sa sélection, que l'entrée lit sur son
+    conteneur.
+
+    La vignette (VignetteDePage) se dessine depuis la composition, comme celle des modèles
+    depuis Q9 : un schéma, et non des contrôles de bloc. Elle prend le document dans le
+    modèle de vue de la liste, et sa page dans le contexte de l'entrée.
 -->
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:models="using:MyPublisher.Models"
+             xmlns:vm="using:MyPublisher.ViewModels"
+             xmlns:views="using:MyPublisher.Views"
              xmlns:conv="using:MyPublisher.Converters"
              x:Class="MyPublisher.Views.EntreeDePage"
              x:DataType="models:Page">
 
     <UserControl.Styles>
+        <!-- L'ombre de la maquette, « 0 1px 2px rgba(0,0,0,0.08) » : du noir hors de la
+             palette, que l'apparence laisse à I4 et I5. La classe n'est pas « vignette » :
+             la fenêtre la donne déjà aux vignettes de couleur de Fond et contour, et son
+             style — 22 × 22, une marge à droite — descend jusqu'ici. -->
+        <Style Selector="Border.vignetteDePage">
+            <Setter Property="Width" Value="96"/>
+            <Setter Property="Background" Value="{StaticResource Blanc}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BordChamp}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BoxShadow" Value="0 1 2 0 #14000000"/>
+        </Style>
+        <Style Selector="ListBoxItem:selected Border.vignetteDePage">
+            <Setter Property="BorderBrush" Value="{StaticResource Accent}"/>
+            <Setter Property="BorderThickness" Value="2"/>
+        </Style>
         <Style Selector="TextBlock.numeroDePage">
             <Setter Property="FontSize" Value="11"/>
             <Setter Property="Foreground" Value="{StaticResource Etat}"/>
@@ -26,16 +50,31 @@
         </Style>
     </UserControl.Styles>
 
-    <!-- Le numéro est le rang de la page dans la liste, et non son nom : un .pub importé
-         nomme ses pages comme il veut. Le nombre d'entrées est lié lui aussi, pour que les
-         numéros suivent une page insérée ou retirée avant celle-ci. -->
-    <TextBlock x:Name="NumeroDePage" Classes="numeroDePage">
-        <TextBlock.Text>
-            <MultiBinding Converter="{x:Static conv:NumeroDePage.Instance}">
-                <Binding/>
-                <Binding Path="$parent[ListBox].ItemsSource"/>
-                <Binding Path="$parent[ListBox].ItemCount"/>
-            </MultiBinding>
-        </TextBlock.Text>
-    </TextBlock>
+    <StackPanel Spacing="5" HorizontalAlignment="Center">
+        <!-- La hauteur suit le format du document, qui change en place : liée à la largeur
+             et à la hauteur de la page, et non au document seul. -->
+        <Border x:Name="CadreDeVignette" Classes="vignetteDePage">
+            <Border.Height>
+                <MultiBinding Converter="{x:Static conv:HauteurDeVignette.Instance}" ConverterParameter="96">
+                    <Binding Path="#Vignette.Document.PageWidth"/>
+                    <Binding Path="#Vignette.Document.PageHeight"/>
+                </MultiBinding>
+            </Border.Height>
+            <views:VignetteDePage x:Name="Vignette" Page="{Binding}"
+                                  Document="{Binding $parent[ListBox].((vm:MainWindowViewModel)DataContext).Document}"/>
+        </Border>
+
+        <!-- Le numéro est le rang de la page dans la liste, et non son nom : un .pub importé
+             nomme ses pages comme il veut. Le nombre d'entrées est lié lui aussi, pour que
+             les numéros suivent une page insérée ou retirée avant celle-ci. -->
+        <TextBlock x:Name="NumeroDePage" Classes="numeroDePage">
+            <TextBlock.Text>
+                <MultiBinding Converter="{x:Static conv:NumeroDePage.Instance}">
+                    <Binding/>
+                    <Binding Path="$parent[ListBox].ItemsSource"/>
+                    <Binding Path="$parent[ListBox].ItemCount"/>
+                </MultiBinding>
+            </TextBlock.Text>
+        </TextBlock>
+    </StackPanel>
 </UserControl>

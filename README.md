@@ -122,6 +122,12 @@ dans la zone visible. Aucun de ces gestes n'entre dans l'historique ni ne rend l
 document « modifié », et le zoom ne change jamais de lui-même, ni à l'ouverture ni quand
 la fenêtre change de taille.
 
+Le panneau **Pages** montre chaque page en vignette, au rapport de la page, son numéro
+dessous ; la page courante est bordée de bleu, et un clic sur une autre y mène. La vignette
+est un schéma, comme celles du catalogue de modèles — le texte en filets, à la place des
+lignes de la page, l'image en cadre barré, les formes et le fond de page dans leurs
+couleurs —, et elle suit chaque retouche, l'annulation comprise.
+
 L'onglet *Propriétés* montre le bloc sélectionné en sections repliables : Position et
 taille, puis ce qui est propre au type — pour un bloc de texte, Cadre de texte, Caractère,
 Paragraphe et Contenu —, puis Fond et contour. Une section fermée le reste d'un bloc à
