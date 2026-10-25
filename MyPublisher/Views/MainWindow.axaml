@@ -1060,9 +1060,24 @@
                                                                 </ComboBox.ItemTemplate>
                                                             </ComboBox>
                                                         </StackPanel>
-                                                        <!-- La place de l'alerte d'excédent, « Texte en excédent : n
-                                                             lignes », que I9 pose ici. -->
-                                                        <Panel Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="3" x:Name="PlaceDeLAlerteDExcedent"/>
+                                                        <!-- L'alerte d'excédent (I9) : les lignes du bloc que le bloc
+                                                             ne montre pas, comptées par le noyau sur la composition de
+                                                             l'écran ; à zéro, rien. Elle suit la frappe, sans attendre
+                                                             un changement de sélection. L'icône prend la couleur du
+                                                             texte de l'alerte. -->
+                                                        <Panel Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="3" x:Name="PlaceDeLAlerteDExcedent">
+                                                            <Border x:Name="AlerteDExcedent" Margin="0,8,0,0" Padding="9,7"
+                                                                    CornerRadius="6" Background="{StaticResource FondAlerte}"
+                                                                    TextElement.Foreground="{StaticResource TexteAlerte}"
+                                                                    TextElement.FontSize="11.5"
+                                                                    IsVisible="{Binding #Root.((vm:MainWindowViewModel)DataContext).TexteEnExcedent}">
+                                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                                    <ContentControl VerticalAlignment="Center" Content="{StaticResource IconeAlerte}"/>
+                                                                    <TextBlock VerticalAlignment="Center"
+                                                                               Text="{Binding #Root.((vm:MainWindowViewModel)DataContext).AlerteDExcedent}"/>
+                                                                </StackPanel>
+                                                            </Border>
+                                                        </Panel>
                                                     </Grid>
 
                                                     <!-- Caractère : la mise en forme que la barre contextuelle

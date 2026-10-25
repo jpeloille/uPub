@@ -676,6 +676,44 @@ public static class Compositeur
         Debordement(lignes, disponible, margeBasse, fer) > SeuilDebordement;
 
     /// <summary>
+    /// Combien de lignes composées le bloc ne montre pas : celles qui ne tiennent pas
+    /// entières dans le BLOC. C'est le « Texte en excédent : 4 lignes » du dock (poste
+    /// I9) ; <see cref="Debordement"/> dit de combien de points, ceci dit combien de
+    /// lignes. Une fonction pure : l'écran l'appelle sur les lignes qu'il compose avec sa
+    /// règle, et une composition faite à la règle de l'export donne le même compte, parce
+    /// que les deux coupent aux mêmes mots (Q13) et posent les lignes aux mêmes
+    /// ordonnées (R4). C'est le compte des lignes absentes du PDF.
+    ///
+    /// Une ligne est montrée quand ce qu'on en dessine reste dans le bloc : sa hauteur
+    /// naturelle, que les deux rendus posent au milieu de son avance — l'interligne
+    /// supplémentaire se partage de part et d'autre. Une ligne coupée par le bord n'est
+    /// pas montrée : on n'en lit que le haut, et Publisher la mettrait en excédent tout
+    /// entière. Pour le reste, les mesures de <see cref="Debordement"/>, et pas d'autres :
+    ///
+    /// le BLOC et non la zone de texte — ce qui ne dépasse que dans la marge intérieure
+    /// basse reste entier et lisible (C6) ; le calage vertical de <see cref="Decalage"/>,
+    /// qui ne descend jamais un texte trop haut (A7) ; le même seuil d'un demi-point, si
+    /// bien qu'une ligne comptée fait toujours poser le marqueur rouge. Les colonnes (R3)
+    /// n'ont rien à demander : chaque ligne porte son sommet dans sa colonne, et seule la
+    /// dernière laisse couler ce qui ne tient pas — sauf une ligne plus haute qu'une
+    /// colonne entière, qui n'y est montrée nulle part et compte. Un bloc tourné se
+    /// compte dans son propre repère, où il est droit.
+    ///
+    /// L'inverse ne vaut pas toujours : <see cref="Debordement"/> mesure jusqu'au bas de
+    /// l'avance de la dernière ligne, espace après le paragraphe compris, qui ne sont pas
+    /// de l'encre. Un bloc dont seuls ce demi-interligne ou cet espace sortent porte le
+    /// marqueur et zéro ligne en excédent ; zéro ne s'annonce pas.
+    /// </summary>
+    public static int LignesEnExcedent(
+        IReadOnlyList<LigneComposee> lignes, double disponible, double margeBasse,
+        VerticalAlign fer)
+    {
+        var descente = Decalage(lignes, disponible, fer);
+        var bord = disponible + margeBasse + SeuilDebordement;
+        return lignes.Count(l => descente + l.Haut + (l.Avance + l.Naturelle) / 2 > bord);
+    }
+
+    /// <summary>
     /// Avance d'une ligne à la suivante. <paramref name="naturelle"/> est la hauteur
     /// de ligne de la police elle-même ; le multiple vient du modèle.
     ///

@@ -15,6 +15,7 @@ namespace MyPublisher.Banc;
 ///                          [--enregistrer &lt;copie.mypub&gt;]
 ///   MyPublisher.Banc mots &lt;doc&gt; --sortie &lt;lignes.json&gt;
 ///                          [--charger-d-abord romain|gras|italique] [--coupure-seule]
+///   MyPublisher.Banc excedent &lt;doc.mypub&gt; --sortie &lt;blocs.json&gt;
 ///
 /// Les deux jeux se choisissent par le modèle de vue, exactement comme la liste du
 /// panneau les choisit — c'est le geste « changer de jeu » du poste C5b, rejoué sans
@@ -37,6 +38,7 @@ internal static class Program
             {
                 "rendre" => Rendre(args),
                 "mots" => Mots.Lancer(args),
+                "excedent" => Excedent.Lancer(args),
                 _ => Inconnu(args[0]),
             };
         }
@@ -129,5 +131,7 @@ internal static class Program
             "        MyPublisher.Banc mots <doc> --sortie <lignes.json>");
         Console.Error.WriteLine(
             "                              [--charger-d-abord romain|gras|italique] [--coupure-seule]");
+        Console.Error.WriteLine(
+            "        MyPublisher.Banc excedent <doc.mypub> --sortie <blocs.json>");
     }
 }

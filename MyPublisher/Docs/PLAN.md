@@ -24,7 +24,7 @@ Où en est chaque poste. Une seule règle pour la colonne d'avancement : un post
 on écrit ce qui est fait plutôt qu'un pourcentage inventé — un poste à moitié écrit n'est
 pas un poste à moitié livré. La colonne se met à jour dans le commit qui clôt le poste.
 
-*Dernière mise à jour : 25 octobre 2026 (I2 livré avec B7 : la disposition de la fenêtre ; I4 livré : la planche, et Q10 avec elle ; I6 livré : naviguer dans la planche, et garder les proportions ; I7 livré : le souligné et ses sortes, le modèle seul ; I5 livré : les vignettes de pages ; I8 livré : masquer un bloc ; relecture et juge après fusion pour I5, I6 et I8).*
+*Dernière mise à jour : 25 octobre 2026 (I2 livré avec B7 : la disposition de la fenêtre ; I4 livré : la planche, et Q10 avec elle ; I6 livré : naviguer dans la planche, et garder les proportions ; I7 livré : le souligné et ses sortes, le modèle seul ; I5 livré : les vignettes de pages ; I8 livré : masquer un bloc ; I9 livré : les lignes en excédent au dock ; relecture et juge après fusion pour I5, I6, I8 et I9).*
 
 | Poste | Intitulé | Avancement | Où ça en est |
 |---|---|:---:|---|
@@ -101,13 +101,13 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **I6** | Main, zoom, page entière, proportions | **100 %** | La main du rail, ou `Espace` tenu hors saisie et hors bouton, fait glisser la planche — son seul défilement, sans bloc touché ni pas d'annulation —, main ouverte puis fermée, deux curseurs dessinés aux pinceaux de l'apparence. La loupe (`Z`) zoome d'un pas au clic, en arrière sous `Alt`, le point visé restant sous le pointeur ; `Ctrl`+molette de même, prise avant que la zone qui défile ne la consomme. « Page entière » tient la page dans la zone, marge de la planche déduite, mesurée après la mise en page, qui arrondit au pixel supérieur ; jamais d'office. « Conserver les proportions », état de la session : cochée, un coin tiré et la saisie de L ou de H — qui passent désormais par le modèle de vue — gardent le rapport du bloc, les côtés non, et `Maj` pendant le glissé fait l'inverse. Les deux icônes du poste servent. Neuf tests ; relecture et juge après fusion. Recette dans `Scripts/recettes/` |
 | **I7** | Souligné | **100 %** | Le souligné porte sa sorte — plein, pointillé, tiret, tiret long, tiret-point, tiret-point-point ou vague ; simple ou double, épais ou non, « mots seuls » — au bloc, au fragment, où `null` laisse celui du bloc, et dans le style effectif. Il s'écrit `false`, `true` pour le trait simple, ou en objet `{ Line, Double, Thick, WordsOnly }` ; `FormatVersion` ne change pas, Samples et Templates sont réenregistrés. Il se trace à l'écran et au PDF à la place et à l'épaisseur de la table `post`, sous la ligne de base de son morceau, exposant compris, et à la couleur de son texte ; seize des dix-sept sortes de libmspub s'importent, le double en double. La commande `SoulignerCommand` est dans `MainWindowViewModel.Souligne.cs`, sans bouton : le bouton S, `Ctrl+U` et le menu viennent de I3. Recette dans `Scripts/recettes/`, vingt-six sabotages au juge |
 | **I8** | Masquer un bloc | **100 %** | L'œil de « Blocs de la page », à la place que I2 avait réservée : un clic masque le bloc, ou le montre, en un pas d'annulation, même pendant une saisie, sans le sélectionner ni prendre le focus ; le document est « modifié ». `Visible` sur tout bloc, `true` par défaut ; `FormatVersion` ne change pas, Samples et Templates sont réenregistrés — un « Visible » de plus par bloc, rien d'autre. Masqué, le bloc n'est dessiné ni dans `PageRoot` ni au PDF, ni ce que porte un groupe masqué ; rien de lui n'avertit, ni sa police (Q8), ni son image, ni son débordement ; son filet n'élargit plus la découpe d'un groupe. Un clic à sa place prend le bloc d'en dessous ; l'alignement et la répartition ne le voient pas, « Tout sélectionner » non plus. Il reste dans la liste, l'œil fermé, et s'y sélectionne, sans cadre ni poignée sur la planche ; masqué, il quitte une sélection multiple. Une recopie le garde, dissocier un groupe masqué laisse ses blocs masqués ; les cases d'un tableau ne portent pas la propriété. La vignette de la page (I5) ne le dessine pas. L'icône du poste sert. Vingt-cinq tests ; relecture et juge après fusion. Recette dans `Scripts/recettes/` |
-| **I9** | Compter les lignes en excédent | 0 % | Spécifié le 24 octobre 2026 ; lot 2 |
+| **I9** | Compter les lignes en excédent | **100 %** | `Compositeur.LignesEnExcedent`, fonction pure du noyau : les lignes dont l'encre — la hauteur naturelle, au milieu de l'avance — sort du bloc, au calage vertical (A7), au bord du bloc et non de la zone (C6), au seuil du marqueur de A2 ; les colonnes et les blocs tournés sans chemin à part. Le dock l'affiche à la section « Cadre de texte », dans la place que I2 avait réservée : « Texte en excédent : 4 lignes » au fond, à la couleur et à l'icône d'alerte de l'apparence, au singulier pour une ligne, rien à zéro ; il suit la frappe et chaque réglage du bloc sans changement de sélection, et ne touche pas au document. Le modèle de vue le porte dans `MainWindowViewModel.Excedent.cs`. Aucune clé sérialisée ; l'avertissement d'export et le relevé de P2 inchangés. Sur `recette-debordement.mypub` et sur une variante en colonnes, marges, interligne 1,5 et rotation, le compte du dock est celui des lignes absentes du PDF, bloc par bloc, lu par la commande `excedent` du banc. Dix-huit tests, douze purs et six sur la fenêtre ; recette dans `Scripts/recettes/`. Relecture et juge après fusion |
 | **D** | Moteur de composition | — | Décision non ouverte ; à rouvrir quand A, B et C sont livrées |
 
 **Par phase** — P : 4 sur 4 · A : 7 sur 15 · B : 4 sur 7 · C : 7 sur 9 · R : 5 sur 7 ·
-Q : 17 sur 23 · I : 7 sur 9 · D : non planifié.
+Q : 17 sur 23 · I : 8 sur 9 · D : non planifié.
 
-Soit **51 postes sur 74**. Le 24 octobre 2026, la phase I en a ajouté neuf, tirés de la
+Soit **52 postes sur 74**. Le 24 octobre 2026, la phase I en a ajouté neuf, tirés de la
 maquette de la nouvelle interface. Le compte avait doublé le 11 octobre 2026 sans que rien ne
 recule : il porte désormais les onze postes de l'audit des fiches (A8 à A15, B6, B7,
 C8), deux postes que les documents réels demandaient (R6, R7), et la phase Q, qui
@@ -5092,6 +5092,36 @@ P2 ne bouge pas.
 - l'alerte suit la frappe, sans attendre un changement de sélection.
 
 Effort : faible.
+
+*Livré le 25 octobre 2026* ; la relecture adversariale et les sabotages du juge viennent
+après la fusion. *Choisi sans certitude* :
+- une ligne est montrée quand son encre tient dans le bloc — sa hauteur naturelle, que les
+  deux rendus posent au milieu de son avance —, au demi-point près du marqueur. Une ligne
+  que le bord coupe est en excédent tout entière : on n'en lit que le haut, et Publisher la
+  renverrait. C'est ce que mesure « absente du PDF » : `pdftotext` ne voit pas la découpe,
+  la recette lit la boîte de chaque mot, ramenée au repère du bloc ;
+- l'export ne compte pas : son avertissement garde sa formulation en points. La fonction
+  est la même pour l'écran et pour l'export au sens où une composition faite à la règle du
+  PDF donne le même compte — un test de la fenêtre le vérifie bloc par bloc, la recette le
+  confronte au PDF ;
+- le modèle de vue compose le bloc comme `ControleDeBloc.Mesurer`, dans son partiel, plutôt
+  que de partager le code de la planche : partager touchait un fichier que les postes partis
+  en même temps peuvent toucher. Il se branche sur ce qu'il annonce de lui-même
+  (`OnPropertyChanged`, surchargé dans le partiel), sans une ligne dans
+  `MainWindowViewModel.cs` ; un second poste qui surchargerait la même méthode ne
+  compilerait pas, et la fusion le dirait ;
+- le banc gagne une commande, `excedent`, qui sélectionne chaque bloc de texte dans la vraie
+  fenêtre et lit l'alerte affichée : la recette confronte ce qu'on lit, et non un compte
+  recalculé à côté.
+
+*Relevé, non corrigé.* La mesure de A2 descend jusqu'au bas de l'avance de la dernière
+ligne, espace après le paragraphe compris. Un bloc dont seuls le demi-interligne d'un
+interligne lâche, ou l'espace après le dernier paragraphe, sortent porte le marqueur rouge
+et l'avertissement « ce qui dépasse n'est pas imprimé », alors qu'aucune encre n'est coupée
+et que le dock ne compte rien. La variante de la recette le montre : « Interligne lache »,
+trois lignes en interligne 1,5 dans 55 pt, annoncé à 2,6 pt, aucune ligne absente. Aligner
+A2 sur l'encre changerait des avertissements de l'export : c'est au propriétaire d'en
+décider.
 
 ---
 
