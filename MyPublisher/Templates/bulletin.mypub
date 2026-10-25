@@ -50,7 +50,9 @@
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
           "Visible": true,
-          "Shape": "Rectangle"
+          "Shape": "Rectangle",
+          "StartArrow": false,
+          "EndArrow": false
         },
         {
           "$kind": "shape",
@@ -69,7 +71,9 @@
           "StrokeStyle": "Solid",
           "CornerRadius": 0,
           "Visible": true,
-          "Shape": "Rectangle"
+          "Shape": "Rectangle",
+          "StartArrow": false,
+          "EndArrow": false
         },
         {
           "$kind": "text",
@@ -633,7 +637,9 @@
               "StrokeStyle": "Solid",
               "CornerRadius": 4,
               "Visible": true,
-              "Shape": "Rectangle"
+              "Shape": "Rectangle",
+              "StartArrow": false,
+              "EndArrow": false
             },
             {
               "$kind": "text",

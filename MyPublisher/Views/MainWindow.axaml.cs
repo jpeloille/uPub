@@ -562,6 +562,7 @@ public partial class MainWindow : Window
                 case Key.H: vm.ActiveTool = EditorTool.Heading; e.Handled = true; return;
                 case Key.R: vm.ActiveTool = EditorTool.Rectangle; e.Handled = true; return;
                 case Key.E: vm.ActiveTool = EditorTool.Ellipse; e.Handled = true; return;
+                case Key.L: vm.ActiveTool = EditorTool.Line; e.Handled = true; return;
                 // « B » comme bande : « T » appartient au texte.
                 case Key.B: vm.ActiveTool = EditorTool.Table; e.Handled = true; return;
                 case Key.Z: vm.ActiveTool = EditorTool.Zoom; e.Handled = true; return;

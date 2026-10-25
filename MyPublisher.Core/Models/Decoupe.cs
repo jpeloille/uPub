@@ -78,6 +78,8 @@ public static class Decoupe
     {
         if (bloc.StrokeThickness <= 0) return 0;
         if (!HexColor.TryParse(bloc.Stroke, out var alpha, out _, out _, out _) || alpha == 0) return 0;
+        // Un trait sort aussi de ses pointes, plus larges que lui (poste A10).
+        if (bloc is ShapeFrame { IsLine: true } trait) return trait.Debord;
         return bloc.StrokeThickness / 2;
     }
 

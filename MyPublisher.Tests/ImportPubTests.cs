@@ -313,6 +313,33 @@ public class ImportPubTests
         Assert.Equal(StrokeStyle.Dashed, trait.StrokeStyle);
         Assert.Equal(576, trait.Width, precision: 6);
         Assert.Equal(0, trait.Height, precision: 6);
+        // Un trait, et non plus un rectangle sans épaisseur (poste A10).
+        Assert.Equal(ShapeKind.Line, trait.Shape);
+        Assert.Null(trait.Fill);
+    }
+
+    [Fact]
+    public void Un_trait_garde_son_sens_du_premier_point_au_dernier()
+    {
+        // Un trait montant et un trait descendant avaient le même cadre tant que l'import les
+        // rendait par un rectangle : le sens se perdait. Le début est le premier point.
+        var document = Importer($"""
+            {UnePage}
+                setStyle(draw:fill: solid, draw:fill-color: #336699, draw:stroke: solid, svg:stroke-color: #FF0000, svg:stroke-width: 0.0278in)
+                  drawPath (svg:d: ((librevenge:path-action: M, svg:x: 1.0000in, svg:y: 3.0000in), (librevenge:path-action: L, svg:x: 3.0000in, svg:y: 1.0000in)))
+            """);
+
+        var trait = Assert.IsType<ShapeFrame>(document.Pages[0].Frames.Single());
+        Assert.True(trait.IsLine);
+        Assert.Equal(72, trait.Debut.X, precision: 6);
+        Assert.Equal(216, trait.Debut.Y, precision: 6);
+        Assert.Equal(216, trait.Fin.X, precision: 6);
+        Assert.Equal(72, trait.Fin.Y, precision: 6);
+        Assert.Equal(315, trait.Rotation, precision: 6);
+        Assert.Equal(2, trait.StrokeThickness, precision: 2);
+        Assert.Equal("#FFFF0000", trait.Stroke);
+        // Un trait n'a pas de fond, même quand la source lui en donne un.
+        Assert.Null(trait.Fill);
     }
 
     [Fact]

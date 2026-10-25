@@ -12,7 +12,9 @@
 #   1. le .pub s'ouvre et se réécrit en .mypub ;
 #   2. ce qui a été restitué correspond, objet pour objet, à ce que le relevé de la
 #      source contient — pages, blocs de texte, tableaux, cellules, formes, fragments
-#      de style ;
+#      de style ; parmi les formes, chaque chemin est un trait et chaque polygone un
+#      cadre (ajusté par le poste A10, qui a fait du trait un objet : les cinq traits des
+#      fiches étaient jusque-là cinq rectangles sans épaisseur) ;
 #   3. le document importé s'exporte, avec le bon nombre de pages ;
 #   4. son texte se retrouve dans le PDF.
 #
@@ -74,6 +76,10 @@ compte["page"] = len(document["Pages"])
 
 def parcours(bloc):
     compte[bloc["$kind"]] += 1
+    # Un chemin est un trait, un polygone un cadre (poste A10) : un trait rendu par un
+    # rectangle sans épaisseur, comme avant A10, compterait pour un cadre de trop.
+    if bloc["$kind"] == "shape":
+        compte["trait" if bloc.get("Shape") == "Line" else "cadre"] += 1
     if bloc["$kind"] == "text":
         compte["fragment"] += len(bloc.get("Spans", []))
         compte["caractere"] += len(bloc.get("Text", ""))
@@ -144,6 +150,8 @@ attendu = {
     "tableaux":           (source["startTableObject"], compte["table"]),
     "cellules":           (source["openTableCell"],    compte["cellule"]),
     "formes":             (source["drawPolygon"] + source["drawPath"], compte["shape"]),
+    "dont traits":        (source["drawPath"],         compte["trait"]),
+    "dont cadres":        (source["drawPolygon"],      compte["cadre"]),
     "styles perdus":      (0, len(manquants)),
 }
 

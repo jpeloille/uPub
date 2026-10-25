@@ -192,6 +192,7 @@ public sealed class InitialeDuType : IValueConverter
         TableFrame => "B",
         GroupFrame => "G",
         ShapeFrame { IsEllipse: true } => "E",
+        ShapeFrame { IsLine: true } => "L",
         ShapeFrame => "R",
         _ => "",
     };

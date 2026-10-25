@@ -37,9 +37,10 @@ public partial class PageCanvas : UserControl
 
     /// <summary>
     /// Le geste en cours. <see cref="Pan"/> est celui de la main (poste I6) : il fait
-    /// défiler la planche et ne touche à rien d'autre.
+    /// défiler la planche et ne touche à rien d'autre. <see cref="Extremite"/> tire un bout
+    /// de trait (poste A10, PageCanvas.Trait.cs).
     /// </summary>
-    private enum DragMode { None, Move, Resize, Rotate, Create, Guide, Pan }
+    private enum DragMode { None, Move, Resize, Rotate, Create, Guide, Pan, Extremite }
 
     /// <summary>
     /// Côté d'une poignée carrée, en pixels écran : les 7 px de blanc de la maquette dans
@@ -358,12 +359,15 @@ public partial class PageCanvas : UserControl
         // ses blocs autour d'un pivot commun, ce que le groupe fait proprement. On
         // sélectionne, on groupe, puis on redimensionne ou l'on tourne.
         var single = frames.Count == 1 ? frames[0] : null;
-        foreach (var handle in _handles) handle.IsVisible = single is not null;
-        _rotateStem.IsVisible = single is not null;
+        // Un trait n'en a que deux, sur ses extrémités, et pas de rotation (poste A10).
+        for (var i = 0; i < _handles.Length; i++) _handles[i].IsVisible = single is not null && PoigneeServie(single, (Anchor)i);
+        _rotateStem.IsVisible = single is not null && !single.IsLine;
 
         // La bulle de dimensions ne parle que pendant un redimensionnement — et pendant un
         // tracé, que UpdatePreview sert. Elle dit la taille du bloc, comme la barre d'état.
         if (single is not null && _mode == DragMode.Resize) MontrerLaBulle(single.Extent, single.Width, single.Height);
+        else if (single is ShapeFrame trait && _mode == DragMode.Extremite)
+            MontrerLaBulleDuTrait(trait.Extent, trait.Debut.X, trait.Debut.Y, trait.Fin.X, trait.Fin.Y);
         else if (_mode != DragMode.Create) CacherLaBulle();
 
         if (single is null) return;
@@ -436,6 +440,8 @@ public partial class PageCanvas : UserControl
     /// </summary>
     private (double X, double Y) LocalAnchor(Frame frame, Anchor anchor)
     {
+        if (AncreDExtremite(frame, anchor) is { } extremite) return extremite;
+
         var e = SelectionGap / Scale;
         return anchor switch
         {
@@ -455,6 +461,8 @@ public partial class PageCanvas : UserControl
     {
         for (var i = 0; i < _handles.Length; i++)
         {
+            if (!PoigneeServie(frame, (Anchor)i)) continue;
+
             var (lx, ly) = LocalAnchor(frame, (Anchor)i);
             var centre = SurfacePoint(frame, lx, ly);
             if (Math.Abs(centre.X - surfacePoint.X) <= HandleGrab &&
@@ -506,7 +514,7 @@ public partial class PageCanvas : UserControl
 
             _mode = DragMode.Create;
             _startPointer = page;
-            UpdatePreview(page, page);
+            if (!MontrerLeTraitEnCours(page, page, e.KeyModifiers)) UpdatePreview(page, page);
             e.Pointer.Capture(InputLayer);
             return;
         }
@@ -519,6 +527,11 @@ public partial class PageCanvas : UserControl
             _mode = anchor == Anchor.Rotate ? DragMode.Rotate : DragMode.Resize;
             _anchor = anchor;
             RememberResize(single, page);
+            if (single is ShapeFrame { IsLine: true } trait)
+            {
+                _mode = DragMode.Extremite;
+                PrendreUneExtremite(trait, anchor);
+            }
             _vm.BeginEdit();
             e.Pointer.Capture(InputLayer);
             e.Handled = true;
@@ -621,7 +634,7 @@ public partial class PageCanvas : UserControl
 
         if (_mode == DragMode.Create)
         {
-            UpdatePreview(_startPointer, page);
+            if (!MontrerLeTraitEnCours(_startPointer, page, e.KeyModifiers)) UpdatePreview(_startPointer, page);
             return;
         }
 
@@ -646,6 +659,7 @@ public partial class PageCanvas : UserControl
         var maj = e.KeyModifiers.HasFlag(KeyModifiers.Shift);
 
         if (_mode == DragMode.Rotate) ApplyRotate(frame, page, maj);
+        else if (_mode == DragMode.Extremite && frame is ShapeFrame trait) TirerUneExtremite(trait, page, e.KeyModifiers);
         else ApplyResize(frame, page, maj != _vm.ConserverLesProportions);
     }
 
@@ -662,7 +676,7 @@ public partial class PageCanvas : UserControl
 
         if (mode == DragMode.Create)
         {
-            FinishCreate(e.GetPosition(Surface));
+            FinishCreate(e.GetPosition(Surface), e.KeyModifiers);
             return;
         }
 
@@ -692,6 +706,7 @@ public partial class PageCanvas : UserControl
 
         _mode = DragMode.None;
         _preview.IsVisible = false;
+        CacherLeTraitEnCours();
         RefreshOverlay();
     }
 
@@ -717,14 +732,22 @@ public partial class PageCanvas : UserControl
         MontrerLaBulle(cadre, cadre.Width, cadre.Height);
     }
 
-    private void FinishCreate(Point surfacePoint)
+    private void FinishCreate(Point surfacePoint, KeyModifiers modifiers)
     {
         _preview.IsVisible = false;
+        CacherLeTraitEnCours();
         CacherLaBulle();
 
         if (_vm is null) return;
 
         var end = ToPageCoordinates(surfacePoint);
+
+        // Un trait se pose par ses deux extrémités (poste A10).
+        if (FinirLeTrait(_startPointer, end, modifiers))
+        {
+            InputLayer.Cursor = ArrowCursor;
+            return;
+        }
         var frame = _vm.DrawWithActiveTool(
             Math.Min(_startPointer.X, end.X),
             Math.Min(_startPointer.Y, end.Y),

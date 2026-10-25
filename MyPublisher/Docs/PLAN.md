@@ -24,7 +24,7 @@ Où en est chaque poste. Une seule règle pour la colonne d'avancement : un post
 on écrit ce qui est fait plutôt qu'un pourcentage inventé — un poste à moitié écrit n'est
 pas un poste à moitié livré. La colonne se met à jour dans le commit qui clôt le poste.
 
-*Dernière mise à jour : 25 octobre 2026 (I2 livré avec B7 : la disposition de la fenêtre ; I4 livré : la planche, et Q10 avec elle ; I6 livré : naviguer dans la planche, et garder les proportions ; I7 livré : le souligné et ses sortes, le modèle seul ; I5 livré : les vignettes de pages ; I8 livré : masquer un bloc ; I9 livré : les lignes en excédent au dock ; relecture et juge après fusion pour I5, I6, I8 et I9).*
+*Dernière mise à jour : 25 octobre 2026 (I2 livré avec B7 : la disposition de la fenêtre ; I4 livré : la planche, et Q10 avec elle ; I6 livré : naviguer dans la planche, et garder les proportions ; I7 livré : le souligné et ses sortes, le modèle seul ; I5 livré : les vignettes de pages ; I8 livré : masquer un bloc ; I9 livré : les lignes en excédent au dock ; A10 livré : le trait et la flèche, avec l'outil Ligne ; relecture et juge après fusion pour I5, I6, I8, I9 et A10).*
 
 | Poste | Intitulé | Avancement | Où ça en est |
 |---|---|:---:|---|
@@ -41,7 +41,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **A7** | Alignement vertical du texte | **100 %** | Haut, milieu, bas sur le bloc de texte ; le calage est borné à zéro. `FormatVersion` reste à 3 |
 | **A8** | Insérer des pages : nombre, position, contenu | 0 % | Spécifié le 11 octobre 2026 |
 | **A9** | Rotation par quart de tour | 0 % | Spécifié le 11 octobre 2026 |
-| **A10** | Objet trait, et flèche | 0 % | Spécifié le 11 octobre 2026 ; l'import simule le trait par un rectangle. Passé au lot 2 de la phase I, pour l'outil Ligne |
+| **A10** | Objet trait, et flèche | **100 %** | `ShapeKind.Line` : un trait est une forme couchée, sans hauteur, longue de sa largeur, que sa rotation oriente autour de son milieu ; il se définit par ses deux extrémités (`PoserLesExtremites`), et la taille minimale d'un bloc ne s'y applique jamais. `StartArrow` et `EndArrow`, une pointe pleine facultative à chaque bout ; `FormatVersion` ne change pas, Samples et Templates réenregistrés. L'outil Ligne (`L`) du rail, entre Ellipse et la loupe, trace d'une extrémité à l'autre, `Maj` à 0, 45 ou 90°, la bulle disant longueur et angle ; *Insertion ▸ Trait*. Deux poignées sur les extrémités, sans rotation ; survol à 3 pt de l'encre. Au dock, X1, Y1, X2, Y2 à la place du cadre, les pointes, et le contour pour l'épaisseur et la couleur. Un coup de crayon `m … l S` au PDF, au même endroit qu'à l'écran ; les vignettes le dessinent. L'import des Fiches rend 5 traits et 0 rectangle de substitution, R5 compte les traits à part. L'icône du poste sert. Treize tests d'interface, vingt-six du noyau ; relecture et juge après fusion. Recette dans `Scripts/recettes/` |
 | **A11** | Aimantation réglable, et aux autres blocs | 0 % | Spécifié le 11 octobre 2026 |
 | **A12** | Menu contextuel du bloc | 0 % | Spécifié le 11 octobre 2026 |
 | **A13** | Rognage manuel de l'image | 0 % | Spécifié le 11 octobre 2026 |
@@ -104,10 +104,10 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **I9** | Compter les lignes en excédent | **100 %** | `Compositeur.LignesEnExcedent`, fonction pure du noyau : les lignes dont l'encre — la hauteur naturelle, au milieu de l'avance — sort du bloc, au calage vertical (A7), au bord du bloc et non de la zone (C6), au seuil du marqueur de A2 ; les colonnes et les blocs tournés sans chemin à part. Le dock l'affiche à la section « Cadre de texte », dans la place que I2 avait réservée : « Texte en excédent : 4 lignes » au fond, à la couleur et à l'icône d'alerte de l'apparence, au singulier pour une ligne, rien à zéro ; il suit la frappe et chaque réglage du bloc sans changement de sélection, et ne touche pas au document. Le modèle de vue le porte dans `MainWindowViewModel.Excedent.cs`. Aucune clé sérialisée ; l'avertissement d'export et le relevé de P2 inchangés. Sur `recette-debordement.mypub` et sur une variante en colonnes, marges, interligne 1,5 et rotation, le compte du dock est celui des lignes absentes du PDF, bloc par bloc, lu par la commande `excedent` du banc. Dix-huit tests, douze purs et six sur la fenêtre ; recette dans `Scripts/recettes/`. Relecture et juge après fusion |
 | **D** | Moteur de composition | — | Décision non ouverte ; à rouvrir quand A, B et C sont livrées |
 
-**Par phase** — P : 4 sur 4 · A : 7 sur 15 · B : 4 sur 7 · C : 7 sur 9 · R : 5 sur 7 ·
+**Par phase** — P : 4 sur 4 · A : 8 sur 15 · B : 4 sur 7 · C : 7 sur 9 · R : 5 sur 7 ·
 Q : 17 sur 23 · I : 8 sur 9 · D : non planifié.
 
-Soit **52 postes sur 74**. Le 24 octobre 2026, la phase I en a ajouté neuf, tirés de la
+Soit **53 postes sur 74**. Le 24 octobre 2026, la phase I en a ajouté neuf, tirés de la
 maquette de la nouvelle interface. Le compte avait doublé le 11 octobre 2026 sans que rien ne
 recule : il porte désormais les onze postes de l'audit des fiches (A8 à A15, B6, B7,
 C8), deux postes que les documents réels demandaient (R6, R7), et la phase Q, qui
@@ -1367,6 +1367,28 @@ nulle. Le trait se définit donc par ses deux extrémités, et non par un cadre.
   est ajustée en conséquence.
 
 Effort : moyen.
+
+*Livré le 25 octobre 2026*, avec l'outil Ligne du rail (lot 2 de la phase I), en même temps
+que I3, I8 et I9 ; la relecture adversariale et les sabotages du juge viennent après la
+fusion. Le trait n'a pas de clé à lui pour ses extrémités : il est un bloc couché, de
+hauteur nulle, dont la largeur est la longueur, la rotation l'angle et le centre le milieu.
+La rotation, l'export tourné, le déplacement, le groupe et la superposition le servent sans
+rien apprendre ; tout ce qui le manipule passe par ses extrémités, jamais par un
+redimensionnement de cadre. *Choisi sans certitude* :
+- le survol prend un trait à 3 pt de son **encre** — de l'axe, moins la demi-épaisseur ;
+- la poignée de rotation se tait sur un trait, comme dans Publisher : tirer une extrémité le
+  tourne déjà, et l'angle reste au dock, autour du milieu ;
+- la pointe est la flèche moyenne d'Office, longue et large de trois fois l'épaisseur,
+  comptée au moins pour 2 pt ; le fût s'arrête sous elle, à mi-longueur ;
+- un trait neuf prend la couleur principale du jeu, d'un point, sans fond.
+
+*Relevé, non corrigé.* libmspub ne transmet aucune pointe de flèche — son relevé n'a pas de
+clé `draw:marker-*` — : un `.pub` à flèches s'importe sans ses pointes, et les deux documents
+ATR n'en portent pas. Un trait debout ou oblique, tourné, ne s'aimante pas quand on le
+déplace, comme tout bloc tourné ; ses extrémités, si. « Ajuster aux marges » écrit la
+hauteur des marges dans un trait, qui se dessine alors au milieu de cette hauteur, couché
+sur la largeur des marges : forcer la hauteur à zéro dans le modèle rendait le bloc
+dépendant de l'ordre où l'on pose sa figure et sa hauteur, ce que la copie a montré.
 
 #### A11 — Aimantation réglable, et aux autres blocs *(fiche 22)*
 
