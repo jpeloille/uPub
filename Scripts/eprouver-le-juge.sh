@@ -1791,6 +1791,17 @@ saboter "le second F9 (N4) rend le zoom d'avant sans son défilement" \
     'DemanderLeZoom(avant.Zoom);' \
     'N4-affichage-au-clavier|AffichageTests'
 
+# N3 : chaque morceau composé porte la position de son premier caractère. Le renvoi rogne la
+# tête blanche du mot renvoyé, qui reste au bout de la ligne qu'il quitte : le morceau
+# commence après elle. Qu'il garde la position de son blanc de tête, et son texte n'est plus
+# le texte à sa position — la sortie du compositeur, elle, ne bouge pas : seuls les tests du
+# poste le voient.
+saboter "un mot renvoyé garde la position de son blanc de tête (N3)" \
+    MyPublisher.Core/Models/Compositeur.cs \
+    'courante.Add(new Morceau(debut, mot.Style, largeurCourante, l, renvoi));' \
+    'courante.Add(new Morceau(debut, mot.Style, largeurCourante, l, mot.Debut));' \
+    'N3-position-des-morceaux|OrigineDesMorceauxTests|PositionDesMorceauxTests'
+
 # Un motif qui ne désigne aucun sabotage ne prouve rien. « eprouver-le-juge.sh I4 » sortait
 # en 0 sur « 0 sabotages, 0 attrapés », quand les intitulés de la planche ne portaient pas
 # encore le code du poste : le filet passait pour éprouvé sans qu'on l'ait troué.
