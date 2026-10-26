@@ -18,7 +18,8 @@
 #         n'y entre pas : son blanc est celui de la feuille, le document, et non celui de
 #         l'interface — comme celui de PageRoot, que la recette I1 laisse à I4.
 #      c. Les sept textes que le juge sabote dans TemplatePreview.cs sont présents, chacun
-#         une fois : « eprouver-le-juge.sh --cibles » le vérifie pour tous les textes visés.
+#         une fois : « eprouver-le-juge.sh --cibles » le vérifie pour tous les textes visés —
+#         hors du juge, qui ôte justement l'un d'eux à chaque sabotage.
 #   2. LES TESTS d'interface « poste=I5 », sur la vraie fenêtre, les pixels lus sur l'image
 #      composée :
 #      - chaque page a sa vignette de 96 × 136 pour un A4, centrée, le numéro à 5 px
@@ -34,6 +35,8 @@
 #      - ajouter, dupliquer ou supprimer une page met la liste à jour — nombre, numéros,
 #        page courante bordée —, et la copie montre les pixels de l'original ;
 #      - un clic sur une vignette change la page courante, sans rien mettre à l'historique ;
+#        un Ctrl + clic sur la vignette courante la garde : la fenêtre ne reste jamais sans
+#        page courante ;
 #      - une vignette sortie de l'arbre n'écoute plus ni le document, ni la page, ni un
 #        bloc, ni une collection d'écarts, ni un groupe — vingt passages ;
 #      - sur ATA 21, redessiner toutes les vignettes après une retouche du plus long bloc de
@@ -117,23 +120,32 @@ if echecs:
     sys.exit(1)
 PY
 
-# c. Les cibles du juge, dont les sept de TemplatePreview.cs.
-if ! Scripts/eprouver-le-juge.sh --cibles > "$travail/cibles.txt" 2>&1; then
-    sed 's/^/    /' "$travail/cibles.txt" >&2
-    echo "ÉCHEC : un texte visé par le juge a disparu ou s'est dédoublé (règle 7)." >&2
-    exit 1
-fi
+# c. Les cibles du juge, dont les sept de TemplatePreview.cs. Pas sous le juge lui-même, qui
+#    tient son verrou pendant qu'il sabote : il vient d'ôter l'un de ces textes, et cette
+#    lecture échouait sous chaque sabotage, quel qu'il fût. La recette « attrapait » alors
+#    les deux cent et quelques du juge, et ceux qui ne nomment pas leur garde-fou — les sept
+#    premiers, sur le noyau — passaient pour pris sans qu'aucun test les eût vus (relecture
+#    du 26 octobre 2026).
 sept="$(grep -c "^    MyPublisher/Views/TemplatePreview.cs" Scripts/eprouver-le-juge.sh || true)"
 if [ "$sept" != 7 ]; then
     echo "ÉCHEC : le juge vise $sept texte(s) dans TemplatePreview.cs, sept attendus." >&2
     exit 1
 fi
-echo "    c. les textes visés par le juge sont présents, une fois chacun — les sept de TemplatePreview.cs compris"
+if [ -e .juge-en-cours ]; then
+    echo "    c. sous le juge, qui sabote ces textes : leur présence ne se lit pas ici — les sept de TemplatePreview.cs restent visés"
+else
+    if ! Scripts/eprouver-le-juge.sh --cibles > "$travail/cibles.txt" 2>&1; then
+        sed 's/^/    /' "$travail/cibles.txt" >&2
+        echo "ÉCHEC : un texte visé par le juge a disparu ou s'est dédoublé (règle 7)." >&2
+        exit 1
+    fi
+    echo "    c. les textes visés par le juge sont présents, une fois chacun — les sept de TemplatePreview.cs compris"
+fi
 echo "  1. les sources : l'entrée, sa vignette, la liste de la recette I1, les cibles du juge"
 
 # ------------------------------------------------------------------------ 2. les tests
 
-attendus=9
+attendus=10
 if ! dotnet test MyPublisher.Tests.Interface/MyPublisher.Tests.Interface.csproj ${MYPUBLISHER_DEJA_COMPILE:+--no-build} \
         --nologo -v q --filter "poste=I5" --logger "console;verbosity=detailed" > "$travail/tests.txt" 2>&1; then
     grep -E "\[FAIL\]|Assert|ATA 21" "$travail/tests.txt" | sed 's/^/    /' >&2 || true

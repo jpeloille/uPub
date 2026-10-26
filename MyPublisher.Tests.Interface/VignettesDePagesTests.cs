@@ -334,6 +334,27 @@ public class VignettesDePagesTests(ITestOutputHelper sortie)
         Assert.Same(vm.Document.Pages[0], vm.CurrentPage);
     }
 
+    [AvaloniaFact]
+    public void Un_ctrl_clic_sur_la_vignette_courante_ne_laisse_pas_la_fenetre_sans_page()
+    {
+        // Relecture du 26 octobre 2026 : la liste des pages, en sélection simple, rendait sa
+        // sélection sous Ctrl + clic. La page courante devenait nulle — plus de planche, plus
+        // de cadre d'accent, « Page 0 » —, et rien ne la rendait qu'un clic sur une autre.
+        var (fenetre, vm) = OuvrirLExemple();
+        var vignette = Vignettes(fenetre)[0];
+        var centre = vignette.TranslatePoint(new Point(vignette.Bounds.Width / 2, vignette.Bounds.Height / 2), fenetre)
+                     ?? throw new InvalidOperationException();
+
+        fenetre.MouseDown(centre, MouseButton.Left, RawInputModifiers.Control);
+        fenetre.MouseUp(centre, MouseButton.Left, RawInputModifiers.Control);
+        Rendu.Battre();
+
+        Assert.Same(vm.Document.Pages[0], vm.CurrentPage);
+        Assert.Equal(1, vm.CurrentPageNumber);
+        Assert.Equal(new Thickness(2), Cadre(vignette).BorderThickness);
+        Assert.False(vm.CanUndo);
+    }
+
     // ------------------------------------------------------------ les abonnements
 
     /// <summary>Les vignettes de page qui écoutent cet objet par cet événement.</summary>

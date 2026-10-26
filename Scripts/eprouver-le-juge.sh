@@ -1977,6 +1977,49 @@ saboter "le sélecteur de couleur (Q25) referme sa transaction après avoir rend
     'private void SurCouleurQuiSeFerme(object? sender, CancelEventArgs e) { }' \
     'Q24-Q25-transactions|TransactionsDeSaisieTests'
 
+# I5 : la vignette d'une page suit le document ouvert, qui se modifie en place. Le poste
+# n'avait aucun sabotage (règle 11) ; la relecture du 26 octobre 2026 lui en donne cinq, un
+# par promesse que seul son filet garde.
+
+# Elle écoute chaque bloc de sa page : sourde, elle montre la page d'avant la retouche.
+saboter "la vignette d'une page (I5) n'écoute plus ses blocs" \
+    MyPublisher/Views/VignetteDePage.cs \
+    'bloc.PropertyChanged += SurBloc;' \
+    '' \
+    'I5-vignettes|VignettesDePagesTests'
+
+# Un bloc retouché fait recomposer ses filets ; redessinés de mémoire, le texte reste où il
+# était.
+saboter "la vignette d'une page (I5) redessine un bloc retouché sans le recomposer" \
+    MyPublisher/Views/VignetteDePage.cs \
+    'else Oublier(deLaPage);' \
+    'else InvalidateVisual();' \
+    'I5-vignettes|VignettesDePagesTests'
+
+# Une page vit aussi longtemps que le document : une vignette sortie de l'arbre qui
+# l'écouterait encore resterait accrochée à elle.
+saboter "la vignette d'une page (I5) écoute encore sa page hors de l'arbre" \
+    MyPublisher/Views/VignetteDePage.cs \
+    '_dansLArbre = false;
+        Lacher();' \
+    '_dansLArbre = false;' \
+    'I5-vignettes|VignettesDePagesTests'
+
+# La page courante est bordée de 2 px d'accent ; d'un seul, rien ne la distingue que sa couleur.
+saboter "la vignette de la page courante (I5) n'a plus qu'un pixel d'accent" \
+    MyPublisher/Views/EntreeDePage.axaml \
+    '<Setter Property="BorderThickness" Value="2"/>' \
+    '<Setter Property="BorderThickness" Value="1"/>' \
+    'I5-vignettes|VignettesDePagesTests'
+
+# Un Ctrl + clic sur la vignette courante vidait la sélection de la liste, et la fenêtre
+# restait sans page courante.
+saboter "la liste des pages (I5) se laisse vider par un Ctrl + clic" \
+    MyPublisher/Views/MainWindow.axaml \
+    'SelectionMode="AlwaysSelected"' \
+    'SelectionMode="Single"' \
+    'I5-vignettes|VignettesDePagesTests'
+
 # Un motif qui ne désigne aucun sabotage ne prouve rien. « eprouver-le-juge.sh I4 » sortait
 # en 0 sur « 0 sabotages, 0 attrapés », quand les intitulés de la planche ne portaient pas
 # encore le code du poste : le filet passait pour éprouvé sans qu'on l'ait troué.
