@@ -24,7 +24,7 @@ Où en est chaque poste. Une seule règle pour la colonne d'avancement : un post
 on écrit ce qui est fait plutôt qu'un pourcentage inventé — un poste à moitié écrit n'est
 pas un poste à moitié livré. La colonne se met à jour dans le commit qui clôt le poste.
 
-*Dernière mise à jour : 26 octobre 2026 (salve Saisie 1 livrée : Q24 et Q25, Annuler et Rétablir ne laissent plus de frappe hors de toute transaction, et un réglage fait pendant la saisie a son propre pas ; N1, le banc des gestes ; N2, la mise en forme d'une plage dans le noyau ; N3, la position de chaque morceau composé ; N4, l'affichage au clavier. Plus tôt le même jour : phase N ouverte, la saisie de Publisher : N1 à N28, et Q24 et Q25 en phase Q ; A8, A9, A11, A12, A13, Q21, Q22, R6 et R7 repris par elle). Le 25 octobre 2026 : I2 livré avec B7 : la disposition de la fenêtre ; I4 livré : la planche, et Q10 avec elle ; I6 livré : naviguer dans la planche, et garder les proportions ; I7 livré : le souligné et ses sortes, le modèle seul ; I5 livré : les vignettes de pages ; I8 livré : masquer un bloc ; I9 livré : les lignes en excédent au dock ; A10 livré : le trait et la flèche, avec l'outil Ligne ; I3 livré : la barre contextuelle ; Q23 livré : sélectionner un bloc ne fige plus la fenêtre ; relecture et juge après fusion pour I3, I5, I6, I8, I9, A10 et Q23).*
+*Dernière mise à jour : 26 octobre 2026 (salve Saisie 2 livrée : N5, un clic hors du texte en saisie agit d'un seul geste ; N6, les raccourcis d'objet laissent la touche au champ, au clavier seul ; N7, la mesure de la première voie — 471 pt au plus, le seuil n'est pas tenu — et **la voie 2a choisie par le propriétaire pour R7** ; N8, couper, copier, coller des blocs ; N9, la langue du texte ; et le champ X du dock rendu au clavier au sélecteur refermé, Q23. Plus tôt le même jour, salve Saisie 1 livrée : Q24 et Q25, Annuler et Rétablir ne laissent plus de frappe hors de toute transaction, et un réglage fait pendant la saisie a son propre pas ; N1, le banc des gestes ; N2, la mise en forme d'une plage dans le noyau ; N3, la position de chaque morceau composé ; N4, l'affichage au clavier. Plus tôt le même jour : phase N ouverte, la saisie de Publisher : N1 à N28, et Q24 et Q25 en phase Q ; A8, A9, A11, A12, A13, Q21, Q22, R6 et R7 repris par elle). Le 25 octobre 2026 : I2 livré avec B7 : la disposition de la fenêtre ; I4 livré : la planche, et Q10 avec elle ; I6 livré : naviguer dans la planche, et garder les proportions ; I7 livré : le souligné et ses sortes, le modèle seul ; I5 livré : les vignettes de pages ; I8 livré : masquer un bloc ; I9 livré : les lignes en excédent au dock ; A10 livré : le trait et la flèche, avec l'outil Ligne ; I3 livré : la barre contextuelle ; Q23 livré : sélectionner un bloc ne fige plus la fenêtre ; relecture et juge après fusion pour I3, I5, I6, I8, I9, A10 et Q23).*
 
 | Poste | Intitulé | Avancement | Où ça en est |
 |---|---|:---:|---|
@@ -69,7 +69,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **R4** | Interligne : une seule mesure | **100 %** | Multiple de la hauteur naturelle ; écran et PDF concordent à 0,05 pt près ; recette dans `Scripts/recettes/` |
 | **R5** | **Ouvrir un `.pub`** | **100 %** | Lecture déléguée à libmspub. Les deux documents ATR s'ouvrent objet pour objet, sans perdre un style |
 | **R6** | Alignement par paragraphe | 0 % | Spécifié le 11 octobre 2026 ; repris en phase N (salve Saisie 7), sur N2, N15 et N21 |
-| **R7** | Éditer le texte riche à la souris | 0 % | Spécifié le 11 octobre 2026 ; repris en phase N (salve Saisie 8) : la mesure est N7, le gras `Ctrl+G` ; attend la décision de voie |
+| **R7** | Éditer le texte riche à la souris | 0 % | Spécifié le 11 octobre 2026 ; repris en phase N (salve Saisie 8) : la mesure est N7, le gras `Ctrl+G` ; **voie 2a**, choisie par le propriétaire le 26 octobre 2026 sur la mesure de N7 |
 | **Q1** | Les styles suivent la frappe | **100 %** | Fragments et écarts recalés à la saisie par une fonction pure du noyau (`Recalage`), à la règle de Publisher : le style qui précède, celui qui suit en tête de paragraphe, le premier remplacé pour une sélection retapée. Seules les zones de saisie s'y lient ; lecture, import, copie et annulation ne recalent rien. `FormatVersion` reste à 4 ; recette dans `Scripts/recettes/` |
 | **Q2** | Le texte composé se détache de son bloc | **100 %** | `ControleDeBloc` suit l'attachement, comme `FondBloc`, et lâche l'ancien bloc quand on lui en donne un autre. Mesuré : le changement de page ne fuyait pas ; la fuite ne frappait qu'un contrôle sorti de l'arbre avec son bloc. Recette dans `Scripts/recettes/` |
 | **Q3** | Le cache d'images oublie ses échecs | **100 %** | L'ouverture d'un document (fichier ou modèle) oublie les échecs du cache, et eux seuls ; insérer une image ou la choisir pour un fond relit le fichier. L'annulation ne relit pas le disque. Recette dans `Scripts/recettes/` |
@@ -135,9 +135,9 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **D** | Moteur de composition | — | Décision non ouverte ; à rouvrir quand A, B et C sont livrées |
 
 **Par phase** — P : 4 sur 4 · A : 8 sur 15 · B : 4 sur 7 · C : 7 sur 9 · R : 5 sur 7 ·
-Q : 20 sur 25 · I : 9 sur 9 · N : 4 sur 28 · D : non planifié.
+Q : 20 sur 25 · I : 9 sur 9 · N : 9 sur 28 · D : non planifié.
 
-Soit **61 postes sur 104**. Le 25 octobre 2026, la phase N en a ajouté vingt-huit, et la phase Q
+Soit **66 postes sur 104**. Le 25 octobre 2026, la phase N en a ajouté vingt-huit, et la phase Q
 deux (Q24, Q25), tirés de la relecture du cours sous l'angle de la saisie (fiche 23). Le
 24 octobre 2026, la phase I en avait ajouté neuf, tirés de la
 maquette de la nouvelle interface. Le compte avait doublé le 11 octobre 2026 sans que rien ne
@@ -3082,6 +3082,13 @@ choix revient au propriétaire.
 
 Rien de ce qui dépend de la voie ne part avant la réponse du propriétaire : N21, R6, R7, N22 à
 N28.
+
+*Décidé le 26 octobre 2026 par le propriétaire, sur cette mesure : **la voie 2a**.* Un champ caché,
+hors de `PageRoot`, fait la frappe, la méthode d'entrée et le presse-papiers ; le curseur, la
+sélection, la souris et la navigation qui dépend de la mise en page se calculent sur la composition
+et se dessinent dans l'`Overlay`. L'écart de `PointDe` au dessin de la composition dans un crénage
+ou une ligature (jusqu'à 3,9 pt) se reprend dans N3 avant elle. N21, R6, R7 et N22 à N28 partent
+dans leurs salves.
 
 ---
 
