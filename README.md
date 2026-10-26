@@ -118,7 +118,12 @@ Deux outils du rail ne posent rien : ils naviguent. La **main** fait glisser la 
 sans toucher à aucun bloc ; `Espace` tenu la prête sans changer d'outil. La **loupe**
 zoome d'un pas au clic, en arrière sous `Alt`, et le point visé reste sous le pointeur —
 comme sous `Ctrl` + molette. **Page entière**, dans la barre principale, tient la page
-dans la zone visible. Aucun de ces gestes n'entre dans l'historique ni ne rend le
+dans la zone visible. Entre les deux boutons de zoom, la valeur se lit comme un libellé et
+se tape comme un champ : un clic y entre et déroule la liste de Publisher — Page entière,
+Objets sélectionnés, de 400 à 10 % —, un pourcentage part à `Entrée`, `Échap` y renonce ; un
+zoom hors de 10 à 800 % est refusé, avec un message. `F9` bascule entre l'affichage courant
+et la taille réelle, autour du centre de la sélection, et le second `F9` rend l'affichage
+d'avant, défilement compris. Aucun de ces gestes n'entre dans l'historique ni ne rend le
 document « modifié », et le zoom ne change jamais de lui-même, ni à l'ouverture ni quand
 la fenêtre change de taille.
 
@@ -275,9 +280,10 @@ Fenêtre masque aussi l'un ou l'autre.
   page —, où la sélection se projette en bande bleue pâle. Repères libres posés où l'on
   veut, et tracés sur toute la planche : on les glisse depuis une règle, on les déplace,
   on les retire en les lâchant hors de la page, et l'aimantation s'y accroche. Aucun
-  repère ne s'imprime ; *Affichage ▸ Repères* et *Règles* les effacent de l'écran — et
-  *Repères* efface aussi les marges en pointillé et le marqueur de débordement, qui ne
-  s'impriment pas davantage.
+  repère ne s'imprime ; *Affichage ▸ Limites et repères* (`Ctrl+Maj+O`) et *Règles* les
+  effacent de l'écran — et *Limites et repères* efface aussi les marges en pointillé, la
+  grille et le marqueur de débordement, qui ne s'impriment pas davantage ; *Repères de
+  lignes de base* (`Ctrl+F7`) n'efface que les lignes de base.
 - Édition du texte directement sur la page (double-clic).
 - **Importer un texte** — *Texte ▸ Importer un texte…*, ou le bouton du même nom à la
   section Contenu d'un bloc de texte : un fichier texte remplit le bloc sélectionné, au style du
@@ -373,6 +379,11 @@ domaine où il est rangé.
 | `Ctrl` + molette, `Ctrl` `+`/`-`/`0` | Zoom — à la molette, le point visé reste sous le pointeur |
 | `Espace` tenu | La main : un glissé fait défiler la planche, sans changer d'outil (hors saisie, et pas quand un bouton a le focus) |
 | Clic, `Alt` + clic de la loupe | Zoom avant, zoom arrière, autour du point visé |
+| `F9` | Bascule entre l'affichage courant et la taille réelle, autour de la sélection ; le second rend l'affichage d'avant |
+| `Ctrl+Maj+L` | Page entière |
+| `Ctrl+Maj+O` | Limites et repères : montre ou masque tout ce qui ne s'imprime pas |
+| `Ctrl+F7` | Repères de lignes de base : montre ou masque les seules lignes de base |
+| Dans le champ du zoom : `Entrée`, `Échap`, flèches | Applique le zoom tapé, y renonce en rendant la planche, parcourt la liste |
 
 ### Outils
 

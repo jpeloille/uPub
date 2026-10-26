@@ -65,6 +65,17 @@
         <KeyBinding Gesture="Ctrl+Subtract" Command="{Binding ZoomOutCommand}"/>
         <KeyBinding Gesture="Ctrl+D0" Command="{Binding ZoomResetCommand}"/>
         <KeyBinding Gesture="Ctrl+NumPad0" Command="{Binding ZoomResetCommand}"/>
+        <!-- L'affichage au clavier (poste N4), aux touches de Publisher en français : F9
+             bascule entre l'affichage courant et la taille réelle, Ctrl+Maj+L tient la page
+             entière, Ctrl+Maj+O montre ou masque les limites et repères, Ctrl+F7 les seules
+             lignes de base. Le bureau n'en prend aucune (GNOME, relevé le 26 octobre 2026).
+             Les quatre commandes s'exécutent toujours : une liaison ne rend la touche que si
+             la sienne ne le peut pas, et Ctrl+Maj+O rendu irait à OnKeyDown, qui y lirait
+             Ctrl+O et ouvrirait un document. -->
+        <KeyBinding Gesture="F9" Command="{Binding BasculerLaTailleReelleCommand}"/>
+        <KeyBinding Gesture="Ctrl+Shift+L" Command="{Binding PageEntiereCommand}"/>
+        <KeyBinding Gesture="Ctrl+Shift+O" Command="{Binding BasculerLesReperesCommand}"/>
+        <KeyBinding Gesture="Ctrl+F7" Command="{Binding BasculerLesLignesDeBaseCommand}"/>
         <!-- Le gras et l'italique comme dans Publisher en français : G et I. Ni l'un ni
              l'autre n'est pris par OnKeyDown, qui n'intercepte sous Ctrl que N, O, S et E. -->
         <KeyBinding Gesture="Ctrl+G" Command="{Binding BasculerGrasCommand}"/>
@@ -670,13 +681,26 @@
                         <MenuItem Header="_Supprimer la page" Command="{Binding DeletePageCommand}"/>
                     </MenuItem>
 
+                    <!-- Le menu Affichage montre ses gestes (poste N4), et ses deux bascules de
+                         Publisher : « Limites et repères » est la case « Repères » d'avant, qui
+                         masque tout ce qui ne s'imprime pas — marges, grille, lignes de base,
+                         repères libres, emplacement d'image, marqueur de débordement — ;
+                         « Repères de lignes de base » ne masque que les lignes de base. Une
+                         lettre d'accès par entrée. -->
                     <MenuItem Header="_Affichage">
-                        <MenuItem Header="_Repères" ToggleType="CheckBox" IsChecked="{Binding ShowGuides, Mode=TwoWay}"/>
+                        <MenuItem Name="MenuLimitesEtReperes" Header="_Limites et repères" InputGesture="Ctrl+Shift+O"
+                                  ToggleType="CheckBox" IsChecked="{Binding ShowGuides, Mode=TwoWay}"/>
+                        <MenuItem Name="MenuLignesDeBase" Header="Repères de lignes de _base" InputGesture="Ctrl+F7"
+                                  ToggleType="CheckBox" IsChecked="{Binding ShowBaselines, Mode=TwoWay}"/>
                         <MenuItem Header="Rè_gles" ToggleType="CheckBox" IsChecked="{Binding ShowRulers, Mode=TwoWay}"/>
                         <Separator/>
-                        <MenuItem Header="Zoom _avant" Command="{Binding ZoomInCommand}"/>
-                        <MenuItem Header="Zoom a_rrière" Command="{Binding ZoomOutCommand}"/>
-                        <MenuItem Header="Taille _réelle" Command="{Binding ZoomResetCommand}"/>
+                        <MenuItem Header="Zoom _avant" InputGesture="Ctrl+OemPlus" Command="{Binding ZoomInCommand}"/>
+                        <MenuItem Header="Zoom a_rrière" InputGesture="Ctrl+OemMinus" Command="{Binding ZoomOutCommand}"/>
+                        <MenuItem Header="_Taille réelle" InputGesture="Ctrl+D0" Command="{Binding ZoomResetCommand}"/>
+                        <MenuItem Name="MenuBasculerLaTailleReelle" Header="Bas_culer en taille réelle" InputGesture="F9"
+                                  Command="{Binding BasculerLaTailleReelleCommand}"/>
+                        <MenuItem Header="Page _entière" InputGesture="Ctrl+Shift+L" Command="{Binding PageEntiereCommand}"/>
+                        <MenuItem Header="_Objets sélectionnés" Command="{Binding ObjetsSelectionnesCommand}"/>
                     </MenuItem>
 
                     <!-- Le menu Fenêtre : les deux panneaux, chacun à son tour, ou les deux
@@ -754,8 +778,10 @@
                             VerticalAlignment="Center">
                     <Button Classes="ib" ToolTip.Tip="Zoom arrière (Ctrl+−)" Command="{Binding ZoomOutCommand}"
                             Content="{StaticResource IconeZoomArriere}"/>
-                    <TextBlock x:Name="ValeurDuZoom" Text="{Binding ZoomLabel}" FontSize="12" Width="44"
-                               TextAlignment="Center" VerticalAlignment="Center"/>
+                    <!-- La valeur du zoom, qu'on lit comme le libellé de la maquette et qu'on tape
+                         comme un champ (poste N4) : un contrôle à part, hors de toute
+                         transaction — la barre principale n'en ouvre pas. -->
+                    <views:ChampDuZoom x:Name="ValeurDuZoom" VerticalAlignment="Center"/>
                     <Button Classes="ib" ToolTip.Tip="Zoom avant (Ctrl++)" Command="{Binding ZoomInCommand}"
                             Content="{StaticResource IconeZoomAvant}"/>
                     <!-- Posé ici ; la page tenue dans la zone visible est le geste de I6,

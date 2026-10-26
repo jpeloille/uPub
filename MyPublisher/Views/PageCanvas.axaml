@@ -470,7 +470,9 @@
                                  Ils ne sont dessinés que là — l'export ne les connaît pas,
                                  et c'est ce qui garantit qu'ils ne s'impriment jamais. Les
                                  repères libres, eux, ont quitté la page pour la planche
-                                 entière (poste I4) : voir « CoucheDesReperes ». -->
+                                 entière (poste I4) : voir « CoucheDesReperes ». Le tout suit
+                                 « Limites et repères » (Ctrl+Maj+O, poste N4), la case
+                                 « Repères » d'avant sous son nom de Publisher. -->
                             <Panel IsVisible="{Binding ShowGuides}" IsHitTestVisible="False">
                                 <!-- Les marges en pointillé rose de la maquette, sous les
                                      blocs comme elles l'ont toujours été. Un pixel d'écran à
@@ -512,10 +514,21 @@
                                         <DataTemplate DataType="models:GuideLine">
                                             <!-- Une ligne de base se pose au dixième de point et
                                                  s'efface : il y en a des dizaines par page, elles
-                                                 guident sans devoir se voir. -->
+                                                 guident sans devoir se voir. Elle a sa propre
+                                                 bascule, « Repères de lignes de base » (Ctrl+F7,
+                                                 poste N4), sous celle du panneau entier,
+                                                 « Limites et repères » : un trait de ligne de la
+                                                 grille ne l'écoute pas. -->
                                             <Rectangle Width="{Binding #Board.((vm:MainWindowViewModel)DataContext).Document.PageWidth}"
                                                        Height="{Binding IsBaseline, Converter={x:Static conv:Conv.GuideWeight}}"
-                                                       Fill="{Binding IsBaseline, Converter={x:Static conv:Conv.GuideTint}}"/>
+                                                       Fill="{Binding IsBaseline, Converter={x:Static conv:Conv.GuideTint}}">
+                                                <Rectangle.IsVisible>
+                                                    <MultiBinding Converter="{x:Static BoolConverters.Or}">
+                                                        <Binding Path="IsBaseline" Converter="{x:Static BoolConverters.Not}"/>
+                                                        <Binding Path="#Board.((vm:MainWindowViewModel)DataContext).ShowBaselines"/>
+                                                    </MultiBinding>
+                                                </Rectangle.IsVisible>
+                                            </Rectangle>
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>

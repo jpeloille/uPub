@@ -24,6 +24,11 @@ namespace MyPublisher.Views;
 ///   - « Page entière » tient la page dans la zone visible, la marge de la planche
 ///     déduite — les règles sont déjà hors de la zone qui défile. C'est une commande, et
 ///     jamais l'effet d'une ouverture ni d'un redimensionnement (règle 5 de la phase).
+///   - L'affichage au clavier (poste N4) : F9 et le champ du zoom zooment sans pointeur,
+///     autour du centre de la sélection, ou du milieu de la zone visible ; le second F9
+///     rend l'affichage d'avant, défilement compris ; « Objets sélectionnés » tient la
+///     sélection dans la zone, comme « Page entière » y tient la page. Le modèle de vue
+///     décide ; la planche calcule (<see cref="OnZoomDemande"/>).
 ///
 /// Rien de tout cela ne vit dans PageRoot ni ne change le document.
 /// </summary>
@@ -190,6 +195,18 @@ public partial class PageCanvas
         var coin = PageRoot.TranslatePoint(default, Surface) ?? default;
         var vise = (pointeurDansSurface - coin) / Scale;
         var dansLaZone = (Surface.TranslatePoint(pointeurDansSurface, Stage) ?? default) - Scroller.Offset;
+        Zoomer(vise, dansLaZone, zoom);
+    }
+
+    /// <summary>
+    /// Pose le zoom, puis fait défiler la planche pour que le point de page <paramref name="vise"/>
+    /// tombe en <paramref name="dansLaZone"/>, en pixels depuis le coin de la zone visible —
+    /// autant que le défilement le permet : une page plus petite que la zone y est centrée.
+    /// Le geste de la loupe et de la molette, et celui du clavier (N4).
+    /// </summary>
+    private void Zoomer(Vector vise, Point dansLaZone, double zoom)
+    {
+        if (_vm is null) return;
 
         _vm.SetZoom(zoom);
         UpdateLayout();
@@ -197,6 +214,110 @@ public partial class PageCanvas
         var nouveauCoin = PageRoot.TranslatePoint(default, Surface) ?? default;
         var ici = Surface.TranslatePoint(nouveauCoin + vise * Scale, Stage) ?? default;
         Scroller.Offset = ici - dansLaZone;
+    }
+
+    // ------------------------------------------------------- l'affichage au clavier (N4)
+
+    /// <summary>Le modèle de vue dont la planche sert les demandes d'affichage du poste N4.</summary>
+    private MainWindowViewModel? _vmDeLAffichage;
+
+    /// <summary>
+    /// La planche sert les demandes d'affichage du modèle de vue qu'elle porte : F9, le
+    /// champ du zoom, « Objets sélectionnés ». L'abonnement suit le contexte, comme celui que
+    /// pose AttachViewModel au même changement — l'événement que la classe de base lève,
+    /// et que le constructeur écoute, passe d'abord —, sans toucher au fichier principal de
+    /// la planche, qu'un seul poste d'une salve retouche (règle 16 de la phase N).
+    /// </summary>
+    protected override void OnDataContextChanged(EventArgs e)
+    {
+        base.OnDataContextChanged(e);
+
+        if (_vmDeLAffichage is not null)
+        {
+            _vmDeLAffichage.ZoomDemande -= OnZoomDemande;
+            _vmDeLAffichage.ObjetsSelectionnesDemandes -= OnObjetsSelectionnesDemandes;
+        }
+
+        _vmDeLAffichage = DataContext as MainWindowViewModel;
+
+        if (_vmDeLAffichage is not null)
+        {
+            _vmDeLAffichage.ZoomDemande += OnZoomDemande;
+            _vmDeLAffichage.ObjetsSelectionnesDemandes += OnObjetsSelectionnesDemandes;
+        }
+    }
+
+    /// <summary>
+    /// Un zoom demandé sans pointeur. Le second F9 rend un affichage — son zoom, puis son
+    /// défilement, tel qu'il était : la zone n'a pas changé de taille entre-temps, ou le
+    /// défilement s'y borne. Sinon, le zoom change autour de ce que <see cref="PointARetenir"/>
+    /// désigne. La planche dit d'où elle partait : c'est ce que le second F9 rendra.
+    /// </summary>
+    private void OnZoomDemande(object? sender, MainWindowViewModel.DemandeDeZoom demande)
+    {
+        if (_vm is null) return;
+
+        demande.Servie = true;
+        demande.DefilementDAvant = Scroller.Offset;
+
+        if (demande.Defilement is { } defilement)
+        {
+            _vm.SetZoom(demande.Zoom);
+            UpdateLayout();
+            Scroller.Offset = defilement;
+            return;
+        }
+
+        var (vise, dansLaZone) = PointARetenir();
+        Zoomer(vise, dansLaZone, demande.Zoom);
+    }
+
+    /// <summary>
+    /// Ce qui garde sa place quand le zoom change sans pointeur : le centre de la
+    /// sélection, là où il est dans la zone visible ; hors de la vue, il vient au milieu de
+    /// la zone, plutôt que de rester où l'on ne le voit pas ; sans sélection, ce que le
+    /// milieu de la zone montre. Un bloc masqué (I8) n'en est pas : la planche ne le montre
+    /// pas. Rend le point de page et sa place dans la zone, en pixels depuis son coin.
+    /// </summary>
+    private (Vector Vise, Point DansLaZone) PointARetenir()
+    {
+        var zone = Scroller.Viewport;
+        var milieu = new Point(zone.Width / 2, zone.Height / 2);
+        var coin = PageRoot.TranslatePoint(default, Surface) ?? default;
+
+        if (_vm is not null &&
+            Extent.Union(_vm.Selection.Where(bloc => bloc.Visible).Select(bloc => bloc.Extent)) is { } emprise)
+        {
+            var centre = new Vector(emprise.CenterX, emprise.CenterY);
+            var dansLaZone = (Surface.TranslatePoint(coin + centre * Scale, Stage) ?? default) - Scroller.Offset;
+            var enVue = dansLaZone.X >= 0 && dansLaZone.Y >= 0 && dansLaZone.X <= zone.Width && dansLaZone.Y <= zone.Height;
+            return (centre, enVue ? dansLaZone : milieu);
+        }
+
+        var auMilieu = Stage.TranslatePoint(milieu + Scroller.Offset, Surface) ?? default;
+        return ((auMilieu - coin) / Scale, milieu);
+    }
+
+    /// <summary>
+    /// « Objets sélectionnés » : le plus grand zoom auquel l'emprise de la sélection et la
+    /// marge de la planche tiennent dans la zone visible, dans les bornes du zoom, la
+    /// sélection au milieu de la zone. Un trait n'a pas de hauteur : un côté compte au
+    /// moins pour un point.
+    /// </summary>
+    private void OnObjetsSelectionnesDemandes(object? sender, EventArgs e)
+    {
+        if (_vm is null) return;
+        if (Extent.Union(_vm.Selection.Where(bloc => bloc.Visible).Select(bloc => bloc.Extent)) is not { } emprise) return;
+
+        var marge = Feuille.Margin;
+        var zone = Scroller.Viewport;
+        var largeur = zone.Width - marge.Left - marge.Right;
+        var hauteur = zone.Height - marge.Top - marge.Bottom;
+        if (largeur <= 0 || hauteur <= 0) return;
+
+        var echelle = Math.Min(largeur / Math.Max(emprise.Width, 1), hauteur / Math.Max(emprise.Height, 1));
+        Zoomer(new Vector(emprise.CenterX, emprise.CenterY), new Point(zone.Width / 2, zone.Height / 2),
+            echelle / Units.PointToDip);
     }
 
     /// <summary>

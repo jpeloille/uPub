@@ -77,6 +77,7 @@ vues_de_la_phase=(
     MyPublisher/Views/BarreContextuelle.axaml
     MyPublisher/Views/BoutonDEtat.cs
     MyPublisher/Views/EntreeDePage.axaml
+    MyPublisher/Views/ChampDuZoom.axaml
     MyPublisher/Views/PageCanvas.axaml
     MyPublisher/Views/PageCanvas.axaml.cs
     MyPublisher/Views/PageCanvas.Planche.cs

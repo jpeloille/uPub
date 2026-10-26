@@ -341,6 +341,22 @@ public static class Rendu
                ?? throw new InvalidOperationException("Surface n'est pas dans la fenêtre");
     }
 
+    /// <summary>
+    /// Le point de page sous un point de la fenêtre : l'inverse de <see cref="SurLaPage"/>,
+    /// lu de même, par le coin de PageRoot dans Surface et l'échelle de la planche.
+    /// </summary>
+    public static Point SousLaFenetre(Window fenetre, Point point)
+    {
+        var page = Nomme<Panel>(fenetre, "PageRoot");
+        var surface = Nomme<Panel>(fenetre, "Surface");
+        var echelle = Vm(fenetre).RenderScale;
+        var coin = page.TranslatePoint(default, surface)
+                   ?? throw new InvalidOperationException("PageRoot n'est pas sous Surface");
+        var ici = fenetre.TranslatePoint(point, surface)
+                  ?? throw new InvalidOperationException("Surface n'est pas dans la fenêtre");
+        return new Point((ici.X - coin.X) / echelle, (ici.Y - coin.Y) / echelle);
+    }
+
     /// <summary>Le centre d'un bloc, dans la fenêtre — celui d'un bloc tourné est son pivot.</summary>
     public static Point Centre(Window fenetre, Frame bloc) =>
         SurLaPage(fenetre, bloc.X + bloc.Width / 2, bloc.Y + bloc.Height / 2);
@@ -684,7 +700,8 @@ public static class Rendu
     /// Entre en saisie dans un bloc comme l'utilisateur : le bloc pris, puis un
     /// double-clic à (<paramref name="dx"/>, <paramref name="dy"/>) de son coin. C'est le
     /// seul endroit que N12 changera, quand on entrera dans le texte d'un clic. Rend la
-    /// zone de saisie, et échoue si la saisie ne s'est pas ouverte.
+    /// zone de saisie, et échoue si la saisie ne s'est pas ouverte ou si la zone n'a pas le
+    /// focus (Q25 : la transaction de la saisie le suit).
     /// </summary>
     public static TextBox EntrerEnSaisie(Window fenetre, MainWindowViewModel vm, TextFrame bloc, double dx = 40, double dy = 8)
     {
@@ -694,7 +711,9 @@ public static class Rendu
         DoubleCliquer(fenetre, SurLaPage(fenetre, bloc.X + dx, bloc.Y + dy));
         Assert.True(bloc.IsEditing, "le double-clic n'a pas ouvert la saisie sur la page");
 
-        return ZoneDeSaisie(fenetre, bloc) ?? throw new InvalidOperationException("la saisie est ouverte, mais aucune zone ne se voit");
+        var zone = ZoneDeSaisie(fenetre, bloc) ?? throw new InvalidOperationException("la saisie est ouverte, mais aucune zone ne se voit");
+        Assert.True(zone.IsFocused, "la zone de saisie n'a pas le focus");
+        return zone;
     }
 
     /// <summary>

@@ -93,8 +93,8 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **Q21** | Un tremblement ne déplace pas le bloc | 0 % | Trouvé par la relecture de Q14 : un pixel de mouvement pendant le clic, près d'une marge, fait sauter le bloc de 3 pt par l'aimantation. Repris en phase N (salve Saisie 3, avec Q22) |
 | **Q22** | Un clic sur une poignée ne redimensionne pas | 0 % | Trouvé par la relecture de Q14 : une pression sans mouvement près d'un coin fait passer le bloc de 100 à 96 pt et empile un pas d'annulation. Repris en phase N (salve Saisie 3) : toujours présent sur un bloc tourné, et Maj arrondit l'angle sans mouvement |
 | **Q23** | Sélectionner un bloc ne fige pas la fenêtre | **100 %** | La cause, mesurée : les trois sections du dock et les réglages de la barre contextuelle étaient des `ContentControl` liés au bloc seul, qu'une sélection vide vidait et que la pression suivante reconstruisait — mille visuels, vingt-quatre champs numériques —, dans la pression même ; la liste des polices n'y était pour rien. Ils sont construits une fois par sorte de bloc et gardés, masqués sans bloc de leur sorte (`Views/GabaritsGardes.cs`) : sur ATA 21, une pression sur un bloc non sélectionné rend la main en 30 à 52 ms au lieu de 107 à 136, l'image comprise, et n'ajoute plus qu'un visuel à la fenêtre. « Blocs de la page » ne défile plus que si la ligne du bloc n'est pas en vue ; le sélecteur de couleur refermé ne rend plus le focus à un champ de la barre, qui engloutissait son pas. Les deux tests du double-clic reprennent le geste entier et passent vingt fois de suite, chacun dans un processus neuf. Quatre tests ; relecture et juge après fusion. Recette dans `Scripts/recettes/` |
-| **Q24** | Annuler ou Rétablir ne laisse plus une saisie hors de toute transaction | 0 % | Trouvé par la relecture du cours (fiche 23) : `Ctrl+Z` sans rien à annuler, ou `Ctrl+Y` après une frappe, sort la frappe de toute transaction — elle ne s'annule plus et ne marque pas le document. Phase N, salve Saisie 1 |
-| **Q25** | Un réglage fait pendant une saisie a son propre pas | 0 % | Trouvé par la même relecture : un champ de la barre ouvert pendant la frappe se fond dans son pas. Phase N, salve Saisie 1, après Q24 dans la même copie |
+| **Q24** | Annuler ou Rétablir ne laisse plus une saisie hors de toute transaction | **100 %** | `Undo` et `Redo` referment ce qui est ouvert, comme avant, puis lèvent un avis sur chaque chemin, rien à défaire compris (`MainWindowViewModel.Transactions.cs`), sans rien rouvrir eux-mêmes : chaque propriétaire encore actif rouvre sa propre transaction, et lui seul — la saisie sur la page si elle l'est toujours, le champ du dock ou de la barre s'il a toujours le focus, et deux que le plan ne nommait pas, le glissé dont le bouton est tenu et le sélecteur de couleur resté ouvert. Une annulation qui relit le document referme la saisie, et rien ne se rouvre pour elle. Les trois cas du plan se montraient, le déduit compris : un champ de la barre sous un `Ctrl+Z` sans rien à annuler, une marge de l'onglet Document sous une vraie annulation ; les champs du bloc, eux, perdent le focus à une annulation, la sélection se vidant en passant. Neuf tests, dont sept tombaient sur le code d'avant ; le test du double-clic de Q14 n'est plus joué à froid par la recette, où il tombait sous la charge de la machine, avant Q24 comme après ; relecture et juge après fusion. Recette dans `Scripts/recettes/` |
+| **Q25** | Un réglage fait pendant une saisie a son propre pas | **100 %** | Confirmé d'abord par un test : la transaction de la saisie s'ouvrait au double-clic et ne se refermait qu'à Échap, et le corps réglé à la barre, le retrait saisi au dock ou la couleur prise au sélecteur pendant la frappe se fondaient dans son pas. Elle suit désormais le focus de la zone de saisie sur la page — ouverte quand la zone le prend, refermée quand elle le perd, et à `EndTextEdit` ; la saisie reste ouverte quand on clique dans la barre ou le dock, et les boutons G, I et S, qui ne prennent pas le focus, gardent `UnGesteUnPas`. La réponse de la planche à l'avis de Q24 suit le même focus : sous un `Ctrl+Z` sans rien à annuler, seul le champ qui a le focus rouvre sa transaction. Le sélecteur de couleur referme la sienne dès que son volet commence à se refermer, avant de rendre le focus à la zone, qui rouvrait la sienne dedans. Cinq tests, dont quatre tombaient sur le code d'avant ; relecture et juge après fusion. Recette dans `Scripts/recettes/` |
 | **I1** | Apparence de l'interface | **100 %** | `Views/Apparence.axaml` — pas « charte », qui nomme le jeu du document —, chargée par `App.axaml` : les 26 couleurs de l'interface de la maquette, une fois chacune et sous leur nom ; cinq classes aux tailles et aux couleurs de la feuille de style de la maquette, dont le bouton-icône de 30 × 30 plein d'accent quand il est actif ; 35 icônes au tracé de la maquette, à la couleur courante, une par emploi. L'écran d'aujourd'hui ne change pas d'un pixel. La recette tient la liste des vues de la phase et le poste de chaque icône, que les postes suivants complètent ; une vue qui cite l'apparence ou écrit en dur une de ses couleurs sans être dans la liste la fait échouer. Recette dans `Scripts/recettes/` |
 | **I2** | Disposition de la fenêtre | **100 %** | La fenêtre de la maquette, de haut en bas. Barre de menus : la marque, le titre du document centré, deux menus neufs — Texte (gras `Ctrl+G`, italique `Ctrl+I`, les quatre alignements, « Importer un te_xte… ») et Fenêtre (les deux panneaux, et B7). Barre principale à icônes : Annuler et Rétablir grisés sur un historique vide, mais pas pendant une saisie qui a déjà changé le bloc ; « Page entière » posé pour I6. La place de la barre contextuelle, de hauteur constante, et sa pastille, dans son propre fichier pour I3. Rail d'outils, sans Main, Zoom ni Ligne avant leur geste. Panneau Pages, dont l'entrée est un contrôle à part pour I5. Dock à quatre onglets, sections repliables retenues le temps de la session, longueurs en millimètres, vignettes de Fond et contour, « Blocs de la page » l'avant en tête. Barre d'état : la page, le format, le zoom en échelle logarithmique. Chaque champ, chaque onglet et chaque geste de la fenêtre fait un seul pas d'annulation ; les vingt-six icônes du poste servent. Repris après relecture : quatorze défauts, tous refermés. Recette dans `Scripts/recettes/` |
 | **I3** | Barre contextuelle | **100 %** | La barre suit la sélection, à la suite de la pastille de I2. Pour un bloc de texte : la police avec la garde de Q20, le corps, le gras, l'italique, le souligné — bouton S, `Ctrl+U` et « Souligné » au menu Texte sur la commande de I7, qui retire le souligné quelle qu'en soit la sorte ou pose le trait simple, et un chevron qui propose le double, l'épais et « mots seuls » —, les quatre alignements, la droite comprise, l'interligne en multiple, et la couleur du texte, dont la vignette ouvre le sélecteur du jeu ; un tableau a la même mise en forme, sans l'alignement ni le souligné ; un groupe se dissocie, plusieurs blocs s'alignent et se répartissent ; une image, une forme ou la page n'ont que la pastille. Ce que la barre porte a quitté le dock : la section Caractère, l'alignement et l'interligne de Paragraphe, la mise en forme du tableau. Chaque bouton joue la commande du menu Texte sans prendre le focus et ne se coche que par le bloc, si bien que chaque clic fait son pas, même pendant une saisie ; le sélecteur de couleur, ouvert hors de la barre, tient sa propre transaction ; `Échap` quitte un champ de la barre et rend les lettres seules aux outils. Un clic sur « Centrer le texte » centre le bloc à l'écran et au PDF en un pas. Onze tests ; relecture et juge après fusion. Repris après le contrôle indépendant : deux de ces tests tombaient trois fois sur quatorze en suite entière — un clic dans un menu tout juste ouvert, ou sur un bouton que la barre venait d'échanger, cherchait sa cible dans la dernière image rendue, où elle n'était pas encore ; le banc, pas le produit. Le clic au centre d'un contrôle n'a plus qu'une aide, `Rendu.Cliquer`, pour les trois classes qui en avaient chacune une copie : elle attend que l'image montre le contrôle sous son centre, et échoue en nommant ce qui le couvre. Recette dans `Scripts/recettes/` |
@@ -104,10 +104,10 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **I7** | Souligné | **100 %** | Le souligné porte sa sorte — plein, pointillé, tiret, tiret long, tiret-point, tiret-point-point ou vague ; simple ou double, épais ou non, « mots seuls » — au bloc, au fragment, où `null` laisse celui du bloc, et dans le style effectif. Il s'écrit `false`, `true` pour le trait simple, ou en objet `{ Line, Double, Thick, WordsOnly }` ; `FormatVersion` ne change pas, Samples et Templates sont réenregistrés. Il se trace à l'écran et au PDF à la place et à l'épaisseur de la table `post`, sous la ligne de base de son morceau, exposant compris, et à la couleur de son texte ; seize des dix-sept sortes de libmspub s'importent, le double en double. La commande `SoulignerCommand` est dans `MainWindowViewModel.Souligne.cs`, sans bouton : le bouton S, `Ctrl+U` et le menu viennent de I3. Recette dans `Scripts/recettes/`, vingt-six sabotages au juge |
 | **I8** | Masquer un bloc | **100 %** | L'œil de « Blocs de la page », à la place que I2 avait réservée : un clic masque le bloc, ou le montre, en un pas d'annulation, même pendant une saisie, sans le sélectionner ni prendre le focus ; le document est « modifié ». `Visible` sur tout bloc, `true` par défaut ; `FormatVersion` ne change pas, Samples et Templates sont réenregistrés — un « Visible » de plus par bloc, rien d'autre. Masqué, le bloc n'est dessiné ni dans `PageRoot` ni au PDF, ni ce que porte un groupe masqué ; rien de lui n'avertit, ni sa police (Q8), ni son image, ni son débordement ; son filet n'élargit plus la découpe d'un groupe. Un clic à sa place prend le bloc d'en dessous ; l'alignement et la répartition ne le voient pas, « Tout sélectionner » non plus. Il reste dans la liste, l'œil fermé, et s'y sélectionne, sans cadre ni poignée sur la planche ; masqué, il quitte une sélection multiple. Une recopie le garde, dissocier un groupe masqué laisse ses blocs masqués ; les cases d'un tableau ne portent pas la propriété. La vignette de la page (I5) ne le dessine pas. L'icône du poste sert. Vingt-cinq tests ; relecture et juge après fusion. Recette dans `Scripts/recettes/` |
 | **I9** | Compter les lignes en excédent | **100 %** | `Compositeur.LignesEnExcedent`, fonction pure du noyau : les lignes dont l'encre — la hauteur naturelle, au milieu de l'avance — sort du bloc, au calage vertical (A7), au bord du bloc et non de la zone (C6), au seuil du marqueur de A2 ; les colonnes et les blocs tournés sans chemin à part. Le dock l'affiche à la section « Cadre de texte », dans la place que I2 avait réservée : « Texte en excédent : 4 lignes » au fond, à la couleur et à l'icône d'alerte de l'apparence, au singulier pour une ligne, rien à zéro ; il suit la frappe et chaque réglage du bloc sans changement de sélection, et ne touche pas au document. Le modèle de vue le porte dans `MainWindowViewModel.Excedent.cs`. Aucune clé sérialisée ; l'avertissement d'export et le relevé de P2 inchangés. Sur `recette-debordement.mypub` et sur une variante en colonnes, marges, interligne 1,5 et rotation, le compte du dock est celui des lignes absentes du PDF, bloc par bloc, lu par la commande `excedent` du banc. Dix-huit tests, douze purs et six sur la fenêtre ; recette dans `Scripts/recettes/`. Relecture et juge après fusion |
-| **N1** | Le banc des gestes | **100 %** | Les gestes des tests d'interface sont synthétisés à un seul endroit, la région « Les gestes » de `Rendu.cs` : vingt-deux aides — `SurLaPage`, à l'échelle de la planche, qui échoue sans `PageRoot` ; `Centre`, `Coin`, `Poignee`, la poignée de rotation et son centre ; `Cliquer` sur un contrôle, qui attend l'image, ou en un point, touches, bouton et mouvement nul de Q14 compris ; `CliquerDroit`, qui rend le `ContextMenu` ouvert ; `DoubleCliquer` ; `Glisser`, toujours bouton tenu ; `Touche`, `ToucheAzerty`, `Taper`, `Saisir` ; `ZoneDeSaisie` et `EntrerEnSaisie`, le seul endroit que N12 changera ; `BordDuCaractere`, `SelectionnerDuTexte`, `TexteCopie`, `UnSeulPas`. Quarante et une copies retirées de dix-sept classes, quatre aides de classe réécrites sur celles du banc, un homonyme renommé, les deux entrées en saisie écrites en ligne remplacées ; les défauts des copies corrigés — deux glissés et une rotation sans le bouton tenu, deux clics sans l'attente d'image, dix `SurLaPage` qui retombaient sur (0, 0), deux `UnSeulPas` qui ne vérifiaient pas que le pas change le document — sans qu'aucun test change d'issue ni qu'un `poste=` perde un test. `BancTests`, dix tests sous `poste=N1`, éprouvent ce qu'Avalonia 11.3.9 sans affichage permet : le clic droit et la touche Menu, le presse-papiers et un format propre, `Ctrl+C`, le glissé dans un `TextBox` et dans la saisie d'un bloc, l'AZERTY, le double-clic à 3 px. Un contrôle des sources, `Scripts/aides-de-geste.py`, refuse toute aide de geste hors du banc ; la recette de Q23 lit le clic du banc. Trois sabotages au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
-| **N2** | Mettre en forme une plage, dans le noyau | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 1 |
-| **N3** | Chaque morceau composé sait d'où il vient | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 1 |
-| **N4** | L'affichage au clavier | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 1 |
+| **N1** | Le banc des gestes | **100 %** | Les gestes des tests d'interface sont synthétisés à un seul endroit, la région « Les gestes » de `Rendu.cs` : vingt-trois aides — `SurLaPage`, à l'échelle de la planche, qui échoue sans `PageRoot` ; `Centre`, `Coin`, `Poignee`, la poignée de rotation et son centre ; `Cliquer` sur un contrôle, qui attend l'image, ou en un point, touches, bouton et mouvement nul de Q14 compris ; `CliquerDroit`, qui rend le `ContextMenu` ouvert ; `DoubleCliquer` ; `Glisser`, toujours bouton tenu ; `Touche`, `ToucheAzerty`, `Taper`, `Saisir` ; `ZoneDeSaisie` et `EntrerEnSaisie`, le seul endroit que N12 changera ; `BordDuCaractere`, `SelectionnerDuTexte`, `TexteCopie`, `UnSeulPas`, `SousLaFenetre`. Quarante et une copies retirées de dix-sept classes, puis dix des classes de Q24, Q25 et N4 à la fusion, quatre aides de classe réécrites sur celles du banc, un homonyme renommé, les deux entrées en saisie écrites en ligne remplacées ; les défauts des copies corrigés — deux glissés et une rotation sans le bouton tenu, deux clics sans l'attente d'image, dix `SurLaPage` qui retombaient sur (0, 0), deux `UnSeulPas` qui ne vérifiaient pas que le pas change le document — sans qu'aucun test change d'issue ni qu'un `poste=` perde un test. `BancTests`, dix tests sous `poste=N1`, éprouvent ce qu'Avalonia 11.3.9 sans affichage permet : le clic droit et la touche Menu, le presse-papiers et un format propre, `Ctrl+C`, le glissé dans un `TextBox` et dans la saisie d'un bloc, l'AZERTY, le double-clic à 3 px. Un contrôle des sources, `Scripts/aides-de-geste.py`, refuse toute aide de geste hors du banc ; la recette de Q23 lit le clic du banc. Trois sabotages au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
+| **N2** | Mettre en forme une plage, dans le noyau | **100 %** | `MiseEnForme`, fonctions pures du noyau sur le modèle de `Recalage` : `Lire` (la valeur commune de chaque propriété, nulle si mixte, police et couleur comparées résolues par la charte), `Allume`, `Poser`, `Basculer` (Gras, Italique, Souligné ; retirer pose la valeur éteinte, `Bold = false` sur un bloc gras) et `Retirer` (`Ctrl+Espace`), sur les fragments et, à l'échelle du paragraphe, sur les écarts (`Basculer` d'un fer, `Paragraphes` d'une sélection) ; une pose coupe aux bornes par `Clone`, ne tranche « le dernier l'emporte » que dans la plage, rend nulle une valeur égale au bloc comparée brute (`scheme:accent1`), recolle les voisins identiques et retire ce qui ne dit plus rien ; l'écriture passe par les opérations de la collection, sans fragment modifié sur place, et une pose sans changement à l'œil n'écrit rien. `Recalage.ParagrapheDe` et `NombreDeParagraphes` publics ; `StyleEffectif.Etendue` et `ParagrapheEffectif.Etendue` partagées avec la composition. Rien de l'application ne l'appelle encore : R6 et R7. Vingt-six tests purs, dont deux balayages de deux mille poses ; recette dans `Scripts/recettes/`, deux sabotages au juge. Relecture et juge après fusion |
+| **N3** | Chaque morceau composé sait d'où il vient | **100 %** | `Morceau` porte en dernier membre `Debut`, la position de son premier caractère ; `LigneComposee` sa plage `Debut`–`Fin`, blancs rognés compris, saut exclu, et son `Paragraphe`, compté comme `Recalage` le compte. `Decouper` lit le texte tel qu'il est, sans `Replace` : seule exception, déclarée, un « \r\n » que deux fragments se partagent ne fait plus qu'un paragraphe — aucun document du dépôt n'en porte. Deux fonctions pures du noyau, `Compositeur.Abscisse` et `PositionLaPlusProche`, taquets, justification et blancs pendants compris ; `Compositeur.LigneDuTexteVide` pour le curseur d'un bloc vide. La vue pose, dans la passe même du dessin, une `TexteCompose.LignePosee` par ligne, lignes vides comprises ; `TexteCompose.Geometrie()` les rend avec `PointDe(index)` et `IndexSous(point)`, en coordonnées du bloc, colonnes et calage compris, rien pour un bloc à champ. **La sortie ne change pas, mesuré** : l'empreinte de la composition (`Scripts/empreinte-composition.sh`, commande `empreinte` du banc) — 2 492 lignes à la règle de l'écran et du PDF, 13 880 morceaux au bit près, ce que l'écran pose et souligne, les pixels de 29 pages, le PDF exporté et ses 6 634 mots — est identique avant et après sur les 18 documents du dépôt : `Samples/`, `Templates/`, ATA 21 et les Fiches. 76 tests sous `poste=N3`, 66 purs et 10 sur la vraie fenêtre ; un sabotage au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
+| **N4** | L'affichage au clavier | **100 %** | `F9` bascule entre l'affichage courant et la taille réelle, autour du centre de la sélection — ou du milieu de la zone visible —, qui garde sa place à l'écran ; le second `F9` rend l'affichage d'avant, zoom et défilement, tant qu'aucun autre geste n'a changé le zoom. `Ctrl+Maj+L` joue « Page entière ». La valeur du zoom de la barre principale est un champ (`Views/ChampDuZoom.axaml`) à l'allure du libellé de la maquette tant qu'il n'a pas le focus : un clic y entre et déroule la liste de Publisher — Page entière, Objets sélectionnés, de 400 à 10 % — ; un pourcentage part à Entrée, Échap renonce et rend la planche, un zoom hors de 10 à 800 % est refusé avec un message ; aucune transaction. « Limites et repères » (`Ctrl+Maj+O`) est la case « Repères » d'avant ; « Repères de lignes de base » (`Ctrl+F7`), `ShowBaselines`, ne masque que les lignes de base. Le menu Affichage montre ses gestes. Le bureau (GNOME 50.1 sous Wayland, sans KDE) ne prend aucune des quatre touches — seulement `Alt+F7`, `Ctrl+Alt+F7` et `Ctrl+Alt+F9`. Dix tests ; relecture et juge après fusion. Recette dans `Scripts/recettes/` |
 | **N5** | Quitter la saisie d'un clic qui agit | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 2 |
 | **N6** | Les raccourcis de la fenêtre laissent la touche au champ | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 2 |
 | **N7** | Mesurer l'écart de la première voie, et s'arrêter | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 2. **Arrêt** : la voie de R7 revient au propriétaire |
@@ -4543,6 +4543,87 @@ champ » de Q14 et de I2 reste intacte.
 Fichiers : `MainWindowViewModel.cs` (`Undo`, `Redo`, l'avis), `MainWindow.axaml.cs` et
 `PageCanvas.axaml.cs` (le réarmement). Part dans la même copie que Q25, avant lui (salve Saisie 1). Effort : faible.
 
+*Fait le 26 octobre 2026.* Les trois cas se montrent, chacun par un test qui tombait sur le code
+d'avant : `Ctrl+Z` sans rien à annuler pendant la saisie, puis « abc » — Annuler grisé, le titre
+sans marque, aucun pas ; « abc », `Ctrl+Y`, « d » — un seul pas ; et le cas déduit, dans un champ
+de la barre qui garde le focus sous un `Ctrl+Z` sans rien à annuler : la fenêtre croyait sa
+transaction ouverte, la profondeur était à zéro, et le corps saisi ensuite ne faisait aucun pas.
+
+`Undo` et `Redo` referment ce qui est ouvert, comme avant, puis lèvent l'avis
+`TransactionsRefermees` sur chaque chemin — ils n'ont plus de retour anticipé — et ne rouvrent rien
+eux-mêmes. L'avis est déclaré dans `MainWindowViewModel.Transactions.cs` (règle 10). Chaque
+propriétaire y répond pour lui seul : la planche rouvre la transaction de la saisie si elle est
+toujours ouverte, et celle du glissé si le bouton est toujours tenu, que son relâché refermera ;
+la fenêtre, celle du champ si le panneau où il a pris le focus — la barre ou un onglet du dock — le
+garde (`IsKeyboardFocusWithin`) ; la barre, celle du sélecteur de couleur s'il est toujours ouvert.
+Une annulation qui relit le document referme la saisie par le changement de sélection, et le
+sélecteur avec le bloc : rien ne se rouvre pour eux. La règle « un pas par champ » de Q14 et de I2
+reste intacte : `UnGesteUnPas` et ses deux recopies (I7, I8) n'ont pas changé, et la recette
+rejoue les tests voisins qui la tiennent.
+
+*Recette jouée* : `Scripts/recettes/Q24-Q25-transactions.sh`. Les sources d'abord : `Undo` et
+`Redo` commencent par refermer, finissent par l'avis, hors de toute condition, sans retour ni
+`BeginEdit` ; l'avis est dans le partiel du poste et n'est levé que par eux ; la fenêtre, la
+planche et la barre s'y abonnent et s'en désabonnent. Puis neuf tests sous `poste=Q24`
+(`TransactionsDeSaisieTests`), au clavier sur la vraie fenêtre : les deux premiers cas du plan ;
+le champ de la barre sous un `Ctrl+Z` sans rien à annuler ; le champ Contenu sous `Ctrl+Y` ; une
+marge de l'onglet Document sous un `Ctrl+Z` qui la défait ; un glissé, et le sélecteur de couleur,
+sous un `Ctrl+Z` sans rien à annuler ; et le piège — après une annulation qui referme la saisie, un
+glissé de 1 pt, `Alt` tenu, fait encore son propre pas ; et la règle de Q14 vue de la transaction :
+entrer en saisie et la quitter sans rien taper ne fait aucun pas. Ces deux derniers passaient sur
+le code d'avant, les sept autres tombaient. Enfin quatre tests voisins : un par champ du dock et de
+la barre (I2, I3), un par raccourci pendant la saisie d'un champ. Cinq
+sabotages au juge : l'avis qui n'est plus levé, une transaction rouverte pour une saisie refermée,
+et chacun des trois autres propriétaires qui ne rouvre plus la sienne.
+
+*Repris le 26 octobre 2026, avant la fusion.* La recette jouait en voisin le test du double-clic
+de Q14 sur ATA 21 (`Un_double_clic_ouvre_la_saisie_sans_rien_reecrire`), et `Scripts/verifier.sh`
+y tombait : « le double-clic n'a pas ouvert la saisie de « Air Production » ». La cause n'est pas
+dans le code de Q24. Avalonia ne compte deux clics que si moins de 500 ms séparent les deux
+pressions, et le premier clic d'une fenêtre neuve, dans un processus neuf, les dépasse parfois :
+compilation à la volée et construction des réglages du bloc (Q23) comprises, 285 à 684 ms
+mesurées entre les deux pressions sur le premier bloc, 50 à 90 ms sur les suivants. Alternés sous
+la même charge de la machine, le test joué seul tombe 5 fois sur 12 sur `2d8b9f9`, avant Q24, et 4
+fois sur 12 sur `ea27f0c`, aux mêmes écarts : chaque échec est un premier écart de plus de 500 ms.
+Dans le lot de voisins de la recette, il passait le premier, à froid ; les recettes de Q14 et de
+Q23 le jouent après un autre test du même processus, à chaud. Il n'est donc plus un voisin : la
+règle qu'il tenait ici — aucun pas à l'entrée en saisie — l'est par un test de la classe du poste,
+le bloc pris avant le double-clic, que le délai ne touche pas. Le test de Q14 n'a pas changé.
+
+*Ce que l'implémentation a appris.*
+- Les champs du bloc — la barre, les sections du dock — perdent le focus à une vraie annulation :
+  `Restore` change de page avant de rendre la sélection, changer de page la vide, et les réglages du
+  bloc se masquent un instant (Q23) ; Avalonia reprend le focus à un champ qui cesse d'être visible.
+  La recette du plan, « dans le champ Contenu, frappe, `Ctrl+Z`, frappe », ne se joue donc pas telle
+  quelle : la seconde frappe n'arrive nulle part, et rien ne se perd. Elle se joue sous `Ctrl+Y`
+  dans le champ Contenu, qui garde le focus, et sous `Ctrl+Z` dans une marge de l'onglet Document,
+  que la sélection ne masque pas : l'annulation l'y laissait, sans transaction.
+- Deux propriétaires de plus que les deux du plan, vus à la lecture du code et confirmés chacun par
+  un test qui tombait : le glissé, de la pression au relâché — `Ctrl+Z` le bouton tenu, sur un
+  historique vide, et le déplacement qui suivait n'entrait dans aucun pas —, et le sélecteur de
+  couleur de la barre, qui tient sa transaction de son ouverture à sa fermeture (I3) — la pastille
+  choisie après un `Ctrl+Z` ne faisait aucun pas. Sur le banc, le volet s'ouvre dans la fenêtre, et
+  la touche atteint ses raccourcis ; sur une plate-forme où il a sa propre fenêtre, ce n'est pas
+  éprouvé.
+- Les liaisons de la fenêtre prennent `Ctrl+Z` et `Ctrl+Y` même quand un champ ou la zone de
+  saisie a le focus : c'est l'historique du document qui annule, et le défaut passait par lui.
+
+*Choisi sans certitude.*
+- « Document neuf, bloc tracé » est lu comme un bloc posé dans le document à l'ouverture : tracé
+  dans la session, le bloc fait son pas, et `Ctrl+Z` défait le tracé — l'historique n'est plus vide,
+  et ce n'est plus le cas du défaut.
+- L'avis est levé à chaque Annuler et Rétablir, même quand rien n'était ouvert : chaque propriétaire
+  se règle sur ce qu'il voit, et un champ resté au focus sans transaction en retrouve une.
+
+*Relevé, non corrigé.* Un changement de sélection pendant qu'un champ que la sélection ne masque
+pas a le focus referme sa transaction sans qu'il la rouvre : `Ctrl+A` dans une marge de l'onglet
+Document sélectionne les blocs (la liaison de la fenêtre prend la touche), le champ garde le focus,
+et la marge saisie ensuite n'entre dans aucun pas ni ne marque le document — mesuré. N6, qui laisse
+la touche au champ, en ôte ce chemin ; un changement de sélection venu d'ailleurs le garderait.
+`ImporterTexte`, au modèle de vue, referme aussi tout ce qui est ouvert sans rien rouvrir : le geste
+de la fenêtre referme la saisie et le champ avant de l'appeler, si bien que rien n'est laissé ouvert
+— un appel venu d'ailleurs le ferait.
+
 ### Q25 — Un réglage fait pendant une saisie a son propre pas
 
 *Trouvé le 25 octobre 2026 par la même relecture, à confirmer d'abord par un test.* Les champs de
@@ -4566,6 +4647,52 @@ saisie reste ouverte quand on clique dans le dock, comme aujourd'hui.
 
 Fichiers : `PageCanvas.axaml.cs` (`BeginTextEdit`, `EndTextEdit`), tests. Dépend de Q24, dans la
 même copie. Effort : faible.
+
+*Fait le 26 octobre 2026.* Le défaut se montre, comme le plan le disait : sur une saisie ouverte,
+« abc », le corps à 14 dans la barre puis Entrée, un clic dans le texte, « d », Échap — la première
+annulation ne rendait pas l'état d'après le corps, le réglage et les deux frappes ne faisant qu'un
+pas ; de même pour un retrait de première ligne saisi au dock, et pour une couleur prise au
+sélecteur de la barre.
+
+La transaction de la saisie suit le focus de sa zone sur la page (`PageCanvas.axaml.cs`) :
+`BeginTextEdit` ne l'ouvre plus, la planche l'ouvre quand la zone du bloc en saisie prend le focus
+et la referme quand elle le perd — `GotFocus` et `LostFocus`, qui montent de la zone jusqu'à
+elle —, et `EndTextEdit` referme celle que la saisie tient, et elle seule. Le focus quitte la zone
+avant d'arriver au champ : le champ de la barre ou du dock ouvre la sienne quand celle de la
+saisie est déjà refermée, et fait son pas ; le clic qui rend le focus au texte en rouvre une pour la
+frappe qui reprend. La saisie reste ouverte quand on clique dans la barre ou le dock, comme avant.
+Les boutons G, I et S ne prennent pas le focus : la zone le garde, et `UnGesteUnPas` referme la
+transaction de la saisie, empile le pas du bouton et la rouvre, sans changement. La réponse de la
+planche à l'avis de Q24 suit le même focus : elle rouvre la transaction de la saisie si sa zone a
+toujours le focus, et non plus si la saisie est toujours ouverte.
+
+*Recette jouée* : la troisième partie de `Scripts/recettes/Q24-Q25-transactions.sh`. Les sources :
+`BeginTextEdit` sans `BeginEdit`, `EndTextEdit` sans `CommitEdit` direct, la planche abonnée au
+focus de la zone, et les deux volets de couleur de la barre abonnés à leur fermeture imminente.
+Puis cinq tests sous `poste=Q25` (`TransactionsDeSaisieTests`), au clavier et à la souris sur la
+vraie fenêtre : les trois cas du plan — le corps à la barre, le retrait au dock, la couleur au
+sélecteur —, chacun en trois pas défaits un à un et dans l'ordre ; le gras cliqué à la barre, qui
+fait son pas sans prendre le focus ; et, Q24 et Q25 ensemble, un `Ctrl+Z` sans rien à annuler
+pendant la saisie, le focus dans le corps de la barre — seul le champ rouvre sa transaction. Le gras
+passait sur le code d'avant, les quatre autres tombaient. Quatre sabotages au juge : la transaction
+qui ne se referme plus quand la zone perd le focus, celle qui ne se rouvre plus quand elle le
+reprend, la saisie qui la rouvre sous l'avis sans que sa zone ait le focus, et le sélecteur de
+couleur qui referme la sienne après avoir rendu le focus.
+
+*Ce que l'implémentation a appris.* Le volet du sélecteur de couleur rend le focus au dernier
+élément qui l'avait avant de lever `Closed` : pendant une saisie, c'est la zone de la page, et sa
+transaction se rouvrait dans celle de la couleur, encore ouverte — la pastille et la frappe qui
+suivait ne faisaient qu'un pas. La transaction de la couleur se referme donc à `Closing`, quand le
+volet commence à se refermer (`BarreContextuelle.axaml` et son code, que le plan ne nommait pas) ;
+`Closed` garde ce que Q23 y avait mis — un champ de la barre qui reprend le focus le rend aussitôt —
+et referme la transaction d'un volet qui se serait refermé sans prévenir. Le piège du plan se
+vérifie : le sélecteur retire le focus en s'ouvrant, ce qui clôt la frappe d'abord, et la frappe
+reprend dans la zone, qui a retrouvé le focus, sans clic.
+
+*Choisi sans certitude.* Entre le double-clic et le focus de la zone, que la planche lui donne au
+passage de mise en page suivant, la saisie n'a pas de transaction : rien ne s'y tape encore. Une
+fenêtre quittée pendant la frappe n'est pas éprouvée sur le banc : si la plate-forme retire alors
+le focus à la zone, la frappe déjà faite fait son pas, et la suite en ouvre un autre au retour.
 
 ---
 
@@ -5577,11 +5704,12 @@ point, touches, bouton, mouvementNul)`, qui finit par une image (`UneImage`) ;
 l'attend dix images au plus ; `DoubleCliquer(racine, point)` ; `Glisser(racine, depart, arrivee,
 touches, pas = 2)`, toujours bouton tenu. Le clavier : `Touche(racine, place, touches, relacher)` en
 QWERTY, `ToucheAzerty` avec la même signature, `Taper(racine, texte)`, `Saisir(fenetre, champ,
-texte)`. Le texte : `ZoneDeSaisie(fenetre, bloc)`, `EntrerEnSaisie(fenetre, vm, bloc, dx = 40, dy =
-8)`, qui rend la zone et que N12 sera seul à changer, `BordDuCaractere(zone, indice)`,
-`SelectionnerDuTexte(zone, debut, fin)`, `TexteCopie(racine)`. L'annulation : `UnSeulPas(vm, avant,
-quoi)`, qui rend le bloc sélectionné. `Attendre`, qui fait tourner la file le temps d'une tâche du
-presse-papiers, est hors de la région : ce n'est pas un geste.
+texte)`. L'inverse de `SurLaPage` : `SousLaFenetre(fenetre, point)`. Le texte :
+`ZoneDeSaisie(fenetre, bloc)`, `EntrerEnSaisie(fenetre, vm, bloc, dx = 40, dy = 8)`, qui rend la
+zone et que N12 sera seul à changer, `BordDuCaractere(zone, indice)`, `SelectionnerDuTexte(zone,
+debut, fin)`, `TexteCopie(racine)`. L'annulation : `UnSeulPas(vm, avant, quoi)`, qui rend le bloc
+sélectionné. `Attendre`, qui fait tourner la file le temps d'une tâche du presse-papiers, est hors
+de la région : ce n'est pas un geste.
 
 **La migration**, copie pour copie, inventoriée par le contrôle même de la recette : quarante-trois
 définitions hors de `Rendu.cs`, dans dix-sept classes. Quarante et une copies sont retirées — les
@@ -5599,7 +5727,13 @@ les copies portaient sont corrigés au passage : `NavigationTests.Glisser`, `Rep
 les `UnSeulPas` de `NavigationTests` et de `TraitTests` vérifient, comme les deux autres, que le pas
 a changé le document. Aucun test n'en change d'issue : aucun ne passait pour une mauvaise raison. Le
 mouvement nul de `DoubleClicTests.Cliquer` est le paramètre `mouvementNul`, et la recette de Q23,
-qui lisait le premier clic de ses deux tests du double-clic, lit désormais celui du banc.
+qui lisait le premier clic de ses deux tests du double-clic, lit désormais celui du banc. À la
+fusion d'`interface`, les aides que Q24, Q25 et N4 avaient écrites en tête de leurs classes ont
+suivi : sept dans `TransactionsDeSaisieTests` — `SurLaPage`, `Cliquer`, `Glisser`, `Touche`,
+`ZoneDeSaisie`, `EntrerEnSaisie`, `UnSeulPas` —, et dans `AffichageTests` `DansLaFenetre`, `Frapper`
+— `Touche` qui relâche — et `SousLaFenetre`, qui rejoint le banc avec celle de `NavigationTests`,
+dont elle était la copie. `EntrerEnSaisie` vérifie désormais, comme celle de Q25, que la zone a le
+focus.
 
 **Le banc**, `BancTests`, dix tests sous `poste=N1`, dans une fenêtre nue pour sept d'entre eux, la
 vraie pour trois. Ce qu'Avalonia 11.3.9 permet sans affichage, et que le banc éprouve : un clic
@@ -5626,11 +5760,11 @@ porte le nom d'une aide de la région ; aucune n'est définie hors de `Rendu.cs`
 aucune entrée n'est synthétisée hors de la région. Un test qui joue ses entrées en ligne n'en est
 pas une, ni une aide de classe qui compose celles du banc ; commentaires et littéraux sont blanchis
 avant la lecture. Puis les quinze aides que nomme le poste, présentes dans la région, et les dix
-tests sous `poste=N1`. La suite d'interface passe de 284 à 294 tests, tous verts, sans qu'un
-`poste=` en perde ni en gagne hors de N1 ; la recette de Q14 passe, celle de Q23 aussi, vingt
-passages sur vingt. Trois sabotages au juge : `Glisser` sans `LeftMouseButton` et `EntrerEnSaisie`
-qui ne clique qu'une fois, pris par `BancTests` ; une classe qui synthétise de nouveau sa touche,
-que seul le contrôle des sources voit.
+tests sous `poste=N1`. La suite d'interface passe de 284 à 294 tests sur la base du poste, de 318 à
+328 après la fusion d'`interface`, tous verts, sans qu'un `poste=` en perde ni en gagne hors de N1 ;
+la recette de Q14 passe, celle de Q23 aussi, vingt passages sur vingt. Trois sabotages au juge :
+`Glisser` sans `LeftMouseButton` et `EntrerEnSaisie` qui ne clique qu'une fois, pris par `BancTests`
+; une classe qui synthétise de nouveau sa touche, que seul le contrôle des sources voit.
 
 *Ce que l'implémentation a appris.* Le glissé dans la zone de saisie d'un bloc sélectionne déjà du
 texte : la couche de saisie le laisse passer, et N15 peut s'éprouver au banc dès maintenant. Chaque
@@ -5650,8 +5784,9 @@ refuse la rangée des chiffres, dont elle ne saurait pas ce qu'un AZERTY livre s
 
 *Relevé, non corrigé.* Cinq glissés écrits en ligne dans le corps de tests ne disent pas le bouton
 tenu — trois dans `GestesTests`, un dans `GroupementTests`, la main de `NavigationTests` — : ce ne
-sont pas des aides, ils passent, et N17 les croisera. Q24, Q25 et N4, partis avec N1, écrivent des
-aides privées en tête de leurs classes : elles migreront au rebasage de N1, fusionné en dernier.
+sont pas des aides, ils passent, et N17 les croisera. `MilieuDeLaZone` reste dans `NavigationTests`
+et dans `AffichageTests`, sous le même nom et pas pour la même mesure — les bornes de la zone qui
+défile là, sa vue ici — : ce n'est pas un geste, et les fondre changerait l'un des deux tests.
 
 #### N2 — Mettre en forme une plage, dans le noyau *(fiche 23, b1, b9)*
 
@@ -5688,6 +5823,51 @@ mixte. Une case de tableau n'a pas de paragraphes.
 
 Fichiers : `MyPublisher.Core/Models/MiseEnForme.cs` (neuf), `Recalage.cs`, `MyPublisher.Tests`.
 Effort : moyen.
+
+*Livré le 26 octobre 2026* ; la relecture adversariale et les sabotages du juge viennent après
+la fusion. `MiseEnForme` porte, sur les fragments, `Lire(texte, fragments, commun, plage,
+charte)`, `Allume(…, bascule)`, `Poser(…, style)`, `Basculer(…, bascule)` et `Retirer` ; sur
+les écarts, `Lire`, `Poser`, `Basculer(…, fer)` et `Retirer`, avec `Paragraphes(texte, plage)`
+qui rend les paragraphes qu'une sélection touche ; `Commun(TextFrame)` et `Commun(TableFrame)`
+donnent le style dont les fragments s'écartent. Ce qu'on lit et ce qu'on pose est un même type,
+`StyleDeLaPlage` (et `ReglagesDeLaPlage`), dont une propriété nulle est mixte à la lecture et
+intouchée à la pose. Le coupage, la superposition, le recollage et l'écriture sont écrits une
+fois pour les fragments et les écarts. Vingt-six tests sous `poste=N2`, dont les quatre de la
+recette chiffre pour chiffre, un test d'exhaustivité par réflexion (une propriété ajoutée au
+fragment ou à l'écart, et oubliée par la mise en forme, le fait tomber) et deux balayages :
+deux mille listes au hasard, recouvrements et débords compris, où hors de la plage rien ne
+change à l'œil et où la pose rejouée n'écrit plus rien. Deux sabotages au juge : la
+normalisation oubliée, et un fragment coupé en le retouchant sur place.
+
+*Ce que l'implémentation a appris.* `StyleEffectif.Decouper` calculait la fin d'un fragment en
+entier : « Start = 2, Length = 2 147 483 647 » débordait, et le fragment, qui court jusqu'au bout
+du texte, ne recouvrait plus rien. Elle se calcule désormais en long, comme celle d'un écart,
+dans `StyleEffectif.Etendue`, que la mise en forme emploie aussi : les deux voient chaque
+fragment au même endroit. Le dessin ne change que pour ces longueurs absurdes.
+
+*Choisi sans certitude* :
+- retirer le gras, l'italique ou le souligné pose la valeur éteinte et non « comme le bloc » :
+  sur un bloc gras, nul rendrait le gras ; la recette le demande. Le souligné basculé est
+  allumé quelle qu'en soit la sorte, comme `Ctrl+U` dans Publisher, et se pose en trait simple ;
+  `Lire` dit mixte une plage qui mêle deux sortes, `Allume` la dit allumée ;
+- une plage vide ne change rien — c'est à R7 de dire sur quel mot porte un geste sans
+  sélection —, et se lit au style que prendrait la frappe (`Recalage.Ancre`) ;
+- `Lire` rend la valeur brute quand toute la plage la porte, la résolue quand seules les
+  résolues s'accordent ; la charte ne résout que la police et la couleur ;
+- le fer basculé de `Ctrl+E`, `Ctrl+R` ou `Ctrl+J` revient au fer à gauche, comme dans Word, et
+  non au fer du bloc ;
+- une sélection qui finit sur un saut de paragraphe ne touche pas le paragraphe d'après : le
+  saut appartient au paragraphe qu'il clôt ;
+- une pose qui ne change rien à l'œil laisse la collection telle quelle, même désordonnée : pas
+  de pas d'historique sans rien à montrer ;
+- une case de tableau s'écarte du style du tableau sans souligné, celui du bloc que
+  `TableFrame.CellFrames` construit.
+
+*Relevé, non corrigé.* Le recollage ne joue qu'aux deux bornes de la plage : deux fragments
+voisins identiques laissés par un import ailleurs dans le bloc restent deux. Un élément qui
+recouvre la plage n'est allongé sur son voisin de droite que s'ils se suivent dans la liste,
+pour ne rien changer de ce qui l'emporte hors de la plage ; la liste peut donc garder deux
+fragments là où un suffirait, sans que rien n'en paraisse.
 
 #### N3 — Chaque morceau composé sait d'où il vient *(fiche 23, a21)*
 
@@ -5733,6 +5913,62 @@ n'a pas de géométrie, son `Contenu` différant de `Text`.
 
 Fichiers : `Compositeur.cs`, `Views/TexteCompose.cs`, tests. Effort : moyen.
 
+*Livré le 26 octobre 2026*, sur `interface` au commit `2d8b9f9`.
+
+**Le noyau.** `Morceau(Texte, Style, X, Largeur, Debut)` ; `LigneComposee` finit par
+`Debut, Fin, Paragraphe`. `Decouper` parcourt le texte d'origine : chaque unité garde sa
+place, un saut sa longueur — un « \n », un « \r » seul, ou un « \r\n » pour un seul,
+même à cheval sur deux fragments. Le renvoi laisse la tête blanche du mot au bout de la ligne
+qu'il quitte ; le morceau renvoyé commence après elle, et la ligne quittée finit là où commence
+la suivante. Deux fonctions pures sur une ligne posée : `Compositeur.Abscisse(ligne,
+decalages, position, texte, commun, metriques)`, comptée depuis l'origine de la ligne comme
+`Soulignes`, et `Compositeur.PositionLaPlusProche(ligne, decalages, abscisse, texte, commun,
+metriques)`, son inverse, la première à égalité. Une tabulation avance au taquet ; le point
+qui suit un blanc élargi est au mot suivant ; les blancs rognés pendent après le dernier
+morceau, mesurés à son style, ou au style commun sur une ligne sans morceau ; jamais le
+milieu d'une paire de substitution. `Composer` ne rend toujours aucune ligne pour un texte
+vide — un bloc vide ne déborde pas — ; `LigneDuTexteVide` rend celle qu'il aurait, de la
+même composition.
+
+**La vue.** `TexteCompose.Disposer` pose, dans la passe du dessin, une
+`LignePosee(Ligne, Rang, Origine, Haut, LigneDeBase, Decalages)` par ligne, lignes vides
+comprises — une ligne sans morceau prend la montée du style commun. `ControleDeBloc.Mesurer`
+peut composer la ligne du texte vide, et `TexteMesure` porte le style commun.
+`TexteCompose.Geometrie()` rend une `GeometrieDuTexte` — `Lignes`, `LigneDe(index)`,
+`PointDe(index)`, `IndexSous(point)` —, rien sans bloc ni pour un bloc à champ ;
+`TexteCompose.PointDe` et `IndexSous` y délèguent, en recomposant à chaque appel : qui
+demande beaucoup de points garde la géométrie. `PointDe` rend le point d'insertion sur la
+ligne de base de sa ligne ; une position où une ligne est renvoyée est le début de la
+suivante. `IndexSous` prend la colonne la plus proche parmi celles qui portent du texte, la
+ligne la plus proche dans cette colonne, puis la position la plus proche sur la ligne.
+
+**Mesuré.** L'empreinte de la composition, relevée avant tout changement puis après, par
+`Scripts/empreinte-composition.sh` et la commande `empreinte` du banc, qui n'emploie que
+l'API d'avant N3 : 18 documents — les 12 de `Samples/`, les 4 de `Templates/`, ATA 21 et les
+Fiches par pub2raw —, 289 contrôles de texte, 2 492 lignes composées à la règle de l'écran et
+à celle du PDF, 13 880 morceaux avec leur style, leur abscisse et leur largeur au bit près, les
+décalages de justification, ce que `Poser` et `Souligner` rendent, l'empreinte des pixels de
+29 pages, et le PDF exporté, normalisé de ce que PDFsharp tire au hasard, avec ses 6 634 mots
+et leur boîte : **identique**. Deux relevés d'avant, pris du même code, l'étaient aussi entre
+eux. Aucune chaîne des 16 `.mypub` ne porte de « \r », ni aucun texte d'ATA 21 et des Fiches.
+Sur les documents réels, `PointDe(m.Debut).X` est l'ancre du dessin à 10⁻⁶ près, et
+`IndexSous(PointDe(i)) == i` pour chaque position de l'exemple, d'ATA 21, des Fiches et de
+`recette-colonnes`. Une géométrie coûte de 0,2 à 15 ms par bloc sur ATA 21, machine chargée.
+
+*Choisi sans certitude* : `PointDe` sur la ligne de base, et non au sommet de la ligne ; la
+fin d'une ligne renvoyée rendue au début de la suivante, sans affinité ; un point à égale
+distance de deux colonnes ou de deux lignes donné à la première ; la bande d'une ligne étendue
+à sa ligne de base quand un interligne serré l'en fait sortir. L'outil d'empreinte est gardé,
+et la recette le joue sur demande (`--empreinte <référence>`) : il demande quelques minutes et
+un relevé de référence que le dépôt ne garde pas, les pixels dépendant des polices de la
+machine.
+
+*Relevé, non corrigé* : la mise en page arrondit au pixel la place et la taille du contrôle
+d'un bloc — 22,77 pt de haut deviennent 23 — et un bloc tourné tourne autour du centre de son
+contrôle : le repère que `Frame.ToLocal` calcule sur le modèle s'écarte de celui de l'écran de
+0,5 pt sur les deux blocs tournés d'ATA 21. Le caractère visé n'en change pas ; c'est l'affaire
+de N12 et de R7.
+
 #### N4 — L'affichage au clavier *(fiche 23, d10, d11, d13, e14, f24)*
 
 *Spécifié le 25 octobre 2026.* Publisher zoome par `F9` (p. 36), qui bascule entre l'affichage
@@ -5767,6 +6003,54 @@ avant : que ni GNOME ni KDE ne prennent `F9`, `Ctrl+F7`, `Ctrl+Maj+L` ou `Ctrl+M
 Fichiers : `MainWindow.axaml` (barre principale, menu Affichage, liaisons), `PageCanvas.axaml`,
 `PageCanvas.Navigation.cs`, `MainWindowViewModel.Affichage.cs` (neuf), README (Affichage).
 Effort : faible.
+
+*Livré le 26 octobre 2026*, dans la salve Saisie 1 ; la relecture adversariale vient après la
+fusion. **Le bureau, vérifié avant d'écrire** (`gsettings list-recursively`, schémas des
+extensions compris ; pas de `~/.config/kglobalshortcutsrc`, la machine n'a pas KDE) : GNOME
+50.1 sous Wayland ne prend ni `F9`, ni `Ctrl+F7`, ni `Ctrl+Maj+L`, ni `Ctrl+Maj+O`. Il prend
+leurs voisines — `Alt+F7` (déplacer la fenêtre), `Ctrl+Alt+F7` et `Ctrl+Alt+F9` (changer de
+session) —, que le poste ne déclare pas ; `Ctrl+Maj+O` n'est qu'un raccourci du terminal
+Ptyxis, qui ne vaut que dans sa fenêtre. Le poste écrit, outre les fichiers nommés, le champ
+du zoom en contrôle à part (`Views/ChampDuZoom.axaml` et son code), inscrit à la liste des
+vues de la recette I1 ; la classe `AffichageTests` (dix tests) ; deux sabotages au juge — `F9`
+qui oublie l'affichage d'avant, et le second `F9` qui rend le zoom sans le défilement. Le
+modèle de vue décide — quel zoom, quel affichage `F9` rendra — et la planche calcule, seule à
+connaître sa zone et son défilement : elle répond à deux événements, `ZoomDemande` et
+`ObjetsSelectionnesDemandes`, auxquels elle s'abonne dans `PageCanvas.Navigation.cs` sans
+toucher au fichier principal de la planche (règle 16). Le README dit les quatre touches au
+sous-tableau « Affichage », le champ dans « Interface », et « Limites et repères » là où il
+disait *Affichage ▸ Repères*.
+
+*Ce que l'implémentation a appris.* Les liaisons de la fenêtre passent avant `OnKeyDown`, et
+une liaison dont la commande s'exécute garde la touche : `Ctrl+Maj+O` n'arrive jamais à
+l'aiguillage qui lit `Ctrl+O` sans regarder `Maj` et ouvrirait un document — mesuré en
+remplaçant l'ouverture par une marque, que le test n'a pas vue. Les quatre commandes
+s'exécutent donc toujours. Rendre le défilement d'avant ne se prouve pas sur un aller-retour
+immobile : zoomer en arrière autour du même point rend le même défilement, au pixel près, et
+le sabotage qui l'oublie passait ; le test fait défiler la planche entre les deux `F9`.
+
+*Choisi sans certitude* :
+- `F9` en taille réelle sans rien à rendre ne fait rien et le dit à la barre d'état (« Déjà en
+  taille réelle. ») ; l'affichage retenu s'oublie dès qu'un autre geste change le zoom — la
+  molette, la loupe, un bouton, le champ, « Page entière » —, pas quand on fait seulement
+  défiler ;
+- le point qui garde sa place est le centre de la sélection quand il est en vue ; hors de la
+  vue, il vient au milieu de la zone ; un bloc masqué (I8) ne compte pas, ni pour `F9` ni pour
+  « Objets sélectionnés » ;
+- le champ lit « 150 », « 150 % », « 66,5 » ou « 66.5 » ; un zoom hors des bornes est refusé,
+  non ramené à la borne ; les flèches parcourent la liste, `Alt` + flèche la déroule ou la
+  replie ; perdre le focus vaut Échap, sans rendre la planche ;
+- « Objets sélectionnés » est aussi une entrée du menu Affichage, sans touche, comme
+  « Basculer en taille réelle » (`F9`) et « Page entière » (`Ctrl+Maj+L`) ; « Taille réelle »
+  y prend la lettre d'accès `T`, « Basculer » la `C` ;
+- `ShowBaselines` est vraie à l'ouverture et n'entre pas au document ; « Limites et repères »
+  masque les lignes de base avec le reste, et les rend dans l'état de leur propre case.
+
+*Relevé, non corrigé.* Le champ montre le zoom arrondi au pourcent, comme le libellé
+d'avant : « 66,5 » tapé se relit « 67 % » — `ZoomLabel` n'est pas au poste. « Page
+entière » et « Objets sélectionnés » ne se rappellent pas comme tels : le champ montre
+ensuite le pourcentage qu'ils ont posé, et ne suit pas la fenêtre qu'on redimensionne
+(règle 5).
 
 #### N5 — Quitter la saisie d'un clic qui agit *(fiche 23, a8, a9)*
 

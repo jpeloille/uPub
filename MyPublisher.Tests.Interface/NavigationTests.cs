@@ -36,16 +36,6 @@ public class NavigationTests
 
     private static ScrollViewer Defilement(Window fenetre) => Trouver<ScrollViewer>(fenetre, "Scroller");
 
-    /// <summary>Le point de page sous un point de la fenêtre : l'inverse de <see cref="Rendu.SurLaPage"/>.</summary>
-    private static Point SousLaFenetre(Window fenetre, MainWindowViewModel vm, Point point)
-    {
-        var page = Trouver<Panel>(fenetre, "PageRoot");
-        var surface = Trouver<Panel>(fenetre, "Surface");
-        var coin = page.TranslatePoint(default, surface) ?? throw new InvalidOperationException();
-        var ici = fenetre.TranslatePoint(point, surface) ?? throw new InvalidOperationException();
-        return new Point((ici.X - coin.X) / vm.RenderScale, (ici.Y - coin.Y) / vm.RenderScale);
-    }
-
     /// <summary>Le milieu de la zone qui défile, dans la fenêtre.</summary>
     private static Point MilieuDeLaZone(Window fenetre)
     {
@@ -247,7 +237,7 @@ public class NavigationTests
 
             // Sur le bloc : la loupe ne le prend pas.
             var pointeur = Rendu.SurLaPage(fenetre, 300, 400);
-            var vise = SousLaFenetre(fenetre, vm, pointeur);
+            var vise = Rendu.SousLaFenetre(fenetre, pointeur);
             var zoom = vm.Zoom;
             fenetre.MouseDown(pointeur, MouseButton.Left);
             fenetre.MouseUp(pointeur, MouseButton.Left);
@@ -258,7 +248,7 @@ public class NavigationTests
 
             // Un second clic, ailleurs dans la zone : la page déborde, le point suit encore.
             pointeur = MilieuDeLaZone(fenetre) + new Vector(120, 90);
-            vise = SousLaFenetre(fenetre, vm, pointeur);
+            vise = Rendu.SousLaFenetre(fenetre, pointeur);
             fenetre.MouseDown(pointeur, MouseButton.Left);
             fenetre.MouseUp(pointeur, MouseButton.Left);
             Rendu.Battre();
@@ -267,7 +257,7 @@ public class NavigationTests
 
             // Alt + clic zoome en arrière, autour du point visé lui aussi.
             pointeur = MilieuDeLaZone(fenetre) + new Vector(-60, -40);
-            vise = SousLaFenetre(fenetre, vm, pointeur);
+            vise = Rendu.SousLaFenetre(fenetre, pointeur);
             fenetre.MouseDown(pointeur, MouseButton.Left, RawInputModifiers.Alt);
             fenetre.MouseUp(pointeur, MouseButton.Left, RawInputModifiers.Alt);
             Rendu.Battre();
@@ -299,7 +289,7 @@ public class NavigationTests
             Rendu.Battre();
 
             var pointeur = MilieuDeLaZone(fenetre) + new Vector(80, -50);
-            var vise = SousLaFenetre(fenetre, vm, pointeur);
+            var vise = Rendu.SousLaFenetre(fenetre, pointeur);
             var zoom = vm.Zoom;
             fenetre.MouseWheel(pointeur, new Vector(0, 1), RawInputModifiers.Control);
             Rendu.Battre();

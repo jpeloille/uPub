@@ -699,7 +699,10 @@ public partial class MainWindowViewModel : ViewModelBase
     /// <summary>
     /// Referme une transaction laissée ouverte par un champ encore actif. Annuler
     /// pendant une saisie doit d'abord valider cette saisie, sinon l'instantané de
-    /// référence serait comparé à un document déjà restauré.
+    /// référence serait comparé à un document déjà restauré. Elle referme celles de tous
+    /// les propriétaires à la fois : qui l'appelle rend la main à chacun — Annuler et
+    /// Rétablir par l'avis (poste Q24), un geste de la fenêtre en rouvrant aussitôt ce
+    /// qu'il a refermé, faute d'avoir rien relu entre les deux.
     /// </summary>
     private void EndPendingEdit()
     {
@@ -709,36 +712,52 @@ public partial class MainWindowViewModel : ViewModelBase
         CommitEdit();
     }
 
+    /// <summary>
+    /// Annuler. Ce qui était ouvert est refermé d'abord, en un pas s'il a changé le
+    /// document, puis l'avis rend la main aux propriétaires encore actifs, qu'il y ait eu
+    /// quelque chose à défaire ou non (poste Q24, MainWindowViewModel.Transactions.cs).
+    /// </summary>
     [RelayCommand]
     private void Undo()
     {
         EndPendingEdit();
-        if (_undo.Count == 0) return;
+        if (_undo.Count > 0)
+        {
+            var current = Capture();
+            var target = _undo[^1];
+            _undo.RemoveAt(_undo.Count - 1);
+            _redo.Add(current);
+            Restore(target);
+            IsDirty = true;
+            NotifyHistory();
+            Status = "Annulé";
+        }
 
-        var current = Capture();
-        var target = _undo[^1];
-        _undo.RemoveAt(_undo.Count - 1);
-        _redo.Add(current);
-        Restore(target);
-        IsDirty = true;
-        NotifyHistory();
-        Status = "Annulé";
+        AviserLesProprietaires();
     }
 
+    /// <summary>
+    /// Rétablir, sur le même modèle. Après une frappe, la pile de rétablissement est vide :
+    /// fermer la frappe l'a vidée. C'est le cas le plus fréquent où il n'y a rien à faire, et
+    /// la saisie reste ouverte.
+    /// </summary>
     [RelayCommand]
     private void Redo()
     {
         EndPendingEdit();
-        if (_redo.Count == 0) return;
+        if (_redo.Count > 0)
+        {
+            var current = Capture();
+            var target = _redo[^1];
+            _redo.RemoveAt(_redo.Count - 1);
+            _undo.Add(current);
+            Restore(target);
+            IsDirty = true;
+            NotifyHistory();
+            Status = "Rétabli";
+        }
 
-        var current = Capture();
-        var target = _redo[^1];
-        _redo.RemoveAt(_redo.Count - 1);
-        _undo.Add(current);
-        Restore(target);
-        IsDirty = true;
-        NotifyHistory();
-        Status = "Rétabli";
+        AviserLesProprietaires();
     }
 
     private Snapshot Capture() => new(

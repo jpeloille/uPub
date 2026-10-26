@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Avalonia;
 using Avalonia.Media;
 using MyPublisher.Models;
@@ -49,10 +50,26 @@ public sealed class TexteCompose : ControleDeBloc
     public readonly record struct TraitPose(
         double Debut, double Fin, double Axe, double Epaisseur, Souligne Sorte, string Couleur, int Ligne);
 
+    /// <summary>
+    /// Une ligne posée (poste N3), telle que <see cref="Disposer"/> la pose pour le dessin,
+    /// lignes vides comprises — un paragraphe vide, une ligne de blancs, le texte vide :
+    /// rien ne s'y dessine, mais le curseur s'y pose. <paramref name="Ligne"/> est la ligne
+    /// composée, avec sa plage dans le texte ; <paramref name="Rang"/> son rang dans le
+    /// bloc ; <paramref name="Origine"/> l'abscisse où se pose son premier morceau, retrait,
+    /// colonne et fer compris ; <paramref name="Haut"/> son sommet et
+    /// <paramref name="LigneDeBase"/> sa ligne de base, calage vertical compris ;
+    /// <paramref name="Decalages"/> ce que la justification ajoute à chaque morceau, des
+    /// zéros si elle n'est pas justifiée. Tout est dans le repère du contrôle, qui est celui
+    /// du bloc non tourné.
+    /// </summary>
+    public readonly record struct LignePosee(
+        LigneComposee Ligne, int Rang, double Origine, double Haut, double LigneDeBase,
+        IReadOnlyList<double> Decalages);
+
     public override void Render(DrawingContext contexte)
     {
         var metriques = new MetriquesAvalonia();
-        var (poses, traits) = Disposer(metriques, metriques);
+        var (poses, traits, _, _) = Disposer(metriques, metriques);
         foreach (var morceau in poses)
         {
             contexte.DrawText(morceau.Rendu, morceau.Ancre);
@@ -116,17 +133,61 @@ public sealed class TexteCompose : ControleDeBloc
         Disposer(metriques, metriques).Traits;
 
     /// <summary>
+    /// La géométrie du texte tel qu'il est à l'écran (poste N3) : les lignes que
+    /// <see cref="Render"/> pose, et de quoi passer d'une position du texte à un point du
+    /// bloc et retour. Elle est prise de la passe même du dessin, et non d'un calcul à côté.
+    ///
+    /// Elle compose le bloc à chaque appel : qui demande beaucoup de points la garde, au lieu
+    /// d'appeler <see cref="PointDe"/> en boucle. Rien pour un bloc sans bloc, ni pour un
+    /// bloc à champ — son <see cref="ControleDeBloc.Contenu"/>, résolu, n'est pas son texte,
+    /// et une position dans l'un ne désigne rien dans l'autre.
+    /// </summary>
+    public GeometrieDuTexte? Geometrie()
+    {
+        if (Bloc is not { } bloc || bloc.HasField || (Contenu ?? string.Empty) != (bloc.Text ?? string.Empty))
+        {
+            return null;
+        }
+
+        var metriques = new MetriquesAvalonia();
+        var disposition = Disposer(metriques, metriques, texteVideCompris: true);
+        if (disposition.Mesure is not { } mesure) return null;
+
+        return new GeometrieDuTexte(
+            disposition.Lignes, mesure.Commun, Contenu ?? string.Empty,
+            bloc.PaddingLeft, mesure.Largeur, bloc.Colonnage, metriques);
+    }
+
+    /// <summary>
+    /// Le point d'insertion placé avant le caractère <paramref name="index"/>, sur la ligne
+    /// de base de sa ligne, dans le repère du bloc non tourné (poste N3) — voir
+    /// <see cref="GeometrieDuTexte.PointDe"/>. Rien pour un bloc à champ.
+    /// </summary>
+    public Point? PointDe(int index) => Geometrie()?.PointDe(index);
+
+    /// <summary>
+    /// La position du texte la plus proche d'un point du repère du bloc non tourné — un
+    /// point de la page y entre par <see cref="Frame.ToLocal"/> (poste N3) ; voir
+    /// <see cref="GeometrieDuTexte.IndexSous"/>. Rien pour un bloc à champ.
+    /// </summary>
+    public int? IndexSous(Point point) => Geometrie()?.IndexSous(point);
+
+    /// <summary>
     /// Les morceaux et les traits de souligné, d'une seule composition : le souligné se
     /// pose sur les lignes mêmes que le texte, et composer deux fois coûterait deux fois
-    /// à chaque redessin pour le risque de ne pas tomber pareil.
+    /// à chaque redessin pour le risque de ne pas tomber pareil. Les lignes posées en
+    /// sortent aussi, lignes vides comprises (poste N3) : la géométrie lit ce que le dessin
+    /// a posé. <paramref name="texteVideCompris"/> donne au texte vide la ligne qu'il
+    /// aurait, où le curseur se pose ; le dessin n'en a que faire.
     /// </summary>
-    private (List<MorceauPose> Poses, List<TraitPose> Traits) Disposer(
-        MetriquesAvalonia metriques, Compositeur.IMetriques composition)
+    private (List<MorceauPose> Poses, List<TraitPose> Traits, List<LignePosee> Lignes, TexteMesure? Mesure) Disposer(
+        MetriquesAvalonia metriques, Compositeur.IMetriques composition, bool texteVideCompris = false)
     {
         var poses = new List<MorceauPose>();
         var traits = new List<TraitPose>();
-        if (Bloc is not { } bloc) return (poses, traits);
-        if (Mesurer(composition) is not { } mesure) return (poses, traits);
+        var posees = new List<LignePosee>();
+        if (Bloc is not { } bloc) return (poses, traits, posees, null);
+        if (Mesurer(composition, texteVideCompris) is not { } mesure) return (poses, traits, posees, null);
 
         // Le calage vertical vient du noyau, comme la découpe en lignes : l'export lit
         // la même fonction. Il est borné à zéro là-bas comme ici, si bien qu'un texte
@@ -141,7 +202,9 @@ public sealed class TexteCompose : ControleDeBloc
             // l'espace avant le paragraphe y est déjà entré. C'est la composition qui a
             // décidé où passer d'une colonne à l'autre, et il ne faut pas deux endroits
             // pour en décider.
-            if (ligne.Morceaux.Count == 0) continue;
+            //
+            // Une ligne sans morceau ne dessine rien, mais elle se pose : le curseur s'y
+            // met (poste N3).
 
             // Le fer vient de la LIGNE et non du bloc : il appartient au paragraphe.
             var justifiee = ligne.Fer == TextAlign.Justify && !ligne.FinDeParagraphe;
@@ -165,8 +228,9 @@ public sealed class TexteCompose : ControleDeBloc
 
             // Tous les morceaux d'une ligne se calent sur la même ligne de base,
             // celle du plus grand style : c'est ce qui empêche un mot en gros
-            // corps de flotter au-dessus de ses voisins.
-            var montee = 0.0;
+            // corps de flotter au-dessus de ses voisins. Une ligne sans morceau a la
+            // hauteur naturelle du style commun : elle en prend la montée.
+            var montee = ligne.Morceaux.Count == 0 ? metriques.Montee(mesure.Commun) : 0.0;
             foreach (var morceau in ligne.Morceaux)
             {
                 montee = Math.Max(montee, metriques.Montee(morceau.Style));
@@ -174,6 +238,7 @@ public sealed class TexteCompose : ControleDeBloc
 
             var haut = bloc.PaddingTop + descente + ligne.Haut;
             var ligneDeBase = haut + (ligne.Avance - ligne.Naturelle) / 2 + montee;
+            posees.Add(new LignePosee(ligne, rang, origine, haut, ligneDeBase, decalages));
 
             for (var m = 0; m < ligne.Morceaux.Count; m++)
             {
@@ -208,6 +273,160 @@ public sealed class TexteCompose : ControleDeBloc
             }
         }
 
-        return (poses, traits);
+        return (poses, traits, posees, mesure);
     }
+}
+
+/// <summary>
+/// La géométrie d'un texte posé (poste N3) : ses lignes posées, et le passage d'une position
+/// du texte à un point du bloc, et retour — le curseur, le clic, la sélection. Tout est dans
+/// le repère du bloc non tourné, colonnes, retraits, fer, justification et calage vertical
+/// compris ; l'abscisse dans la ligne vient du noyau (<see cref="Compositeur.Abscisse"/>,
+/// <see cref="Compositeur.PositionLaPlusProche"/>), mesurée à la règle même du dessin.
+/// </summary>
+public sealed class GeometrieDuTexte
+{
+    private readonly StyleEffectif _commun;
+    private readonly string _texte;
+    private readonly Compositeur.IMetriques _metriques;
+    private readonly double _gauche;
+    private readonly double _largeurDeColonne;
+    private readonly double _pas;
+
+    /// <summary>L'étendue de chaque colonne qui porte du texte, calculée au premier clic.</summary>
+    private List<(int Colonne, double Gauche, double Droite)>? _colonnes;
+
+    internal GeometrieDuTexte(
+        IReadOnlyList<TexteCompose.LignePosee> lignes, StyleEffectif commun, string texte,
+        double paddingLeft, double largeur, Colonnage colonnes, Compositeur.IMetriques metriques)
+    {
+        Lignes = lignes;
+        _commun = commun;
+        _texte = texte;
+        _metriques = metriques;
+        _gauche = paddingLeft;
+        _largeurDeColonne = colonnes.Largeur(largeur);
+        _pas = colonnes.Pas(largeur);
+    }
+
+    /// <summary>Les lignes posées, dans l'ordre du texte ; jamais aucune : un texte vide en a une.</summary>
+    public IReadOnlyList<TexteCompose.LignePosee> Lignes { get; }
+
+    /// <summary>
+    /// La ligne qui porte la position <paramref name="index"/>, ramenée dans le texte : la
+    /// dernière qui commence avant elle ou sur elle. Une position où une ligne est renvoyée
+    /// est le début de la suivante ; une position dans un « \r\n » appartient à la ligne
+    /// qu'il ferme.
+    /// </summary>
+    public TexteCompose.LignePosee LigneDe(int index)
+    {
+        index = Math.Clamp(index, 0, _texte.Length);
+        var trouvee = Lignes[0];
+        foreach (var ligne in Lignes)
+        {
+            if (ligne.Ligne.Debut > index) break;
+            trouvee = ligne;
+        }
+
+        return trouvee;
+    }
+
+    /// <summary>
+    /// Le point d'insertion placé avant le caractère <paramref name="index"/> : son
+    /// abscisse, et la ligne de base de sa ligne (<see cref="LigneDe"/>). Une position hors
+    /// du texte s'y ramène ; une position au milieu d'une paire de substitution, au début de
+    /// la paire.
+    /// </summary>
+    public Point PointDe(int index)
+    {
+        var posee = LigneDe(index);
+        var x = Compositeur.Abscisse(
+            posee.Ligne, posee.Decalages, Math.Clamp(index, 0, _texte.Length), _texte, _commun, _metriques);
+        return new Point(posee.Origine + x, posee.LigneDeBase);
+    }
+
+    /// <summary>
+    /// La position du texte la plus proche de <paramref name="point"/> : la colonne la plus
+    /// proche parmi celles qui portent du texte, puis, dans cette colonne, la ligne la plus
+    /// proche, puis, sur cette ligne, la position la plus proche de l'abscisse
+    /// (<see cref="Compositeur.PositionLaPlusProche"/>). Un point à égale distance de deux
+    /// colonnes ou de deux lignes va à la première. La bande d'une ligne va de son sommet au
+    /// bas de son avance, et contient sa ligne de base même quand un interligne serré l'en
+    /// fait sortir ; l'étendue d'une colonne contient ce que ses lignes dépassent, de leur
+    /// fer ou de leurs blancs pendants. Si bien que <c>IndexSous(PointDe(i)) == i</c> pour
+    /// toute position qui désigne un caractère.
+    /// </summary>
+    public int IndexSous(Point point)
+    {
+        // La colonne : la plus proche du point en abscisse.
+        var colonne = -1;
+        var meilleure = double.PositiveInfinity;
+        foreach (var (rang, gauche, droite) in _colonnes ??= Colonnes())
+        {
+            var distance = Distance(point.X, gauche, droite);
+            if (distance < meilleure)
+            {
+                meilleure = distance;
+                colonne = rang;
+            }
+        }
+
+        // La ligne : la plus proche du point en ordonnée, dans cette colonne.
+        var choisie = Lignes[0];
+        meilleure = double.PositiveInfinity;
+        foreach (var posee in Lignes)
+        {
+            if (posee.Ligne.Colonne != colonne) continue;
+            var haut = Math.Min(posee.Haut, posee.LigneDeBase);
+            var bas = Math.Max(posee.Haut + posee.Ligne.Avance, posee.LigneDeBase);
+            var distance = Distance(point.Y, haut, bas);
+            if (distance < meilleure)
+            {
+                meilleure = distance;
+                choisie = posee;
+            }
+        }
+
+        return Compositeur.PositionLaPlusProche(
+            choisie.Ligne, choisie.Decalages, point.X - choisie.Origine, _texte, _commun, _metriques);
+    }
+
+    /// <summary>
+    /// L'étendue de chaque colonne qui porte du texte : sa place dans le bloc, et ce que ses
+    /// lignes en dépassent.
+    /// </summary>
+    private List<(int Colonne, double Gauche, double Droite)> Colonnes()
+    {
+        var colonnes = new List<(int, double, double)>();
+        foreach (var groupe in Lignes.GroupBy(l => l.Ligne.Colonne))
+        {
+            var debut = _gauche + groupe.Key * _pas;
+            var fin = debut + _largeurDeColonne;
+            foreach (var posee in groupe)
+            {
+                var (gauche, droite) = Etendue(posee);
+                debut = Math.Min(debut, gauche);
+                fin = Math.Max(fin, droite);
+            }
+
+            colonnes.Add((groupe.Key, debut, fin));
+        }
+
+        return colonnes;
+    }
+
+    /// <summary>
+    /// De quoi la ligne s'étend en abscisse : sa place entre ses retraits, et ce qu'elle en
+    /// dépasse — un fer qui la décale à gauche, des blancs pendants à droite.
+    /// </summary>
+    private (double Gauche, double Droite) Etendue(TexteCompose.LignePosee posee)
+    {
+        var bord = _gauche + posee.Ligne.Retrait;
+        var bout = posee.Origine + Compositeur.Abscisse(
+            posee.Ligne, posee.Decalages, posee.Ligne.Fin, _texte, _commun, _metriques);
+        return (Math.Min(bord, posee.Origine), Math.Max(bord + posee.Ligne.Disponible, bout));
+    }
+
+    private static double Distance(double valeur, double debut, double fin) =>
+        valeur < debut ? debut - valeur : valeur > fin ? valeur - fin : 0;
 }
