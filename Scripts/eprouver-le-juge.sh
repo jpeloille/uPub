@@ -1749,11 +1749,50 @@ saboter "la planche (I4) décroche un repère du bord où il vient de s'aimanter
 # construits une fois par sorte de bloc et gardés. Reconstruits à chaque sélection, ils
 # figeaient la pression : c'est la cause du poste. Le chronomètre la verrait sur une machine
 # calme ; le compte des champs la voit sur toutes.
+#
+# Repris à la relecture du 26 octobre 2026. Le garde-fou attendu était « Q23-selection ou
+# PressionTests » : le chronomètre en est, et la recette le joue. Sous une charge de 18 sur
+# vingt cœurs, il tombe aussi sur le code juste — médiane de 104 à 181 ms sur un bloc,
+# deux exécutions sur trois —, et il attrapait ainsi deux sabotages qui ne changent rien au
+# temps : le juge les comptait pris. Le garde-fou attendu nomme désormais les tests qui
+# comptent, et non le chronomètre ni la recette qui l'embarque. Pour celui-ci, les tests de
+# la barre en sont : le juge ne nomme que les quatre premiers tests tombés, et ceux de la
+# barre, qui tombent aussi et ne lisent pas l'horloge, passent avant PressionTests.
 saboter "les réglages du bloc (Q23) se reconstruisent à chaque sélection" \
     MyPublisher/Views/GabaritsGardes.cs \
     'if (gabarit is not null && !_construits.TryGetValue(gabarit, out montre))' \
     'if (gabarit is not null)' \
-    'Q23-selection|PressionTests'
+    'PressionTests\.Les_reglages_du_bloc|BarreContextuelleTests'
+
+saboter "les réglages du bloc (Q23) d'une autre sorte restent visibles" \
+    MyPublisher/Views/GabaritsGardes.cs \
+    'if (!ReferenceEquals(reglages, montre)) reglages.IsVisible = false;' \
+    '' \
+    'PressionTests\.(Les_reglages_du_bloc|Un_champ_masque)'
+
+saboter "les réglages gardés (Q23) restent liés au bloc d'avant" \
+    MyPublisher/Views/GabaritsGardes.cs \
+    'montre.DataContext = bloc;
+        montre.IsVisible = true;' \
+    'montre.IsVisible = true;' \
+    'PressionTests\.Les_reglages_du_bloc|BarreContextuelleTests'
+
+saboter "le sélecteur de couleur (Q23) reste ouvert quand le bloc change sans clic" \
+    MyPublisher/Views/BarreContextuelle.axaml.cs \
+    'if (e.Property == GabaritsGardes.BlocProperty) FermerLaCouleur();' \
+    '' \
+    'BarreContextuelleTests\.Changer_de_bloc_sans_le_pointeur'
+
+saboter "le sélecteur de couleur refermé (Q23) rend le focus à un champ gardé de la barre" \
+    MyPublisher/Views/BarreContextuelle.axaml.cs \
+    'focus.ClearFocus();
+        }
+
+        (DataContext as MainWindowViewModel)?.CommitEdit();' \
+    '}
+
+        (DataContext as MainWindowViewModel)?.CommitEdit();' \
+    'BarreContextuelleTests'
 
 # Un motif qui ne désigne aucun sabotage ne prouve rien. « eprouver-le-juge.sh I4 » sortait
 # en 0 sur « 0 sabotages, 0 attrapés », quand les intitulés de la planche ne portaient pas

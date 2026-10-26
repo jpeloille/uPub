@@ -330,6 +330,46 @@ public class BarreContextuelleTests
         Assert.False(vm.CanUndo, "deux gestes, plus de deux pas");
     }
 
+    [AvaloniaFact]
+    public void Changer_de_bloc_sans_le_pointeur_referme_aussi_le_selecteur()
+    {
+        // Écrit à la relecture de Q23, le 26 octobre 2026. Le test précédent change de bloc
+        // au pointeur, et le premier clic referme le volet de lui-même : il passait sans
+        // l'écoute du bloc de « ReglagesDuBloc », que Q23 a reprise de « ContentControl ».
+        // C'est elle qui le referme quand la sélection change sans clic — un raccourci, une
+        // annulation, la liste des blocs. Sans elle, le volet restait ouvert sur le bloc
+        // d'après, et la transaction de la couleur engloutissait le geste suivant.
+        var a = Texte("A", 60, 60);
+        var b = Texte("B", 60, 200);
+        var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(a, b));
+        vm.SelectOnly(a);
+        Rendu.Battre();
+        var avant = DocumentSerializer.ToJson(vm.Document);
+
+        Rendu.Cliquer(Trouver<Button>(Barre(fenetre), "CouleurDuTexte"));
+        Rendu.Cliquer(SelecteurOuvert(fenetre).GetVisualDescendants().OfType<Button>().Single(x => x.Tag is EmplacementDeCouleur.Accent2));
+        Assert.Equal("scheme:accent2", a.Foreground);
+
+        vm.SelectOnly(b);
+        Rendu.Battre();
+        Assert.False(Assert.IsType<Flyout>(Trouver<Button>(Barre(fenetre), "CouleurDuTexte").Flyout).IsOpen,
+            "le sélecteur est resté ouvert sur le bloc d'après");
+
+        // Un geste du modèle de vue, qui ouvre et ferme sa propre transaction : il fait son pas.
+        vm.BeginEdit();
+        b.Bold = true;
+        vm.CommitEdit();
+
+        TextFrame Bloc(string nom) => vm.CurrentPage!.Frames.OfType<TextFrame>().Single(x => x.Name == nom);
+        vm.UndoCommand.Execute(null);
+        Rendu.Battre();
+        Assert.Equal(("scheme:accent2", false), (Bloc("A").Foreground, Bloc("B").Bold));
+        vm.UndoCommand.Execute(null);
+        Rendu.Battre();
+        Assert.Equal(avant, DocumentSerializer.ToJson(vm.Document));
+        Assert.False(vm.CanUndo, "deux gestes, plus de deux pas");
+    }
+
     /// <summary>Le sélecteur de couleur que la vignette de la barre vient d'ouvrir, dans sa racine à lui.</summary>
     private static SelecteurDeCouleur SelecteurOuvert(Window fenetre)
     {
