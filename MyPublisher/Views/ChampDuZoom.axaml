@@ -1,0 +1,121 @@
+<!--
+    Le champ du zoom de la barre principale (poste N4), entre « Zoom arrière » et « Zoom
+    avant ». Un contrôle à part, dans son propre fichier, comme la barre contextuelle et
+    l'entrée de page : il a son code, et la fenêtre n'a qu'à le poser.
+
+    Tant qu'il n'a pas le focus, il a l'allure du libellé de la maquette, qui fait foi pour
+    les tailles : « 86 % » au corps 12, sur 44 px, centré, en chiffres tabulaires, sans fond
+    ni bord. Un clic y entre, tout le texte pris, et déroule la liste de Publisher (p. 8, 24) :
+    Page entière, Objets sélectionnés, puis de 400 à 10 %. Au focus, il prend le bord
+    d'accent des champs de l'apparence. On y tape un pourcentage : il part à Entrée ; Échap
+    y renonce et rend la planche ; les flèches parcourent la liste, Alt + flèche la déroule
+    ou la replie. Ce qu'on y tape et ce qu'on y choisit se lisent de même
+    (MainWindowViewModel.SaisirLeZoom).
+
+    Le champ n'ouvre aucune transaction : la barre principale n'en ouvre pas, et le zoom
+    n'est pas le document. Les entrées de la liste ne prennent pas le focus : le champ le
+    garde pendant qu'on choisit, et rien ne le lui retire entre la pression et le clic.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:MyPublisher.ViewModels"
+             xmlns:sys="using:System"
+             x:Class="MyPublisher.Views.ChampDuZoom"
+             x:DataType="vm:MainWindowViewModel">
+
+    <UserControl.Styles>
+        <!-- Au repos, le libellé de la maquette : « font-size: 12px; width: 44px; text-align:
+             center; font-variant-numeric: tabular-nums ». La hauteur est celle d'un champ de
+             l'apparence, 26 px, centrée dans la barre comme le libellé l'était : le texte
+             tombe à la même ligne. Le bord est là, transparent, pour que le focus ne fasse
+             pas bouger le texte d'un pixel en le dessinant. -->
+        <Style Selector="TextBox#SaisieDuZoom">
+            <Setter Property="Width" Value="44"/>
+            <Setter Property="Height" Value="26"/>
+            <Setter Property="MinWidth" Value="0"/>
+            <Setter Property="MinHeight" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontFeatures" Value="+tnum"/>
+            <Setter Property="TextAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Foreground" Value="{StaticResource Texte}"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="5"/>
+            <Setter Property="SelectionBrush" Value="{StaticResource Accent}"/>
+            <Setter Property="SelectionForegroundBrush" Value="{StaticResource Blanc}"/>
+        </Style>
+        <!-- Fluent repeint le fond et le bord au survol et au focus, sur l'élément du gabarit :
+             au survol, rien ne change ; au focus, le bord d'accent des champs de l'apparence
+             (« TextBox.champ:focus »), sur leur fond blanc. -->
+        <Style Selector="TextBox#SaisieDuZoom:pointerover /template/ Border#PART_BorderElement">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+        </Style>
+        <Style Selector="TextBox#SaisieDuZoom:focus /template/ Border#PART_BorderElement">
+            <Setter Property="Background" Value="{StaticResource Blanc}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource Accent}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+        <Style Selector="TextBox#SaisieDuZoom:pointerover, TextBox#SaisieDuZoom:focus">
+            <Setter Property="Foreground" Value="{StaticResource Texte}"/>
+        </Style>
+
+        <!-- La liste : le blanc et le bord des champs, rayon 6 ; une entrée par ligne, au corps
+             12, grise au survol comme une ligne de « Blocs de la page ». L'entrée que les
+             flèches désignent — celle que le champ montre — porte la classe « courante ». -->
+        <Style Selector="Border.listeDuZoom">
+            <Setter Property="Background" Value="{StaticResource Blanc}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BordChamp}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Padding" Value="4"/>
+            <Setter Property="MinWidth" Value="140"/>
+        </Style>
+        <Style Selector="Button.entreeDuZoom">
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="MinHeight" Value="0"/>
+            <Setter Property="Height" Value="24"/>
+            <Setter Property="Padding" Value="8,0"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource Commande}"/>
+        </Style>
+        <Style Selector="Button.entreeDuZoom:pointerover /template/ ContentPresenter#PART_ContentPresenter,
+                         Button.entreeDuZoom:pressed /template/ ContentPresenter#PART_ContentPresenter,
+                         Button.entreeDuZoom.courante /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{StaticResource Survol}"/>
+            <Setter Property="Foreground" Value="{StaticResource Commande}"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Panel>
+        <TextBox Name="SaisieDuZoom" ToolTip.Tip="Zoom — tapez un pourcentage puis Entrée, ou choisissez dans la liste"/>
+
+        <!-- Sous le champ. Un clic ailleurs la replie et va où il va ; un clic dans le champ
+             la laisse. Elle ne prend pas le focus en s'ouvrant : on tape pendant qu'elle est
+             là. -->
+        <Popup Name="ListeDuZoom" PlacementTarget="{Binding #SaisieDuZoom}" Placement="Bottom"
+               IsLightDismissEnabled="True" OverlayDismissEventPassThrough="True"
+               OverlayInputPassThroughElement="{Binding #SaisieDuZoom}"
+               TakesFocusFromNativeControl="False">
+            <Border Classes="listeDuZoom">
+                <ItemsControl Name="EntreesDuZoom" ItemsSource="{Binding ZoomsProposes}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="sys:String">
+                            <Button Classes="entreeDuZoom" Content="{Binding}" Click="SurEntreeChoisie"
+                                    AttachedToVisualTree="SurEntreeMontree"/>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </Border>
+        </Popup>
+    </Panel>
+</UserControl>

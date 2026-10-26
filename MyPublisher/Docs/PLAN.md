@@ -107,7 +107,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **N1** | Le banc des gestes | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 1 |
 | **N2** | Mettre en forme une plage, dans le noyau | **100 %** | `MiseEnForme`, fonctions pures du noyau sur le modèle de `Recalage` : `Lire` (la valeur commune de chaque propriété, nulle si mixte, police et couleur comparées résolues par la charte), `Allume`, `Poser`, `Basculer` (Gras, Italique, Souligné ; retirer pose la valeur éteinte, `Bold = false` sur un bloc gras) et `Retirer` (`Ctrl+Espace`), sur les fragments et, à l'échelle du paragraphe, sur les écarts (`Basculer` d'un fer, `Paragraphes` d'une sélection) ; une pose coupe aux bornes par `Clone`, ne tranche « le dernier l'emporte » que dans la plage, rend nulle une valeur égale au bloc comparée brute (`scheme:accent1`), recolle les voisins identiques et retire ce qui ne dit plus rien ; l'écriture passe par les opérations de la collection, sans fragment modifié sur place, et une pose sans changement à l'œil n'écrit rien. `Recalage.ParagrapheDe` et `NombreDeParagraphes` publics ; `StyleEffectif.Etendue` et `ParagrapheEffectif.Etendue` partagées avec la composition. Rien de l'application ne l'appelle encore : R6 et R7. Vingt-six tests purs, dont deux balayages de deux mille poses ; recette dans `Scripts/recettes/`, deux sabotages au juge. Relecture et juge après fusion |
 | **N3** | Chaque morceau composé sait d'où il vient | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 1 |
-| **N4** | L'affichage au clavier | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 1 |
+| **N4** | L'affichage au clavier | **100 %** | `F9` bascule entre l'affichage courant et la taille réelle, autour du centre de la sélection — ou du milieu de la zone visible —, qui garde sa place à l'écran ; le second `F9` rend l'affichage d'avant, zoom et défilement, tant qu'aucun autre geste n'a changé le zoom. `Ctrl+Maj+L` joue « Page entière ». La valeur du zoom de la barre principale est un champ (`Views/ChampDuZoom.axaml`) à l'allure du libellé de la maquette tant qu'il n'a pas le focus : un clic y entre et déroule la liste de Publisher — Page entière, Objets sélectionnés, de 400 à 10 % — ; un pourcentage part à Entrée, Échap renonce et rend la planche, un zoom hors de 10 à 800 % est refusé avec un message ; aucune transaction. « Limites et repères » (`Ctrl+Maj+O`) est la case « Repères » d'avant ; « Repères de lignes de base » (`Ctrl+F7`), `ShowBaselines`, ne masque que les lignes de base. Le menu Affichage montre ses gestes. Le bureau (GNOME 50.1 sous Wayland, sans KDE) ne prend aucune des quatre touches — seulement `Alt+F7`, `Ctrl+Alt+F7` et `Ctrl+Alt+F9`. Dix tests ; relecture et juge après fusion. Recette dans `Scripts/recettes/` |
 | **N5** | Quitter la saisie d'un clic qui agit | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 2 |
 | **N6** | Les raccourcis de la fenêtre laissent la touche au champ | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 2 |
 | **N7** | Mesurer l'écart de la première voie, et s'arrêter | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 2. **Arrêt** : la voie de R7 revient au propriétaire |
@@ -5722,6 +5722,54 @@ avant : que ni GNOME ni KDE ne prennent `F9`, `Ctrl+F7`, `Ctrl+Maj+L` ou `Ctrl+M
 Fichiers : `MainWindow.axaml` (barre principale, menu Affichage, liaisons), `PageCanvas.axaml`,
 `PageCanvas.Navigation.cs`, `MainWindowViewModel.Affichage.cs` (neuf), README (Affichage).
 Effort : faible.
+
+*Livré le 26 octobre 2026*, dans la salve Saisie 1 ; la relecture adversariale vient après la
+fusion. **Le bureau, vérifié avant d'écrire** (`gsettings list-recursively`, schémas des
+extensions compris ; pas de `~/.config/kglobalshortcutsrc`, la machine n'a pas KDE) : GNOME
+50.1 sous Wayland ne prend ni `F9`, ni `Ctrl+F7`, ni `Ctrl+Maj+L`, ni `Ctrl+Maj+O`. Il prend
+leurs voisines — `Alt+F7` (déplacer la fenêtre), `Ctrl+Alt+F7` et `Ctrl+Alt+F9` (changer de
+session) —, que le poste ne déclare pas ; `Ctrl+Maj+O` n'est qu'un raccourci du terminal
+Ptyxis, qui ne vaut que dans sa fenêtre. Le poste écrit, outre les fichiers nommés, le champ
+du zoom en contrôle à part (`Views/ChampDuZoom.axaml` et son code), inscrit à la liste des
+vues de la recette I1 ; la classe `AffichageTests` (dix tests) ; deux sabotages au juge — `F9`
+qui oublie l'affichage d'avant, et le second `F9` qui rend le zoom sans le défilement. Le
+modèle de vue décide — quel zoom, quel affichage `F9` rendra — et la planche calcule, seule à
+connaître sa zone et son défilement : elle répond à deux événements, `ZoomDemande` et
+`ObjetsSelectionnesDemandes`, auxquels elle s'abonne dans `PageCanvas.Navigation.cs` sans
+toucher au fichier principal de la planche (règle 16). Le README dit les quatre touches au
+sous-tableau « Affichage », le champ dans « Interface », et « Limites et repères » là où il
+disait *Affichage ▸ Repères*.
+
+*Ce que l'implémentation a appris.* Les liaisons de la fenêtre passent avant `OnKeyDown`, et
+une liaison dont la commande s'exécute garde la touche : `Ctrl+Maj+O` n'arrive jamais à
+l'aiguillage qui lit `Ctrl+O` sans regarder `Maj` et ouvrirait un document — mesuré en
+remplaçant l'ouverture par une marque, que le test n'a pas vue. Les quatre commandes
+s'exécutent donc toujours. Rendre le défilement d'avant ne se prouve pas sur un aller-retour
+immobile : zoomer en arrière autour du même point rend le même défilement, au pixel près, et
+le sabotage qui l'oublie passait ; le test fait défiler la planche entre les deux `F9`.
+
+*Choisi sans certitude* :
+- `F9` en taille réelle sans rien à rendre ne fait rien et le dit à la barre d'état (« Déjà en
+  taille réelle. ») ; l'affichage retenu s'oublie dès qu'un autre geste change le zoom — la
+  molette, la loupe, un bouton, le champ, « Page entière » —, pas quand on fait seulement
+  défiler ;
+- le point qui garde sa place est le centre de la sélection quand il est en vue ; hors de la
+  vue, il vient au milieu de la zone ; un bloc masqué (I8) ne compte pas, ni pour `F9` ni pour
+  « Objets sélectionnés » ;
+- le champ lit « 150 », « 150 % », « 66,5 » ou « 66.5 » ; un zoom hors des bornes est refusé,
+  non ramené à la borne ; les flèches parcourent la liste, `Alt` + flèche la déroule ou la
+  replie ; perdre le focus vaut Échap, sans rendre la planche ;
+- « Objets sélectionnés » est aussi une entrée du menu Affichage, sans touche, comme
+  « Basculer en taille réelle » (`F9`) et « Page entière » (`Ctrl+Maj+L`) ; « Taille réelle »
+  y prend la lettre d'accès `T`, « Basculer » la `C` ;
+- `ShowBaselines` est vraie à l'ouverture et n'entre pas au document ; « Limites et repères »
+  masque les lignes de base avec le reste, et les rend dans l'état de leur propre case.
+
+*Relevé, non corrigé.* Le champ montre le zoom arrondi au pourcent, comme le libellé
+d'avant : « 66,5 » tapé se relit « 67 % » — `ZoomLabel` n'est pas au poste. « Page
+entière » et « Objets sélectionnés » ne se rappellent pas comme tels : le champ montre
+ensuite le pourcentage qu'ils ont posé, et ne suit pas la fenêtre qu'on redimensionne
+(règle 5).
 
 #### N5 — Quitter la saisie d'un clic qui agit *(fiche 23, a8, a9)*
 
