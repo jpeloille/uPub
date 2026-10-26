@@ -153,8 +153,9 @@ d'annulation**. La case **Conserver les
 proportions**, réglage de la session et non du document, fait garder au bloc son rapport
 quand on tire un coin ou qu'on saisit sa largeur ou sa hauteur ; les poignées de côté ne le
 gardent pas, et `Maj` pendant le glissé fait l'inverse de la case. *Styles* et *Couleurs* portent les
-jeux du document ; *Document*, le format, les marges, la grille, les repères de règle et
-le fond de page.
+jeux du document ; *Document*, le format, les marges, la grille, les repères de règle,
+le fond de page et la **langue du document** — celle de tout texte qui n'en dit pas
+d'autre, que la vérification orthographique lira ; elle ne change rien à ce qui s'imprime.
 
 Au pied de *Propriétés*, **Blocs de la page** montre la pile de la page, **l'avant en
 tête**, et se laisse réordonner en y tirant un bloc — un trait bleu marque où il se
@@ -540,6 +541,12 @@ Le souligné, `Underline`, s'écrit sur le bloc et sur chaque portion : `false` 
 réglages — `{ "Line": "Dotted", "Double": false, "Thick": true, "WordsOnly": false }`, le
 trait étant l'un de `Solid`, `Dotted`, `Dash`, `LongDash`, `DotDash`, `DotDotDash`,
 `Wave`. Sur une portion, `null` laisse celui du bloc.
+
+Le document porte `Langue`, une étiquette BCP 47 — `fr-FR` pour un document vierge ou
+écrit avant qu'elle n'existe, jamais la langue de la machine. Un bloc de texte et chaque
+portion portent aussi `Langue`, où `null` laisse celle du bloc, puis celle du document.
+Une étiquette inconnue reste telle qu'elle est écrite. L'import d'un `.pub` lit la langue
+que libmspub donne à chaque fragment ; rien de ce qui se dessine n'en dépend.
 
 Tout bloc porte `Visible`, `true` par défaut ; à `false`, il n'est ni dessiné ni
 exporté, ni rien de ce qu'il porte s'il est un groupe. Une case de tableau ne le porte

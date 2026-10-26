@@ -1,6 +1,7 @@
 {
   "FormatVersion": 5,
   "Title": "Recette A5 — format de page libre",
+  "Langue": "fr-FR",
   "PageWidth": 283.46456692913387,
   "PageHeight": 566.9291338582677,
   "MarginLeft": 28.34645669291339,
@@ -75,6 +76,7 @@
           "Italic": false,
           "Underline": false,
           "Foreground": "#FF000000",
+          "Langue": null,
           "Spans": [],
           "Align": "Left",
           "LineHeight": 1.25,

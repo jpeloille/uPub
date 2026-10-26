@@ -62,6 +62,26 @@ public partial class Document : ObservableObject
     [property: JsonPropertyOrder(20)]
     private string _title = "Sans titre";
 
+    /// <summary>
+    /// La langue du document, une étiquette BCP 47 (poste N9) : celle de tout bloc qui n'en
+    /// dit pas. Un document vierge est en <see cref="Langues.ParDefaut"/>, jamais dans la
+    /// langue de la machine ; un document parti d'un modèle prend celle du modèle, qu'il
+    /// relit. Une clé additive, au précédent de <c>Columns</c> : <c>FormatVersion</c> reste
+    /// à 5, et un fichier qui ne l'écrit pas est en français.
+    ///
+    /// Jamais nulle ni vide, comme le jeu de couleurs : le sérialiseur passe par le setter,
+    /// et un « null » écrit à la main y arriverait. Une étiquette inconnue reste telle
+    /// qu'elle est écrite.
+    /// </summary>
+    [ObservableProperty]
+    [property: JsonPropertyOrder(25)]
+    private string _langue = Langues.ParDefaut;
+
+    partial void OnLangueChanged(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) Langue = Langues.ParDefaut;
+    }
+
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(MarginBoxWidth))]
     [property: JsonPropertyOrder(30)]

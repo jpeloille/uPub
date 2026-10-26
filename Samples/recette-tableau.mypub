@@ -1,6 +1,7 @@
 {
   "FormatVersion": 5,
   "Title": "Recette C9 - le bloc tableau",
+  "Langue": "fr-FR",
   "PageWidth": 595.28,
   "PageHeight": 841.89,
   "MarginLeft": 56.69,
@@ -54,6 +55,7 @@
           "Italic": false,
           "Underline": false,
           "Foreground": "#FF1A1A1A",
+          "Langue": null,
           "Spans": [],
           "Align": "Left",
           "LineHeight": 1,
@@ -562,7 +564,8 @@
                   "Italic": null,
                   "Underline": null,
                   "Foreground": null,
-                  "BaselineShift": 0
+                  "BaselineShift": 0,
+                  "Langue": null
                 }
               ],
               "Align": "Left",

@@ -27,6 +27,14 @@ public readonly record struct StyleDeLaPlage
     public Souligne? Underline { get; init; }
     public string? Foreground { get; init; }
     public double? BaselineShift { get; init; }
+
+    /// <summary>
+    /// La langue (poste N9), lue brute : celle que les fragments écrivent sur toute la plage ;
+    /// nulle quand ils n'en écrivent pas qu'une — deux langues mêlées, ou la plage qui s'en
+    /// remet au bloc, dont <see cref="MiseEnForme"/> ne connaît pas la langue. La langue d'un
+    /// caractère se résout par <see cref="Langues.DuCaractere"/>.
+    /// </summary>
+    public string? Langue { get; init; }
 }
 
 /// <summary>
@@ -141,10 +149,13 @@ public static class MiseEnForme
     public static StyleDeLaPlage Lire(
         string texte, IReadOnlyList<StyleSpan> fragments, StyleEffectif commun, Plage plage, Charte charte)
     {
-        var styles = Styles(texte, fragments, commun, plage);
+        var segments = Segments(texte, fragments, plage);
+        var styles = segments.Select(surcharges => surcharges.Sur(commun)).ToList();
+        var langue = segments[0].Langue;
 
         return new StyleDeLaPlage
         {
+            Langue = segments.All(surcharges => surcharges.Langue == langue) ? langue : null,
             FontFamily = Commune(styles, s => s.FontFamily, charte.Police),
             FontSize = Commune(styles, s => s.FontSize),
             Bold = Commune(styles, s => s.Bold),
@@ -221,12 +232,12 @@ public static class MiseEnForme
     /// <summary>
     /// Rend à la plage le style du bloc — <c>Ctrl+Espace</c> : plus aucun fragment n'y dit
     /// quoi que ce soit, décalage de ligne de base compris. Ce qui dépasse de la plage garde
-    /// le sien. Le style du bloc est demandé pour juger du changement : une plage qui ne
+    /// le sien. La langue reste (poste N9) : elle n'est pas du style. Le style du bloc est demandé pour juger du changement : une plage qui ne
     /// s'en écarte qu'en apparence — un fragment qui répète le bloc — n'a rien à rendre.
     /// </summary>
     public static bool Retirer(string texte, IList<StyleSpan> fragments, StyleEffectif commun, Plage plage) =>
         LesFragments.Appliquer(fragments, texte.Length, plage,
-            _ => default,
+            surcharges => surcharges.SansLeStyle(),
             surcharges => surcharges.Normaliser(commun));
 
     // -------------------------------------------------------------- les paragraphes
@@ -324,18 +335,25 @@ public static class MiseEnForme
 
     /// <summary>Les styles effectifs, bruts, de chaque segment de la plage ; celui de la frappe pour une plage vide.</summary>
     private static IReadOnlyList<StyleEffectif> Styles(
-        string texte, IReadOnlyList<StyleSpan> fragments, StyleEffectif commun, Plage plage)
+        string texte, IReadOnlyList<StyleSpan> fragments, StyleEffectif commun, Plage plage) =>
+        Segments(texte, fragments, plage).Select(surcharges => surcharges.Sur(commun)).ToList();
+
+    /// <summary>
+    /// Ce que disent les fragments sur chaque segment de la plage ; sur le caractère de la
+    /// frappe pour une plage vide, et rien — le style du bloc — dans un texte vide.
+    /// </summary>
+    private static List<Surcharges> Segments(string texte, IReadOnlyList<StyleSpan> fragments, Plage plage)
     {
         var (debut, fin) = Borner(plage, texte.Length);
         if (debut == fin)
         {
             var ancre = Recalage.Ancre(texte, new Edition(debut, 0, 1));
-            if (ancre < 0) return [commun];
+            if (ancre < 0) return [default];
             (debut, fin) = (ancre, ancre + 1);
         }
 
         return LesFragments.Segments(fragments, texte.Length, debut, fin)
-            .Select(segment => segment.Valeurs.Sur(commun)).ToList();
+            .Select(segment => segment.Valeurs).ToList();
     }
 
     private static T? Commune<TStyle, T>(IReadOnlyList<TStyle> styles, Func<TStyle, T> valeur) where T : struct
@@ -378,22 +396,23 @@ public static class MiseEnForme
     /// </summary>
     private readonly record struct Surcharges(
         string? FontFamily, double? FontSize, bool? Bold, bool? Italic, Souligne? Underline,
-        string? Foreground, double BaselineShift)
+        string? Foreground, double BaselineShift, string? Langue)
     {
         public static Surcharges De(StyleSpan f) =>
-            new(f.FontFamily, f.FontSize, f.Bold, f.Italic, f.Underline, f.Foreground, f.BaselineShift);
+            new(f.FontFamily, f.FontSize, f.Bold, f.Italic, f.Underline, f.Foreground, f.BaselineShift, f.Langue);
 
         public StyleSpan Fragment(int debut, int fin) => new()
         {
             Start = debut, Length = fin - debut, FontFamily = FontFamily, FontSize = FontSize, Bold = Bold,
             Italic = Italic, Underline = Underline, Foreground = Foreground, BaselineShift = BaselineShift,
+            Langue = Langue,
         };
 
         /// <summary>Ce que disent ces surcharges recouvertes par <paramref name="dessus"/>, qui l'emporte.</summary>
         public Surcharges Puis(Surcharges dessus) => new(
             dessus.FontFamily ?? FontFamily, dessus.FontSize ?? FontSize, dessus.Bold ?? Bold,
             dessus.Italic ?? Italic, dessus.Underline ?? Underline, dessus.Foreground ?? Foreground,
-            dessus.BaselineShift != 0 ? dessus.BaselineShift : BaselineShift);
+            dessus.BaselineShift != 0 ? dessus.BaselineShift : BaselineShift, dessus.Langue ?? Langue);
 
         /// <summary>Le style d'un caractère que ces surcharges recouvrent, sur le style du bloc.</summary>
         public StyleEffectif Sur(StyleEffectif commun) => new(
@@ -404,17 +423,29 @@ public static class MiseEnForme
         public Surcharges Poser(StyleDeLaPlage style) => new(
             style.FontFamily ?? FontFamily, style.FontSize ?? FontSize, style.Bold ?? Bold,
             style.Italic ?? Italic, style.Underline ?? Underline, style.Foreground ?? Foreground,
-            style.BaselineShift ?? BaselineShift);
+            style.BaselineShift ?? BaselineShift, style.Langue ?? Langue);
 
         /// <summary>
         /// Nulle, toute valeur égale à celle du bloc — comparée brute. Ce qui reste dit
         /// exactement ce que le caractère a de différent du bloc, et deux caractères qui se
         /// dessinent pareil ont les mêmes surcharges normalisées.
+        ///
+        /// Sauf la langue (poste N9), qui reste telle que le fragment l'écrit : le style
+        /// commun n'en porte pas — la composition ne la voit pas —, et un fragment qui écrit
+        /// la langue de son bloc la garde quand le bloc en change. Deux caractères de même
+        /// dessin et de langues différentes ont donc des surcharges différentes : ils ne se
+        /// recollent pas.
         /// </summary>
         public Surcharges Normaliser(StyleEffectif commun) => new(
             Sauf(FontFamily, commun.FontFamily), Sauf(FontSize, commun.FontSize), Sauf(Bold, commun.Bold),
             Sauf(Italic, commun.Italic), Sauf(Underline, commun.Underline), Sauf(Foreground, commun.Foreground),
-            BaselineShift.Equals(commun.BaselineShift) ? 0 : BaselineShift);
+            BaselineShift.Equals(commun.BaselineShift) ? 0 : BaselineShift, Langue);
+
+        /// <summary>
+        /// Ce que <c>Ctrl+Espace</c> laisse : la langue seule. Rendre au texte le style du
+        /// bloc ne change pas la langue dans laquelle il est écrit.
+        /// </summary>
+        public Surcharges SansLeStyle() => default(Surcharges) with { Langue = Langue };
     }
 
     /// <summary>

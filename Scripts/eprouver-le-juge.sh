@@ -2460,6 +2460,40 @@ saboter "la liste des pages (I5) se laisse vider par un Ctrl + clic" \
     'SelectionMode="Single"' \
     'I5-vignettes|VignettesDePagesTests'
 
+# N9 : l'import lit la langue de chaque fragment dans le relevé de libmspub. Oubliée, un
+# titre français d'un bloc anglais, au même style que lui, n'a plus rien à dire : son
+# fragment disparaît, et le titre passe en anglais ; ceux des cases n'ont plus de langue à
+# garder — dans les Fiches, les dix-sept titres français.
+saboter "l'import (N9) oublie la langue d'un fragment" \
+    MyPublisher.Core/Services/PubImporter.cs \
+    '                Langue = langue,' \
+    '                Langue = null,' \
+    'N9-langue|Langue(DuDocument)?Tests'
+
+# N9, le sabotage de l'étude de Publisher 98 (F2) : la langue sans son pays. « fr » n'est
+# pas « fr-FR », et les deux documents réels ne portent plus aucune des langues déclarées.
+saboter "l'import (N9) ignore le pays de la langue" \
+    MyPublisher.Core/Services/PubImporter.cs \
+    'if (style.GetValueOrDefault("fo:country") is { Length: > 0 } pays) etiquette.Append('"'"'-'"'"').Append(pays);' \
+    '' \
+    'N9-langue|Langue(DuDocument)?Tests'
+
+# N9 : un document vierge est en français, jamais dans la langue de la machine — sous
+# LC_ALL=C, il n'en aurait aucune.
+saboter "un document vierge (N9) prend la langue de la machine" \
+    MyPublisher.Core/Models/Document.cs \
+    'private string _langue = Langues.ParDefaut;' \
+    'private string _langue = System.Globalization.CultureInfo.CurrentCulture.Name;' \
+    'N9-langue|Langue(DuDocument)?Tests'
+
+# N9 : Ctrl+Espace rend à la plage le style du bloc, pas sa langue. Effacée avec le reste, un
+# mot français remis au style du bloc passerait au correcteur dans la langue du bloc.
+saboter "Ctrl+Espace (N9) efface la langue avec le style" \
+    MyPublisher.Core/Models/MiseEnForme.cs \
+    'surcharges => surcharges.SansLeStyle(),' \
+    '_ => default,' \
+    'N9-langue|Langue(DuDocument)?Tests'
+
 # Un motif qui ne désigne aucun sabotage ne prouve rien. « eprouver-le-juge.sh I4 » sortait
 # en 0 sur « 0 sabotages, 0 attrapés », quand les intitulés de la planche ne portaient pas
 # encore le code du poste : le filet passait pour éprouvé sans qu'on l'ait troué.

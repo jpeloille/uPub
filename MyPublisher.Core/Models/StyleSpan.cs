@@ -72,11 +72,21 @@ public partial class StyleSpan : ObservableObject
     [property: JsonPropertyOrder(80)]
     private double _baselineShift;
 
+    /// <summary>
+    /// La langue de la portion, une étiquette BCP 47 (poste N9) ; nulle, celle du bloc. Elle
+    /// n'entre pas dans <see cref="StyleEffectif"/> : la composition et les deux rendus ne la
+    /// voient pas (<see cref="Langues"/>). L'import d'un <c>.pub</c> la lit sur chaque
+    /// fragment de libmspub.
+    /// </summary>
+    [ObservableProperty]
+    [property: JsonPropertyOrder(90)]
+    private string? _langue;
+
     public StyleSpan Clone() => new()
     {
         Start = Start, Length = Length, FontFamily = FontFamily, FontSize = FontSize,
         Bold = Bold, Italic = Italic, Underline = Underline, Foreground = Foreground,
-        BaselineShift = BaselineShift,
+        BaselineShift = BaselineShift, Langue = Langue,
     };
 }
 

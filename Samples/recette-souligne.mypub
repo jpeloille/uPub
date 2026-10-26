@@ -1,6 +1,7 @@
 {
   "FormatVersion": 5,
   "Title": "Recette I7 — le souligné",
+  "Langue": "fr-FR",
   "PageWidth": 595.28,
   "PageHeight": 841.89,
   "MarginLeft": 56.69291338582678,
@@ -54,6 +55,7 @@
           "Italic": false,
           "Underline": false,
           "Foreground": "#FF000000",
+          "Langue": null,
           "Spans": [
             {
               "Start": 0,
@@ -64,7 +66,8 @@
               "Italic": null,
               "Underline": true,
               "Foreground": null,
-              "BaselineShift": 0
+              "BaselineShift": 0,
+              "Langue": null
             }
           ],
           "Align": "Left",
@@ -110,6 +113,7 @@
             "WordsOnly": true
           },
           "Foreground": "#FF000000",
+          "Langue": null,
           "Spans": [],
           "Align": "Left",
           "LineHeight": 1,
@@ -149,6 +153,7 @@
           "Italic": false,
           "Underline": false,
           "Foreground": "#FF000000",
+          "Langue": null,
           "Spans": [
             {
               "Start": 0,
@@ -164,7 +169,8 @@
                 "WordsOnly": false
               },
               "Foreground": null,
-              "BaselineShift": 0
+              "BaselineShift": 0,
+              "Langue": null
             }
           ],
           "Align": "Left",
@@ -210,6 +216,7 @@
             "WordsOnly": false
           },
           "Foreground": "#FF000000",
+          "Langue": null,
           "Spans": [],
           "Align": "Left",
           "LineHeight": 1,
@@ -249,6 +256,7 @@
           "Italic": false,
           "Underline": false,
           "Foreground": "#FF000000",
+          "Langue": null,
           "Spans": [
             {
               "Start": 0,
@@ -264,7 +272,8 @@
                 "WordsOnly": false
               },
               "Foreground": null,
-              "BaselineShift": 0
+              "BaselineShift": 0,
+              "Langue": null
             }
           ],
           "Align": "Left",
@@ -310,6 +319,7 @@
             "WordsOnly": false
           },
           "Foreground": "#FF000000",
+          "Langue": null,
           "Spans": [],
           "Align": "Left",
           "LineHeight": 1,
@@ -349,6 +359,7 @@
           "Italic": false,
           "Underline": false,
           "Foreground": "#FF000000",
+          "Langue": null,
           "Spans": [
             {
               "Start": 0,
@@ -364,7 +375,8 @@
                 "WordsOnly": false
               },
               "Foreground": null,
-              "BaselineShift": 0
+              "BaselineShift": 0,
+              "Langue": null
             }
           ],
           "Align": "Left",
@@ -410,6 +422,7 @@
             "WordsOnly": false
           },
           "Foreground": "#FF000000",
+          "Langue": null,
           "Spans": [],
           "Align": "Left",
           "LineHeight": 1,
@@ -449,6 +462,7 @@
           "Italic": false,
           "Underline": false,
           "Foreground": "#FF000000",
+          "Langue": null,
           "Spans": [
             {
               "Start": 0,
@@ -464,7 +478,8 @@
                 "WordsOnly": false
               },
               "Foreground": null,
-              "BaselineShift": 0
+              "BaselineShift": 0,
+              "Langue": null
             }
           ],
           "Align": "Left",
@@ -510,6 +525,7 @@
             "WordsOnly": false
           },
           "Foreground": "#FF000000",
+          "Langue": null,
           "Spans": [],
           "Align": "Left",
           "LineHeight": 1,
@@ -549,6 +565,7 @@
           "Italic": false,
           "Underline": false,
           "Foreground": "#FF000000",
+          "Langue": null,
           "Spans": [
             {
               "Start": 0,
@@ -564,7 +581,8 @@
                 "WordsOnly": false
               },
               "Foreground": null,
-              "BaselineShift": 0
+              "BaselineShift": 0,
+              "Langue": null
             }
           ],
           "Align": "Left",
@@ -610,6 +628,7 @@
             "WordsOnly": false
           },
           "Foreground": "#FF000000",
+          "Langue": null,
           "Spans": [],
           "Align": "Left",
           "LineHeight": 1,
@@ -649,6 +668,7 @@
           "Italic": false,
           "Underline": false,
           "Foreground": "#FF000000",
+          "Langue": null,
           "Spans": [
             {
               "Start": 0,
@@ -664,7 +684,8 @@
                 "WordsOnly": false
               },
               "Foreground": null,
-              "BaselineShift": 0
+              "BaselineShift": 0,
+              "Langue": null
             }
           ],
           "Align": "Left",
@@ -710,6 +731,7 @@
             "WordsOnly": false
           },
           "Foreground": "#FF000000",
+          "Langue": null,
           "Spans": [],
           "Align": "Left",
           "LineHeight": 1,
@@ -749,6 +771,7 @@
           "Italic": false,
           "Underline": false,
           "Foreground": "#FF000000",
+          "Langue": null,
           "Spans": [
             {
               "Start": 0,
@@ -764,7 +787,8 @@
                 "WordsOnly": false
               },
               "Foreground": null,
-              "BaselineShift": 0
+              "BaselineShift": 0,
+              "Langue": null
             }
           ],
           "Align": "Left",
@@ -810,6 +834,7 @@
             "WordsOnly": false
           },
           "Foreground": "#FF000000",
+          "Langue": null,
           "Spans": [],
           "Align": "Left",
           "LineHeight": 1,
@@ -849,6 +874,7 @@
           "Italic": false,
           "Underline": false,
           "Foreground": "#FF000000",
+          "Langue": null,
           "Spans": [
             {
               "Start": 0,
@@ -864,7 +890,8 @@
                 "WordsOnly": false
               },
               "Foreground": null,
-              "BaselineShift": 0
+              "BaselineShift": 0,
+              "Langue": null
             }
           ],
           "Align": "Left",
@@ -905,6 +932,7 @@
           "Italic": false,
           "Underline": true,
           "Foreground": "#FF1F3B57",
+          "Langue": null,
           "Spans": [],
           "Align": "Justify",
           "LineHeight": 1,
@@ -949,6 +977,7 @@
             "WordsOnly": true
           },
           "Foreground": "#FF1F3B57",
+          "Langue": null,
           "Spans": [],
           "Align": "Justify",
           "LineHeight": 1,
@@ -988,6 +1017,7 @@
           "Italic": false,
           "Underline": true,
           "Foreground": "#FFB0302A",
+          "Langue": null,
           "Spans": [
             {
               "Start": 13,
@@ -998,7 +1028,8 @@
               "Italic": null,
               "Underline": null,
               "Foreground": null,
-              "BaselineShift": 0.33
+              "BaselineShift": 0.33,
+              "Langue": null
             }
           ],
           "Align": "Left",
