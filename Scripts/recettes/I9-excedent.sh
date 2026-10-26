@@ -19,9 +19,11 @@
 #
 # 2. LES TESTS, par leur trait « poste=I9 » : le compte pur (« ExcedentTests » — dix lignes
 #    qui en montrent six en comptent quatre, zéro sans débordement, colonnes, marge
-#    intérieure, calage, seuil) et la vraie fenêtre (« ExcedentEcranTests » — le compte de
+#    intérieure, calage, seuil, interligne serré) et la vraie fenêtre (« ExcedentEcranTests » — le compte de
 #    chaque bloc du document de A2, le même à la règle de l'export, l'alerte qui suit la
-#    frappe sans changement de sélection, les couleurs et l'icône de la maquette).
+#    frappe sans changement de sélection, les couleurs et l'icône de la maquette ; depuis
+#    la relecture du 26 octobre 2026, les fragments, les écarts de paragraphe, le jeu de
+#    polices et son annulation, le champ résolu et les coordonnées adoptées).
 #
 # 3. LE PDF CONTRE LE DOCK, sur « Samples/recette-debordement.mypub » puis sur une variante
 #    écrite ici, pour ce que le document de A2 ne porte pas — deux colonnes, quatre marges
@@ -178,8 +180,8 @@ jouer() {   # <projet> <attendus> <libellé>
     fi
     echo "     $3 : $joues tests"
 }
-jouer MyPublisher.Tests/MyPublisher.Tests.csproj 14 "le compte pur"
-jouer MyPublisher.Tests.Interface/MyPublisher.Tests.Interface.csproj 6 "la vraie fenêtre"
+jouer MyPublisher.Tests/MyPublisher.Tests.csproj 15 "le compte pur"
+jouer MyPublisher.Tests.Interface/MyPublisher.Tests.Interface.csproj 9 "la vraie fenêtre"
 echo "  2. les tests du poste"
 
 # ------------------------------------------------------------------------ 3. le PDF contre le dock

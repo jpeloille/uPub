@@ -1226,6 +1226,115 @@ saboter "sans la porte, l'écran adresse une collection qui n'existe pas" \
     'return new FontFamily($"{Cle}#{nom}");' \
     'Q13-coupure|CoupureTests'
 
+# I9 — les lignes en excédent. Posés à la relecture du 26 octobre 2026 : le poste était
+# fusionné sans un sabotage. Le compte pur du noyau — le deuxième ferme le défaut que la
+# relecture a trouvé, l'interligne serré —, puis ce que le modèle de vue compose et écoute :
+# huit passaient avant la relecture, qui a écrit leurs tests (les fragments et les écarts,
+# suivis et composés ; le jeu de polices, suivi et composé ; le champ résolu ; les
+# coordonnées). Le cas « Document » de l'écoute n'a pas de sabotage : l'annulation et
+# l'ouverture changent la sélection après le document, et le compte suit déjà par elle.
+saboter "le compte des lignes en excédent (I9) mesure l'avance et non l'encre" \
+    MyPublisher.Core/Models/Compositeur.cs \
+    '(l.Avance + Math.Min(l.Naturelle, l.Avance)) / 2 > bord' \
+    'l.Avance > bord' \
+    'I9-excedent|Excedent(Ecran)?Tests'
+
+saboter "le compte des lignes en excédent (I9) prend pour perdue une ligne serrée qui se lit" \
+    MyPublisher.Core/Models/Compositeur.cs \
+    'Math.Min(l.Naturelle, l.Avance)) / 2 > bord' \
+    'l.Naturelle) / 2 > bord' \
+    'I9-excedent|Excedent(Ecran)?Tests'
+
+saboter "le compte des lignes en excédent (I9) mesure au bord de la zone de texte, et non du bloc" \
+    MyPublisher.Core/Models/Compositeur.cs \
+    'var bord = disponible + margeBasse + SeuilDebordement;' \
+    'var bord = disponible + SeuilDebordement;' \
+    'I9-excedent|Excedent(Ecran)?Tests'
+
+saboter "le compte des lignes en excédent (I9) oublie le seuil du marqueur" \
+    MyPublisher.Core/Models/Compositeur.cs \
+    'var bord = disponible + margeBasse + SeuilDebordement;' \
+    'var bord = disponible + margeBasse;' \
+    'I9-excedent|Excedent(Ecran)?Tests'
+
+saboter "le compte des lignes en excédent (I9) oublie le calage vertical" \
+    MyPublisher.Core/Models/Compositeur.cs \
+    'var descente = Decalage(lignes, disponible, fer);' \
+    'var descente = 0.0;' \
+    'I9-excedent|Excedent(Ecran)?Tests'
+
+saboter "l'alerte d'excédent (I9) ne suit plus la frappe" \
+    MyPublisher/ViewModels/MainWindowViewModel.Excedent.cs \
+    '_blocCompte.PropertyChanged += SurBlocCompteRetouche;' \
+    '' \
+    'I9-excedent|Excedent(Ecran)?Tests'
+
+saboter "l'alerte d'excédent (I9) ne suit plus les fragments de style" \
+    MyPublisher/ViewModels/MainWindowViewModel.Excedent.cs \
+    '_blocCompte.Spans.CollectionChanged += SurBlocCompteRetouche;' \
+    '' \
+    'I9-excedent|Excedent(Ecran)?Tests'
+
+saboter "l'alerte d'excédent (I9) ne suit plus les écarts de paragraphe" \
+    MyPublisher/ViewModels/MainWindowViewModel.Excedent.cs \
+    '_blocCompte.Paragraphs.CollectionChanged += SurBlocCompteRetouche;' \
+    '' \
+    'I9-excedent|Excedent(Ecran)?Tests'
+
+saboter "l'alerte d'excédent (I9) ne suit plus le jeu de polices" \
+    MyPublisher/ViewModels/MainWindowViewModel.Excedent.cs \
+    'case nameof(Document) or nameof(FieldContext) or nameof(ChosenFontScheme):' \
+    'case nameof(Document) or nameof(FieldContext):' \
+    'I9-excedent|Excedent(Ecran)?Tests'
+
+saboter "l'alerte d'excédent (I9) ne suit plus les coordonnées ni la page" \
+    MyPublisher/ViewModels/MainWindowViewModel.Excedent.cs \
+    'case nameof(Document) or nameof(FieldContext) or nameof(ChosenFontScheme):' \
+    'case nameof(Document) or nameof(ChosenFontScheme):' \
+    'I9-excedent|Excedent(Ecran)?Tests'
+
+saboter "le compte d'excédent (I9) reste abonné au bloc quitté" \
+    MyPublisher/ViewModels/MainWindowViewModel.Excedent.cs \
+    '_blocCompte.PropertyChanged -= SurBlocCompteRetouche;' \
+    '' \
+    'I9-excedent|Excedent(Ecran)?Tests'
+
+saboter "le compte d'excédent (I9) compose sans les fragments de style" \
+    MyPublisher/ViewModels/MainWindowViewModel.Excedent.cs \
+    'var fragments = contenu == bloc.Text ? charte.Fragments(bloc.Spans) : (IReadOnlyList<StyleSpan>)[];' \
+    'var fragments = (IReadOnlyList<StyleSpan>)[];' \
+    'I9-excedent|Excedent(Ecran)?Tests'
+
+saboter "le compte d'excédent (I9) compose sans les écarts de paragraphe" \
+    MyPublisher/ViewModels/MainWindowViewModel.Excedent.cs \
+    'var ecarts = contenu == bloc.Text ? bloc.Paragraphs : (IReadOnlyList<ParagraphSpan>)[];' \
+    'var ecarts = (IReadOnlyList<ParagraphSpan>)[];' \
+    'I9-excedent|Excedent(Ecran)?Tests'
+
+saboter "le compte d'excédent (I9) compose dans le jeu par défaut, et non celui du document" \
+    MyPublisher/ViewModels/MainWindowViewModel.Excedent.cs \
+    'var charte = Document.Charte;' \
+    'var charte = Charte.Defaut;' \
+    'I9-excedent|Excedent(Ecran)?Tests'
+
+saboter "le compte d'excédent (I9) compte le texte saisi d'un champ, et non ce qu'il affiche" \
+    MyPublisher/ViewModels/MainWindowViewModel.Excedent.cs \
+    'var contenu = FieldResolver.Resolve(bloc.Field, bloc.Text, FieldContext);' \
+    'var contenu = bloc.Text;' \
+    'I9-excedent|Excedent(Ecran)?Tests'
+
+saboter "l'alerte d'excédent (I9) s'annonce à zéro" \
+    MyPublisher/ViewModels/MainWindowViewModel.Excedent.cs \
+    'public bool TexteEnExcedent => LignesEnExcedent > 0;' \
+    'public bool TexteEnExcedent => LignesEnExcedent >= 0;' \
+    'I9-excedent|Excedent(Ecran)?Tests'
+
+saboter "l'alerte d'excédent (I9) se montre sans excédent" \
+    MyPublisher/Views/MainWindow.axaml \
+    'IsVisible="{Binding #Root.((vm:MainWindowViewModel)DataContext).TexteEnExcedent}"' \
+    '' \
+    'I9-excedent|Excedent(Ecran)?Tests'
+
 # I1 : l'apparence de l'interface. Aucune vue ne s'en sert encore — seules sa recette et
 # ses tests la voient, et chaque sabotage doit tomber sous eux. Chaque intitulé dit
 # « l'apparence » : « eprouver-le-juge.sh apparence » les joue tous, et eux seuls.
