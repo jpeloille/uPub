@@ -1,6 +1,10 @@
+using System.Linq;
 using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Controls.Shapes;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
+using Avalonia.VisualTree;
 using MyPublisher.Models;
 using MyPublisher.Services;
 using MyPublisher.ViewModels;
@@ -187,5 +191,115 @@ public class SeuilDuPointeurTests
         Assert.Same(bloc, vm.SingleSelected);
         Assert.Equal(document.MarginLeft + 3, bloc.X);
         Rendu.UnSeulPas(vm, avant, "la frappe, puis un clic qui tremble sur un autre bloc");
+    }
+
+    // ------------------------------------------------------------------ Q22 : les poignées
+
+    /// <summary>
+    /// Les poignées que l'Overlay montre, rotation comprise, leur centre dans la fenêtre : lu
+    /// dans l'arbre, et non recalculé — un bloc tourné les porte où sa rotation les mène.
+    /// </summary>
+    private static Point[] CentresDesPoignees(Window fenetre) =>
+        fenetre.GetVisualDescendants().OfType<Canvas>().Single(c => c.Name == "Overlay").Children
+            .OfType<Shape>()
+            .Where(s => s.IsVisible && s.Classes.Contains("poignee"))
+            .Select(s => s.TranslatePoint(new Point(s.Width / 2, s.Height / 2), fenetre)!.Value)
+            .ToArray();
+
+    /// <summary>
+    /// La recette du plan : une pression puis un relâchement sur chacune des huit poignées
+    /// laissent le bloc identique et l'historique vide — avec le mouvement nul qu'une
+    /// plate-forme peut livrer, et en tremblant d'un pixel, ce qui redimensionnait le bloc
+    /// d'autant. Et la mesure du relevé de Q14, une pression à quatre pixels du coin sud-est.
+    /// </summary>
+    [AvaloniaFact]
+    [Trait("poste", "Q22")]
+    public void Une_pression_sur_chacune_des_huit_poignees_laisse_le_bloc()
+    {
+        var bloc = new ShapeFrame { Name = "A", X = 100, Y = 100, Width = 100, Height = 100 };
+        var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(bloc));
+        vm.SelectOnly(bloc);
+        Rendu.UneImage();
+        var avant = DocumentSerializer.ToJson(vm.Document);
+
+        var poignees = (from fy in new[] { 0, 0.5, 1 }
+                        from fx in new[] { 0, 0.5, 1 }
+                        where fx != 0.5 || fy != 0.5
+                        select (fx, fy)).ToList();
+        Assert.Equal(8, poignees.Count);
+
+        foreach (var (fx, fy) in poignees)
+        {
+            var poignee = Rendu.Poignee(fenetre, bloc, fx, fy);
+            Rendu.Cliquer(fenetre, poignee, mouvementNul: true);
+            RienNaChange(vm, avant, $"une pression sans mouvement sur la poignée ({fx}, {fy})");
+            Rendu.Trembler(fenetre, poignee, new Vector(1, 1));
+            RienNaChange(vm, avant, $"une pression qui tremble sur la poignée ({fx}, {fy})");
+            Assert.Same(bloc, vm.SingleSelected);
+        }
+
+        Rendu.Cliquer(fenetre, Rendu.SurLaPage(fenetre, 204, 204), mouvementNul: true);
+        Assert.Equal((100.0, 100.0), (bloc.Width, bloc.Height));
+        RienNaChange(vm, avant, "une pression à quatre pixels du coin sud-est");
+    }
+
+    /// <summary>
+    /// Un bloc tourné de 12,3456789°, pressé sans mouvement sur chacune de ses neuf poignées —
+    /// la rotation comprise —, puis en tremblant d'un pixel : il ne bouge pas. La pression
+    /// repassait par les cosinus du redimensionnement, et le bloc en ressortait décalé d'un
+    /// arrondi, avec un pas empilé.
+    /// </summary>
+    [AvaloniaFact]
+    [Trait("poste", "Q22")]
+    public void Un_bloc_tourne_presse_sur_chaque_poignee_ne_bouge_pas()
+    {
+        var bloc = new ShapeFrame { Name = "Tourné", X = 150, Y = 200, Width = 160, Height = 90, Rotation = 12.3456789 };
+        var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(bloc));
+        vm.SelectOnly(bloc);
+        Rendu.UneImage();
+        var avant = DocumentSerializer.ToJson(vm.Document);
+
+        var poignees = CentresDesPoignees(fenetre);
+        Assert.Equal(9, poignees.Length);
+
+        foreach (var poignee in poignees)
+        {
+            Rendu.Cliquer(fenetre, poignee, mouvementNul: true);
+            RienNaChange(vm, avant, $"une pression sans mouvement en {poignee}");
+            Rendu.Trembler(fenetre, poignee, new Vector(1, 0));
+            RienNaChange(vm, avant, $"une pression qui tremble en {poignee}");
+            Assert.Same(bloc, vm.SingleSelected);
+        }
+    }
+
+    /// <summary>
+    /// Maj arrondit l'angle au pas de 15° — sur un glissé. Pressée sous Maj, sans mouvement ou
+    /// en tremblant, la poignée de rotation d'un bloc à 7° le ramenait à 0° ; elle le laisse à
+    /// 7°. Mené au-delà du seuil puis ramené à un pixel de sa prise — l'angle à 6,2° environ —,
+    /// le même geste arrondit encore, à 0°.
+    /// </summary>
+    [AvaloniaFact]
+    [Trait("poste", "Q22")]
+    public void La_poignee_de_rotation_pressee_sous_Maj_laisse_langle()
+    {
+        var bloc = new ShapeFrame { Name = "À 7°", X = 150, Y = 200, Width = 160, Height = 90, Rotation = 7 };
+        var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(bloc));
+        vm.SelectOnly(bloc);
+        Rendu.UneImage();
+        var avant = DocumentSerializer.ToJson(vm.Document);
+        var disque = Rendu.PoigneeDeRotation(fenetre) ?? throw new System.InvalidOperationException("aucune poignée de rotation");
+        var poignee = disque.TranslatePoint(new Point(disque.Width / 2, disque.Height / 2), fenetre)!.Value;
+
+        Rendu.Cliquer(fenetre, poignee, RawInputModifiers.Shift, mouvementNul: true);
+        Assert.Equal(7, bloc.Rotation);
+        RienNaChange(vm, avant, "la poignée de rotation pressée sous Maj");
+
+        Rendu.Trembler(fenetre, poignee, new Vector(1, 0), RawInputModifiers.Shift);
+        Assert.Equal(7, bloc.Rotation);
+        RienNaChange(vm, avant, "la poignée de rotation pressée sous Maj, en tremblant");
+
+        Rendu.GlisserEtRamener(fenetre, poignee, poignee + new Vector(-1, 0), RawInputModifiers.Shift);
+        Assert.Equal(0, bloc.Rotation);
+        Rendu.UnSeulPas(vm, avant, "un glissé de la poignée de rotation sous Maj");
     }
 }

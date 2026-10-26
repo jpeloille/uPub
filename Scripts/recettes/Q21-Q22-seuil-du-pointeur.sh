@@ -5,7 +5,9 @@
 #
 # Q14 avait gardé le bloc d'un clic sans mouvement, mais un pointeur réel tremble : un pixel
 # de mouvement pendant le clic, près d'une marge, faisait sauter le bloc de 3 pt par
-# l'aimantation et empilait un pas d'annulation (Q21). La planche ne compte désormais un geste
+# l'aimantation et empilait un pas d'annulation (Q21) ; une pression sans mouvement sur une
+# poignée repassait par les cosinus d'un bloc tourné, qui en ressortait décalé avec un pas
+# empilé, et Maj ramenait à 0° un bloc à 7° sans le moindre mouvement (Q22). La planche ne compte désormais un geste
 # pour un glissé qu'une fois le pointeur écarté de trois pixels d'écran de sa prise, pour tout
 # glissé — déplacement, poignées, rotation, extrémités de trait — ; l'aimantation ne joue
 # qu'au-delà. Deux temps.
@@ -36,7 +38,17 @@
 #      · un glissé ramené exactement à sa prise, près d'une marge, rend le bloc sans
 #        l'aimanter : c'est désormais le seul chemin qui mène à la garde de Q14 ;
 #      · l'extrémité d'un trait qui tremble reste où elle est ;
-#      · en saisie, le clic qui en sort sur un autre bloc et tremble ne le déplace pas.
+#      · en saisie, le clic qui en sort sur un autre bloc et tremble ne le déplace pas ;
+#
+#    et sous « poste=Q22 » :
+#
+#      · une pression puis un relâchement sur chacune des huit poignées d'un bloc droit, avec
+#        le mouvement nul d'une plate-forme ou en tremblant d'un pixel, laissent le bloc
+#        identique et l'historique vide ; une pression à quatre pixels du coin sud-est aussi ;
+#      · un bloc tourné de 12,3456789°, pressé de même sur chacune de ses neuf poignées, la
+#        rotation comprise, ne bouge pas ;
+#      · la poignée de rotation pressée sous Maj, sans mouvement ou en tremblant, laisse 7° à
+#        7° ; menée au-delà du seuil puis ramenée, elle arrondit encore, à 0°.
 #
 #    Le compte des tests joués est vérifié : un filtre qui ne désigne plus rien sort en 0.
 #
@@ -146,5 +158,6 @@ jouer() {
 }
 
 jouer Q21 6 "le clic qui tremble près d'une marge, le seuil en pixels d'écran, le glissé d'un point ramené, le glissé revenu à sa prise, l'extrémité d'un trait, le clic qui sort de la saisie"
+jouer Q22 3 "les huit poignées d'un bloc droit, les neuf d'un bloc tourné, la rotation sous Maj"
 
-echo "Q21 : un clic qui tremble de moins de trois pixels ne déplace rien ; au-delà, le glissé compte, d'un point s'il le faut."
+echo "Q21 et Q22 : un clic qui tremble de moins de trois pixels ne déplace rien, ne redimensionne rien, ne tourne rien ; au-delà, le glissé compte, d'un point s'il le faut."

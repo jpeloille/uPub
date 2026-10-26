@@ -2587,6 +2587,15 @@ saboter "sans seuil du glissé (Q21), un clic qui tremble aimante le bloc sur la
     'private const double SeuilDuGlisse = 0;' \
     'Q21-Q22-seuil-du-pointeur|SeuilDuPointeurTests'
 
+# Q22 : le seuil vaut pour les poignées aussi. Réservé au déplacement, une pression sur une
+# poignée d'un bloc tourné le décale d'un arrondi et empile un pas, et Maj ramène à 0° un bloc à
+# 7° sans le moindre mouvement.
+saboter "le seuil du glissé (Q22) ne garde plus les poignées" \
+    MyPublisher/Views/PageCanvas.axaml.cs \
+    'if (!AGlisse(surfacePoint)) return;' \
+    'if (!AGlisse(surfacePoint) && _mode == DragMode.Move) return;' \
+    'Q21-Q22-seuil-du-pointeur|SeuilDuPointeurTests'
+
 # Un motif qui ne désigne aucun sabotage ne prouve rien. « eprouver-le-juge.sh I4 » sortait
 # en 0 sur « 0 sabotages, 0 attrapés », quand les intitulés de la planche ne portaient pas
 # encore le code du poste : le filet passait pour éprouvé sans qu'on l'ait troué.
