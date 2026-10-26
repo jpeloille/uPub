@@ -5,21 +5,23 @@
 #
 # Les liaisons de la fenêtre passent avant le contrôle qui a le focus, et ne lui rendent la
 # touche que si leur commande ne peut pas s'exécuter. Tant qu'un champ de texte a le clavier —
-# la saisie d'un bloc sur la page, un champ du dock ou de la barre —, les commandes d'objet se
+# la saisie d'un bloc sur la page, un champ du dock ou de la barre —, les raccourcis d'objet se
 # taisent : tout sélectionner, dupliquer, grouper, dissocier, premier plan, arrière-plan. Leur
-# touche revient au champ. Alt+flèche, en saisie, déplace le bloc dans un pas à lui. Deux temps.
+# touche revient au champ. La garde est au clavier seul (décision du propriétaire, 26 octobre
+# 2026) : les menus et les boutons agissent sur les blocs comme avant, même pendant la frappe.
+# Alt+flèche, en saisie, déplace le bloc dans un pas à lui. Deux temps.
 #
 # 1. LES SOURCES, lues par un script :
 #
-#      a. les six commandes ont un CanExecute qui lit le focus de la fenêtre
-#         (ConsumesTyping), en plus de la sélection qu'elles lisaient ; Annuler et Rétablir
-#         n'en ont pas — c'est l'historique du document qui annule (Q24) ;
-#      b. la fenêtre prête son prédicat au modèle de vue quand elle le prend, le reprend quand
-#         elle le lâche, et lève LeClavierAChange à chaque prise et perte du focus, traitées
-#         comprises : les boutons qui portent ces commandes suivent, et la notification touche
-#         les six ;
-#      c. aucun second Ctrl+A, ni sur un champ ni ailleurs : la touche revient au champ par le
-#         CanExecute, non par une liaison de plus ; OnKeyDown ne prend ni A ni D sous
+#      a. les six liaisons mènent chacune à une commande du clavier, qui lit le focus de la
+#         fenêtre (ConsumesTyping) puis la condition de la commande d'origine, et ne joue
+#         qu'elle ; les commandes d'origine ont retrouvé leur condition d'avant le poste, et les
+#         menus et les boutons les portent toujours ; Annuler et Rétablir n'ont pas de
+#         condition — c'est l'historique du document qui annule (Q24) ;
+#      b. la fenêtre prête son prédicat au modèle de vue quand elle le prend, et le reprend
+#         quand elle le lâche ;
+#      c. aucun second Ctrl+A, ni sur un champ ni ailleurs : la touche revient au champ par la
+#         condition de la commande du clavier, non par une liaison de plus ; OnKeyDown ne prend ni A ni D sous
 #         Contrôle (règle 9) ; la cible du juge « PageView.EndTextEdit(); » reste, une fois ;
 #      d. ce que le poste ajoute au modèle de vue est dans son fichier partiel (règle 10) ;
 #         Alt+flèche est pris en tunnel, avant la zone de saisie, et passe par UnGesteUnPas ;
@@ -33,8 +35,9 @@
 #        Document, où la valeur tapée ensuite fait son pas (le relevé de Q24) ;
 #      · Ctrl+D, Ctrl+Maj+F et B ne font rien en saisie et n'empilent rien, la frappe seule a
 #        son pas ; Ctrl+Maj+G et H ne font rien dans un champ ;
-#      · les boutons Premier plan et Arrière-plan se grisent tant qu'un champ a le clavier, et se
-#        rallument ; un menu ouvert prend le focus, et rallume ses entrées ;
+#      · en saisie, le bouton Premier plan n'est pas grisé, et un clic sur lui porte le bloc au
+#        premier plan, quand Ctrl+Maj+F ne fait rien ; un menu ouvert prend le focus, et
+#        « Tout sélectionner » y prend les blocs ;
 #      · un champ quitté rend Ctrl+D et Ctrl+A aux blocs ;
 #      · Alt+→ déplace le bloc de 3 pt, en un pas, et la saisie continue, le curseur en place ;
 #        Alt+Maj+↓ de 0,5 pt.
@@ -83,44 +86,49 @@ chemin = VM / "MainWindowViewModel.Clavier.cs"
 partiel = chemin.read_text(encoding="utf-8") if chemin.exists() else ""
 fenetre = (VUES / "MainWindow.axaml.cs").read_text(encoding="utf-8")
 
-# ------------------------------------------------- a. les six commandes lisent le focus
+# ------------------------------------- a. six commandes du clavier, gardées par le focus
 
-commandes = {
-    "SelectAll": ("PeutToutSelectionner", None),
-    "DuplicateSelected": ("PeutAgirSurLaSelection", "HasSelection"),
-    "BringToFront": ("PeutAgirSurLaSelection", "HasSelection"),
-    "SendToBack": ("PeutAgirSurLaSelection", "HasSelection"),
-    "GroupSelected": ("PeutGrouper", "CanGroup"),
-    "UngroupSelected": ("PeutDissocier", "CanUngroup"),
+axaml_fenetre = (VUES / "MainWindow.axaml").read_text(encoding="utf-8")
+liaisons = {
+    "Ctrl+A": ("ToucheToutSelectionner", "PeutToutSelectionnerAuClavier", "SelectAll"),
+    "Ctrl+D": ("ToucheDupliquer", "PeutDupliquerAuClavier", "DuplicateSelected"),
+    "Ctrl+Shift+G": ("ToucheGrouper", "PeutGrouperAuClavier", "GroupSelected"),
+    "Ctrl+Shift+H": ("ToucheDissocier", "PeutDissocierAuClavier", "UngroupSelected"),
+    "Ctrl+Shift+F": ("ToucheAuPremierPlan", "PeutPorterAuPremierPlanAuClavier", "BringToFront"),
+    "Ctrl+Shift+B": ("ToucheALArrierePlan", "PeutPorterALArrierePlanAuClavier", "SendToBack"),
 }
-for commande, (garde, selection) in commandes.items():
-    exige(re.search(rf"\[RelayCommand\(CanExecute = nameof\({garde}\)\)\]\s*private void {commande}\(\)", modele),
-          f"« {commande} » n'a pas « {garde} » pour CanExecute.")
-    definition = re.search(rf"private bool {garde}\(\) => (.*?);", partiel)
-    exige(definition is not None, f"« {garde} » n'est pas dans le partiel du poste.")
-    if definition:
-        exige("!ConsumesTyping" in definition.group(1), f"« {garde} » ne lit pas le focus (ConsumesTyping).")
-        if selection:
-            exige(selection in definition.group(1), f"« {garde} » ne lit plus « {selection} ».")
+origines = {
+    "SelectAll": r"\[RelayCommand\]",
+    "DuplicateSelected": r"\[RelayCommand\(CanExecute = nameof\(HasSelection\)\)\]",
+    "BringToFront": r"\[RelayCommand\(CanExecute = nameof\(HasSelection\)\)\]",
+    "SendToBack": r"\[RelayCommand\(CanExecute = nameof\(HasSelection\)\)\]",
+    "GroupSelected": r"\[RelayCommand\(CanExecute = nameof\(CanGroup\)\)\]",
+    "UngroupSelected": r"\[RelayCommand\(CanExecute = nameof\(CanUngroup\)\)\]",
+}
+for geste, (touche, garde, origine) in liaisons.items():
+    exige(f'<KeyBinding Gesture="{geste}" Command="{{Binding {touche}Command}}"/>' in axaml_fenetre,
+          f"« {geste} » ne mène pas à la commande du clavier « {touche}Command ».")
+    exige(re.search(rf"\[RelayCommand\(CanExecute = nameof\({garde}\)\)\]\s*private void {touche}\(\) => {origine}Command\.Execute\(null\);",
+                    partiel), f"« {touche} » n'est pas une commande du partiel, gardée par « {garde} », qui joue « {origine} ».")
+    exige(f"private bool {garde}() => !ConsumesTyping && {origine}Command.CanExecute(null);" in partiel,
+          f"« {garde} » ne lit pas le focus (ConsumesTyping), puis la condition de « {origine} ».")
+    exige(re.search(origines[origine] + rf"\s*private void {origine}\(\)", modele),
+          f"« {origine} » n'a plus sa condition d'avant le poste : les menus et les boutons la liraient.")
+    exige(f"{{Binding {origine}Command}}" in axaml_fenetre,
+          f"aucun menu ni bouton de la fenêtre ne porte plus « {origine}Command ».")
+exige("ConsumesTyping" not in modele, "MainWindowViewModel.cs lit le focus : la garde est au clavier seul.")
 for commande in ("Undo", "Redo"):
     exige(re.search(rf"\[RelayCommand\]\s*private void {commande}\(\)", modele),
           f"« {commande} » a pris une condition : Annuler et Rétablir ne changent pas de sens.")
-print("    a. tout sélectionner, dupliquer, grouper, dissocier, premier plan et arrière-plan lisent le focus ; Annuler et Rétablir, non")
+print("    a. six commandes du clavier, gardées par le focus ; les commandes d'origine, aux menus et aux boutons, comme avant")
 
-# ------------------------------------------- b. la fenêtre prête son focus, et le suit
+# ------------------------------------------------------- b. la fenêtre prête son focus
 
 exige(fenetre.count("_vm.SuivreLeClavier(() => ConsumesTyping(FocusManager?.GetFocusedElement()));") == 1,
       "la fenêtre ne prête pas son prédicat au modèle de vue qu'elle prend.")
 exige(fenetre.count("_vm.SuivreLeClavier(null);") == 1,
       "la fenêtre ne reprend pas son prédicat au modèle de vue qu'elle lâche.")
-for evenement in ("GotFocusEvent", "LostFocusEvent"):
-    exige(re.search(rf"AddHandler\({evenement}, \(_, _\) => Vm\?\.LeClavierAChange\(\), RoutingStrategies\.Bubble, handledEventsToo: true\);",
-                    fenetre), f"la fenêtre ne lève pas LeClavierAChange à « {evenement} », traités compris.")
-notifie = corps(partiel, "public void LeClavierAChange()") or ""
-for commande in commandes:
-    exige(f"{commande}Command.NotifyCanExecuteChanged();" in notifie,
-          f"LeClavierAChange ne notifie pas « {commande}Command » : ce qui la porte ne suivrait pas le focus.")
-print("    b. la fenêtre prête son focus au modèle de vue, et lève LeClavierAChange à chaque prise et perte du focus")
+print("    b. la fenêtre prête son focus au modèle de vue, et le reprend")
 
 # ------------------------------------------------------- c. aucun second Ctrl+A, ni D
 
@@ -140,7 +148,7 @@ print("    c. une liaison par geste, aucune touche doublée dans OnKeyDown, la c
 exige(chemin.exists() and "public partial class MainWindowViewModel" in partiel,
       "ce que N6 ajoute au modèle de vue n'est pas dans son partiel, MainWindowViewModel.Clavier.cs (règle 10).")
 for membre in ("public bool ConsumesTyping => _unChampALeClavier();", "public void SuivreLeClavier(",
-               "public void LeClavierAChange()", "public void DeplacerLeBlocEnSaisie("):
+               "public void DeplacerLeBlocEnSaisie("):
     exige(membre in partiel, f"« {membre.strip('(')} » n'est pas dans le partiel du poste.")
     exige(membre not in modele, f"« {membre.strip('(')} » est dans MainWindowViewModel.cs, hors du partiel.")
 exige("UnGesteUnPas(() => NudgeSelection(dx, dy, fine));" in partiel,
@@ -169,7 +177,7 @@ if echecs:
         print(f"    ÉCHEC : {message}", file=sys.stderr)
     sys.exit(1)
 PY
-echo "  1. les sources : six commandes qui lisent le focus, la fenêtre qui le prête et le suit, une liaison par geste, le partiel, le README"
+echo "  1. les sources : six commandes du clavier gardées par le focus, les commandes d'origine comme avant, une liaison par geste, le partiel, le README"
 
 # ------------------------------------------------------------------------ 2. les gestes
 
@@ -190,7 +198,7 @@ jouer() {
     echo "  $quoi ($joues tests)"
 }
 
-jouer "poste=N6" 8 "2. la touche au champ, sur la vraie fenêtre : Ctrl+A dans la saisie et les champs, les commandes d'objet muettes, les boutons qui suivent, Alt+flèche en un pas"
+jouer "poste=N6" 8 "2. la touche au champ, sur la vraie fenêtre : Ctrl+A dans la saisie et les champs, les raccourcis d'objet muets, le bouton et le menu qui agissent, Alt+flèche en un pas"
 
 # Les voisins : hors des champs, tout se joue comme avant (A4) ; un raccourci de texte pendant
 # la saisie d'un champ fait encore son propre pas (I2, I3).

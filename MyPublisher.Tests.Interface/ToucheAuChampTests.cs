@@ -23,9 +23,10 @@ namespace MyPublisher.Tests.Interface;
 /// la saisie d'un bloc sélectionnait tous les blocs et refermait la saisie, et <c>Ctrl+D</c>
 /// dupliquait le bloc, la frappe et la copie ne faisant qu'un pas ; de même dans les champs du
 /// dock, pour <c>Ctrl+Maj+G</c>, <c>H</c>, <c>F</c> et <c>B</c> (relevé de la relecture de I3).
-/// Tant qu'un champ de texte a le clavier, ces commandes d'objet se taisent, et leur touche
-/// revient au champ ; les menus suivent. <c>Alt</c>+flèche, en saisie, déplace le bloc dans un
-/// pas à lui. Hors des champs, tout se joue comme avant — les tests de A4 le tiennent.
+/// Tant qu'un champ de texte a le clavier, ces raccourcis d'objet se taisent, et leur touche
+/// revient au champ ; les menus et les boutons agissent sur les blocs comme avant (décision du
+/// propriétaire, 26 octobre 2026). <c>Alt</c>+flèche, en saisie, déplace le bloc dans un pas à
+/// lui. Hors des champs, tout se joue comme avant — les tests de A4 le tiennent.
 ///
 /// Tout se joue au clavier sur la vraie fenêtre, aux gestes du banc (<see cref="Rendu"/>,
 /// poste N1). La recette du poste — <c>Scripts/recettes/N6-touche-au-champ.sh</c> — joue ces
@@ -251,56 +252,44 @@ public class ToucheAuChampTests
     }
 
     /// <summary>
-    /// Les boutons qui portent ces commandes suivent : ils ne se grisent que sur
-    /// <c>CanExecuteChanged</c>, que la fenêtre lève à chaque changement de focus. En saisie,
-    /// Premier plan et Arrière-plan, dans la barre principale, sont grisés ; Échap les rallume ; de
-    /// même pour un champ du dock. Les entrées des menus portent les mêmes commandes, mais un menu
-    /// qu'on ouvre prend le focus à la zone de saisie — et les rallume : voir la section du poste.
+    /// La garde est au clavier seul — décision du propriétaire, le 26 octobre 2026. En saisie,
+    /// <c>Ctrl+Maj+F</c> ne fait rien ; le bouton Premier plan de la barre principale, qui porte la
+    /// commande d'origine, n'est pas grisé, et un clic sur lui porte le bloc au premier plan.
     /// </summary>
     [AvaloniaFact]
-    public void Les_boutons_d_ordre_se_grisent_tant_qu_un_champ_a_le_clavier()
+    public void En_saisie_le_bouton_Premier_plan_agit_et_Ctrl_Maj_F_se_tait()
     {
         var bloc = Texte();
         var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(bloc, Carre("Carré", 400, 300)));
-        vm.SelectOnly(bloc);
-        Rendu.Battre();
-
-        var ordre = fenetre.GetVisualDescendants().OfType<Button>()
-            .Where(bouton => ToolTip.GetTip(bouton) is "Premier plan (Ctrl+Maj+F)" or "Arrière-plan (Ctrl+Maj+B)")
-            .ToArray();
-        Assert.Equal(2, ordre.Length);
-        Assert.All(ordre, bouton => Assert.True(bouton.IsEffectivelyEnabled, $"« {ToolTip.GetTip(bouton)} » grisé avant la saisie"));
+        var premier = fenetre.GetVisualDescendants().OfType<Button>()
+            .Single(bouton => ToolTip.GetTip(bouton) is "Premier plan (Ctrl+Maj+F)");
 
         var zone = Rendu.EntrerEnSaisie(fenetre, vm, bloc);
-        Assert.All(ordre, bouton => Assert.False(bouton.IsEffectivelyEnabled, $"« {ToolTip.GetTip(bouton)} » allumé pendant la saisie"));
-        Assert.True(zone.IsFocused);
+        Rendu.Touche(fenetre, PhysicalKey.F, RawInputModifiers.Control | RawInputModifiers.Shift);
+        Assert.Equal(new[] { "Bloc", "Carré" }, Pile(vm));
+        Assert.True(zone.IsFocused, "Ctrl+Maj+F a pris le focus à la saisie");
+        Assert.False(vm.CanUndo, "Ctrl+Maj+F en saisie a fait un pas");
 
-        Rendu.Touche(fenetre, PhysicalKey.Escape);
-        Assert.False(bloc.IsEditing);
-        Assert.All(ordre, bouton => Assert.True(bouton.IsEffectivelyEnabled, $"« {ToolTip.GetTip(bouton)} » encore grisé après la saisie"));
-
-        var nom = Trouver<TextBox>(fenetre, "ChampNom");
-        nom.Focus();
-        Rendu.Battre();
-        Assert.All(ordre, bouton => Assert.False(bouton.IsEffectivelyEnabled, $"« {ToolTip.GetTip(bouton)} » allumé dans le champ Nom"));
-        Quitter(fenetre);
-        Assert.All(ordre, bouton => Assert.True(bouton.IsEffectivelyEnabled, $"« {ToolTip.GetTip(bouton)} » encore grisé hors du champ"));
+        Assert.True(premier.IsEffectivelyEnabled, "le bouton Premier plan est grisé pendant la saisie");
+        Rendu.Cliquer(premier);
+        Assert.Equal(new[] { "Carré", "Bloc" }, Pile(vm));
+        Assert.Same(bloc, Assert.Single(vm.Selection));
     }
 
     /// <summary>
-    /// Ce que le poste a appris : un menu qu'on ouvre prend le focus. Ouvert pendant la saisie,
-    /// le menu Édition l'ôte à la zone, et « Tout sélectionner » y est allumé — la commande
-    /// relit le focus, qui n'est plus à un champ. Choisie au menu, elle prend les blocs, comme
-    /// avant le poste ; seule la touche revient au champ.
+    /// Un menu qu'on ouvre prend le focus. Ouvert pendant la saisie, le menu Édition l'ôte à la
+    /// zone, et « Tout sélectionner », qui porte la commande d'origine, y est allumé : choisi au
+    /// menu, il prend les blocs, comme avant le poste. Seule la touche revient au champ.
     /// </summary>
     [AvaloniaFact]
-    public void Un_menu_ouvert_pendant_la_saisie_prend_le_focus_et_rallume_ses_entrees()
+    public void Un_menu_ouvert_pendant_la_saisie_agit_sur_les_blocs()
     {
         var bloc = Texte();
         var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(bloc, Carre("Carré", 400, 300)));
 
         var zone = Rendu.EntrerEnSaisie(fenetre, vm, bloc);
-        Assert.False(vm.SelectAllCommand.CanExecute(null));
+        Assert.False(vm.ToucheToutSelectionnerCommand.CanExecute(null), "Ctrl+A prendrait la touche à la saisie");
+        Assert.True(vm.SelectAllCommand.CanExecute(null), "Tout sélectionner, au menu, lit le focus");
 
         Rendu.Cliquer(Menu(fenetre, "_Édition"));
         var tout = Menu(fenetre, "_Tout sélectionner");

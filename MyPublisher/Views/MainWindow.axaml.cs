@@ -85,12 +85,6 @@ public partial class MainWindow : Window
         // La fenêtre quittée Espace tenu ne verra pas son relâchement : la main se lâche ici (I6).
         Deactivated += (_, _) => PageView.MainTenue = false;
 
-        // Les commandes d'objet se taisent tant qu'un champ a le clavier (poste N6) : elles
-        // relisent le focus à chaque changement, pour que les menus et les boutons suivent. Les
-        // événements traités comptent aussi — un champ qui prend le focus le marque souvent.
-        AddHandler(GotFocusEvent, (_, _) => Vm?.LeClavierAChange(), RoutingStrategies.Bubble, handledEventsToo: true);
-        AddHandler(LostFocusEvent, (_, _) => Vm?.LeClavierAChange(), RoutingStrategies.Bubble, handledEventsToo: true);
-
         // Alt+flèche pendant la saisie : avant la zone de texte, qui y déplacerait le curseur (N6).
         AddHandler(KeyDownEvent, DeplacerLeBlocEnSaisie, RoutingStrategies.Tunnel);
 
@@ -773,7 +767,7 @@ public partial class MainWindow : Window
     /// qui cherche une entrée à la lettre. Les raccourcis d'outil à une lettre ne
     /// doivent pas les court-circuiter — taper « T » dans la liste des polices doit
     /// chercher une police, pas armer l'outil texte. Depuis le poste N6, le modèle de vue
-    /// le lit aussi (<see cref="MainWindowViewModel.ConsumesTyping"/>) : les commandes
+    /// le lit aussi (<see cref="MainWindowViewModel.ConsumesTyping"/>) : les raccourcis
     /// d'objet des liaisons de la fenêtre se taisent tant qu'il est vrai.
     /// </summary>
     private static bool ConsumesTyping(IInputElement? element) =>
