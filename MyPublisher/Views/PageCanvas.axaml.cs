@@ -225,6 +225,11 @@ public partial class PageCanvas : UserControl
         // En phase de tunnel : on quitte la saisie avant que le clic n'atteigne sa cible.
         AddHandler(PointerPressedEvent, OnTunnelPointerPressed, RoutingStrategies.Tunnel);
 
+        // La transaction de la saisie suit le focus de sa zone (poste Q25) : un champ de la
+        // barre ou du dock qui le prend pendant la frappe y fait son propre pas.
+        AddHandler(GotFocusEvent, (_, e) => SuivreLeFocusDeLaSaisie(e, focus: true), RoutingStrategies.Bubble);
+        AddHandler(LostFocusEvent, (_, e) => SuivreLeFocusDeLaSaisie(e, focus: false), RoutingStrategies.Bubble);
+
         Surface.PropertyChanged += (_, e) =>
         {
             if (e.Property == BoundsProperty) RefreshOverlay();
@@ -248,6 +253,7 @@ public partial class PageCanvas : UserControl
             _vm.PropertyChanged -= OnViewModelPropertyChanged;
             _vm.Selection.CollectionChanged -= OnSelectionChanged;
             _vm.PageEntiereDemandee -= OnPageEntiereDemandee;
+            _vm.TransactionsRefermees -= OnTransactionsRefermees;
         }
 
         _vm = DataContext as MainWindowViewModel;
@@ -262,6 +268,9 @@ public partial class PageCanvas : UserControl
             // « Page entière » est un calcul de la planche, qui seule connaît sa taille à
             // l'écran : le bouton reste grisé tant qu'elle ne l'écoute pas (poste I6).
             _vm.PageEntiereDemandee += OnPageEntiereDemandee;
+
+            // Annuler et Rétablir referment la saisie et le glissé avec le reste (Q24).
+            _vm.TransactionsRefermees += OnTransactionsRefermees;
         }
 
         TrackFrames();
@@ -328,6 +337,31 @@ public partial class PageCanvas : UserControl
     }
 
     private void OnFramePropertyChanged(object? sender, PropertyChangedEventArgs e) => RefreshOverlay();
+
+    /// <summary>
+    /// Annuler ou Rétablir a refermé les transactions de la planche avec les autres (poste
+    /// Q24). Chacun de ses deux propriétaires encore actif rouvre la sienne, et lui seul.
+    ///
+    /// La saisie, si elle est toujours ouverte et que sa zone a le focus — sa transaction suit
+    /// ce focus (Q25) : c'est qu'il n'y avait rien à défaire, <c>Ctrl+Z</c> sur un historique
+    /// vide, <c>Ctrl+Y</c> après une frappe. Une annulation qui relit le document l'a refermée
+    /// par le changement de sélection, et rien ne se rouvre pour elle : une transaction
+    /// rouverte à l'aveugle resterait sans propriétaire, et chaque geste suivant y fondrait son
+    /// pas.
+    ///
+    /// Le glissé, si le bouton est toujours tenu : son relâché refermera ce qu'il rouvre. Après
+    /// une annulation qui a relu le document, il tire des blocs que la page n'a plus, et ne
+    /// change rien.
+    /// </summary>
+    private void OnTransactionsRefermees(object? sender, EventArgs e)
+    {
+        _saisieEnTransaction = false;
+        if (ZoneDeLaSaisieAuFocus()) OuvrirLaTransactionDeLaSaisie();
+        if (_mode is DragMode.Move or DragMode.Resize or DragMode.Rotate or DragMode.Guide or DragMode.Extremite)
+        {
+            _vm?.BeginEdit();
+        }
+    }
 
     // ---------------------------------------------------------------- poignées
 
@@ -1097,7 +1131,8 @@ public partial class PageCanvas : UserControl
             return;
         }
 
-        _vm?.BeginEdit();
+        // La transaction ne s'ouvre pas ici : elle s'ouvrira quand la zone prendra le focus, et
+        // se refermera chaque fois qu'elle le perdra (poste Q25, SuivreLeFocusDeLaSaisie).
         _editing = frame;
         frame.IsEditing = true;
         InputLayer.IsHitTestVisible = false;
@@ -1118,12 +1153,63 @@ public partial class PageCanvas : UserControl
     {
         if (_editing is null) return;
 
+        FermerLaTransactionDeLaSaisie();
         _editing.IsEditing = false;
         _editing = null;
         InputLayer.IsHitTestVisible = true;
-        _vm?.CommitEdit();
         RefreshOverlay();
     }
+
+    /// <summary>
+    /// La saisie tient sa transaction d'édition (poste Q25). Elle suit le focus de sa zone sur
+    /// la page — ouverte quand la zone le prend, refermée quand elle le perd, et à la fin de la
+    /// saisie —, et non plus la saisie elle-même, du double-clic à Échap.
+    ///
+    /// Ouverte de bout en bout, elle avalait celle d'un champ de la barre ou du dock qui prenait
+    /// le focus pendant la frappe : celle-ci s'y emboîtait, et le corps changé entre deux mots
+    /// se fondait dans le pas de la frappe (règle 2 de la phase I). Désormais le champ ouvre la
+    /// sienne quand la zone a déjà refermé la sienne — le focus quitte l'une avant d'arriver à
+    /// l'autre —, et la frappe qui reprend, d'un clic dans le texte, en rouvre une. La saisie,
+    /// elle, reste ouverte quand on clique dans la barre ou le dock, comme avant.
+    ///
+    /// Les boutons G, I et S ne prennent pas le focus : la zone le garde, et ils font leur pas
+    /// par <c>UnGesteUnPas</c>, qui referme la transaction de la saisie, empile le sien et la
+    /// rouvre aussitôt.
+    /// </summary>
+    private bool _saisieEnTransaction;
+
+    private void SuivreLeFocusDeLaSaisie(RoutedEventArgs e, bool focus)
+    {
+        if (_editing is null || e.Source is not TextBox zone || !ReferenceEquals(zone.DataContext, _editing)) return;
+
+        if (focus) OuvrirLaTransactionDeLaSaisie();
+        else FermerLaTransactionDeLaSaisie();
+    }
+
+    private void OuvrirLaTransactionDeLaSaisie()
+    {
+        if (_saisieEnTransaction || _editing is null) return;
+
+        _saisieEnTransaction = true;
+        _vm?.BeginEdit();
+    }
+
+    private void FermerLaTransactionDeLaSaisie()
+    {
+        if (!_saisieEnTransaction) return;
+
+        _saisieEnTransaction = false;
+        _vm?.CommitEdit();
+    }
+
+    /// <summary>
+    /// La zone de saisie du bloc en cours d'édition a le focus. Elle seule : le champ Contenu du
+    /// dock est lié au même bloc, mais hors de la planche.
+    /// </summary>
+    private bool ZoneDeLaSaisieAuFocus() =>
+        _editing is not null &&
+        TopLevel.GetTopLevel(this)?.FocusManager?.GetFocusedElement() is TextBox zone &&
+        ReferenceEquals(zone.DataContext, _editing) && this.IsVisualAncestorOf(zone);
 
     private void OnTunnelPointerPressed(object? sender, PointerPressedEventArgs e)
     {

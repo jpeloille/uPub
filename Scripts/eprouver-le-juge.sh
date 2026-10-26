@@ -1802,6 +1802,83 @@ saboter "un mot renvoyé garde la position de son blanc de tête (N3)" \
     'courante.Add(new Morceau(debut, mot.Style, largeurCourante, l, mot.Debut));' \
     'N3-position-des-morceaux|OrigineDesMorceauxTests|PositionDesMorceauxTests'
 
+# Q24 : Annuler et Rétablir referment toutes les transactions ouvertes, puis lèvent un avis, et
+# chaque propriétaire encore actif rouvre la sienne. Sans l'avis, Ctrl+Z sans rien à annuler, ou
+# Ctrl+Y après une frappe, laissent la saisie hors de toute transaction : la frappe suivante ne
+# s'annule plus, et ne marque pas le document.
+saboter "Annuler et Rétablir (Q24) ne lèvent plus l'avis" \
+    MyPublisher/ViewModels/MainWindowViewModel.Transactions.cs \
+    'private void AviserLesProprietaires() => TransactionsRefermees?.Invoke(this, EventArgs.Empty);' \
+    'private void AviserLesProprietaires() { }' \
+    'Q24-Q25-transactions|TransactionsDeSaisieTests'
+
+# Le piège du poste : rouvrir à l'aveugle. Une annulation qui relit le document referme la
+# saisie par le changement de sélection ; la transaction rouverte pour elle reste sans
+# propriétaire, et le glissé suivant y fond son pas.
+saboter "la planche (Q24) rouvre la transaction d'une saisie refermée" \
+    MyPublisher/Views/PageCanvas.axaml.cs \
+    'if (ZoneDeLaSaisieAuFocus()) OuvrirLaTransactionDeLaSaisie();' \
+    '_vm?.BeginEdit();' \
+    'Q24-Q25-transactions|TransactionsDeSaisieTests'
+
+# Le champ qui garde le focus sous un Ctrl+Z sans rien à annuler croit sa transaction ouverte :
+# ce qu'on y saisit ensuite n'entre dans aucun pas.
+saboter "le champ (Q24) qui garde le focus ne rouvre plus sa transaction" \
+    MyPublisher/Views/MainWindow.axaml.cs \
+    'if (_panneauDuChamp is not { IsKeyboardFocusWithin: true }) return;' \
+    'return;' \
+    'Q24-Q25-transactions|TransactionsDeSaisieTests'
+
+# Le bouton toujours tenu, le glissé repris après un Ctrl+Z sans rien à annuler ne fait aucun pas.
+saboter "le glissé (Q24) ne rouvre plus sa transaction" \
+    MyPublisher/Views/PageCanvas.axaml.cs \
+    'if (_mode is DragMode.Move or DragMode.Resize or DragMode.Rotate or DragMode.Guide or DragMode.Extremite)' \
+    'if (_mode is DragMode.Pan)' \
+    'Q24-Q25-transactions|TransactionsDeSaisieTests'
+
+# Le sélecteur de couleur resté ouvert sous un Ctrl+Z : la pastille choisie ensuite ne fait aucun pas.
+saboter "le sélecteur de couleur (Q24) ne rouvre plus sa transaction" \
+    MyPublisher/Views/BarreContextuelle.axaml.cs \
+    'if (_couleurOuverte is not null) _vm?.BeginEdit();' \
+    '_ = _couleurOuverte;' \
+    'Q24-Q25-transactions|TransactionsDeSaisieTests'
+
+# Q25 : la transaction de la saisie suit le focus de sa zone. Refermée seulement à la fin de la
+# saisie, elle court du premier focus à Échap, comme avant : le champ de la barre ou du dock qui
+# prend le focus pendant la frappe y emboîte la sienne, et son réglage se fond dans le pas de la
+# frappe.
+saboter "la transaction de la saisie (Q25) court du début de la saisie à sa fin, sans suivre le focus" \
+    MyPublisher/Views/PageCanvas.axaml.cs \
+    'else FermerLaTransactionDeLaSaisie();' \
+    'else { }' \
+    'Q24-Q25-transactions|TransactionsDeSaisieTests'
+
+# Le focus rendu à la zone d'un clic dans le texte ne rouvre plus rien : la frappe qui reprend
+# n'entre dans aucun pas.
+saboter "la zone de saisie (Q25) qui reprend le focus ne rouvre plus sa transaction" \
+    MyPublisher/Views/PageCanvas.axaml.cs \
+    'if (focus) OuvrirLaTransactionDeLaSaisie();' \
+    'if (focus) { }' \
+    'Q24-Q25-transactions|TransactionsDeSaisieTests'
+
+# Q24 et Q25 ensemble : sous un Ctrl+Z sans rien à annuler, la saisie rouvre sa transaction
+# parce qu'elle est toujours ouverte, et non parce que sa zone a le focus. Le champ de la barre
+# qui l'a rouvre aussi la sienne, qui s'emboîte : le corps se fond dans la frappe qui reprend.
+saboter "la saisie (Q25) rouvre sa transaction sous l'avis sans que sa zone ait le focus" \
+    MyPublisher/Views/PageCanvas.axaml.cs \
+    'if (ZoneDeLaSaisieAuFocus()) OuvrirLaTransactionDeLaSaisie();' \
+    'if (_editing is not null) OuvrirLaTransactionDeLaSaisie();' \
+    'Q24-Q25-transactions|TransactionsDeSaisieTests'
+
+# Le volet de couleur rend le focus à la zone de saisie avant de dire qu'il s'est refermé : la
+# transaction de la saisie, rouverte à ce focus, s'emboîte dans celle de la couleur, et la
+# pastille se fond dans le pas de la frappe qui suit.
+saboter "le sélecteur de couleur (Q25) referme sa transaction après avoir rendu le focus" \
+    MyPublisher/Views/BarreContextuelle.axaml.cs \
+    'private void SurCouleurQuiSeFerme(object? sender, CancelEventArgs e) => RefermerLaTransactionDeLaCouleur(sender);' \
+    'private void SurCouleurQuiSeFerme(object? sender, CancelEventArgs e) { }' \
+    'Q24-Q25-transactions|TransactionsDeSaisieTests'
+
 # Un motif qui ne désigne aucun sabotage ne prouve rien. « eprouver-le-juge.sh I4 » sortait
 # en 0 sur « 0 sabotages, 0 attrapés », quand les intitulés de la planche ne portaient pas
 # encore le code du poste : le filet passait pour éprouvé sans qu'on l'ait troué.

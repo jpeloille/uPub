@@ -229,7 +229,7 @@
                                     </Border.Background>
                                 </Border>
                                 <Button.Flyout>
-                                    <Flyout Placement="BottomEdgeAlignedLeft" Opened="SurCouleurOuverte" Closed="SurCouleurFermee">
+                                    <Flyout Placement="BottomEdgeAlignedLeft" Opened="SurCouleurOuverte" Closing="SurCouleurQuiSeFerme" Closed="SurCouleurFermee">
                                         <views:SelecteurDeCouleur Valeur="{Binding Foreground}" Width="240"
                                                Jeu="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).Document.ColorScheme}"/>
                                     </Flyout>
@@ -286,7 +286,7 @@
                                     </Border.Background>
                                 </Border>
                                 <Button.Flyout>
-                                    <Flyout Placement="BottomEdgeAlignedLeft" Opened="SurCouleurOuverte" Closed="SurCouleurFermee">
+                                    <Flyout Placement="BottomEdgeAlignedLeft" Opened="SurCouleurOuverte" Closing="SurCouleurQuiSeFerme" Closed="SurCouleurFermee">
                                         <views:SelecteurDeCouleur Valeur="{Binding Foreground}" Width="240"
                                                Jeu="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).Document.ColorScheme}"/>
                                     </Flyout>
