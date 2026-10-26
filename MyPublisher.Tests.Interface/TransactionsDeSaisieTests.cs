@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
@@ -16,7 +17,7 @@ using Xunit;
 namespace MyPublisher.Tests.Interface;
 
 /// <summary>
-/// Qui tient la transaction d'édition, et quand — le poste Q24.
+/// Qui tient la transaction d'édition, et quand — les postes Q24 et Q25.
 ///
 /// Une transaction s'ouvre pour un geste et se referme avec lui : la saisie sur la page, un
 /// champ du dock ou de la barre qui a le focus, un glissé sur la planche, le sélecteur de
@@ -26,6 +27,11 @@ namespace MyPublisher.Tests.Interface;
 /// est ouvert, puis rendaient la main s'il n'y avait rien à défaire. La saisie, ou le champ,
 /// continuait alors hors de toute transaction : sa frappe ne s'annulait plus et ne marquait
 /// pas le document — une fermeture l'aurait perdue sans question.
+///
+/// Q25 : la transaction de la saisie s'ouvrait au double-clic et ne se refermait qu'à la fin
+/// de la saisie. Un champ de la barre ou du dock qui prenait le focus pendant la frappe y
+/// emboîtait la sienne, et son réglage se fondait dans le pas de la frappe. Elle suit
+/// désormais le focus de la zone de saisie.
 ///
 /// Les aides de geste sont en tête de la classe, copiées de celles des autres classes et
 /// nommées comme elles : le poste N1 les remonte dans <see cref="Rendu"/>, qui les
@@ -465,5 +471,201 @@ public class TransactionsDeSaisieTests
         Assert.Equal(avant, Etat(vm));
         Assert.False(vm.CanUndo, "entrer en saisie et en sortir a empilé un pas");
         Assert.False(vm.IsDirty, "entrer en saisie et en sortir a marqué le document");
+    }
+
+    // ===================================================== Q25 · un réglage pendant la frappe
+
+    /// <summary>
+    /// La recette : une frappe, le corps réglé à la barre, un clic dans le texte, une autre
+    /// frappe. Trois gestes, trois pas, défaits un à un et dans l'ordre. La transaction de la
+    /// saisie suit le focus de sa zone : elle se referme quand le champ de la barre le prend,
+    /// et se rouvre quand le clic le lui rend — la saisie, elle, reste ouverte.
+    /// </summary>
+    [AvaloniaFact]
+    [Trait("poste", "Q25")]
+    public void Un_corps_regle_a_la_barre_pendant_la_saisie_fait_son_propre_pas()
+    {
+        var bloc = Texte();
+        var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(bloc));
+        var etats = new List<(string, string)> { ("l'ouverture", Etat(vm)) };
+
+        var zone = EntrerEnSaisie(fenetre, vm, bloc);
+        fenetre.KeyTextInput("abc");
+        Rendu.Battre();
+        etats.Add(("abc", Etat(vm)));
+
+        var corps = SaisieDe(Trouver<NumericUpDown>(Barre(fenetre), "CorpsDuBloc"));
+        Rendu.Cliquer(corps);
+        Assert.True(corps.IsFocused, "le clic n'a pas donné le focus au corps");
+        Assert.True(bloc.IsEditing, "un clic dans la barre a refermé la saisie");
+        corps.SelectAll();
+        fenetre.KeyTextInput("14");
+        Touche(fenetre, PhysicalKey.Enter);
+        Assert.Equal(14, bloc.FontSize);
+        etats.Add(("corps 14", Etat(vm)));
+
+        Cliquer(fenetre, SurLaPage(fenetre, bloc.X + bloc.Width - 20, bloc.Y + 10));
+        Assert.True(zone.IsFocused, "le clic dans le texte ne lui a pas rendu le focus");
+        zone.CaretIndex = zone.Text!.Length;
+        fenetre.KeyTextInput("d");
+        Rendu.Battre();
+        Touche(fenetre, PhysicalKey.Escape);
+        Assert.Equal("abcd", bloc.Text);
+        etats.Add(("d", Etat(vm)));
+
+        DefaitsUnAUn(vm, etats);
+    }
+
+    /// <summary>De même avec un retrait de première ligne saisi au dock.</summary>
+    [AvaloniaFact]
+    [Trait("poste", "Q25")]
+    public void Un_retrait_saisi_au_dock_pendant_la_saisie_fait_son_propre_pas()
+    {
+        var bloc = Texte();
+        var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(bloc));
+        var etats = new List<(string, string)> { ("l'ouverture", Etat(vm)) };
+
+        var zone = EntrerEnSaisie(fenetre, vm, bloc);
+        fenetre.KeyTextInput("abc");
+        Rendu.Battre();
+        etats.Add(("abc", Etat(vm)));
+
+        var retrait = SaisieDe(Trouver<NumericUpDown>(fenetre, "RetraitPremiereLigne"));
+        Rendu.Cliquer(retrait);
+        Assert.True(retrait.IsFocused, "le clic n'a pas donné le focus au retrait");
+        Assert.True(bloc.IsEditing, "un clic dans le dock a refermé la saisie");
+        retrait.SelectAll();
+        fenetre.KeyTextInput("5");
+        Touche(fenetre, PhysicalKey.Enter);
+        Assert.Equal(Units.MmToPoints(5), bloc.IndentFirstLine, precision: 9);
+        etats.Add(("retrait de 5 mm", Etat(vm)));
+
+        Cliquer(fenetre, SurLaPage(fenetre, bloc.X + bloc.Width - 20, bloc.Y + 10));
+        Assert.True(zone.IsFocused, "le clic dans le texte ne lui a pas rendu le focus");
+        zone.CaretIndex = zone.Text!.Length;
+        fenetre.KeyTextInput("d");
+        Rendu.Battre();
+        Touche(fenetre, PhysicalKey.Escape);
+        Assert.Equal("abcd", bloc.Text);
+        etats.Add(("d", Etat(vm)));
+
+        DefaitsUnAUn(vm, etats);
+    }
+
+    /// <summary>
+    /// La couleur prise pendant la saisie fait son propre pas. Le sélecteur retire le focus
+    /// en s'ouvrant, ce qui clôt la frappe d'abord ; il tient sa transaction ; refermé, il
+    /// rend le focus à la zone de la page, dont la transaction se rouvre après la sienne.
+    /// </summary>
+    [AvaloniaFact]
+    [Trait("poste", "Q25")]
+    public void La_couleur_prise_pendant_la_saisie_fait_son_propre_pas()
+    {
+        var bloc = Texte();
+        var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(bloc));
+        var etats = new List<(string, string)> { ("l'ouverture", Etat(vm)) };
+
+        var zone = EntrerEnSaisie(fenetre, vm, bloc);
+        fenetre.KeyTextInput("abc");
+        Rendu.Battre();
+        etats.Add(("abc", Etat(vm)));
+
+        var vignette = Trouver<Button>(Barre(fenetre), "CouleurDuTexte");
+        Rendu.Cliquer(vignette);
+        var volet = Assert.IsType<Flyout>(vignette.Flyout);
+        Assert.True(volet.IsOpen, "la vignette n'ouvre pas le sélecteur");
+        Assert.True(bloc.IsEditing, "ouvrir le sélecteur a refermé la saisie");
+        var selecteur = Assert.IsType<SelecteurDeCouleur>(volet.Content);
+        Rendu.Cliquer(selecteur.GetVisualDescendants().OfType<Button>().Single(b => b.Tag is EmplacementDeCouleur.Accent2));
+        Assert.Equal("scheme:accent2", bloc.Foreground);
+        volet.Hide();
+        Rendu.Battre();
+        etats.Add(("la couleur", Etat(vm)));
+
+        Cliquer(fenetre, SurLaPage(fenetre, bloc.X + bloc.Width - 20, bloc.Y + 10));
+        Assert.True(zone.IsFocused, "le clic dans le texte ne lui a pas rendu le focus");
+        zone.CaretIndex = zone.Text!.Length;
+        fenetre.KeyTextInput("d");
+        Rendu.Battre();
+        Touche(fenetre, PhysicalKey.Escape);
+        Assert.Equal("abcd", bloc.Text);
+        etats.Add(("d", Etat(vm)));
+
+        DefaitsUnAUn(vm, etats);
+    }
+
+    /// <summary>
+    /// Les boutons G, I et S de la barre ne prennent pas le focus : la zone de la page le
+    /// garde, et sa transaction avec. Ils gardent <c>UnGesteUnPas</c>, qui la referme en un
+    /// pas, fait le sien, puis la rouvre — la frappe qui suit a encore le sien.
+    /// </summary>
+    [AvaloniaFact]
+    [Trait("poste", "Q25")]
+    public void Le_gras_clique_pendant_la_saisie_fait_son_propre_pas_sans_prendre_le_focus()
+    {
+        var bloc = Texte();
+        var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(bloc));
+        var etats = new List<(string, string)> { ("l'ouverture", Etat(vm)) };
+
+        var zone = EntrerEnSaisie(fenetre, vm, bloc);
+        fenetre.KeyTextInput("abc");
+        Rendu.Battre();
+        etats.Add(("abc", Etat(vm)));
+
+        Rendu.Cliquer(Barre(fenetre).GetVisualDescendants().OfType<ToggleButton>()
+            .Single(b => Equals(ToolTip.GetTip(b), "Gras (Ctrl+G)") && b.IsEffectivelyVisible));
+        Assert.True(bloc.Bold);
+        Assert.True(zone.IsFocused, "le bouton G a pris le focus à la saisie");
+        etats.Add(("le gras", Etat(vm)));
+
+        fenetre.KeyTextInput("d");
+        Rendu.Battre();
+        Touche(fenetre, PhysicalKey.Escape);
+        Assert.Equal("abcd", bloc.Text);
+        etats.Add(("d", Etat(vm)));
+
+        DefaitsUnAUn(vm, etats);
+    }
+
+    /// <summary>
+    /// Q24 et Q25 ensemble : la saisie ouverte, le focus dans un champ de la barre, un
+    /// <c>Ctrl+Z</c> sans rien à annuler. Seul le champ rouvre sa transaction : celle de la
+    /// saisie suit le focus de sa zone, qui ne l'a pas. Rouverte parce que la saisie l'est
+    /// toujours, elle emboîterait celle du champ, et le corps se fondrait dans la frappe qui
+    /// reprend.
+    /// </summary>
+    [AvaloniaFact]
+    [Trait("poste", "Q25")]
+    public void Ctrl_Z_sans_rien_a_annuler_dans_la_barre_pendant_la_saisie_ne_rouvre_que_le_champ()
+    {
+        var bloc = Texte();
+        var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(bloc));
+        var etats = new List<(string, string)> { ("l'ouverture", Etat(vm)) };
+
+        var zone = EntrerEnSaisie(fenetre, vm, bloc);
+        var corps = SaisieDe(Trouver<NumericUpDown>(Barre(fenetre), "CorpsDuBloc"));
+        Rendu.Cliquer(corps);
+        Assert.True(corps.IsFocused, "le clic n'a pas donné le focus au corps");
+        Assert.False(vm.CanUndo);
+        Touche(fenetre, PhysicalKey.Z, RawInputModifiers.Control);
+        Assert.True(bloc.IsEditing, "Ctrl+Z sans rien à annuler a refermé la saisie");
+        Assert.True(corps.IsFocused, "Ctrl+Z a pris le focus au corps");
+
+        corps.SelectAll();
+        fenetre.KeyTextInput("14");
+        Touche(fenetre, PhysicalKey.Enter);
+        Assert.Equal(14, bloc.FontSize);
+        etats.Add(("corps 14", Etat(vm)));
+
+        Cliquer(fenetre, SurLaPage(fenetre, bloc.X + bloc.Width - 20, bloc.Y + 10));
+        Assert.True(zone.IsFocused, "le clic dans le texte ne lui a pas rendu le focus");
+        zone.CaretIndex = zone.Text!.Length;
+        fenetre.KeyTextInput("d");
+        Rendu.Battre();
+        Touche(fenetre, PhysicalKey.Escape);
+        Assert.Equal("Texted", bloc.Text);
+        etats.Add(("d", Etat(vm)));
+
+        DefaitsUnAUn(vm, etats);
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel;
 using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
@@ -101,22 +102,40 @@ public partial class BarreContextuelle : UserControl
         vm.BeginEdit();
     }
 
+    /// <summary>
+    /// La transaction de la couleur se referme dès que le volet commence à se refermer, avant
+    /// qu'il ne rende le focus au dernier élément qui l'avait (poste Q25). Pendant une saisie
+    /// sur la page, c'est la zone de saisie : sa transaction se rouvre à ce focus, et, celle de
+    /// la couleur encore ouverte, s'y emboîtait — la pastille et la frappe qui suivait se
+    /// fondaient en un pas.
+    /// </summary>
+    private void SurCouleurQuiSeFerme(object? sender, CancelEventArgs e) => RefermerLaTransactionDeLaCouleur(sender);
+
     private void SurCouleurFermee(object? sender, EventArgs e)
     {
-        if (!ReferenceEquals(sender, _couleurOuverte)) return;
-
-        _couleurOuverte = null;
+        if (sender is not FlyoutBase) return;
 
         // Le volet refermé rend le focus au dernier champ qui l'avait dans la fenêtre. Un champ
         // de la barre est gardé d'une sélection à l'autre depuis Q23 : il le reprenait, et la
         // transaction que la fenêtre ouvre à son focus engloutissait celle de la couleur, qui
-        // ne faisait plus son pas. Il le rend aussitôt, comme à l'ouverture du sélecteur.
+        // ne faisait plus son pas. Il le rend aussitôt, comme à l'ouverture du sélecteur. La
+        // zone de saisie de la page, elle, le garde : la frappe continue (Q25).
         if (TopLevel.GetTopLevel(this)?.FocusManager is { } focus &&
             focus.GetFocusedElement() is Control champ && champ.GetSelfAndVisualAncestors().Contains(this))
         {
             focus.ClearFocus();
         }
 
+        // Un volet refermé sans avoir dit qu'il se refermait, ou par FermerLaCouleur, ne laisse
+        // pas sa transaction ouverte.
+        RefermerLaTransactionDeLaCouleur(sender);
+    }
+
+    private void RefermerLaTransactionDeLaCouleur(object? volet)
+    {
+        if (!ReferenceEquals(volet, _couleurOuverte)) return;
+
+        _couleurOuverte = null;
         (DataContext as MainWindowViewModel)?.CommitEdit();
     }
 

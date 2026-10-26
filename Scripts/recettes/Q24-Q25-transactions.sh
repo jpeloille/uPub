@@ -12,7 +12,14 @@
 #         ou le champ — hors de toute transaction : ce qu'on tapait ensuite ne s'annulait
 #         jamais, et ne marquait pas le document.
 #
-# Deux temps :
+#   Q25 — La transaction de la saisie suit le focus de sa zone sur la page : ouverte quand
+#         elle le prend, refermée quand elle le perd, et à la fin de la saisie. Avant, elle
+#         courait du double-clic à Échap, et un champ de la barre ou du dock qui prenait le
+#         focus pendant la frappe y emboîtait la sienne : le corps changé entre deux mots se
+#         fondait dans le pas de la frappe (règle 2). Le sélecteur de couleur referme la
+#         sienne avant de rendre le focus à la zone.
+#
+# Trois temps :
 #
 #   1. LES SOURCES, lues par un script :
 #      a. Undo et Redo referment d'abord ce qui est ouvert, lèvent l'avis sur chaque chemin —
@@ -22,6 +29,10 @@
 #      b. ses trois auditeurs, la fenêtre (les champs), la planche (la saisie, le glissé) et
 #         la barre (le sélecteur de couleur), s'y abonnent et s'en désabonnent une fois
 #         chacun ;
+#      c. (Q25) BeginTextEdit n'ouvre plus de transaction, EndTextEdit ne referme que celle
+#         que la saisie tient ; la planche suit le focus de la zone (GotFocus, LostFocus) ;
+#         la barre referme la transaction de la couleur dès que le volet se referme
+#         (Closing), avant qu'il ne rende le focus ;
 #   2. LES TESTS d'interface « poste=Q24 », sur la vraie fenêtre, au clavier : Ctrl+Z sans
 #      rien à annuler pendant la saisie, puis une frappe — un pas, le document modifié, le
 #      titre marqué, et Ctrl+Z rend le texte d'avant ; une frappe, Ctrl+Y, une frappe — la
@@ -39,6 +50,12 @@
 #      dépasse parfois les 500 ms du double-clic sous la charge de la machine, sur le code
 #      d'avant Q24 comme après (mesuré le 26 octobre 2026). Les recettes de Q14 et de Q23
 #      le jouent, à chaud.
+#   3. LES TESTS d'interface « poste=Q25 » : pendant une saisie sur la page, une frappe, un
+#      réglage, un clic dans le texte, une frappe — trois pas, défaits un à un et dans
+#      l'ordre, pour le corps à la barre, un retrait au dock et la couleur prise au
+#      sélecteur ; et le gras cliqué à la barre, qui ne prend pas le focus, fait encore le
+#      sien par UnGesteUnPas ; enfin, un Ctrl+Z sans rien à annuler pendant la saisie,
+#      le focus dans un champ de la barre : seul le champ rouvre sa transaction (Q24 et Q25).
 #
 set -euo pipefail
 export LC_ALL=C
@@ -113,12 +130,31 @@ for nom in ("MainWindow.axaml.cs", "PageCanvas.axaml.cs", "BarreContextuelle.axa
           f"{nom} : pas de réponse à l'avis.")
 print("    b. la fenêtre, la planche et la barre écoutent l'avis, et s'en désabonnent")
 
+# ------------------------------------------- c. la saisie suit le focus de sa zone (Q25)
+
+planche = (VUES / "PageCanvas.axaml.cs").read_text(encoding="utf-8")
+debut = corps(planche, "private void BeginTextEdit(TextFrame frame)")
+fin = corps(planche, "public void EndTextEdit()")
+exige(debut is not None and fin is not None, "BeginTextEdit ou EndTextEdit est introuvable dans PageCanvas.axaml.cs.")
+if debut is not None and fin is not None:
+    exige("BeginEdit" not in debut and "OuvrirLaTransactionDeLaSaisie" not in debut,
+          "BeginTextEdit ouvre la transaction de la saisie : elle doit s'ouvrir au focus de la zone.")
+    exige("CommitEdit" not in fin and "FermerLaTransactionDeLaSaisie();" in fin,
+          "EndTextEdit ne referme pas la seule transaction que la saisie tient.")
+for evenement, sens in (("GotFocusEvent", "focus: true"), ("LostFocusEvent", "focus: false")):
+    exige(re.search(rf"AddHandler\({evenement}, \(_, e\) => SuivreLeFocusDeLaSaisie\(e, {sens}\)", planche),
+          f"la planche ne suit plus « {evenement} » de la zone de saisie.")
+barre = (VUES / "BarreContextuelle.axaml").read_text(encoding="utf-8")
+n = barre.count('Opened="SurCouleurOuverte" Closing="SurCouleurQuiSeFerme" Closed="SurCouleurFermee"')
+exige(n == 2, f"{n} volet(s) de couleur referment leur transaction à « Closing », deux attendus.")
+print("    c. la saisie ouvre et referme sa transaction au focus de sa zone ; la couleur referme la sienne avant de rendre le focus")
+
 if echecs:
     for message in echecs:
         print(f"    ÉCHEC : {message}", file=sys.stderr)
     sys.exit(1)
 PY
-echo "  1. les sources : l'avis, levé sur chaque chemin, et ses trois auditeurs"
+echo "  1. les sources : l'avis, levé sur chaque chemin, et ses trois auditeurs ; la saisie suit le focus de sa zone"
 
 # ------------------------------------------------------------------------ 2. les tests
 
@@ -149,4 +185,7 @@ voisins+="|FullyQualifiedName~BarreContextuelleTests.Chaque_controle_de_la_barre
 voisins+="|FullyQualifiedName~BarreContextuelleTests.Ctrl_U_pendant_une_saisie_de_la_barre_fait_son_propre_pas"
 jouer "$voisins" 4 "   les voisins : un pas par champ (I2, I3), un par raccourci"
 
+jouer "poste=Q25" 5 "3. un réglage pendant la saisie, à la barre, au dock ou au sélecteur de couleur, fait son propre pas ; le gras aussi, sans prendre le focus ; sous Ctrl+Z, seul le champ au focus rouvre sa transaction"
+
 echo "Q24 : Annuler et Rétablir ne laissent plus une saisie, un champ, un glissé ni le sélecteur de couleur hors de toute transaction."
+echo "Q25 : un réglage fait pendant une saisie sur la page a son propre pas."

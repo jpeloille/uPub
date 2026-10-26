@@ -94,7 +94,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **Q22** | Un clic sur une poignée ne redimensionne pas | 0 % | Trouvé par la relecture de Q14 : une pression sans mouvement près d'un coin fait passer le bloc de 100 à 96 pt et empile un pas d'annulation. Repris en phase N (salve Saisie 3) : toujours présent sur un bloc tourné, et Maj arrondit l'angle sans mouvement |
 | **Q23** | Sélectionner un bloc ne fige pas la fenêtre | **100 %** | La cause, mesurée : les trois sections du dock et les réglages de la barre contextuelle étaient des `ContentControl` liés au bloc seul, qu'une sélection vide vidait et que la pression suivante reconstruisait — mille visuels, vingt-quatre champs numériques —, dans la pression même ; la liste des polices n'y était pour rien. Ils sont construits une fois par sorte de bloc et gardés, masqués sans bloc de leur sorte (`Views/GabaritsGardes.cs`) : sur ATA 21, une pression sur un bloc non sélectionné rend la main en 30 à 52 ms au lieu de 107 à 136, l'image comprise, et n'ajoute plus qu'un visuel à la fenêtre. « Blocs de la page » ne défile plus que si la ligne du bloc n'est pas en vue ; le sélecteur de couleur refermé ne rend plus le focus à un champ de la barre, qui engloutissait son pas. Les deux tests du double-clic reprennent le geste entier et passent vingt fois de suite, chacun dans un processus neuf. Quatre tests ; relecture et juge après fusion. Recette dans `Scripts/recettes/` |
 | **Q24** | Annuler ou Rétablir ne laisse plus une saisie hors de toute transaction | **100 %** | `Undo` et `Redo` referment ce qui est ouvert, comme avant, puis lèvent un avis sur chaque chemin, rien à défaire compris (`MainWindowViewModel.Transactions.cs`), sans rien rouvrir eux-mêmes : chaque propriétaire encore actif rouvre sa propre transaction, et lui seul — la saisie sur la page si elle l'est toujours, le champ du dock ou de la barre s'il a toujours le focus, et deux que le plan ne nommait pas, le glissé dont le bouton est tenu et le sélecteur de couleur resté ouvert. Une annulation qui relit le document referme la saisie, et rien ne se rouvre pour elle. Les trois cas du plan se montraient, le déduit compris : un champ de la barre sous un `Ctrl+Z` sans rien à annuler, une marge de l'onglet Document sous une vraie annulation ; les champs du bloc, eux, perdent le focus à une annulation, la sélection se vidant en passant. Neuf tests, dont sept tombaient sur le code d'avant ; le test du double-clic de Q14 n'est plus joué à froid par la recette, où il tombait sous la charge de la machine, avant Q24 comme après ; relecture et juge après fusion. Recette dans `Scripts/recettes/` |
-| **Q25** | Un réglage fait pendant une saisie a son propre pas | 0 % | Trouvé par la même relecture : un champ de la barre ouvert pendant la frappe se fond dans son pas. Phase N, salve Saisie 1, après Q24 dans la même copie |
+| **Q25** | Un réglage fait pendant une saisie a son propre pas | **100 %** | Confirmé d'abord par un test : la transaction de la saisie s'ouvrait au double-clic et ne se refermait qu'à Échap, et le corps réglé à la barre, le retrait saisi au dock ou la couleur prise au sélecteur pendant la frappe se fondaient dans son pas. Elle suit désormais le focus de la zone de saisie sur la page — ouverte quand la zone le prend, refermée quand elle le perd, et à `EndTextEdit` ; la saisie reste ouverte quand on clique dans la barre ou le dock, et les boutons G, I et S, qui ne prennent pas le focus, gardent `UnGesteUnPas`. La réponse de la planche à l'avis de Q24 suit le même focus : sous un `Ctrl+Z` sans rien à annuler, seul le champ qui a le focus rouvre sa transaction. Le sélecteur de couleur referme la sienne dès que son volet commence à se refermer, avant de rendre le focus à la zone, qui rouvrait la sienne dedans. Cinq tests, dont quatre tombaient sur le code d'avant ; relecture et juge après fusion. Recette dans `Scripts/recettes/` |
 | **I1** | Apparence de l'interface | **100 %** | `Views/Apparence.axaml` — pas « charte », qui nomme le jeu du document —, chargée par `App.axaml` : les 26 couleurs de l'interface de la maquette, une fois chacune et sous leur nom ; cinq classes aux tailles et aux couleurs de la feuille de style de la maquette, dont le bouton-icône de 30 × 30 plein d'accent quand il est actif ; 35 icônes au tracé de la maquette, à la couleur courante, une par emploi. L'écran d'aujourd'hui ne change pas d'un pixel. La recette tient la liste des vues de la phase et le poste de chaque icône, que les postes suivants complètent ; une vue qui cite l'apparence ou écrit en dur une de ses couleurs sans être dans la liste la fait échouer. Recette dans `Scripts/recettes/` |
 | **I2** | Disposition de la fenêtre | **100 %** | La fenêtre de la maquette, de haut en bas. Barre de menus : la marque, le titre du document centré, deux menus neufs — Texte (gras `Ctrl+G`, italique `Ctrl+I`, les quatre alignements, « Importer un te_xte… ») et Fenêtre (les deux panneaux, et B7). Barre principale à icônes : Annuler et Rétablir grisés sur un historique vide, mais pas pendant une saisie qui a déjà changé le bloc ; « Page entière » posé pour I6. La place de la barre contextuelle, de hauteur constante, et sa pastille, dans son propre fichier pour I3. Rail d'outils, sans Main, Zoom ni Ligne avant leur geste. Panneau Pages, dont l'entrée est un contrôle à part pour I5. Dock à quatre onglets, sections repliables retenues le temps de la session, longueurs en millimètres, vignettes de Fond et contour, « Blocs de la page » l'avant en tête. Barre d'état : la page, le format, le zoom en échelle logarithmique. Chaque champ, chaque onglet et chaque geste de la fenêtre fait un seul pas d'annulation ; les vingt-six icônes du poste servent. Repris après relecture : quatorze défauts, tous refermés. Recette dans `Scripts/recettes/` |
 | **I3** | Barre contextuelle | **100 %** | La barre suit la sélection, à la suite de la pastille de I2. Pour un bloc de texte : la police avec la garde de Q20, le corps, le gras, l'italique, le souligné — bouton S, `Ctrl+U` et « Souligné » au menu Texte sur la commande de I7, qui retire le souligné quelle qu'en soit la sorte ou pose le trait simple, et un chevron qui propose le double, l'épais et « mots seuls » —, les quatre alignements, la droite comprise, l'interligne en multiple, et la couleur du texte, dont la vignette ouvre le sélecteur du jeu ; un tableau a la même mise en forme, sans l'alignement ni le souligné ; un groupe se dissocie, plusieurs blocs s'alignent et se répartissent ; une image, une forme ou la page n'ont que la pastille. Ce que la barre porte a quitté le dock : la section Caractère, l'alignement et l'interligne de Paragraphe, la mise en forme du tableau. Chaque bouton joue la commande du menu Texte sans prendre le focus et ne se coche que par le bloc, si bien que chaque clic fait son pas, même pendant une saisie ; le sélecteur de couleur, ouvert hors de la barre, tient sa propre transaction ; `Échap` quitte un champ de la barre et rend les lettres seules aux outils. Un clic sur « Centrer le texte » centre le bloc à l'écran et au PDF en un pas. Onze tests ; relecture et juge après fusion. Repris après le contrôle indépendant : deux de ces tests tombaient trois fois sur quatorze en suite entière — un clic dans un menu tout juste ouvert, ou sur un bouton que la barre venait d'échanger, cherchait sa cible dans la dernière image rendue, où elle n'était pas encore ; le banc, pas le produit. Le clic au centre d'un contrôle n'a plus qu'une aide, `Rendu.Cliquer`, pour les trois classes qui en avaient chacune une copie : elle attend que l'image montre le contrôle sous son centre, et échoue en nommant ce qui le couvre. Recette dans `Scripts/recettes/` |
@@ -4647,6 +4647,52 @@ saisie reste ouverte quand on clique dans le dock, comme aujourd'hui.
 
 Fichiers : `PageCanvas.axaml.cs` (`BeginTextEdit`, `EndTextEdit`), tests. Dépend de Q24, dans la
 même copie. Effort : faible.
+
+*Fait le 26 octobre 2026.* Le défaut se montre, comme le plan le disait : sur une saisie ouverte,
+« abc », le corps à 14 dans la barre puis Entrée, un clic dans le texte, « d », Échap — la première
+annulation ne rendait pas l'état d'après le corps, le réglage et les deux frappes ne faisant qu'un
+pas ; de même pour un retrait de première ligne saisi au dock, et pour une couleur prise au
+sélecteur de la barre.
+
+La transaction de la saisie suit le focus de sa zone sur la page (`PageCanvas.axaml.cs`) :
+`BeginTextEdit` ne l'ouvre plus, la planche l'ouvre quand la zone du bloc en saisie prend le focus
+et la referme quand elle le perd — `GotFocus` et `LostFocus`, qui montent de la zone jusqu'à
+elle —, et `EndTextEdit` referme celle que la saisie tient, et elle seule. Le focus quitte la zone
+avant d'arriver au champ : le champ de la barre ou du dock ouvre la sienne quand celle de la
+saisie est déjà refermée, et fait son pas ; le clic qui rend le focus au texte en rouvre une pour la
+frappe qui reprend. La saisie reste ouverte quand on clique dans la barre ou le dock, comme avant.
+Les boutons G, I et S ne prennent pas le focus : la zone le garde, et `UnGesteUnPas` referme la
+transaction de la saisie, empile le pas du bouton et la rouvre, sans changement. La réponse de la
+planche à l'avis de Q24 suit le même focus : elle rouvre la transaction de la saisie si sa zone a
+toujours le focus, et non plus si la saisie est toujours ouverte.
+
+*Recette jouée* : la troisième partie de `Scripts/recettes/Q24-Q25-transactions.sh`. Les sources :
+`BeginTextEdit` sans `BeginEdit`, `EndTextEdit` sans `CommitEdit` direct, la planche abonnée au
+focus de la zone, et les deux volets de couleur de la barre abonnés à leur fermeture imminente.
+Puis cinq tests sous `poste=Q25` (`TransactionsDeSaisieTests`), au clavier et à la souris sur la
+vraie fenêtre : les trois cas du plan — le corps à la barre, le retrait au dock, la couleur au
+sélecteur —, chacun en trois pas défaits un à un et dans l'ordre ; le gras cliqué à la barre, qui
+fait son pas sans prendre le focus ; et, Q24 et Q25 ensemble, un `Ctrl+Z` sans rien à annuler
+pendant la saisie, le focus dans le corps de la barre — seul le champ rouvre sa transaction. Le gras
+passait sur le code d'avant, les quatre autres tombaient. Quatre sabotages au juge : la transaction
+qui ne se referme plus quand la zone perd le focus, celle qui ne se rouvre plus quand elle le
+reprend, la saisie qui la rouvre sous l'avis sans que sa zone ait le focus, et le sélecteur de
+couleur qui referme la sienne après avoir rendu le focus.
+
+*Ce que l'implémentation a appris.* Le volet du sélecteur de couleur rend le focus au dernier
+élément qui l'avait avant de lever `Closed` : pendant une saisie, c'est la zone de la page, et sa
+transaction se rouvrait dans celle de la couleur, encore ouverte — la pastille et la frappe qui
+suivait ne faisaient qu'un pas. La transaction de la couleur se referme donc à `Closing`, quand le
+volet commence à se refermer (`BarreContextuelle.axaml` et son code, que le plan ne nommait pas) ;
+`Closed` garde ce que Q23 y avait mis — un champ de la barre qui reprend le focus le rend aussitôt —
+et referme la transaction d'un volet qui se serait refermé sans prévenir. Le piège du plan se
+vérifie : le sélecteur retire le focus en s'ouvrant, ce qui clôt la frappe d'abord, et la frappe
+reprend dans la zone, qui a retrouvé le focus, sans clic.
+
+*Choisi sans certitude.* Entre le double-clic et le focus de la zone, que la planche lui donne au
+passage de mise en page suivant, la saisie n'a pas de transaction : rien ne s'y tape encore. Une
+fenêtre quittée pendant la frappe n'est pas éprouvée sur le banc : si la plate-forme retire alors
+le focus à la zone, la frappe déjà faite fait son pas, et la suite en ouvre un autre au retour.
 
 ---
 
