@@ -86,6 +86,7 @@ vues_de_la_phase=(
     MyPublisher/Views/VignetteDePage.cs
     MyPublisher/Views/TraitBloc.cs
     MyPublisher/Views/PageCanvas.Trait.cs
+    MyPublisher/Views/CoucheDeSaisie.cs
 )
 
 # Le relevé d'avant la phase : les couleurs de la maquette que des fichiers hors de la

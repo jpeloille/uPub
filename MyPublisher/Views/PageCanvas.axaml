@@ -563,8 +563,10 @@
             </Border>
 
             <!-- La couche de saisie couvre toute la planche, et non plus la seule page.
-                 Ses coordonnées restent celles de la page : le code les lit sur « Surface ». -->
-            <Border Name="InputLayer" Background="Transparent"/>
+                 Ses coordonnées restent celles de la page : le code les lit sur « Surface ».
+                 Pendant la saisie d'un texte sur la page, elle reste atteignable partout,
+                 sauf sur ce texte, qu'elle laisse à son champ (poste N5). -->
+            <views:CoucheDeSaisie Name="InputLayer" Background="Transparent"/>
         </Panel>
     </ScrollViewer>
     </Grid>
