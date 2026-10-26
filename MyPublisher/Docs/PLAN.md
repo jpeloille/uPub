@@ -4564,6 +4564,24 @@ La relecture a éprouvé le chronomètre sous charge, comblé un trou, et repris
   garde et sans elle, ni une passe de mise en page de plus : la dépense que la livraison a
   chronométrée (5 à 10 ms) ne se compte pas ainsi, et n'a pas de sabotage.
 
+*Repris le 26 octobre 2026, après Q25 : un trou du juge.* Le sabotage du focus rendu par le
+sélecteur refermé n'était plus attrapé. Q25 referme la transaction de la couleur à `Closing`,
+avant que le volet ne rende le focus : la raison écrite à la livraison — le pas de la couleur
+englouti — est tombée. Éprouvé avec et sans le `ClearFocus` de `SurCouleurFermee`, le volet
+refermé par `Hide`, par `Échap` et par un clic sur la page : le compte des pas est le même —
+le corps, la couleur, puis le gras cliqué, `Ctrl+G`, un glissé ou un clic sur un autre bloc,
+chacun le sien. Ce qui change, c'est le clavier. Sans lui, le corps ou la police que l'on
+venait de régler reprend le focus sans avoir été cliqué : « T » s'écrit dans le corps au lieu
+d'armer l'outil texte, une flèche y déplace le curseur au lieu de pousser le bloc, `Suppr` y
+efface le chiffre au lieu du bloc, et il faut un `Échap` de plus pour rendre la main à la
+planche. La saisie sur la page garde le focus dans les deux cas : le code ne le retire qu'à un
+champ de la barre. Le code reste, son commentaire dit sa raison d'aujourd'hui, et
+`Le_selecteur_de_couleur_referme_rend_les_lettres_aux_outils` (`BarreContextuelleTests`) la
+montre : il tombe sans lui, et le juge l'attend nommément. *Relevé, non corrigé* : un champ
+du dock — la position X — reprend de même le focus au volet refermé, et « T » s'y tape : le
+code ne retire le focus qu'à un champ de la barre. Ce n'est pas éprouvé sur
+le code d'avant Q23.
+
 ### Q24 — Annuler ou Rétablir ne laisse plus une saisie hors de toute transaction
 
 *Trouvé le 25 octobre 2026 par la relecture du cours sous l'angle de la saisie (fiche 23, a14),

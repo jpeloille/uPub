@@ -137,8 +137,12 @@ public partial class BarreContextuelle : UserControl
         // Le volet refermé rend le focus au dernier champ qui l'avait dans la fenêtre. Un champ
         // de la barre est gardé d'une sélection à l'autre depuis Q23 : il le reprenait, et la
         // transaction que la fenêtre ouvre à son focus engloutissait celle de la couleur, qui
-        // ne faisait plus son pas. Il le rend aussitôt, comme à l'ouverture du sélecteur. La
-        // zone de saisie de la page, elle, le garde : la frappe continue (Q25).
+        // ne faisait plus son pas. Depuis Q25, celle-ci se referme avant (Closing) ; reste le
+        // clavier : le champ repris gardait les touches de la planche — « T » s'écrivait dans
+        // le corps au lieu d'armer l'outil texte, une flèche y déplaçait le curseur au lieu du
+        // bloc, Suppr y effaçait le chiffre au lieu du bloc. Il le rend donc aussitôt, comme à
+        // l'ouverture du sélecteur. La zone de saisie de la page, elle, le garde : la frappe
+        // continue (Q25).
         if (TopLevel.GetTopLevel(this)?.FocusManager is { } focus &&
             focus.GetFocusedElement() is Control champ && champ.GetSelfAndVisualAncestors().Contains(this))
         {

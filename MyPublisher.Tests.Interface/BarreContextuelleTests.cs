@@ -779,4 +779,39 @@ public class BarreContextuelleTests
         Assert.Equal(12, bloc.FontSize);
         Assert.IsType<TextFrame>(Rendu.UnSeulPas(vm, avant, "corps quitté par Échap"));
     }
+
+    [AvaloniaFact]
+    public void Le_selecteur_de_couleur_referme_rend_les_lettres_aux_outils()
+    {
+        // Écrit le 26 octobre 2026, quand le juge ne voyait plus le focus rendu par le volet
+        // refermé. Le volet rend le focus au dernier champ qui l'avait : le corps, gardé d'une
+        // sélection à l'autre depuis Q23, le reprenait. Depuis Q25, la couleur fait son pas
+        // quand même — sa transaction se referme avant —, mais le corps gardait le clavier :
+        // « T » s'y écrivait au lieu d'armer l'outil texte, alors que rien n'y avait été cliqué.
+        var bloc = Texte("Texte", 60, 60);
+        var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(bloc));
+        vm.SelectOnly(bloc);
+        Rendu.Battre();
+
+        var corps = Trouver<NumericUpDown>(Barre(fenetre), "CorpsDuBloc").GetVisualDescendants().OfType<TextBox>().First();
+        Rendu.Cliquer(corps);
+        corps.SelectAll();
+        Rendu.Taper(fenetre, "14");
+        Rendu.Touche(fenetre, PhysicalKey.Enter);
+        Assert.Equal(14, bloc.FontSize);
+        Assert.True(corps.IsFocused, "le corps n'a pas le focus");
+
+        Rendu.Cliquer(Trouver<Button>(Barre(fenetre), "CouleurDuTexte"));
+        Rendu.Cliquer(SelecteurOuvert(fenetre).GetVisualDescendants().OfType<Button>().Single(x => x.Tag is EmplacementDeCouleur.Accent2));
+        Rendu.Touche(fenetre, PhysicalKey.Escape);
+        Assert.False(Assert.IsType<Flyout>(Trouver<Button>(Barre(fenetre), "CouleurDuTexte").Flyout).IsOpen,
+            "Échap n'a pas refermé le sélecteur");
+        Assert.Equal("scheme:accent2", bloc.Foreground);
+        Assert.False(Barre(fenetre).IsKeyboardFocusWithin, "le sélecteur refermé a rendu le focus au corps");
+
+        Rendu.Touche(fenetre, PhysicalKey.T);
+        Rendu.Taper(fenetre, "T");
+        Assert.Equal(EditorTool.Text, vm.ActiveTool);
+        Assert.Equal(EnPoints(14), corps.Text);
+    }
 }

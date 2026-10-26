@@ -2252,6 +2252,10 @@ saboter "le sélecteur de couleur (Q23) reste ouvert quand le bloc change sans c
     '' \
     'BarreContextuelleTests\.Changer_de_bloc_sans_le_pointeur'
 
+# Le pas de la couleur ne s'y perd plus depuis Q25, qui referme sa transaction à Closing, avant
+# que le focus revienne : le sabotage n'était plus attrapé. Ce que le focus rendu change
+# encore, c'est le clavier — « T » s'écrit dans le corps au lieu d'armer l'outil texte —, et
+# le test qui le voit est écrit le 26 octobre 2026.
 saboter "le sélecteur de couleur refermé (Q23) rend le focus à un champ gardé de la barre" \
     MyPublisher/Views/BarreContextuelle.axaml.cs \
     'focus.ClearFocus();
@@ -2261,7 +2265,7 @@ saboter "le sélecteur de couleur refermé (Q23) rend le focus à un champ gard�
     '}
 
         // Un volet refermé sans avoir dit' \
-    'BarreContextuelleTests'
+    'BarreContextuelleTests\.Le_selecteur_de_couleur_referme'
 
 # N1 : les gestes des tests d'interface sont synthétisés par Rendu.cs seul. Un glissé qui ne
 # dit pas le bouton tenu était le défaut de deux des trois copies : un TextBox n'y étend pas sa
