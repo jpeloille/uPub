@@ -183,6 +183,14 @@ public static class PubImporter
 
         private readonly StringBuilder _texte = new();
         private readonly List<StyleSpan> _fragments = [];
+
+        /// <summary>
+        /// Ce que chaque langue pèse, dans le bloc en cours et dans tout le document : ses
+        /// caractères, puis ses fragments — un fragment vide, qui ne porte que sa marque de
+        /// paragraphe, a une langue et pas un caractère (poste N9).
+        /// </summary>
+        private readonly Dictionary<string, (int Caracteres, int Fragments)> _languesDuBloc = new(StringComparer.Ordinal);
+        private readonly Dictionary<string, (int Caracteres, int Fragments)> _languesDuDocument = new(StringComparer.Ordinal);
         private readonly List<ParagraphSpan> _paragraphes = [];
         private int _paragraphe;
         private int _debutFragment;
@@ -241,6 +249,7 @@ public static class PubImporter
         public void Terminer()
         {
             if (Document.Pages.Count == 0) Document.Pages.Add(new Page { Name = "Page 1" });
+            ParlerLeDocument();
             if (_tabulations > 0)
             {
                 Avertissements.Add(
@@ -312,6 +321,7 @@ public static class PubImporter
 
             _texte.Clear();
             _fragments.Clear();
+            _languesDuBloc.Clear();
             _paragraphes.Clear();
             _paragraphe = 0;
         }
@@ -384,6 +394,9 @@ public static class PubImporter
             if (_styleCourant is not { } style) return;
             var longueur = _texte.Length - _debutFragment;
             _styleCourant = null;
+
+            var langue = Langue(style);
+            Peser(langue, Math.Max(0, longueur));
             if (longueur <= 0) return;
 
             var position = style.GetValueOrDefault("style:text-position");
@@ -402,7 +415,104 @@ public static class PubImporter
                 Underline = LireSouligne(style),
                 Foreground = Couleur(style.GetValueOrDefault("fo:color")),
                 BaselineShift = Decalage(position),
+                Langue = langue,
             });
+        }
+
+        /// <summary>
+        /// La langue d'un fragment, en étiquette BCP 47 (poste N9). libmspub ne la donne pas
+        /// d'un seul tenant : il traduit l'identifiant de langue de Publisher par ICU, et en
+        /// écrit les parties en trois clés d'OpenDocument, vérifiées sur <c>pub2raw</c> —
+        /// <c>fo:language</c>, <c>fo:script</c> quand il y en a une, <c>fo:country</c> ;
+        /// « fo:language: fr, fo:country: FR » est « fr-FR ». ATA 21 en porte 73, toutes
+        /// « fr-FR » ; les Fiches, 298 « en-US » et 31 « fr-FR ».
+        ///
+        /// Une langue que MyPublisher ne connaît pas reste écrite telle quelle : l'étiquette
+        /// n'est ni vérifiée ni corrigée. Un fragment sans langue s'en remet à son bloc.
+        /// </summary>
+        private static string? Langue(Dictionary<string, string> style)
+        {
+            if (style.GetValueOrDefault("fo:language") is not { Length: > 0 } langue) return null;
+
+            var etiquette = new StringBuilder(langue);
+            if (style.GetValueOrDefault("fo:script") is { Length: > 0 } ecriture) etiquette.Append('-').Append(ecriture);
+            if (style.GetValueOrDefault("fo:country") is { Length: > 0 } pays) etiquette.Append('-').Append(pays);
+            return etiquette.ToString();
+        }
+
+        private void Peser(string? langue, int caracteres)
+        {
+            if (langue is null) return;
+            foreach (var pesee in new[] { _languesDuBloc, _languesDuDocument })
+            {
+                var (c, f) = pesee.GetValueOrDefault(langue);
+                pesee[langue] = (c + caracteres, f + 1);
+            }
+        }
+
+        /// <summary>La langue qui pèse le plus : la plus écrite, puis la plus souvent déclarée.</summary>
+        private static string? Dominante(Dictionary<string, (int Caracteres, int Fragments)> pesee) =>
+            pesee.OrderByDescending(p => p.Value.Caracteres).ThenByDescending(p => p.Value.Fragments)
+                 .Select(p => p.Key).FirstOrDefault();
+
+        /// <summary>
+        /// La langue la plus répandue du bloc devient la sienne, et un fragment qui la répète
+        /// ne la dit plus : la règle de <see cref="Degager"/> pour le style, à ceci près qu'un
+        /// fragment qui ne s'écarte de son bloc que par la langue reste — c'est tout ce qu'il
+        /// a à dire (poste N9).
+        /// </summary>
+        private void Parler(TextFrame bloc)
+        {
+            bloc.Langue = Dominante(_languesDuBloc);
+            foreach (var fragment in _fragments)
+            {
+                if (fragment.Langue == bloc.Langue) fragment.Langue = null;
+            }
+        }
+
+        /// <summary>
+        /// La langue des fragments d'une case, et elle seule. L'import ne rend pas le style
+        /// des fragments d'une case — elle prend celui du tableau, comme avant N9 —, mais sa
+        /// langue ne se dessine pas, et elle ne s'y perd plus : les Fiches portent seize titres
+        /// déclarés en français dans leurs cases. Une case n'a pas de langue à elle ; ce qui
+        /// répète celle du document s'en remet à lui (<see cref="ParlerLeDocument"/>).
+        /// </summary>
+        private void ParlerDansLaCase(TableCell cellule)
+        {
+            foreach (var fragment in _fragments.Where(f => f.Langue is not null))
+            {
+                cellule.Spans.Add(new StyleSpan { Start = fragment.Start, Length = fragment.Length, Langue = fragment.Langue });
+            }
+        }
+
+        /// <summary>
+        /// La langue la plus répandue du document devient la sienne, et un bloc qui la répète
+        /// s'en remet à lui : changer la langue du document au dock change alors celle de
+        /// tout ce qui l'emploie. Un relevé sans aucune langue laisse au document la sienne.
+        /// </summary>
+        private void ParlerLeDocument()
+        {
+            if (Dominante(_languesDuDocument) is not { } langue) return;
+
+            Document.Langue = langue;
+            foreach (var bloc in Document.Pages.SelectMany(page => page.Frames))
+            {
+                switch (bloc)
+                {
+                    case TextFrame texte when texte.Langue == langue:
+                        texte.Langue = null;
+                        break;
+                    case TableFrame tableau:
+                        foreach (var cellule in tableau.Cells)
+                        {
+                            foreach (var repete in cellule.Spans.Where(f => f.Langue == langue).ToList())
+                            {
+                                cellule.Spans.Remove(repete);
+                            }
+                        }
+                        break;
+                }
+            }
         }
 
         /// <summary>
@@ -463,6 +573,8 @@ public static class PubImporter
             if (_bloc is null) return;
 
             _bloc.Text = _texte.ToString();
+            if (_cellule is not null) ParlerDansLaCase(_cellule);
+            Parler(_bloc);
             Degager(_bloc);
             foreach (var fragment in _fragments) _bloc.Spans.Add(fragment);
             foreach (var paragraphe in _paragraphes) _bloc.Paragraphs.Add(paragraphe);
@@ -538,10 +650,25 @@ public static class PubImporter
             // Un fragment qui répète le style du bloc n'apprend plus rien ; le garder
             // alourdirait le fichier et ferait croire à une exception là où il n'y en a
             // pas. Le décalage de ligne de base, lui, n'est jamais celui du bloc.
-            _fragments.RemoveAll(f =>
+            bool RepeteLeBloc(StyleSpan f) =>
                 f.BaselineShift == 0 && f.Underline is null &&
                 (f.FontFamily, f.FontSize, f.Bold, f.Italic, f.Foreground) ==
-                (dominant.FontFamily, dominant.FontSize, dominant.Bold, dominant.Italic, dominant.Foreground));
+                (dominant.FontFamily, dominant.FontSize, dominant.Bold, dominant.Italic, dominant.Foreground);
+
+            // Sauf par sa langue (poste N9) : un titre français dans un bloc anglais garde
+            // son fragment, et n'y garde qu'elle. Ce qu'il répète du bloc, il le laisse au
+            // bloc ; sinon il en figerait la police et le corps, et ne suivrait plus le bloc
+            // qu'on retouche.
+            foreach (var fragment in _fragments.Where(f => f.Langue is not null && RepeteLeBloc(f)))
+            {
+                fragment.FontFamily = null;
+                fragment.FontSize = null;
+                fragment.Bold = null;
+                fragment.Italic = null;
+                fragment.Foreground = null;
+            }
+
+            _fragments.RemoveAll(f => f.Langue is null && RepeteLeBloc(f));
         }
 
         /// <summary>Un nom lisible dans la liste des blocs : les premiers mots du texte.</summary>
@@ -805,6 +932,7 @@ public static class PubImporter
 
             _texte.Clear();
             _fragments.Clear();
+            _languesDuBloc.Clear();
             _paragraphes.Clear();
             _paragraphe = 0;
         }
@@ -820,6 +948,7 @@ public static class PubImporter
             if (_cellule is not null && _cellule.Text.Length == 0 && _texte.Length > 0)
             {
                 _cellule.Text = _texte.ToString();
+                ParlerDansLaCase(_cellule);
             }
 
             _cellule = null;

@@ -113,7 +113,15 @@ public static class Rendu
     /// <c>Scripts/outils-pub.sh</c>. Introuvable, le test échoue en disant comment
     /// l'obtenir — il ne se déclare pas vert sur un document qu'il n'a pas ouvert.
     /// </summary>
-    public static Document Ata21()
+    public static Document Ata21() =>
+        DocumentSerializer.Import(Livre("ATA 21 - Air conditioning.pub")).Document;
+
+    /// <summary>
+    /// Le chemin d'un des deux documents Publisher de <c>MyPublisher/Books/</c>, le lecteur
+    /// rendu disponible comme pour <see cref="Ata21"/> : de quoi relever ou importer les
+    /// Fiches aussi (poste N9, qui compare l'import au relevé).
+    /// </summary>
+    public static string Livre(string nom)
     {
         var racine = Racine();
 
@@ -130,8 +138,7 @@ public static class Rendu
                 string.IsNullOrEmpty(actuel) ? bibliotheques : $"{bibliotheques}:{actuel}");
         }
 
-        return DocumentSerializer.Import(
-            Path.Combine(racine, "MyPublisher", "Books", "ATA 21 - Air conditioning.pub")).Document;
+        return Path.Combine(racine, "MyPublisher", "Books", nom);
     }
 
     /// <summary>

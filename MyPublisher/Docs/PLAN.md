@@ -112,7 +112,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **N6** | Les raccourcis de la fenêtre laissent la touche au champ | **100 %** | Tant qu'un champ de texte a le clavier — la saisie d'un bloc sur la page, un champ du dock ou de la barre, numérique compris, ou une liste déroulante —, Tout sélectionner, Dupliquer, Grouper, Dissocier, Premier plan et Arrière-plan se taisent : leur `CanExecute` lit le focus de la fenêtre (`ConsumesTyping`, que la fenêtre prête au modèle de vue dans `MainWindowViewModel.Clavier.cs`), et leur touche revient au champ. En saisie, `Ctrl+A` sélectionne le texte, la saisie reste ouverte et la sélection des blocs ne change pas ; de même dans Contenu, Nom, X et une marge, où la valeur tapée ensuite fait son pas — le chemin relevé à Q24 ; `Ctrl+D`, `Ctrl+Maj+G`, `H`, `F` et `B` ne font rien et n'empilent rien — le relevé de I3 est corrigé. `Alt`+flèche, en saisie, déplace le bloc de 3 pt (`Maj` : 0,5 pt) dans un pas à lui, et la saisie continue, le curseur en place. La fenêtre notifie les six commandes à chaque prise et perte du focus : les boutons Premier plan, Arrière-plan, Grouper et Dissocier se grisent tant qu'un champ a le clavier ; **les menus, non** — un menu qu'on ouvre prend le focus, et ses entrées se rallument : à trancher par le propriétaire, voir la section. Hors des champs, tout se joue comme avant (A4). Huit tests, tous tombaient sur le code d'avant ; trois sabotages au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **N7** | Mesurer l'écart de la première voie, et s'arrêter | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 2. **Arrêt** : la voie de R7 revient au propriétaire |
 | **N8** | Couper, copier, coller des blocs | **100 %** | `Ctrl+X`, `Ctrl+C` et `Ctrl+V` hors saisie, pris par `OnKeyDown` après la garde de la saisie et jamais en `KeyBinding` (`OnCouper`, `OnCopier`, `OnColler`) ; le menu Édition porte Couper, Copier, Coller, qui passent par la fenêtre et rendent le geste au champ de texte — la zone de saisie, que la barre de menus prive du focus, le reprend avec sa sélection une fois le menu refermé. Le format `mypublisher-blocs` est le JSON d'un document d'une page portant des clones de la sélection, dans l'ordre de la page, avec le texte brut des blocs à côté (`MainWindowViewModel.PressePapiers.cs`) ; le collage pose des clones, en un pas, au même endroit, ou 12 pt plus loin — puis 24 — tant que la place est prise, comme `Ctrl+D` ; Couper fait un seul pas ; un texte venu d'ailleurs devient un bloc de texte. Un collage d'une version plus récente du format est refusé ; les références au jeu se résolvent dans le document d'arrivée ; les chemins d'images, absolus en mémoire depuis A3, se rebasent à son enregistrement. Le presse-papiers du banc sans affichage suffit, aucun faux. Onze tests ; un sabotage au juge ; relecture et juge après fusion. Recette dans `Scripts/recettes/` |
-| **N9** | La langue du texte | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 2 |
+| **N9** | La langue du texte | **100 %** | `Document.Langue`, une étiquette BCP 47, toujours là — `fr-FR` pour un document vierge ou écrit avant N9, jamais la langue de la machine ; celle du modèle pour un document qui en part — ; `TextFrame.Langue` et `StyleSpan.Langue`, nulles pour « comme le bloc », puis « comme le document » (`Langues.DuCaractere`, pour N25). Clés additives, `FormatVersion` à 5, Samples et Templates réenregistrés par `--resave`. L'import lit `fo:language`, `fo:script` et `fo:country`, les clés que `pub2raw` écrit sur chaque fragment : ATA 21 en déclare 73 en `fr-FR`, les Fiches 298 en `en-US` et 31 en `fr-FR` ; les 50, 294 et 17 qui portent un caractère gardent leur langue caractère par caractère, comparés au relevé lui-même, seize titres français que les Fiches écrivent dans des cases de tableau compris. La langue la plus écrite va au bloc, puis au document — ATA 21 en `fr-FR`, les Fiches en `en-US` — ; un fragment qui ne diffère de son bloc que par elle reste, et ne dit qu'elle. Le dock Document la règle en un pas, section « Langue » ; une langue inconnue s'y montre telle quelle et ne se perd pas. Elle n'entre pas dans `StyleEffectif` : rien de ce qui se dessine n'en dépend — l'empreinte des 18 documents du corpus est identique avant et après le poste, et chaque document se rend au bit près dans une autre langue. La mise en forme d'une plage la garde, `Ctrl+Espace` aussi. Trente-deux tests, vingt-six purs et six sur la fenêtre ; quatre sabotages au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **N10** | Les raccourcis de Publisher en français | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 3 ; écrit la fiche 24 |
 | **N11** | Ne rien perdre en fermant, retrouver ses documents | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 3 |
 | **N12** | Entrer dans le texte d'un clic, le curseur au point visé | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 4 |
@@ -6753,6 +6753,74 @@ réenregistrés.
 
 Fichiers : `Frame.cs`, `StyleSpan.cs`, `Document.cs`, `PubImporter.cs`, `MainWindow.axaml` (dock
 Document), Samples, Templates. Effort : faible à moyen.
+
+*Livré le 26 octobre 2026*, dans la salve Saisie 2 ; la relecture adversariale vient après la
+fusion. **Les clés, vérifiées sur `pub2raw` avant d'écrire** : libmspub ne rend pas d'étiquette
+d'un seul tenant, mais les parties de celle qu'ICU tire de l'identifiant de langue de Publisher,
+en trois clés d'OpenDocument — `fo:language` et `fo:country` sur chaque `openSpan` des deux
+documents, `fo:script` d'après les chaînes de la bibliothèque, qu'aucun des deux ne porte. Les
+comptes sont ceux du plan : 73 `fr-FR` pour ATA 21, 298 `en-US` et 31 `fr-FR` pour les Fiches.
+Mais 23 des fragments d'ATA 21, et 18 de ceux des Fiches (4 `en-US`, 14 `fr-FR`), ne portent que
+leur marque de paragraphe, que l'import écarte : ce qui se vérifie sur l'import est donc 50
+fragments `fr-FR`, et 294 `en-US` et 17 `fr-FR` — chacun retrouvé à sa place dans le texte de son
+bloc ou de sa case, chaque caractère dans la langue déclarée. La recette le mesure en Python sur
+le `.mypub` que le vrai binaire réécrit, le test sur la vraie fenêtre en C#, tous deux contre le
+relevé et non contre l'import. Le poste écrit, outre les fichiers nommés : `Models/Langues.cs`
+(la langue par défaut et la résolution d'un caractère, d'un bloc ou d'une case) ;
+`MiseEnForme.cs`, dont les surcharges portent la langue, comme N2 le demandait ;
+`MainWindowViewModel.Langue.cs`, le partiel du dock, que le modèle de vue principal annonce en deux
+lignes, quand le document ou sa langue changent ; l'aide `Rendu.Livre`, hors de la région des
+gestes, qui ouvre les Fiches comme `Ata21` ouvrait ATA 21 ; le README (le format, l'onglet
+Document) ; `LangueTests` (vingt-six tests purs) et `LangueDuDocumentTests` (six sur la fenêtre) ;
+quatre sabotages au juge — l'import qui oublie la langue d'un fragment, celui qui ignore le pays
+(le sabotage de F2), le document vierge dans la langue de la machine, `Ctrl+Espace` qui efface la
+langue. **Le rendu ne change pas, mesuré** : `Scripts/empreinte-composition.sh` relevé sur le
+commit de départ et sur le poste, aux 18 documents du corpus, donne des empreintes identiques —
+36 fichiers, 2 492 lignes composées, 29 pages. La recette rend en outre l'exemple, ATA 21 et les
+Fiches tels quels, puis toutes leurs langues changées : empreinte du banc, PDF et pixels au bit
+près, et `comparer-rendus.sh` au même écart des deux côtés.
+
+*Ce que l'implémentation a appris.*
+- **La langue reste hors de `StyleEffectif`**, ce que le test d'exhaustivité de N2 attendait
+  autrement : il demandait au style effectif toutes les propriétés du fragment. Or le style
+  effectif est ce que la composition découpe : une frontière de langue au milieu d'un mot en
+  ferait deux unités, que le renvoi à la ligne pourrait séparer. La ligne du test est réécrite
+  (règle 14) — le style effectif a tout le fragment sauf la langue — ; les surcharges de la mise
+  en forme et `StyleDeLaPlage` la portent, elles, et le test le vérifie toujours.
+- L'import retirait tout fragment qui répète le style de son bloc ; un titre français dans un
+  bloc anglais, au même style, aurait disparu, et sa langue avec. Il reste, mais n'écrit plus que
+  sa langue : gardé avec sa police et son corps, il les figerait, et ne suivrait plus le bloc
+  qu'on retouche.
+- **Les Fiches écrivent seize de leurs titres dans des cases de tableau**, sans bloc de texte
+  (`openSpan` dans `openTableCell`) ; l'import n'en gardait que le texte. Le poste en garde la
+  langue, en fragments qui ne disent qu'elle ; pas le style, qui changerait le dessin des cases.
+- Un relevé se lit en Python avec `newline=""` : sans lui, le « \r » de chaque marque de
+  paragraphe (`insertText (\r)`) passe pour une fin de ligne, et la recette perdait deux
+  fragments d'ATA 21.
+
+*Choisi sans certitude* :
+- la langue la plus écrite — en caractères, puis en fragments — devient celle du bloc, puis
+  celle du document importé ; ce qui la répète s'en remet à lui, si bien que le dock change la
+  langue de tout ce qui l'emploie. Les étiquettes sont gardées telles quelles, alors que l'étude
+  les dit fausses (C18, C24 : ATA 21 est en anglais) ; l'avertissement « une seule langue
+  déclarée » de F2 n'est pas dans la section du poste, et n'est pas fait ;
+- `Ctrl+Espace` (`MiseEnForme.Retirer`) rend le style du bloc et garde la langue : elle n'est pas
+  du style ;
+- un fragment qui écrit la langue de son bloc la garde — la mise en forme ne la compare pas au
+  bloc, dont le style commun ne la porte pas — et la gardera si le bloc en change ;
+  `MiseEnForme.Lire` la rend brute, nulle quand la plage en mêle deux ou s'en remet au bloc ;
+- le dock propose douze langues, aux noms écrits en français — `CultureInfo` les donnerait dans
+  la langue de la machine, ou pas du tout sous `LC_ALL=C` — : `fr-FR`, `fr-BE`, `fr-CA`,
+  `fr-CH`, `en-US`, `en-GB`, `de-DE`, `es-ES`, `it-IT`, `nl-NL`, `pt-PT`, `pt-BR` ; la langue d'un
+  document qui n'en est pas s'ajoute à la liste telle qu'elle est écrite. La section « Langue »
+  est la dernière de l'onglet ; une étiquette ne s'y tape pas ;
+- la clé s'écrit `Langue`, comme la section le nomme, parmi des clés presque toutes anglaises ;
+  une langue de document nulle ou vide dans un fichier se lit `fr-FR`.
+
+*Relevé, non corrigé.* Les cases importées n'ont toujours pas le style de leurs fragments : les
+titres des Fiches y prennent la police, le gras et la couleur du tableau. Le dock ne règle que la
+langue du document ; celle d'un bloc ou d'une sélection attend son poste (N25, ou les menus de
+N13).
 
 ### Lot 2 — Le clavier et le clic de Publisher
 

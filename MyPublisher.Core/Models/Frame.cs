@@ -564,6 +564,16 @@ public partial class TextFrame : Frame
     private string _foreground = "#FF1A1A1A";
 
     /// <summary>
+    /// La langue du bloc, une étiquette BCP 47 (poste N9) ; nulle, celle du document. Ses
+    /// fragments peuvent la changer. Elle ne change rien à ce qui se dessine (voir
+    /// <see cref="Langues"/>) : elle ne sert qu'au correcteur. Nulle par défaut — le cas de
+    /// tous les documents écrits jusqu'ici —, sans migration : <c>FormatVersion</c> reste à 5.
+    /// </summary>
+    [ObservableProperty]
+    [property: JsonPropertyOrder(155)]
+    private string? _langue;
+
+    /// <summary>
     /// Portions de texte qui s'écartent du style du bloc. Vide — le cas de tous les
     /// documents écrits jusqu'ici — veut dire que le bloc est d'un seul style, et rien
     /// ne change pour lui : c'est pourquoi cette addition ne demande aucune migration
@@ -743,7 +753,7 @@ public partial class TextFrame : Frame
         {
             Text = Text, FontFamily = FontFamily, FontSize = FontSize, Bold = Bold,
             Italic = Italic, Underline = Underline, Foreground = Foreground, Align = Align,
-            LineHeight = LineHeight, PaddingLeft = PaddingLeft, PaddingTop = PaddingTop,
+            Langue = Langue, LineHeight = LineHeight, PaddingLeft = PaddingLeft, PaddingTop = PaddingTop,
             PaddingRight = PaddingRight, PaddingBottom = PaddingBottom, Field = Field,
             IndentLeft = IndentLeft, IndentRight = IndentRight,
             IndentFirstLine = IndentFirstLine, SpaceBefore = SpaceBefore, SpaceAfter = SpaceAfter,

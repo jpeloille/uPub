@@ -1939,6 +1939,34 @@
                                     <TextBlock Classes="aide" IsVisible="{Binding !Document.HasBackground}"
                                                Text="Sans fond, la page reste blanche. Le fond ne déborde pas : il s'arrête au format de page."/>
                                 </StackPanel>
+
+                                <!-- La langue du document (poste N9) : celle de tout texte qui n'en dit
+                                     pas d'autre. Elle ne change rien à ce qui se dessine ni à ce qui
+                                     s'imprime ; elle servira au correcteur (N25). Le choix fait son pas
+                                     d'annulation lui-même, par le modèle de vue, comme le jeu de
+                                     couleurs : deux langues choisies de suite font deux pas. -->
+                                <ToggleButton Classes="titreSection" IsChecked="{Binding SectionLangueOuverte}">
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <Panel>
+                                            <ContentControl Classes="chevronOuvert" Content="{StaticResource IconeSectionOuverte}"/>
+                                            <ContentControl Classes="chevronFerme" Content="{StaticResource IconeSectionFermee}"/>
+                                        </Panel>
+                                        <TextBlock Text="Langue"/>
+                                    </StackPanel>
+                                </ToggleButton>
+                                <StackPanel Classes="contenuDeSection" Spacing="6" IsVisible="{Binding SectionLangueOuverte}">
+                                    <ComboBox x:Name="LangueDuDocument" Classes="champ"
+                                              ItemsSource="{Binding LanguesProposees}"
+                                              SelectedItem="{Binding LangueDuDocument}">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate DataType="vm:LangueProposee">
+                                                <TextBlock Text="{Binding Nom}"/>
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                    <TextBlock Classes="aide"
+                                               Text="La langue du texte qui n'en dit pas d'autre. Elle servira à la vérification orthographique, et ne change rien à ce qui s'imprime."/>
+                                </StackPanel>
                             </StackPanel>
                         </ScrollViewer>
                     </TabItem>

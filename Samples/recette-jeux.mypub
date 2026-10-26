@@ -1,6 +1,7 @@
 {
   "FormatVersion": 5,
   "Title": "Recette — jeux de couleurs et de polices",
+  "Langue": "fr-FR",
   "PageWidth": 595.28,
   "PageHeight": 841.89,
   "MarginLeft": 0,
@@ -188,6 +189,7 @@
           "Italic": false,
           "Underline": false,
           "Foreground": "scheme:accent1",
+          "Langue": null,
           "Spans": [
             {
               "Start": 4,
@@ -198,7 +200,8 @@
               "Italic": null,
               "Underline": null,
               "Foreground": "scheme:accent3",
-              "BaselineShift": 0
+              "BaselineShift": 0,
+              "Langue": null
             },
             {
               "Start": 8,
@@ -209,7 +212,8 @@
               "Italic": null,
               "Underline": null,
               "Foreground": "#FF2E5C8A",
-              "BaselineShift": 0
+              "BaselineShift": 0,
+              "Langue": null
             }
           ],
           "Align": "Left",
@@ -313,6 +317,7 @@
           "Italic": false,
           "Underline": false,
           "Foreground": "#FF000000",
+          "Langue": null,
           "Spans": [],
           "Align": "Left",
           "LineHeight": 1.25,
@@ -352,6 +357,7 @@
           "Italic": false,
           "Underline": false,
           "Foreground": "#FF000000",
+          "Langue": null,
           "Spans": [],
           "Align": "Left",
           "LineHeight": 1.25,
@@ -391,6 +397,7 @@
           "Italic": false,
           "Underline": false,
           "Foreground": "#FF000000",
+          "Langue": null,
           "Spans": [],
           "Align": "Left",
           "LineHeight": 1.25,

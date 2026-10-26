@@ -157,6 +157,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
         FontFamilies = PolicesProposees(newValue);
         OnPropertyChanged(nameof(FontFamilies));
+        AnnoncerLaLangue();
     }
 
     private void OnDocumentPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -172,6 +173,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
         if (e.PropertyName == nameof(Models.Document.ColorScheme)) OnPropertyChanged(nameof(ChosenColorScheme));
         if (e.PropertyName == nameof(Models.Document.FontScheme)) OnPropertyChanged(nameof(ChosenFontScheme));
+        if (e.PropertyName == nameof(Models.Document.Langue)) AnnoncerLaLangue();
     }
 
     /// <summary>

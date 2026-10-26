@@ -626,7 +626,13 @@ public class MiseEnFormeTests
 
         Assert.Equal(ProprietesDeStyle(typeof(StyleSpan)), Proprietes(surcharges));
         Assert.Equal(ProprietesDeStyle(typeof(StyleSpan)), Proprietes(typeof(StyleDeLaPlage)));
-        Assert.Equal(ProprietesDeStyle(typeof(StyleSpan)), Proprietes(typeof(StyleEffectif)));
+        // Le style effectif est ce que la composition mesure et ce que les rendus dessinent :
+        // tout le fragment, sauf la langue, que rien ne dessine (poste N9, qui réécrit cette
+        // ligne — elle attendait la langue ici aussi). Une langue dans le style effectif
+        // ferait deux morceaux d'un mot à cheval sur deux langues, que le renvoi à la ligne
+        // pourrait séparer.
+        Assert.Equal(ProprietesDeStyle(typeof(StyleSpan)).Where(nom => nom != nameof(StyleSpan.Langue)),
+            Proprietes(typeof(StyleEffectif)));
         Assert.Equal(ProprietesDeStyle(typeof(ParagraphSpan)), Proprietes(deParagraphe));
         Assert.Equal(ProprietesDeStyle(typeof(ParagraphSpan)), Proprietes(typeof(ReglagesDeLaPlage)));
         Assert.Equal(ProprietesDeStyle(typeof(ParagraphSpan)), Proprietes(typeof(ParagrapheEffectif)));
