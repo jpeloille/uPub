@@ -1565,6 +1565,99 @@ saboter "la fenêtre penche le « I » d'Inter pour l'italique" \
     '' \
     'I2-B7-disposition|DispositionTests'
 
+# A10 — le trait et la flèche. Posés à la relecture du 26 octobre 2026 : le poste était
+# fusionné sans un sabotage. Vingt-cinq ont été joués à la main contre les tests du poste et
+# sa recette ; vingt-trois tombaient, ceux-ci en sont la part qui garde chaque chose une
+# fois. Les deux du groupe ferment le défaut que la relecture a trouvé : un groupe mettait
+# ses traits à l'échelle par leur largeur, que leur rotation oriente. Le vingt-quatrième, la
+# recopie, tombe par CloneTests, hors du filtre de la répétition. Le vingt-cinquième n'a pas
+# de sabotage ici : la garde qui ne repose pas un trait sur ses propres extrémités, au dock,
+# ne se voit d'aucun geste — un champ qu'on traverse sans rien taper n'écrit rien.
+saboter "le trait (A10) ne se prend plus que dans son cadre, sans hauteur" \
+    MyPublisher.Core/Models/Trait.cs \
+    'IsLine ? DistanceAuTrait(px, py) <= ToleranceDeSurvol + StrokeThickness / 2 : base.HitTest(px, py)' \
+    'base.HitTest(px, py)' \
+    'A10-trait|TraitTests'
+
+saboter "poser les extrémités d'un trait (A10) lui laisse sa hauteur" \
+    MyPublisher.Core/Models/Trait.cs \
+    '        Height = 0;
+        Width = longueur;' \
+    '        Width = longueur;' \
+    'A10-trait|TraitTests'
+
+saboter "sous Maj, le trait (A10) garde la longueur du pointeur au lieu de sa projection" \
+    MyPublisher.Core/Models/Trait.cs \
+    'var projection = dx * ux + dy * uy;' \
+    'var projection = Math.Sqrt(dx * dx + dy * dy);' \
+    'A10-trait|TraitTests'
+
+saboter "la découpe d'un groupe (A10) rogne les pointes d'un trait" \
+    MyPublisher.Core/Models/Trait.cs \
+    '? Math.Max(StrokeThickness / 2, Pointe(StrokeThickness).DemiLargeur)' \
+    '? StrokeThickness / 2' \
+    'A10-trait|TraitTests'
+
+saboter "au PDF, la flèche (A10) perd sa pointe de fin" \
+    MyPublisher.Core/Services/PdfExporter.Trait.cs \
+    'foreach (var pointe in new[] { dessin.PointeAuDebut, dessin.PointeALaFin })' \
+    'foreach (var pointe in new[] { dessin.PointeAuDebut })' \
+    'A10-trait|TraitTests'
+
+saboter "au PDF, le trait (A10) redevient un rectangle sans hauteur" \
+    MyPublisher.Core/Services/PdfExporter.cs \
+    'if (frame is ShapeFrame { IsLine: true } trait)
+        {
+            DessinerLeTrait' \
+    'if (frame is ShapeFrame { IsLine: true, Rotation: 12345 } trait)
+        {
+            DessinerLeTrait' \
+    'A10-trait|TraitTests'
+
+saboter "à l'écran, le trait (A10) dépasse ses extrémités de ses bouts carrés" \
+    MyPublisher/Views/TraitBloc.cs \
+    'PenLineCap.Flat' \
+    'PenLineCap.Square' \
+    'A10-trait|TraitTests'
+
+saboter "une recopie de la flèche (A10) perd ses pointes" \
+    MyPublisher.Core/Models/Frame.cs \
+    'new ShapeFrame { Shape = Shape, StartArrow = StartArrow, EndArrow = EndArrow }' \
+    'new ShapeFrame { Shape = Shape }' \
+    'CloneTests|A10-trait|TraitTests'
+
+saboter "élargir un groupe allonge ses traits (A10) debout au lieu de les écarter" \
+    MyPublisher.Core/Models/Frame.cs \
+    'if (horizontal) trait.PoserLesExtremites(x1 * factor, y1, x2 * factor, y2);' \
+    'if (horizontal) trait.PoserLesExtremites(x1, y1, x2, y2);' \
+    'A10-trait|TraitTests'
+
+saboter "grandir un groupe laisse ses traits (A10) debout à leur longueur" \
+    MyPublisher.Core/Models/Frame.cs \
+    'else trait.PoserLesExtremites(x1, y1 * factor, x2, y2 * factor);' \
+    'else trait.PoserLesExtremites(x1, y1, x2, y2);' \
+    'A10-trait|TraitTests'
+
+saboter "un trait (A10) pris montre la poignée de rotation" \
+    MyPublisher/Views/PageCanvas.axaml.cs \
+    '_rotateStem.IsVisible = single is not null && !single.IsLine;' \
+    '_rotateStem.IsVisible = single is not null;' \
+    'A10-trait|TraitTests'
+
+saboter "la vignette de la page dessine le trait (A10) en rectangle" \
+    MyPublisher/Views/TemplatePreview.cs \
+    '            case ShapeFrame { IsLine: true } trait:
+' \
+    '            case ShapeFrame { IsLine: true, Rotation: 12345 } trait:
+' \
+    'A10-trait|TraitTests'
+
+saboter "l'import des Fiches rend ses traits (A10) en rectangles" \
+    MyPublisher.Core/Services/PubImporter.cs \
+    'var trait = new ShapeFrame { Name = "Trait", Shape = ShapeKind.Line };' \
+    'var trait = new ShapeFrame { Name = "Trait", Shape = ShapeKind.Rectangle };' \
+    'A10-trait|R5-import'
+
 # I4 : la planche. Chaque intitulé dit « la planche (I4) » : « eprouver-le-juge.sh I4 », ou
 # « planche », les joue tous, et eux seuls. Chacun est attendu par la recette du poste ou
 # par ses tests (PlancheTests), qui mesurent l'image que la fenêtre compose.

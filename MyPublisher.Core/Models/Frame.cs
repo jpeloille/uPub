@@ -861,6 +861,19 @@ public partial class GroupFrame : Frame
         var factor = newSize / oldSize;
         foreach (var child in Children)
         {
+            // Un trait se met à l'échelle par ses extrémités (poste A10) : il n'a que sa
+            // largeur, que sa rotation oriente, et l'étirer par elle allongeait un filet
+            // vertical quand on élargissait le groupe, et le laissait court quand on le
+            // grandissait. Ses deux bouts suivent le groupe, comme les coins d'un bloc.
+            if (child is ShapeFrame { IsLine: true } trait)
+            {
+                var (x1, y1) = trait.Debut;
+                var (x2, y2) = trait.Fin;
+                if (horizontal) trait.PoserLesExtremites(x1 * factor, y1, x2 * factor, y2);
+                else trait.PoserLesExtremites(x1, y1 * factor, x2, y2 * factor);
+                continue;
+            }
+
             if (horizontal)
             {
                 child.X *= factor;

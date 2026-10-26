@@ -41,7 +41,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **A7** | Alignement vertical du texte | **100 %** | Haut, milieu, bas sur le bloc de texte ; le calage est borné à zéro. `FormatVersion` reste à 3 |
 | **A8** | Insérer des pages : nombre, position, contenu | 0 % | Spécifié le 11 octobre 2026 ; livré avec N18 (phase N, salve Saisie 5) |
 | **A9** | Rotation par quart de tour | 0 % | Spécifié le 11 octobre 2026 ; livré avec N18 (phase N, salve Saisie 5) |
-| **A10** | Objet trait, et flèche | **100 %** | `ShapeKind.Line` : un trait est une forme couchée, sans hauteur, longue de sa largeur, que sa rotation oriente autour de son milieu ; il se définit par ses deux extrémités (`PoserLesExtremites`), et la taille minimale d'un bloc ne s'y applique jamais. `StartArrow` et `EndArrow`, une pointe pleine facultative à chaque bout ; `FormatVersion` ne change pas, Samples et Templates réenregistrés. L'outil Ligne (`L`) du rail, entre Ellipse et la loupe, trace d'une extrémité à l'autre, `Maj` à 0, 45 ou 90°, la bulle disant longueur et angle ; *Insertion ▸ Trait*. Deux poignées sur les extrémités, sans rotation ; survol à 3 pt de l'encre. Au dock, X1, Y1, X2, Y2 à la place du cadre, les pointes, et le contour pour l'épaisseur et la couleur. Un coup de crayon `m … l S` au PDF, au même endroit qu'à l'écran ; les vignettes le dessinent. L'import des Fiches rend 5 traits et 0 rectangle de substitution, R5 compte les traits à part. L'icône du poste sert. Treize tests d'interface, vingt-six du noyau ; relecture et juge après fusion. Recette dans `Scripts/recettes/` |
+| **A10** | Objet trait, et flèche | **100 %** | `ShapeKind.Line` : un trait est une forme couchée, sans hauteur, longue de sa largeur, que sa rotation oriente autour de son milieu ; il se définit par ses deux extrémités (`PoserLesExtremites`), et la taille minimale d'un bloc ne s'y applique jamais. `StartArrow` et `EndArrow`, une pointe pleine facultative à chaque bout ; `FormatVersion` ne change pas, Samples et Templates réenregistrés. L'outil Ligne (`L`) du rail, entre Ellipse et la loupe, trace d'une extrémité à l'autre, `Maj` à 0, 45 ou 90°, la bulle disant longueur et angle ; *Insertion ▸ Trait*. Deux poignées sur les extrémités, sans rotation ; survol à 3 pt de l'encre. Au dock, X1, Y1, X2, Y2 à la place du cadre, les pointes, et le contour pour l'épaisseur et la couleur. Un coup de crayon `m … l S` au PDF, au même endroit qu'à l'écran ; les vignettes le dessinent. L'import des Fiches rend 5 traits et 0 rectangle de substitution, R5 compte les traits à part. L'icône du poste sert. Treize tests d'interface, vingt-huit du noyau ; relu et jugé le 26 octobre 2026 : un groupe étiré met désormais ses traits à l'échelle par leurs extrémités, et non par leur largeur ; treize sabotages au juge. Recette dans `Scripts/recettes/` |
 | **A11** | Aimantation réglable, et aux autres blocs | 0 % | Spécifié le 11 octobre 2026 ; repris en phase N (salve Saisie 13) : au redimensionnement et au tracé, préférences de N11 |
 | **A12** | Menu contextuel du bloc | 0 % | Spécifié le 11 octobre 2026 ; repris et élargi en phase N (salve Saisie 6) : presse-papiers, Format du bloc… vers le dock, double-clic sur une image ou une forme |
 | **A13** | Rognage manuel de l'image | 0 % | Spécifié le 11 octobre 2026 ; repris en phase N (salve Saisie 14) : Rogner au menu contextuel |
@@ -1437,6 +1437,34 @@ déplace, comme tout bloc tourné ; ses extrémités, si. « Ajuster aux marges 
 hauteur des marges dans un trait, qui se dessine alors au milieu de cette hauteur, couché
 sur la largeur des marges : forcer la hauteur à zéro dans le modèle rendait le bloc
 dépendant de l'ordre où l'on pose sa figure et sa hauteur, ce que la copie a montré.
+
+*Repris le 26 octobre 2026 après relecture.* Un défaut, montré par deux tests purs écrits
+avant sa correction, et le juge, que le poste n'avait pas.
+
+- **Un groupe mettait ses traits à l'échelle par leur largeur.** `GroupFrame.OnResized`
+  multiplie l'abscisse et la largeur de chaque bloc quand on élargit le groupe, l'ordonnée et
+  la hauteur quand on le grandit. Un trait n'a que sa largeur, que sa rotation oriente :
+  élargi, le groupe allongeait ses filets debout, qui sortaient de lui ; grandi, il les
+  laissait à leur longueur, décollés de ses bords ; un trait oblique changeait de longueur et
+  non d'angle. La livraison disait que le groupe le servait « sans rien apprendre ». Il le
+  met désormais à l'échelle par ses extrémités, comme les coins d'un bloc
+  (`Un_groupe_etire_garde_ses_traits_dun_bord_a_lautre`,
+  `Un_trait_oblique_suit_le_groupe_etire_et_garde_son_sens`). Un autre bloc tourné garde la
+  règle d'avant, fausse elle aussi sous un étirement qui n'est pas le même dans les deux
+  sens : c'est la règle du groupe, hors du poste.
+- **Le juge.** Vingt-cinq sabotages ont été joués à la main contre les tests du poste et sa
+  recette : vingt-trois tombaient, la recopie des pointes tombe par `CloneTests`. Treize sont
+  au juge, un par chose gardée : le survol, la hauteur, `Maj`, la découpe des pointes, la
+  pointe et le tracé au PDF, les bouts à l'écran, la recopie, le groupe dans ses deux sens,
+  la poignée de rotation, la vignette, l'import. Joué le 26 octobre 2026 : treize sur treize. La suite d'interface passe entière (284 tests), celle du noyau aussi (461), et les recettes A10 et R5. Le vingt-cinquième n'y est pas :
+  la garde qui ne repose pas un trait sur ses propres extrémités quand on quitte un champ du
+  dock ne se voit d'aucun geste — un champ qu'on traverse sans rien taper n'écrit rien, et le
+  test écrit pour la montrer passait avec elle et sans elle.
+- *Soupçon, non montré* : un groupe fait de traits horizontaux à la même hauteur n'a pas de
+  hauteur, et ne se prend qu'en tombant pile sur son cadre.
+- *La recette de I5 comptait exactement* sept cibles du juge dans `TemplatePreview.cs` : la
+  vignette en rectangle en fait une huitième, et elle tombait sur l'arbre propre. Elle en
+  demande désormais sept au moins — I8 en pose une aussi.
 
 #### A11 — Aimantation réglable, et aux autres blocs *(fiche 22)*
 

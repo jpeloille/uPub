@@ -17,9 +17,12 @@
 #         qui vérifie qu'aucune n'écrit une couleur de la maquette en dur. TemplatePreview
 #         n'y entre pas : son blanc est celui de la feuille, le document, et non celui de
 #         l'interface — comme celui de PageRoot, que la recette I1 laisse à I4.
-#      c. Les sept textes que le juge sabote dans TemplatePreview.cs sont présents, chacun
-#         une fois : « eprouver-le-juge.sh --cibles » le vérifie pour tous les textes visés —
-#         hors du juge, qui ôte justement l'un d'eux à chaque sabotage.
+#      c. Les sept textes que le juge sabote dans TemplatePreview.cs pour ce poste sont
+#         présents, chacun une fois : « eprouver-le-juge.sh --cibles » le vérifie pour tous
+#         les textes visés — hors du juge, qui ôte justement l'un d'eux à chaque sabotage.
+#         Au moins sept, et non sept exactement, depuis la relecture du 26 octobre 2026 :
+#         I8 et A10 y ont posé chacun le leur, et le compte exact faisait tomber cette
+#         recette à chaque sabotage d'un autre poste dans la vignette.
 #   2. LES TESTS d'interface « poste=I5 », sur la vraie fenêtre, les pixels lus sur l'image
 #      composée :
 #      - chaque page a sa vignette de 96 × 136 pour un A4, centrée, le numéro à 5 px
@@ -127,8 +130,8 @@ PY
 #    premiers, sur le noyau — passaient pour pris sans qu'aucun test les eût vus (relecture
 #    du 26 octobre 2026).
 sept="$(grep -c "^    MyPublisher/Views/TemplatePreview.cs" Scripts/eprouver-le-juge.sh || true)"
-if [ "$sept" != 7 ]; then
-    echo "ÉCHEC : le juge vise $sept texte(s) dans TemplatePreview.cs, sept attendus." >&2
+if [ "${sept:-0}" -lt 7 ]; then
+    echo "ÉCHEC : le juge vise $sept texte(s) dans TemplatePreview.cs, sept au moins attendus." >&2
     exit 1
 fi
 if [ -e .juge-en-cours ]; then
