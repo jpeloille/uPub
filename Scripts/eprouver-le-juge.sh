@@ -2488,6 +2488,32 @@ saboter "la couche de saisie (N5) ne laisse plus le texte à son champ" \
     'new Rect(Bounds.Size).Contains(point);' \
     'N5-clic-de-sortie|ClicDeSortieTests'
 
+# N6 : les raccourcis de la fenêtre laissent la touche au champ. Une liaison ne rend la touche
+# au contrôle qui a le focus que si sa commande ne peut pas s'exécuter : « Tout sélectionner »
+# qui ne lit plus le focus reprend Ctrl+A à la saisie et aux champs du dock, sélectionne les
+# blocs, et referme la transaction du champ — la marge tapée ensuite n'entre dans aucun pas.
+saboter "Tout sélectionner (N6) ne lit plus le focus" \
+    MyPublisher/ViewModels/MainWindowViewModel.Clavier.cs \
+    'private bool PeutToutSelectionner() => !ConsumesTyping;' \
+    'private bool PeutToutSelectionner() => true;' \
+    'N6-touche-au-champ|ToucheAuChampTests'
+
+# Un bouton ne se grise que sur CanExecuteChanged : la commande qui n'est plus notifiée au
+# changement de focus laisse Premier plan allumé pendant la saisie, et grisé après.
+saboter "Premier plan (N6) n'est plus notifié au changement de focus" \
+    MyPublisher/ViewModels/MainWindowViewModel.Clavier.cs \
+    $'        BringToFrontCommand.NotifyCanExecuteChanged();\n' \
+    '' \
+    'N6-touche-au-champ|ToucheAuChampTests'
+
+# Alt+flèche en saisie fait son propre pas : sans UnGesteUnPas, le déplacement s'emboîte dans
+# la transaction de la saisie, et la frappe et le déplacement ne font qu'un pas.
+saboter "Alt+flèche en saisie (N6) se fond dans le pas de la frappe" \
+    MyPublisher/ViewModels/MainWindowViewModel.Clavier.cs \
+    'UnGesteUnPas(() => NudgeSelection(dx, dy, fine));' \
+    'NudgeSelection(dx, dy, fine);' \
+    'N6-touche-au-champ|ToucheAuChampTests'
+
 # Un motif qui ne désigne aucun sabotage ne prouve rien. « eprouver-le-juge.sh I4 » sortait
 # en 0 sur « 0 sabotages, 0 attrapés », quand les intitulés de la planche ne portaient pas
 # encore le code du poste : le filet passait pour éprouvé sans qu'on l'ait troué.
