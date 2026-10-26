@@ -109,7 +109,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **N3** | Chaque morceau composé sait d'où il vient | **100 %** | `Morceau` porte en dernier membre `Debut`, la position de son premier caractère ; `LigneComposee` sa plage `Debut`–`Fin`, blancs rognés compris, saut exclu, et son `Paragraphe`, compté comme `Recalage` le compte. `Decouper` lit le texte tel qu'il est, sans `Replace` : seule exception, déclarée, un « \r\n » que deux fragments se partagent ne fait plus qu'un paragraphe — aucun document du dépôt n'en porte. Deux fonctions pures du noyau, `Compositeur.Abscisse` et `PositionLaPlusProche`, taquets, justification et blancs pendants compris ; `Compositeur.LigneDuTexteVide` pour le curseur d'un bloc vide. La vue pose, dans la passe même du dessin, une `TexteCompose.LignePosee` par ligne, lignes vides comprises ; `TexteCompose.Geometrie()` les rend avec `PointDe(index)` et `IndexSous(point)`, en coordonnées du bloc, colonnes et calage compris, rien pour un bloc à champ. **La sortie ne change pas, mesuré** : l'empreinte de la composition (`Scripts/empreinte-composition.sh`, commande `empreinte` du banc) — 2 492 lignes à la règle de l'écran et du PDF, 13 880 morceaux au bit près, ce que l'écran pose et souligne, les pixels de 29 pages, le PDF exporté et ses 6 634 mots — est identique avant et après sur les 18 documents du dépôt : `Samples/`, `Templates/`, ATA 21 et les Fiches. 76 tests sous `poste=N3`, 66 purs et 10 sur la vraie fenêtre ; un sabotage au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **N4** | L'affichage au clavier | **100 %** | `F9` bascule entre l'affichage courant et la taille réelle, autour du centre de la sélection — ou du milieu de la zone visible —, qui garde sa place à l'écran ; le second `F9` rend l'affichage d'avant, zoom et défilement, tant qu'aucun autre geste n'a changé le zoom. `Ctrl+Maj+L` joue « Page entière ». La valeur du zoom de la barre principale est un champ (`Views/ChampDuZoom.axaml`) à l'allure du libellé de la maquette tant qu'il n'a pas le focus : un clic y entre et déroule la liste de Publisher — Page entière, Objets sélectionnés, de 400 à 10 % — ; un pourcentage part à Entrée, Échap renonce et rend la planche, un zoom hors de 10 à 800 % est refusé avec un message ; aucune transaction. « Limites et repères » (`Ctrl+Maj+O`) est la case « Repères » d'avant ; « Repères de lignes de base » (`Ctrl+F7`), `ShowBaselines`, ne masque que les lignes de base. Le menu Affichage montre ses gestes. Le bureau (GNOME 50.1 sous Wayland, sans KDE) ne prend aucune des quatre touches — seulement `Alt+F7`, `Ctrl+Alt+F7` et `Ctrl+Alt+F9`. Dix tests ; relecture et juge après fusion. Recette dans `Scripts/recettes/` |
 | **N5** | Quitter la saisie d'un clic qui agit | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 2 |
-| **N6** | Les raccourcis de la fenêtre laissent la touche au champ | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 2 |
+| **N6** | Les raccourcis de la fenêtre laissent la touche au champ | **100 %** | Tant qu'un champ de texte a le clavier — la saisie d'un bloc sur la page, un champ du dock ou de la barre, numérique compris, ou une liste déroulante —, Tout sélectionner, Dupliquer, Grouper, Dissocier, Premier plan et Arrière-plan se taisent : leur `CanExecute` lit le focus de la fenêtre (`ConsumesTyping`, que la fenêtre prête au modèle de vue dans `MainWindowViewModel.Clavier.cs`), et leur touche revient au champ. En saisie, `Ctrl+A` sélectionne le texte, la saisie reste ouverte et la sélection des blocs ne change pas ; de même dans Contenu, Nom, X et une marge, où la valeur tapée ensuite fait son pas — le chemin relevé à Q24 ; `Ctrl+D`, `Ctrl+Maj+G`, `H`, `F` et `B` ne font rien et n'empilent rien — le relevé de I3 est corrigé. `Alt`+flèche, en saisie, déplace le bloc de 3 pt (`Maj` : 0,5 pt) dans un pas à lui, et la saisie continue, le curseur en place. La fenêtre notifie les six commandes à chaque prise et perte du focus : les boutons Premier plan, Arrière-plan, Grouper et Dissocier se grisent tant qu'un champ a le clavier ; **les menus, non** — un menu qu'on ouvre prend le focus, et ses entrées se rallument : à trancher par le propriétaire, voir la section. Hors des champs, tout se joue comme avant (A4). Huit tests, tous tombaient sur le code d'avant ; trois sabotages au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **N7** | Mesurer l'écart de la première voie, et s'arrêter | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 2. **Arrêt** : la voie de R7 revient au propriétaire |
 | **N8** | Couper, copier, coller des blocs | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 2 |
 | **N9** | La langue du texte | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 2 |
@@ -5218,6 +5218,9 @@ quitterait l'arbre visuel tant qu'il est fermé, et les tests qui prennent le s�
 `Ctrl+Maj+G`, `Ctrl+Maj+H`, `Ctrl+Maj+F`, `Ctrl+Maj+B` — se fondent de même dans la saisie
 du dock en cours. C'était le cas avant la phase ; un correctif commun, dans la fenêtre,
 toucherait tous les raccourcis, et sa décision revient au propriétaire.
+*Corrigé le 26 octobre 2026 par N6*, sur la décision du propriétaire de la phase N : tant qu'un
+champ de texte a le clavier, ces raccourcis et `Ctrl+A` se taisent, et leur touche revient au
+champ.
 
 *Jugé le 26 octobre 2026*, après la fusion de I3, I5 et I6 : `eprouver-le-juge.sh` joué en
 entier sur les vingt-cinq sabotages du poste — le motif « I2|^la fenêtre », en deux
@@ -6407,6 +6410,69 @@ une seule fois.
 
 Fichiers : `MainWindowViewModel.cs` (attributs `CanExecute`), `MainWindowViewModel.Clavier.cs`
 (neuf), `MainWindow.axaml.cs` (changement de focus). Dépend de Q24. Effort : faible.
+
+*Livré le 26 octobre 2026*, dans la salve Saisie 2 ; la relecture adversariale vient après la
+fusion. Le mécanisme est celui du plan. `MainWindowViewModel.Clavier.cs` porte `ConsumesTyping`,
+que la fenêtre lui prête — le prédicat qui faisait déjà taire les outils à une lettre : une zone
+de texte, ou une liste déroulante, a le focus —, et quatre gardes : `PeutToutSelectionner`,
+`PeutAgirSurLaSelection` (dupliquer, premier plan, arrière-plan), `PeutGrouper`, `PeutDissocier`,
+qui ajoutent `!ConsumesTyping` à ce que chaque commande lisait. La liaison lit le `CanExecute` au
+moment de la touche : la commande muette lui rend la touche, et le champ la prend — `Ctrl+A` y
+sélectionne le texte. La fenêtre lève `LeClavierAChange` à chaque `GotFocus` et `LostFocus` qui
+lui monte, traités compris, et les six commandes le notifient. Aucune liaison n'est ajoutée, ni
+sur un champ ni ailleurs ; la cible du juge `PageView.EndTextEdit();` reste, une fois. `Alt`+flèche
+est pris en tunnel par la fenêtre, avant la zone de saisie qui y déplacerait son curseur, quand la
+zone de la planche a le focus : `DeplacerLeBlocEnSaisie` passe par `UnGesteUnPas`, qui referme la
+frappe dans son pas, empile le déplacement et rouvre la transaction de la saisie. `PageCanvas.axaml.cs`
+n'est pas touché (règle 16). Le README dit la règle en tête de ses raccourcis, `Ctrl+A` dans un
+champ, et `Alt` + flèches en saisie au sous-tableau « Objets ».
+
+*Recette jouée* : `Scripts/recettes/N6-touche-au-champ.sh`. Les sources d'abord : les six
+commandes lisent le focus, en plus de la sélection, et Annuler et Rétablir n'ont pas de
+condition ; la fenêtre prête son prédicat et le reprend, et lève l'avis aux deux événements du
+focus ; une liaison par geste dans les vues, ni `A` ni `D` sous Contrôle dans `OnKeyDown` ; le
+partiel du poste ; `Alt`+flèche en tunnel, par `UnGesteUnPas` ; le README. Puis huit tests sous
+`poste=N6` (`ToucheAuChampTests`), au clavier sur la vraie fenêtre : `Ctrl+A` dans la saisie ;
+dans Contenu, Nom, X et la marge gauche, où « 25 » tapé ensuite fait un pas et marque le
+document ; `Ctrl+D`, `Ctrl+Maj+F` et `B` en saisie, après une frappe qui garde seule son pas ;
+`Ctrl+Maj+G` et `H` dans la marge, deux blocs pris puis un groupe ; les boutons d'ordre qui se
+grisent et se rallument ; le menu ouvert pendant la saisie ; un champ quitté qui rend `Ctrl+D`
+et `Ctrl+A` aux blocs ; et `Alt+→` puis `Alt+Maj+↓` entre deux frappes, quatre pas défaits un à
+un et dans l'ordre. Les huit tombaient sur le code d'avant. Puis les voisins : les cinq tests de
+A4, et `Ctrl+G` et `Ctrl+U` pendant la saisie d'un champ (I2, I3). Trois sabotages au juge :
+Tout sélectionner qui ne lit plus le focus — le sabotage du plan —, Premier plan qui n'est plus
+notifié au changement de focus, et `Alt`+flèche qui ne passe plus par `UnGesteUnPas`.
+
+*Ce que l'implémentation a appris.* **Les menus ne suivent pas** — la spécification se trompe ici
+sur le code. Un menu qu'on ouvre prend le focus : ouvert d'un clic pendant la saisie, le menu
+Édition l'ôte à la zone, la saisie restant ouverte ; les commandes relisent le focus, qui n'est
+plus à un champ, et « Tout sélectionner », « Dupliquer » ou « Premier plan » s'y montrent allumés.
+Choisis au menu, ils agissent sur les blocs, comme avant le poste — mesuré, et tenu par un test.
+L'entrée grisée qu'annonçait le plan n'est donc jamais visible : seule la touche revient au champ.
+Les boutons, eux, restent à l'écran et suivent : Premier plan, Arrière-plan et Grouper de la barre
+principale, Dissocier de la barre contextuelle se grisent tant qu'un champ a le clavier — avant le
+poste, un clic sur l'un d'eux pendant la saisie prenait le focus et jouait la commande ; il ne fait
+plus rien. Le plan ne le disait pas ; c'est la conséquence de son mécanisme, ces boutons portant
+les mêmes commandes. **La décision revient au propriétaire** : garder ce qui est livré, ou donner
+aux liaisons de la fenêtre des commandes de clavier à elles, gardées par `ConsumesTyping`, et
+rendre aux menus et aux boutons leur état d'avant — un changement de `Clavier.cs` et des six
+`KeyBinding`, sans toucher aux commandes ; N13, les menus de Publisher, pourrait aussi faire
+viser au menu le champ qui avait le clavier, comme Publisher, où « Sélectionner tout » du menu
+sélectionne le texte de la zone.
+
+*Choisi sans certitude* :
+- la liste déroulante compte parmi les champs, comme pour les outils à une lettre : un seul
+  prédicat. La police prise dans la liste de la barre, qui garde le focus, `Ctrl+D` et les autres
+  se taisent jusqu'au clic suivant sur la page ;
+- `Alt`+flèche ne joue que lorsque la zone de saisie de la planche a le focus ; dans un champ du
+  dock, elle reste au champ. Hors saisie, elle déplace de 3 pt, comme avant ; le pixel de
+  Publisher (fiche 23, d2) n'est pas repris, la recette du plan disant 3 pt ;
+- Avancer, Reculer et Supprimer ne sont pas gardés : les deux premiers n'ont pas de touche, et
+  `Suppr` passe déjà par la garde de la saisie dans `OnKeyDown`.
+
+*Relevé, non corrigé.* Le menu refermé par Échap garde le focus à son entrée — mesuré hors
+saisie : la frappe qui suit ne va pas au texte tant qu'on n'y a pas recliqué. C'était le cas
+avant le poste.
 
 #### N7 — Mesurer l'écart de la première voie, et s'arrêter *(fiche 23, a21 ; R7)*
 

@@ -79,6 +79,15 @@ public partial class MainWindow : Window
         // La fenêtre quittée Espace tenu ne verra pas son relâchement : la main se lâche ici (I6).
         Deactivated += (_, _) => PageView.MainTenue = false;
 
+        // Les commandes d'objet se taisent tant qu'un champ a le clavier (poste N6) : elles
+        // relisent le focus à chaque changement, pour que les menus et les boutons suivent. Les
+        // événements traités comptent aussi — un champ qui prend le focus le marque souvent.
+        AddHandler(GotFocusEvent, (_, _) => Vm?.LeClavierAChange(), RoutingStrategies.Bubble, handledEventsToo: true);
+        AddHandler(LostFocusEvent, (_, _) => Vm?.LeClavierAChange(), RoutingStrategies.Bubble, handledEventsToo: true);
+
+        // Alt+flèche pendant la saisie : avant la zone de texte, qui y déplacerait le curseur (N6).
+        AddHandler(KeyDownEvent, DeplacerLeBlocEnSaisie, RoutingStrategies.Tunnel);
+
         DataContextChanged += (_, _) => AttachViewModel();
         AttachViewModel();
 
@@ -99,6 +108,7 @@ public partial class MainWindow : Window
         {
             _vm.PropertyChanged -= OnViewModelPropertyChanged;
             _vm.TransactionsRefermees -= OnTransactionsRefermees;
+            _vm.SuivreLeClavier(null);
         }
 
         _vm = DataContext as MainWindowViewModel;
@@ -106,6 +116,7 @@ public partial class MainWindow : Window
         {
             _vm.PropertyChanged += OnViewModelPropertyChanged;
             _vm.TransactionsRefermees += OnTransactionsRefermees;
+            _vm.SuivreLeClavier(() => ConsumesTyping(FocusManager?.GetFocusedElement()));
         }
     }
 
@@ -588,7 +599,9 @@ public partial class MainWindow : Window
     /// Un contrôle qui consomme les frappes : zone de texte, ou liste déroulante,
     /// qui cherche une entrée à la lettre. Les raccourcis d'outil à une lettre ne
     /// doivent pas les court-circuiter — taper « T » dans la liste des polices doit
-    /// chercher une police, pas armer l'outil texte.
+    /// chercher une police, pas armer l'outil texte. Depuis le poste N6, le modèle de vue
+    /// le lit aussi (<see cref="MainWindowViewModel.ConsumesTyping"/>) : les commandes
+    /// d'objet des liaisons de la fenêtre se taisent tant qu'il est vrai.
     /// </summary>
     private static bool ConsumesTyping(IInputElement? element) =>
         element is Visual visual &&
@@ -668,6 +681,32 @@ public partial class MainWindow : Window
         }
 
         base.OnKeyDown(e);
+    }
+
+    /// <summary>
+    /// <c>Alt</c>+flèche pendant la saisie d'un bloc, la zone de saisie ayant le focus : le bloc
+    /// se déplace, de 3 pt (<c>Maj</c> : 0,5 pt), dans un pas à lui, et la saisie continue — l'aide
+    /// de Publisher en français : « déplacer l'objet dont le texte a le curseur » (poste N6). En
+    /// tunnel, avant la zone, qui prend les flèches pour son curseur, <c>Alt</c> compris. Hors de
+    /// la saisie, la flèche passe par <see cref="OnKeyDown"/>, comme avant.
+    /// </summary>
+    private void DeplacerLeBlocEnSaisie(object? sender, KeyEventArgs e)
+    {
+        if (Vm is not { } vm || !PageView.IsEditingText) return;
+        if ((e.KeyModifiers & ~KeyModifiers.Shift) != KeyModifiers.Alt) return;
+        if (FocusManager?.GetFocusedElement() is not Visual champ || !PageView.IsVisualAncestorOf(champ)) return;
+
+        var fine = e.KeyModifiers.HasFlag(KeyModifiers.Shift);
+        switch (e.Key)
+        {
+            case Key.Left: vm.DeplacerLeBlocEnSaisie(-1, 0, fine); break;
+            case Key.Right: vm.DeplacerLeBlocEnSaisie(1, 0, fine); break;
+            case Key.Up: vm.DeplacerLeBlocEnSaisie(0, -1, fine); break;
+            case Key.Down: vm.DeplacerLeBlocEnSaisie(0, 1, fine); break;
+            default: return;
+        }
+
+        e.Handled = true;
     }
 
     /// <summary>

@@ -340,6 +340,10 @@ Rangés par domaine, chacun dans son sous-tableau. Les recettes lisent tous les
 sous-tableaux comme un seul : un geste n'y figure qu'une fois, quel que soit le
 domaine où il est rangé.
 
+Tant qu'un champ de texte a le clavier — la saisie d'un bloc sur la page, un champ du
+dock ou de la barre —, les raccourcis d'objet se taisent et leur touche revient au champ :
+`Ctrl+A`, `Ctrl+D`, `Ctrl+Maj+G`, `Ctrl+Maj+H`, `Ctrl+Maj+F` et `Ctrl+Maj+B`.
+
 ### Fichier
 
 | Raccourci | Action |
@@ -353,7 +357,7 @@ domaine où il est rangé.
 |---|---|
 | `Ctrl+Z` / `Ctrl+Y` (ou `Ctrl+Maj+Z`) | Annuler / Rétablir |
 | `Ctrl+D` | Dupliquer la sélection |
-| `Ctrl+A` | Sélectionner tous les blocs de la page |
+| `Ctrl+A` | Sélectionner tous les blocs de la page ; dans la saisie d'un bloc ou dans un champ, tout le texte du champ |
 | `Échap` | Désarme l'outil, sinon désélectionne ; dans un champ de la barre contextuelle, le quitte |
 
 ### Objets
@@ -364,6 +368,7 @@ domaine où il est rangé.
 | `Ctrl+Maj+F` / `Ctrl+Maj+B` | Premier plan / Arrière-plan |
 | `Suppr` | Supprimer la sélection |
 | Flèches | Déplacer de 3 pt (`Maj` : 0,5 pt) |
+| `Alt` + flèches, dans la saisie d'un bloc | Déplacer le bloc de 3 pt (`Maj` : 0,5 pt), sans quitter la saisie |
 
 ### Texte
 
