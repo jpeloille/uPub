@@ -498,8 +498,11 @@ public partial class PageCanvas : UserControl
 
         Focus();
 
-        // La main et la loupe passent avant tout : elles ne touchent à aucun bloc (I6).
-        if (PrendreLaNavigation(e)) return;
+        // La main et la loupe passent avant tout : elles ne touchent à aucun bloc (I6). Leur
+        // pression est retenue : elle ne fait pas la première moitié d'un double-clic.
+        _pressionPrecedenteNaviguait = _pressionNaviguait;
+        _pressionNaviguait = PrendreLaNavigation(e);
+        if (_pressionNaviguait) return;
 
         var surfacePoint = e.GetPosition(Surface);
         var page = ToPageCoordinates(surfacePoint);
@@ -1077,7 +1080,7 @@ public partial class PageCanvas : UserControl
     private void OnDoubleTapped(object? sender, TappedEventArgs e)
     {
         // Deux clics de la loupe zooment deux fois ; deux prises de la main ne saisissent rien.
-        if (MainArmee || LoupeArmee) return;
+        if (MainArmee || LoupeArmee || _pressionPrecedenteNaviguait) return;
 
         if (_vm?.SingleSelected is TextFrame text) BeginTextEdit(text);
     }

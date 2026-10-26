@@ -201,6 +201,60 @@ saboter "l interligne redevient un multiple du corps" \
     "naturelle * (multiple > 0 ? multiple : 1);" \
     "multiple;"
 
+# I6 : naviguer dans la planche, et garder les proportions. Le poste n'avait aucun sabotage
+# (règle 11) ; la relecture du 26 octobre 2026 lui en donne sept, chacun sur une clause de la
+# recette du plan ou sur le défaut qu'elle a refermé. « eprouver-le-juge.sh I6 » les joue seuls.
+
+# La main suit le pointeur : figée sur son départ, la planche ne défile plus.
+saboter "la main (I6) ne fait plus défiler la planche" \
+    MyPublisher/Views/PageCanvas.Navigation.cs \
+    'Scroller.Offset = _defilementDeDepart - chemin;' \
+    'Scroller.Offset = _defilementDeDepart;' \
+    'I6-navigation|NavigationTests'
+
+# La loupe zoome encore, mais le point visé s'en va.
+saboter "la loupe (I6) ne garde plus le point visé sous le pointeur" \
+    MyPublisher/Views/PageCanvas.Navigation.cs \
+    'Scroller.Offset = ici - dansLaZone;' \
+    '' \
+    'I6-navigation|NavigationTests'
+
+# Au passage montant, la zone qui défile consomme la molette : sur une page qui déborde,
+# Ctrl + molette fait défiler au lieu de zoomer.
+saboter "Ctrl + molette (I6) laissée à la zone qui défile" \
+    MyPublisher/Views/PageCanvas.axaml.cs \
+    'Scroller.AddHandler(PointerWheelChangedEvent, OnPointerWheelChanged, RoutingStrategies.Tunnel);' \
+    'Scroller.PointerWheelChanged += OnPointerWheelChanged;' \
+    'I6-navigation|NavigationTests'
+
+# « Page entière » se fie à son calcul : l'arrondi de la mise en page la fait dépasser d'un pixel.
+saboter "« Page entière » (I6) ne remesure pas la feuille après la mise en page" \
+    MyPublisher/Views/PageCanvas.Navigation.cs \
+    'if (depasse <= 1) break;' \
+    'break;' \
+    'I6-navigation|NavigationTests'
+
+# Case cochée, la largeur saisie n'entraîne plus la hauteur.
+saboter "la case des proportions (I6) n'entraîne plus l'autre côté à la saisie" \
+    MyPublisher/ViewModels/MainWindowViewModel.Navigation.cs \
+    'var (nouvelleLargeur, nouvelleHauteur) = AuMemeRapport(bloc.Width, bloc.Height, largeur, hauteur);' \
+    'var (nouvelleLargeur, nouvelleHauteur) = (largeur ?? bloc.Width, hauteur ?? bloc.Height);' \
+    'I6-navigation|NavigationTests'
+
+# Le coin tiré n'écoute plus que Maj, comme avant le poste : la case n'y fait rien.
+saboter "le coin tiré (I6) ignore la case des proportions" \
+    MyPublisher/Views/PageCanvas.axaml.cs \
+    'else ApplyResize(frame, page, maj != _vm.ConserverLesProportions);' \
+    'else ApplyResize(frame, page, maj);' \
+    'I6-navigation|NavigationTests'
+
+# Le défaut que la relecture a refermé : une prise de la main faisait la moitié d'un double-clic.
+saboter "une prise de la main (I6) fait la moitié d'un double-clic" \
+    MyPublisher/Views/PageCanvas.axaml.cs \
+    'if (MainArmee || LoupeArmee || _pressionPrecedenteNaviguait) return;' \
+    'if (MainArmee || LoupeArmee) return;' \
+    'I6-navigation|NavigationTests'
+
 # Q12 n'a pas de sabotage ici : sa recette, « verifier-dependances.sh », demande le
 # réseau et se lance à part. Sa contre-épreuve — un projet témoin qui tire la version
 # fautive doit y être signalé — la fait échouer à chaque passage.

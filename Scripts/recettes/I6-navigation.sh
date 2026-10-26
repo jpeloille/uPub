@@ -30,7 +30,8 @@
 #      · Espace tenu et un glissé de 100 px décalent le défilement de 100 px, en partant
 #        d'un bloc qu'aucun pixel ne déplace ; l'historique reste vide, le document non
 #        modifié ; Espace relâché, le même glissé reprend le bloc. L'outil Main du rail
-#        fait de même, main ouverte puis fermée ; un double-clic n'y ouvre pas la saisie ;
+#        fait de même, main ouverte puis fermée ; un double-clic n'y ouvre pas la saisie, ni
+#        une prise de la main suivie d'un clic au même point, Espace relâché ;
 #        Échap le désarme. Espace ne tient pas la main dans un champ, ni sur un bouton ;
 #      · un clic de la loupe en un point de la page : le même point de la page est sous le
 #        pointeur avant et après, à 1 px près — deux clics en avant, un Alt + clic en
@@ -189,7 +190,7 @@ echo "  1. les sources : le rail, les touches, les champs, le partiel, aucun zoo
 
 # ------------------------------------------------------------------------ 2. les gestes
 
-attendus=9
+attendus=10
 if ! dotnet test MyPublisher.Tests.Interface/MyPublisher.Tests.Interface.csproj ${MYPUBLISHER_DEJA_COMPILE:+--no-build} \
         --nologo -v q --filter "poste=I6" > "$travail/tests.txt" 2>&1; then
     sed 's/^/    /' "$travail/tests.txt" >&2

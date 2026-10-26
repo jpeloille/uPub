@@ -210,6 +210,11 @@ public class NavigationTests
             var point = MilieuDeLaZone(fenetre);
             void DoubleClic()
             {
+                // Ailleurs à chaque fois : l'horloge du banc n'avance pas, et deux pressions au
+                // même point se comptent toujours ensemble. Au point des prises de la main, le
+                // double-clic de contrôle se compterait avec la dernière d'entre elles, et une
+                // prise de la main ne fait pas la moitié d'un double-clic (relecture de I6).
+                point += new Vector(30, 30);
                 for (var clic = 0; clic < 2; clic++)
                 {
                     fenetre.MouseDown(point, MouseButton.Left);
@@ -279,6 +284,60 @@ public class NavigationTests
             fenetre.KeyReleaseQwerty(PhysicalKey.Space, RawInputModifiers.None);
             Rendu.Battre();
             Assert.False(planche.MainTenue);
+        }
+        finally
+        {
+            fenetre.Close();
+        }
+    }
+
+    [AvaloniaFact]
+    public void Une_prise_de_la_main_puis_un_clic_au_meme_point_n_ouvrent_pas_la_saisie()
+    {
+        // Relevé à la livraison, refermé par la relecture du 26 octobre 2026 : Espace tenu, une
+        // prise de la main sur le bloc de texte sélectionné ; Espace relâché, un clic au même
+        // point dans le délai du double-clic. Les deux pressions faisaient un double-clic, qui
+        // ouvrait la saisie du bloc — la main avait touché au bloc. L'horloge du banc n'avance
+        // pas : les deux pressions tombent toujours dans le délai.
+        var bloc = Texte(60, 60, 200, 80);
+        var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(bloc));
+        try
+        {
+            var planche = Trouver<PageCanvas>(fenetre, "PageView");
+            vm.SelectOnly(bloc);
+            Rendu.Battre();
+            planche.Focus();
+            Rendu.Battre();
+            var point = DansLaFenetre(fenetre, vm, 100, 100);
+
+            fenetre.KeyPressQwerty(PhysicalKey.Space, RawInputModifiers.None);
+            Rendu.Battre();
+            Assert.True(planche.MainTenue);
+            fenetre.MouseDown(point, MouseButton.Left);
+            fenetre.MouseUp(point, MouseButton.Left);
+            Rendu.Battre();
+            fenetre.KeyReleaseQwerty(PhysicalKey.Space, RawInputModifiers.None);
+            Rendu.Battre();
+
+            fenetre.MouseDown(point, MouseButton.Left);
+            fenetre.MouseUp(point, MouseButton.Left);
+            Rendu.Battre(8);
+
+            Assert.False(planche.IsEditingText, "une prise de la main et un clic ont ouvert la saisie");
+            Assert.Same(bloc, vm.SingleSelected);
+            Assert.False(vm.CanUndo);
+
+            // Deux clics ordinaires, ensuite, ouvrent bien la saisie : la garde ne vaut que
+            // pour une paire dont la première pression naviguait.
+            var ailleurs = DansLaFenetre(fenetre, vm, 150, 110);
+            for (var clic = 0; clic < 2; clic++)
+            {
+                fenetre.MouseDown(ailleurs, MouseButton.Left);
+                fenetre.MouseUp(ailleurs, MouseButton.Left);
+            }
+
+            Rendu.Battre(8);
+            Assert.True(planche.IsEditingText, "le double-clic de contrôle n'a pas ouvert la saisie");
         }
         finally
         {
