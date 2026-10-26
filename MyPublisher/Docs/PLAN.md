@@ -24,7 +24,7 @@ Où en est chaque poste. Une seule règle pour la colonne d'avancement : un post
 on écrit ce qui est fait plutôt qu'un pourcentage inventé — un poste à moitié écrit n'est
 pas un poste à moitié livré. La colonne se met à jour dans le commit qui clôt le poste.
 
-*Dernière mise à jour : 26 octobre 2026 (phase N ouverte, la saisie de Publisher : N1 à N28, et Q24 et Q25 en phase Q ; A8, A9, A11, A12, A13, Q21, Q22, R6 et R7 repris par elle). Le 25 octobre 2026 : I2 livré avec B7 : la disposition de la fenêtre ; I4 livré : la planche, et Q10 avec elle ; I6 livré : naviguer dans la planche, et garder les proportions ; I7 livré : le souligné et ses sortes, le modèle seul ; I5 livré : les vignettes de pages ; I8 livré : masquer un bloc ; I9 livré : les lignes en excédent au dock ; A10 livré : le trait et la flèche, avec l'outil Ligne ; I3 livré : la barre contextuelle ; Q23 livré : sélectionner un bloc ne fige plus la fenêtre ; relecture et juge après fusion pour I3, I5, I6, I8, I9, A10 et Q23).*
+*Dernière mise à jour : 26 octobre 2026 (salve Saisie 1 livrée : Q24 et Q25, Annuler et Rétablir ne laissent plus de frappe hors de toute transaction, et un réglage fait pendant la saisie a son propre pas ; N1, le banc des gestes ; N2, la mise en forme d'une plage dans le noyau ; N3, la position de chaque morceau composé ; N4, l'affichage au clavier. Plus tôt le même jour : phase N ouverte, la saisie de Publisher : N1 à N28, et Q24 et Q25 en phase Q ; A8, A9, A11, A12, A13, Q21, Q22, R6 et R7 repris par elle). Le 25 octobre 2026 : I2 livré avec B7 : la disposition de la fenêtre ; I4 livré : la planche, et Q10 avec elle ; I6 livré : naviguer dans la planche, et garder les proportions ; I7 livré : le souligné et ses sortes, le modèle seul ; I5 livré : les vignettes de pages ; I8 livré : masquer un bloc ; I9 livré : les lignes en excédent au dock ; A10 livré : le trait et la flèche, avec l'outil Ligne ; I3 livré : la barre contextuelle ; Q23 livré : sélectionner un bloc ne fige plus la fenêtre ; relecture et juge après fusion pour I3, I5, I6, I8, I9, A10 et Q23).*
 
 | Poste | Intitulé | Avancement | Où ça en est |
 |---|---|:---:|---|
@@ -135,9 +135,9 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **D** | Moteur de composition | — | Décision non ouverte ; à rouvrir quand A, B et C sont livrées |
 
 **Par phase** — P : 4 sur 4 · A : 8 sur 15 · B : 4 sur 7 · C : 7 sur 9 · R : 5 sur 7 ·
-Q : 18 sur 25 · I : 9 sur 9 · N : 0 sur 28 · D : non planifié.
+Q : 20 sur 25 · I : 9 sur 9 · N : 4 sur 28 · D : non planifié.
 
-Soit **55 postes sur 104**. Le 25 octobre 2026, la phase N en a ajouté vingt-huit, et la phase Q
+Soit **61 postes sur 104**. Le 25 octobre 2026, la phase N en a ajouté vingt-huit, et la phase Q
 deux (Q24, Q25), tirés de la relecture du cours sous l'angle de la saisie (fiche 23). Le
 24 octobre 2026, la phase I en avait ajouté neuf, tirés de la
 maquette de la nouvelle interface. Le compte avait doublé le 11 octobre 2026 sans que rien ne
