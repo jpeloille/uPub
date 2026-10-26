@@ -5,16 +5,30 @@
 # Deux temps, et ils ne se recouvrent pas.
 #
 # 1. LE TABLEAU DES RACCOURCIS, lu dans les sources. C'est ce qu'un script fait mieux
-#    qu'un test : il confronte trois listes écrites à trois endroits par trois mains —
+#    qu'un test : il confronte des listes écrites à plusieurs endroits par plusieurs mains —
 #
 #      · les gestes déclarés dans « Window.KeyBindings » ;
-#      · les touches que « MainWindow.OnKeyDown » intercepte avant eux ;
+#      · les touches que « MainWindow.OnKeyDown » intercepte ;
+#      · la table des raccourcis lus sur le caractère, « RaccourcisParCaractere »
+#        (poste N10, MainWindowViewModel.Raccourcis.cs) ;
+#      · les gestes que les menus affichent ;
 #      · le tableau des raccourcis du README, qui est ce que l'utilisateur lit.
 #
 #    Un raccourci en double se tait : Avalonia joue le premier et laisse l'autre
 #    inerte, sans erreur ni avertissement de compilation. Un raccourci absent du README
-#    existe sans que personne ne le sache. Aucun des deux n'échoue à l'exécution, et
-#    c'est pourquoi ils se vérifient ici.
+#    existe sans que personne ne le sache. Un geste affiché à un menu sans liaison ment.
+#    Aucun n'échoue à l'exécution, et c'est pourquoi ils se vérifient ici. Étendue par le
+#    poste N10, la confrontation tient aussi :
+#
+#      a. chaque geste déclaré une fois, en KeyBinding ou dans la table, jamais dans les deux ;
+#      b. chaque touche traitée dans OnKeyDown au README, comme les liaisons et la table ;
+#      c. chaque liaison qui a une entrée de menu l'y affiche, et chaque geste affiché à un
+#         menu est une vraie liaison ;
+#      d. les touches réservées de la table française libres (règle 12 de la phase N) ;
+#      e. Ctrl+E qui n'exporte plus : il centre, et l'export est sur Ctrl+Maj+P ;
+#      f. Ctrl+Maj+F et Ctrl+Maj+B toujours déclarés, Premier plan et Arrière-plan ;
+#      g. sous Contrôle, OnKeyDown n'intercepte que N, O, S et les touches du presse-papiers,
+#         et aucune n'est aussi une liaison.
 #
 # 2. LES GESTES, joués par « MyPublisher.Tests.Interface » sur la vraie fenêtre. Un
 #    script de shell ne synthétise ni pointeur ni frappe : ce qui demande la fenêtre
@@ -55,62 +69,163 @@ fi
 # --------------------------------------------------- 1. le tableau des raccourcis
 
 echo "  Raccourcis déclarés, interceptés et documentés :"
-python3 - MyPublisher/Views/MainWindow.axaml MyPublisher/Views/MainWindow.axaml.cs README.md <<'PY'
+python3 - MyPublisher/Views/MainWindow.axaml MyPublisher/Views/MainWindow.axaml.cs README.md \
+          MyPublisher/ViewModels/MainWindowViewModel.Raccourcis.cs <<'PY'
 import re, sys
+import xml.etree.ElementTree as ET
 
-axaml, code, readme = (open(chemin, encoding="utf-8").read() for chemin in sys.argv[1:4])
-echec = False
+axaml, code, readme, raccourcis = (open(chemin, encoding="utf-8").read() for chemin in sys.argv[1:5])
+echecs = []
+def refuser(message):
+    echecs.append(message)
+
+A = "{https://github.com/avaloniaui}"
+fenetre = ET.fromstring(axaml)
 
 bloc = re.search(r"<Window\.KeyBindings>(.*?)</Window\.KeyBindings>", axaml, re.S)
 if bloc is None:
     sys.exit("    aucun bloc « Window.KeyBindings » dans MainWindow.axaml")
 
-gestes = re.findall(r'<KeyBinding\s+Gesture="([^"]+)"', bloc.group(1))
+# Les liaisons : le geste, la commande, et son paramètre — les alignements partagent une commande.
+liaisons = [(e.get("Gesture"), e.get("Command"), e.get("CommandParameter")) for e in fenetre.iter(A + "KeyBinding")]
+gestes = [g for g, _, _ in liaisons]
 
+# ------------------------------------------------- la table des raccourcis par caractère (N10)
+table = re.search(r"RaccourcisParCaractere => .*?\{(.*?)\};", raccourcis, re.S)
+if table is None:
+    sys.exit("    la table « RaccourcisParCaractere » est introuvable (MainWindowViewModel.Raccourcis.cs)")
+caracteres = re.findall(r'\["(.)"\] = (\w+)Command', table.group(1))
+if len(caracteres) < 4:
+    refuser(f"la table des raccourcis par caractère n'a que {len(caracteres)} entrées, quatre attendues")
+
+# ------------------------------------------------------- les touches qu'OnKeyDown traite
+corps = re.search(r"protected override void OnKeyDown\(KeyEventArgs e\)\s*\n(\s*)\{\n(.*?)\n\1\}", code, re.S)
+if corps is None:
+    sys.exit("    OnKeyDown est introuvable dans MainWindow.axaml.cs")
+# Chaque « if » qui lit les modificateurs ouvre une section : Contrôle (avec ou sans d'autres
+# touches), aucun modificateur, puis, après « var fine », les touches qui se lisent sans eux.
+sections, mode = {"ctrl+": set(), "ctrl": set(), "aucun": set(), "libre": set()}, None
+for ligne in corps.group(2).splitlines():
+    if re.search(r"if \(e\.KeyModifiers\.HasFlag\(KeyModifiers\.Control\)\)", ligne):
+        mode = "ctrl+"
+    elif re.search(r"if \(e\.KeyModifiers == KeyModifiers\.Control\)", ligne):
+        mode = "ctrl"
+    elif re.search(r"if \(e\.KeyModifiers == KeyModifiers\.None\)", ligne):
+        mode = "aucun"
+    elif "var fine" in ligne:
+        mode = "libre"
+    if mode and re.search(r"\bcase\b", ligne):
+        sections[mode].update(re.findall(r"Key\.(\w+)", ligne))
+interceptees_ctrl = sections["ctrl+"] | sections["ctrl"]
+traitees = ({f"Ctrl+{k}" for k in interceptees_ctrl} | set(sections["aucun"]) | set(sections["libre"]))
+
+# Ce que le README écrit pour une touche : « Maj » pour Shift, et les noms français.
+noms = {"Shift": "Maj", "Back": "Retour arrière", "Delete": "Suppr", "Escape": "Échap", "Space": "Espace",
+        "Left": "Flèches", "Right": "Flèches", "Up": "Flèches", "Down": "Flèches"}
+def au_readme(geste):
+    return "+".join(noms.get(partie, partie) for partie in geste.split("+"))
+
+tableau = re.search(r"^## Raccourcis$(.*?)^## ", readme, re.S | re.M)
+if tableau is None:
+    sys.exit("    le README n'a plus de section « ## Raccourcis »")
+tableau = tableau.group(1)
+
+# ------------------------------- a. chaque geste une fois, en KeyBinding ou dans la table
 # Un doublon ne se signale nulle part : Avalonia retient le premier, et le second ne
 # fait jamais rien. C'est le mode de panne que ce poste pouvait introduire.
 doublons = sorted({g for g in gestes if gestes.count(g) > 1})
 if doublons:
-    print("    gestes déclarés deux fois : " + ", ".join(doublons), file=sys.stderr)
-    echec = True
+    refuser("gestes déclarés deux fois : " + ", ".join(doublons))
+lettres = [c for c, _ in caracteres]
+if len(set(lettres)) != len(lettres):
+    refuser("un caractère est deux fois dans la table des raccourcis par caractère")
+# La touche qu'un QWERTY donne à chaque caractère : la déclarer aussi en KeyBinding ferait
+# jouer deux fois le même geste — la liaison d'abord, la table ensuite.
+oem = {"]": "OemCloseBrackets", "[": "OemOpenBrackets", "<": "OemComma", ">": "OemPeriod"}
+for c, commande in caracteres:
+    for geste in (f"Ctrl+{oem.get(c, c)}", f"Ctrl+Shift+{oem.get(c, c)}"):
+        if geste in gestes:
+            refuser(f"« Ctrl+{c} » est dans la table et en KeyBinding ({geste})")
+    if f"{commande}Command" in bloc.group(1):
+        refuser(f"la commande de « Ctrl+{c} », {commande}Command, est aussi liée en KeyBinding")
 
-# Les touches que la fenêtre intercepte sous Contrôle avant de rendre la main aux
-# KeyBindings. Un « Ctrl+S » déclaré comme KeyBinding n'arriverait jamais.
-interceptees = set(re.findall(r"case Key\.([A-Z]): On[A-Za-z]+\(", code))
-for geste in gestes:
-    parties = [p.strip() for p in geste.split("+")]
-    if parties[0] == "Ctrl" and len(parties) == 2 and parties[1] in interceptees:
-        print(f"    « {geste} » est intercepté par OnKeyDown avant sa commande", file=sys.stderr)
-        echec = True
-
-for attendu in ("Ctrl+Shift+F", "Ctrl+Shift+B"):
-    if attendu not in gestes:
-        print(f"    « {attendu} » n'est pas déclaré", file=sys.stderr)
-        echec = True
-
+# ----------------------------------------- b. le README dit les liaisons, OnKeyDown et la table
 # Le README doit dire ce que l'application écoute, et le dire dans SON TABLEAU : c'est
 # là qu'on va chercher un raccourci, et une mention au fil du texte ne s'y substitue
 # pas. La première écriture de cette recette cherchait dans le README entier, et elle
 # ne tombait pas quand on retirait la ligne du tableau — les deux raccourcis étant
-# aussi cités dans la prose. Un contrôle qu'on n'a pas vu échouer ne prouve rien.
-tableau = re.search(r"^## Raccourcis$(.*?)^## ", readme, re.S | re.M)
-if tableau is None:
-    sys.exit("    le README n'a plus de section « ## Raccourcis »")
-
-# Il écrit « Maj » là où le XAML écrit « Shift » : c'est la seule traduction, et elle
-# est ici plutôt que dans le README, qui s'adresse à un lecteur français. Les touches de
-# zoom sont déclarées en double par nature — pavé numérique et rangée du haut — et le
-# tableau les résume d'une ligne ; on ne les confronte pas.
+# aussi cités dans la prose. Un contrôle qu'on n'a pas vu échouer ne prouve rien. Les
+# touches de zoom sont déclarées en double par nature — pavé numérique et rangée du haut —
+# et le tableau les résume d'une ligne ; on ne les confronte pas.
 zoom = {"Ctrl+OemPlus", "Ctrl+Add", "Ctrl+OemMinus", "Ctrl+Subtract", "Ctrl+D0", "Ctrl+NumPad0"}
 confrontes = [g for g in gestes if g not in zoom]
-manquants = [g for g in confrontes if g.replace("Shift", "Maj") not in tableau.group(1)]
+manquants = [g for g in confrontes if au_readme(g) not in tableau]
+manquants += [f"OnKeyDown : {g}" for g in sorted(traitees)
+              if not (f"`{au_readme(g)}`" in tableau or (au_readme(g) == "Flèches" and "Flèches" in tableau))]
+manquants += [f"table : Ctrl+{c}" for c in lettres if f"`Ctrl+{c}`" not in tableau and f"`Ctrl+Maj+{c}`" not in tableau]
 if manquants:
-    print("    absents du tableau du README : " + ", ".join(manquants), file=sys.stderr)
-    echec = True
+    refuser("absents du tableau du README : " + ", ".join(manquants))
 
-print(f"    {len(gestes)} gestes déclarés, {len(set(gestes))} distincts, "
-      f"{len(confrontes)} confrontés au tableau du README")
-sys.exit(1 if echec else 0)
+# ----------------------------------- c. les menus affichent les liaisons, et rien d'autre
+# Les gestes que la fenêtre ne voit pas : le bureau ferme la fenêtre à Alt+F4, qu'elle reçoit
+# en fermeture (poste N11).
+du_bureau = {"Alt+F4"}
+vraies = set(gestes) | traitees | {f"Ctrl+{c}" for c in lettres} | du_bureau
+menus = [(e.get("Header"), e.get("InputGesture"), e.get("Command"), e.get("CommandParameter"))
+         for e in fenetre.iter(A + "MenuItem")]
+for entete, geste, commande, parametre in menus:
+    if geste and geste not in vraies:
+        refuser(f"le menu « {entete} » affiche « {geste} », que rien ne lie")
+    if commande:
+        siennes = [g for g, c, p in liaisons if c == commande and p == parametre]
+        if siennes and geste not in siennes:
+            refuser(f"le menu « {entete} » n'affiche pas sa touche ({' ou '.join(siennes)})")
+
+# ---------------------------------------------- d. les touches réservées restent libres
+# Leur fonction n'existe pas encore dans MyPublisher : elles attendent le poste qui la sert
+# (règle 12 ; fiche 24). Ctrl+B, Atteindre la page (N18) ; Ctrl+M, la page maître ; Ctrl+K,
+# le lien hypertexte ; Ctrl+P, Imprimer (B3) ; Ctrl+Maj+E, la bibliothèque (C7) ; Ctrl+Maj+H,
+# la coupure de mots.
+reservees = ["Ctrl+B", "Ctrl+M", "Ctrl+K", "Ctrl+P", "Ctrl+Shift+E", "Ctrl+Shift+H"]
+for geste in reservees:
+    lettre = geste.split("+")[-1]
+    prise = (geste in gestes or any(g == geste for _, g, _, _ in menus) or lettre in sections["ctrl+"]
+             or (geste.count("+") == 1 and lettre in sections["ctrl"]))
+    if prise:
+        refuser(f"« {geste} », réservé par la table française, est pris")
+
+# ------------------------------------------------------------ e. Ctrl+E n'exporte plus
+if ("Ctrl+E", "{Binding AlignerLeTexteCommand}", "{x:Static models:TextAlign.Center}") not in liaisons:
+    refuser("« Ctrl+E » ne centre pas le texte")
+if "E" in interceptees_ctrl:
+    refuser("OnKeyDown prend encore E sous Contrôle")
+if ("Ctrl+Shift+P", "{Binding ExporterEnPdfCommand}", None) not in liaisons:
+    refuser("l'export n'est pas sur « Ctrl+Shift+P »")
+if [g for g, c, _ in liaisons if c == "{Binding ExporterEnPdfCommand}"] != ["Ctrl+Shift+P"]:
+    refuser("l'export a une autre touche que « Ctrl+Shift+P »")
+
+# --------------------------------------------- f. Premier plan et Arrière-plan, exigés
+for attendu in ("Ctrl+Shift+F", "Ctrl+Shift+B"):
+    if attendu not in gestes:
+        refuser(f"« {attendu} » n'est pas déclaré")
+
+# --------------------------------- g. Ctrl+lettre : N, O, S et le presse-papiers, seulement
+# Les touches que la fenêtre intercepte sous Contrôle n'arrivent pas à une liaison du même
+# nom : un « Ctrl+S » déclaré comme KeyBinding passerait avant elles, ou jamais.
+if interceptees_ctrl != {"N", "O", "S", "X", "C", "V"}:
+    refuser("OnKeyDown intercepte sous Contrôle " + ", ".join(sorted(interceptees_ctrl))
+            + " — N, O, S, X, C et V attendues")
+for geste in gestes:
+    parties = geste.split("+")
+    if parties[0] == "Ctrl" and len(parties) == 2 and parties[1] in interceptees_ctrl:
+        refuser(f"« {geste} » est intercepté par OnKeyDown avant sa commande")
+
+for message in echecs:
+    print("    " + message, file=sys.stderr)
+print(f"    {len(gestes)} gestes déclarés, {len(set(gestes))} distincts, {len(lettres)} lus sur le caractère, "
+      f"{len(traitees)} touches d'OnKeyDown, {sum(1 for m in menus if m[1])} gestes de menu ; "
+      f"{len(confrontes)} liaisons confrontées au tableau du README")
+sys.exit(1 if echecs else 0)
 PY
 
 # -------------------------------------------------------------------- 2. les gestes

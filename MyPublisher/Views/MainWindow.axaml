@@ -47,6 +47,14 @@
         <KeyBinding Gesture="Ctrl+Z" Command="{Binding UndoCommand}"/>
         <KeyBinding Gesture="Ctrl+Y" Command="{Binding RedoCommand}"/>
         <KeyBinding Gesture="Ctrl+Shift+Z" Command="{Binding RedoCommand}"/>
+        <!-- Annuler et Rétablir ont aussi les touches de Publisher en français (poste N10,
+             fiche 24) : Alt+Retour arrière et F4. Le bureau ne prend ni l'une ni l'autre — GNOME
+             ferme la fenêtre à Alt+F4, change de console à Ctrl+Alt+F4 (relevé le 26 octobre
+             2026). Les deux commandes s'exécutent toujours : la touche ne va jamais plus loin,
+             ni à OnKeyDown, qui prendrait Retour arrière pour Supprimer, ni à la liste
+             déroulante, qui s'ouvrirait à F4. -->
+        <KeyBinding Gesture="Alt+Back" Command="{Binding UndoCommand}"/>
+        <KeyBinding Gesture="F4" Command="{Binding RedoCommand}"/>
         <!-- Les six commandes d'objet passent par des commandes du clavier, gardées par le focus
              (poste N6, MainWindowViewModel.Clavier.cs) : tant qu'un champ de texte a le
              clavier, elles se taisent, et la liaison rend la touche au champ — Ctrl+A y
@@ -54,8 +62,12 @@
              et agissent sur les blocs même pendant la frappe. -->
         <KeyBinding Gesture="Ctrl+D" Command="{Binding ToucheDupliquerCommand}"/>
         <KeyBinding Gesture="Ctrl+A" Command="{Binding ToucheToutSelectionnerCommand}"/>
-        <KeyBinding Gesture="Ctrl+Shift+G" Command="{Binding ToucheGrouperCommand}"/>
-        <KeyBinding Gesture="Ctrl+Shift+H" Command="{Binding ToucheDissocierCommand}"/>
+        <!-- Ctrl+Maj+G groupe, et la même touche dissocie un groupe, comme Publisher (p. 44, 46 ;
+             poste N10). Ctrl+Maj+H, la coupure de mots de Publisher, est libéré et réservé. -->
+        <KeyBinding Gesture="Ctrl+Shift+G" Command="{Binding ToucheGrouperOuDissocierCommand}"/>
+        <!-- Supprimer l'objet sélectionné, même en saisie (poste N10) : Suppr reste au champ, qui
+             y efface du texte. La frappe en cours garde son pas, la suppression fait le sien. -->
+        <KeyBinding Gesture="Ctrl+Shift+X" Command="{Binding ToucheSupprimerLObjetCommand}"/>
         <!-- Ordre de superposition. Publisher ne donne de raccourci qu'aux deux
              extrêmes (fiche 15) : avancer et reculer d'un rang n'en ont pas, et on
              ne leur en invente pas. Publisher 2007 les posait sur Alt+F6 et
@@ -82,12 +94,30 @@
         <KeyBinding Gesture="Ctrl+Shift+O" Command="{Binding BasculerLesReperesCommand}"/>
         <KeyBinding Gesture="Ctrl+F7" Command="{Binding BasculerLesLignesDeBaseCommand}"/>
         <!-- Le gras et l'italique comme dans Publisher en français : G et I. Ni l'un ni
-             l'autre n'est pris par OnKeyDown, qui n'intercepte sous Ctrl que N, O, S et E. -->
+             l'autre n'est pris par OnKeyDown, qui n'intercepte sous Ctrl que N, O, S et les
+             touches du presse-papiers. -->
         <KeyBinding Gesture="Ctrl+G" Command="{Binding BasculerGrasCommand}"/>
         <KeyBinding Gesture="Ctrl+I" Command="{Binding BasculerItaliqueCommand}"/>
         <!-- Le souligné, Ctrl+U comme dans Publisher (poste I3, sur la commande de I7) : U
              n'est pris ni par OnKeyDown ni par un autre geste. -->
         <KeyBinding Gesture="Ctrl+U" Command="{Binding SoulignerCommand}"/>
+        <!-- Les alignements du texte, aux touches de Publisher en français (poste N10) : Ctrl+L,
+             Ctrl+E, Ctrl+R, Ctrl+J — sur le bloc entier aujourd'hui, sur le paragraphe avec R6.
+             Ctrl+E n'exporte plus : l'export est passé à Ctrl+Maj+P. Le corps, Ctrl+] et Ctrl+[,
+             Ctrl+Maj+> et Ctrl+Maj+<, se lit sur le caractère, et n'est donc pas ici : voir
+             MainWindowViewModel.Raccourcis.cs, RaccourcisParCaractere. -->
+        <KeyBinding Gesture="Ctrl+L" Command="{Binding AlignerLeTexteCommand}"
+                    CommandParameter="{x:Static models:TextAlign.Left}"/>
+        <KeyBinding Gesture="Ctrl+E" Command="{Binding AlignerLeTexteCommand}"
+                    CommandParameter="{x:Static models:TextAlign.Center}"/>
+        <KeyBinding Gesture="Ctrl+R" Command="{Binding AlignerLeTexteCommand}"
+                    CommandParameter="{x:Static models:TextAlign.Right}"/>
+        <KeyBinding Gesture="Ctrl+J" Command="{Binding AlignerLeTexteCommand}"
+                    CommandParameter="{x:Static models:TextAlign.Justify}"/>
+        <!-- Exporter en PDF (poste N10), voisin d'Imprimer (Ctrl+P, réservé à B3) : libre dans la
+             table française, et le bureau ne le prend pas (relevé le 26 octobre 2026). Même en
+             saisie, comme toutes les liaisons de la fenêtre dont la commande s'exécute. -->
+        <KeyBinding Gesture="Ctrl+Shift+P" Command="{Binding ExporterEnPdfCommand}"/>
         <!-- B7 : replier les panneaux, comme le Ctrl+F1 de Publisher (fiche 04). Ni GNOME
              ni KDE ne le prennent par défaut, à la différence d'Alt+F6 (poste A4). -->
         <KeyBinding Gesture="Ctrl+F1" Command="{Binding ReplierLesPanneauxCommand}"/>
@@ -589,7 +619,7 @@
                         <MenuItem Header="_Enregistrer" InputGesture="Ctrl+S" Click="OnSave"/>
                         <MenuItem Header="Enregistrer _sous…" Click="OnSaveAs"/>
                         <Separator/>
-                        <MenuItem Header="Exporter en _PDF…" InputGesture="Ctrl+E" Click="OnExportPdf"/>
+                        <MenuItem Header="Exporter en _PDF…" InputGesture="Ctrl+Shift+P" Command="{Binding ExporterEnPdfCommand}"/>
                         <Separator/>
                         <MenuItem Header="_Quitter" Click="OnQuit"/>
                     </MenuItem>
@@ -627,7 +657,7 @@
                     <MenuItem Header="_Disposition">
                         <MenuItem Header="_Grouper" InputGesture="Ctrl+Shift+G"
                                   Command="{Binding GroupSelectedCommand}"/>
-                        <MenuItem Header="_Dissocier" InputGesture="Ctrl+Shift+H"
+                        <MenuItem Header="_Dissocier" InputGesture="Ctrl+Shift+G"
                                   Command="{Binding UngroupSelectedCommand}"/>
                         <Separator/>
                         <MenuItem Header="Premier _plan" InputGesture="Ctrl+Shift+F"
@@ -672,13 +702,13 @@
                         <MenuItem Header="_Italique" InputGesture="Ctrl+I" Command="{Binding BasculerItaliqueCommand}"/>
                         <MenuItem Header="_Souligné" InputGesture="Ctrl+U" Command="{Binding SoulignerCommand}"/>
                         <Separator/>
-                        <MenuItem Header="Aligner le texte à _gauche" Command="{Binding AlignerLeTexteCommand}"
+                        <MenuItem Header="Aligner le texte à _gauche" InputGesture="Ctrl+L" Command="{Binding AlignerLeTexteCommand}"
                                   CommandParameter="{x:Static models:TextAlign.Left}"/>
-                        <MenuItem Header="_Centrer le texte" Command="{Binding AlignerLeTexteCommand}"
+                        <MenuItem Header="_Centrer le texte" InputGesture="Ctrl+E" Command="{Binding AlignerLeTexteCommand}"
                                   CommandParameter="{x:Static models:TextAlign.Center}"/>
-                        <MenuItem Header="Aligner le texte à _droite" Command="{Binding AlignerLeTexteCommand}"
+                        <MenuItem Header="Aligner le texte à _droite" InputGesture="Ctrl+R" Command="{Binding AlignerLeTexteCommand}"
                                   CommandParameter="{x:Static models:TextAlign.Right}"/>
-                        <MenuItem Header="_Justifier" Command="{Binding AlignerLeTexteCommand}"
+                        <MenuItem Header="_Justifier" InputGesture="Ctrl+J" Command="{Binding AlignerLeTexteCommand}"
                                   CommandParameter="{x:Static models:TextAlign.Justify}"/>
                         <Separator/>
                         <!-- Remplit le bloc de texte sélectionné, comme « Fichier texte » dans
@@ -802,8 +832,8 @@
                             Command="{Binding PageEntiereCommand}"/>
                 </StackPanel>
 
-                <Button Grid.Column="3" x:Name="BoutonExporter" Classes="principal" Click="OnExportPdf"
-                        ToolTip.Tip="Exporter en PDF (Ctrl+E)" VerticalAlignment="Center">
+                <Button Grid.Column="3" x:Name="BoutonExporter" Classes="principal" Command="{Binding ExporterEnPdfCommand}"
+                        ToolTip.Tip="Exporter en PDF (Ctrl+Maj+P)" VerticalAlignment="Center">
                     <StackPanel Orientation="Horizontal" Spacing="7">
                         <ContentControl Content="{StaticResource IconeExporter}" VerticalAlignment="Center"/>
                         <TextBlock Text="Exporter en PDF" VerticalAlignment="Center"/>
@@ -1297,7 +1327,7 @@
                                                     <StackPanel Classes="contenuDeSection" Spacing="4"
                                                                 IsVisible="{Binding #Root.((vm:MainWindowViewModel)DataContext).SectionGroupeOuverte}">
                                                         <TextBlock FontSize="12" Text="{Binding Children.Count, StringFormat='{}{0} blocs réunis'}"/>
-                                                        <TextBlock Classes="aide" Text="Le groupe se déplace, se tourne et se redimensionne d'une pièce ; le redimensionner met ses blocs à la même échelle. Pour en retoucher un, dissociez (Ctrl+Maj+H)."/>
+                                                        <TextBlock Classes="aide" Text="Le groupe se déplace, se tourne et se redimensionne d'une pièce ; le redimensionner met ses blocs à la même échelle. Pour en retoucher un, dissociez (Ctrl+Maj+G)."/>
                                                     </StackPanel>
                                                 </StackPanel>
                                             </DataTemplate>

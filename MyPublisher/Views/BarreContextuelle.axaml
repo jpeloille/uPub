@@ -300,7 +300,7 @@
 
                     <!-- Un groupe : le dock n'a pas de quoi le dissocier. -->
                     <DataTemplate DataType="models:GroupFrame">
-                        <Button Classes="menu" Content="Dissocier" ToolTip.Tip="Dissocier (Ctrl+Maj+H)"
+                        <Button Classes="menu" Content="Dissocier" ToolTip.Tip="Dissocier (Ctrl+Maj+G)"
                                 Command="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).UngroupSelectedCommand}"/>
                     </DataTemplate>
 

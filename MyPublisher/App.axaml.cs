@@ -26,6 +26,9 @@ public partial class App : Application
             // More info: https://docs.avaloniaui.net/docs/guides/development-guides/data-validation#manage-validationplugins
             DisableAvaloniaDataAnnotationValidation();
 
+            // La sonde du clavier (N10), qui ne s'éveille que si sa variable nomme un fichier.
+            SondeDuClavier.BrancherSiDemandee();
+
             var viewModel = new MainWindowViewModel();
 
             // « MyPublisher document.mypub » ouvre directement le document, ce qui

@@ -2576,6 +2576,39 @@ saboter "la mesure de la saisie (N7) laisse au champ l'interligne de la configur
     '' \
     'N7-mesure-de-la-saisie|MesureDeLaSaisieTests'
 
+# N10 : Ctrl+E centre, comme Publisher en français, et l'export est passé à Ctrl+Maj+P. Rendu à
+# l'export dans OnKeyDown, il ne se verrait pas sur un bloc de texte, où la liaison du centrage
+# passe avant : sur une forme, ou sans sélection, la touche va jusqu'à la fenêtre.
+saboter "Ctrl+E rendu à l'export (N10)" \
+    MyPublisher/Views/MainWindow.axaml.cs \
+    $'                case Key.S: OnSave(this, e); e.Handled = true; return;\n' \
+    $'                case Key.S: OnSave(this, e); e.Handled = true; return;\n                case Key.E: vm.ExporterEnPdfCommand.Execute(null); e.Handled = true; return;\n' \
+    'N10-raccourcis-francais|RaccourcisFrancaisTests|A4-superposition'
+
+# La table du corps lit le caractère, Maj compté pour rien : sur un AZERTY, « > » se tape
+# Ctrl+Maj + « < ». Sans cela, la taille suivante ne se taperait plus qu'en QWERTY… où elle
+# demande Maj aussi.
+saboter "la table du corps (N10) ne compte plus Maj pour rien" \
+    MyPublisher/Views/MainWindow.axaml.cs \
+    '(e.KeyModifiers & ~(KeyModifiers.Shift | KeyModifiers.Alt)) == KeyModifiers.Control' \
+    '(e.KeyModifiers & ~KeyModifiers.Alt) == KeyModifiers.Control' \
+    'N10-raccourcis-francais|RaccourcisFrancaisTests'
+
+# Ctrl+Maj+G groupe, et la même touche dissocie un groupe (p. 16, 44, 46 ; l'aide en français).
+saboter "Ctrl+Maj+G (N10) ne dissocie plus" \
+    MyPublisher/ViewModels/MainWindowViewModel.Raccourcis.cs \
+    '        else ToucheDissocierCommand.Execute(null);' \
+    '' \
+    'N10-raccourcis-francais|RaccourcisFrancaisTests'
+
+# Ctrl+Maj+X en saisie : la frappe d'avant garde son pas. Sans la fermeture de la transaction de
+# la saisie, la suppression s'y fondrait, et une annulation rendrait le bloc sans sa frappe.
+saboter "Ctrl+Maj+X en saisie (N10) fond la frappe et la suppression" \
+    MyPublisher/ViewModels/MainWindowViewModel.Raccourcis.cs \
+    $'        EndPendingEdit();\n        DeleteSelectedCommand.Execute(null);' \
+    '        DeleteSelectedCommand.Execute(null);' \
+    'N10-raccourcis-francais|RaccourcisFrancaisTests'
+
 # Un motif qui ne désigne aucun sabotage ne prouve rien. « eprouver-le-juge.sh I4 » sortait
 # en 0 sur « 0 sabotages, 0 attrapés », quand les intitulés de la planche ne portaient pas
 # encore le code du poste : le filet passait pour éprouvé sans qu'on l'ait troué.
