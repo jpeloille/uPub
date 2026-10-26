@@ -440,4 +440,30 @@ public class TransactionsDeSaisieTests
         Assert.True(vm.IsDirty, "la couleur ne marque pas le document");
         UnSeulPas(vm, avant, "la couleur prise après Ctrl+Z");
     }
+
+    /// <summary>
+    /// La règle de Q14, vue du côté de la transaction : entrer en saisie et la quitter sans
+    /// rien taper n'empile aucun pas et ne marque pas le document. Le bloc est pris avant le
+    /// double-clic, si bien que les deux clics se suivent de près : le test ne dépend pas du
+    /// délai du double-clic, que le premier clic d'un processus neuf sur ATA 21 peut dépasser
+    /// (<c>DoubleClicTests</c>, joué à chaud par les recettes de Q14 et de Q23).
+    /// </summary>
+    [AvaloniaFact]
+    [Trait("poste", "Q24")]
+    public void Entrer_en_saisie_et_la_quitter_sans_rien_taper_ne_fait_aucun_pas()
+    {
+        var bloc = Texte();
+        var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(bloc));
+        var avant = Etat(vm);
+
+        EntrerEnSaisie(fenetre, vm, bloc);
+        Assert.Equal(avant, Etat(vm));
+        Assert.False(vm.PeutAnnuler, "entrer en saisie a ouvert une retouche");
+
+        Touche(fenetre, PhysicalKey.Escape);
+        Assert.False(bloc.IsEditing);
+        Assert.Equal(avant, Etat(vm));
+        Assert.False(vm.CanUndo, "entrer en saisie et en sortir a empilé un pas");
+        Assert.False(vm.IsDirty, "entrer en saisie et en sortir a marqué le document");
+    }
 }

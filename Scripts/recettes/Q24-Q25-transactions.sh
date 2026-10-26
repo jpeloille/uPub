@@ -29,8 +29,16 @@
 #      Ctrl+Z sans rien à annuler ; le champ Contenu sous Ctrl+Y ; une marge de l'onglet
 #      Document, que l'annulation laisse au focus ; un glissé repris après un Ctrl+Z tenu ; le
 #      sélecteur de couleur resté ouvert sous un Ctrl+Z ; et le piège du poste — après une annulation qui referme la saisie, un glissé de 1 pt, Alt
-#      tenu, fait encore son propre pas. Puis les tests voisins qui tiennent « un geste, un
-#      pas » (Q14, I2, I3) : la règle d'un pas par champ reste intacte.
+#      tenu, fait encore son propre pas ; enfin la règle de Q14 vue de la transaction —
+#      entrer en saisie et la quitter sans rien taper ne fait aucun pas. Puis les tests
+#      voisins qui tiennent « un geste, un pas » (I2, I3) : la règle d'un pas par champ
+#      reste intacte.
+#
+#      Le test du double-clic de Q14 sur ATA 21 n'est pas de ces voisins : joué en premier
+#      dans un processus neuf, son premier clic — le premier de la fenêtre, à froid —
+#      dépasse parfois les 500 ms du double-clic sous la charge de la machine, sur le code
+#      d'avant Q24 comme après (mesuré le 26 octobre 2026). Les recettes de Q14 et de Q23
+#      le jouent, à chaud.
 #
 set -euo pipefail
 export LC_ALL=C
@@ -131,16 +139,14 @@ jouer() {
     echo "  $quoi ($joues tests)"
 }
 
-jouer "poste=Q24" 8 "2. Annuler et Rétablir, au clavier : la saisie, le champ, le glissé et le sélecteur encore actifs rouvrent leur transaction, et rien d'autre"
+jouer "poste=Q24" 9 "2. Annuler et Rétablir, au clavier : la saisie, le champ, le glissé et le sélecteur encore actifs rouvrent leur transaction, et rien d'autre"
 
-# Les voisins : un geste, un pas, où que soit le champ — l'entrée en saisie n'en fait aucun
-# (Q14), chaque champ du dock et de la barre en fait un (I2, I3), un raccourci pendant la
-# saisie d'un champ fait le sien (I2, I3).
-voisins="FullyQualifiedName~DoubleClicTests.Un_double_clic_ouvre_la_saisie_sans_rien_reecrire"
-voisins+="|FullyQualifiedName~DispositionTests.Chaque_champ_du_dock_quel_que_soit_son_onglet_fait_un_seul_pas"
+# Les voisins : un geste, un pas, où que soit le champ — chaque champ du dock et de la barre
+# en fait un (I2, I3), un raccourci pendant la saisie d'un champ fait le sien (I2, I3).
+voisins="FullyQualifiedName~DispositionTests.Chaque_champ_du_dock_quel_que_soit_son_onglet_fait_un_seul_pas"
 voisins+="|FullyQualifiedName~DispositionTests.Ctrl_G_pendant_une_saisie_du_dock_fait_son_propre_pas"
 voisins+="|FullyQualifiedName~BarreContextuelleTests.Chaque_controle_de_la_barre_fait_un_seul_pas"
 voisins+="|FullyQualifiedName~BarreContextuelleTests.Ctrl_U_pendant_une_saisie_de_la_barre_fait_son_propre_pas"
-jouer "$voisins" 5 "   les voisins : un pas par champ (I2, I3), aucun à l'entrée en saisie (Q14), un par raccourci"
+jouer "$voisins" 4 "   les voisins : un pas par champ (I2, I3), un par raccourci"
 
 echo "Q24 : Annuler et Rétablir ne laissent plus une saisie, un champ, un glissé ni le sélecteur de couleur hors de toute transaction."
