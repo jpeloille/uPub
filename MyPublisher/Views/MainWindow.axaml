@@ -593,6 +593,13 @@
                         <MenuItem Header="_Annuler" InputGesture="Ctrl+Z" Command="{Binding UndoCommand}"/>
                         <MenuItem Header="_Rétablir" InputGesture="Ctrl+Y" Command="{Binding RedoCommand}"/>
                         <Separator/>
+                        <!-- Le presse-papiers (poste N8) : par la fenêtre, qui rend le geste au champ
+                             de texte en saisie et le donne aux blocs sinon. Les touches sont prises
+                             dans OnKeyDown, jamais en KeyBinding : les gestes ici ne sont qu'affichés. -->
+                        <MenuItem x:Name="MenuCouper" Header="Co_uper" InputGesture="Ctrl+X" Click="OnCouper"/>
+                        <MenuItem x:Name="MenuCopier" Header="_Copier" InputGesture="Ctrl+C" Click="OnCopier"/>
+                        <MenuItem x:Name="MenuColler" Header="C_oller" InputGesture="Ctrl+V" Click="OnColler"/>
+                        <Separator/>
                         <MenuItem Header="_Dupliquer" InputGesture="Ctrl+D" Command="{Binding DuplicateSelectedCommand}"/>
                         <MenuItem Header="_Supprimer" InputGesture="Delete" Command="{Binding DeleteSelectedCommand}"/>
                         <Separator/>

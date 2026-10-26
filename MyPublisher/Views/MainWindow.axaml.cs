@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Input.Platform;
 using Avalonia.Interactivity;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
@@ -75,6 +76,11 @@ public partial class MainWindow : Window
         {
             if (ReferenceEquals(e.Source, OngletsDuDock)) ClosePropertyEdit();
         };
+
+        // Le champ de texte qu'ouvrir la barre de menus prive du focus, retenu avant qu'il ne le
+        // perde (poste N8) : en tunnel, avant que la pression ne donne le focus à l'entrée.
+        AddHandler(PointerPressedEvent, OnPressionAvantLeMenu, RoutingStrategies.Tunnel, handledEventsToo: true);
+        AddHandler(KeyDownEvent, OnToucheAvantLeMenu, RoutingStrategies.Tunnel, handledEventsToo: true);
 
         // La fenêtre quittée Espace tenu ne verra pas son relâchement : la main se lâche ici (I6).
         Deactivated += (_, _) => PageView.MainTenue = false;
@@ -582,6 +588,173 @@ public partial class MainWindow : Window
         TraitDInsertion.IsVisible = true;
     }
 
+    // ---------------------------------------------------------------- presse-papiers
+
+    /// <summary>Le format propre des blocs (poste N8) : le JSON d'un document d'une page.</summary>
+    private static readonly DataFormat<string> FormatDesBlocs =
+        DataFormat.CreateStringApplicationFormat(MainWindowViewModel.FormatDesBlocs);
+
+    /// <summary>
+    /// La dernière écriture au presse-papiers, que le collage attend avant de lire : le
+    /// presse-papiers est asynchrone, et un <c>Ctrl+V</c> qui suit de près un <c>Ctrl+C</c>
+    /// lirait sinon ce qu'il y avait avant.
+    /// </summary>
+    private Task _ecritureDuPressePapiers = Task.CompletedTask;
+
+    /// <summary>
+    /// Le champ de texte que la barre de menus a privé du focus, et la sélection qu'il avait :
+    /// une entrée de menu prend le focus à la pression, et un <c>TextBox</c> qui le perd vide
+    /// sa sélection. Retenu à la pression sur la barre, ou à la touche qui l'ouvre, tant que le
+    /// focus n'y est pas déjà ; nul si aucun champ de texte n'avait le focus.
+    /// </summary>
+    private (TextBox Champ, int Debut, int Fin)? _champSousLeMenu;
+
+    private void OnPressionAvantLeMenu(object? sender, PointerPressedEventArgs e)
+    {
+        if (e.Source is Visual source && source.GetSelfAndVisualAncestors().Contains(Menus)) RetenirLeChampSousLeMenu();
+    }
+
+    private void OnToucheAvantLeMenu(object? sender, KeyEventArgs e)
+    {
+        if (e.Key is Key.LeftAlt or Key.RightAlt or Key.F10) RetenirLeChampSousLeMenu();
+    }
+
+    private void RetenirLeChampSousLeMenu()
+    {
+        // Le focus déjà dans les menus : c'est le champ d'avant qui compte, il reste retenu.
+        if (FocusManager?.GetFocusedElement() is Visual focus && focus.GetSelfAndVisualAncestors().Any(v => v is MenuItem))
+        {
+            return;
+        }
+
+        _champSousLeMenu = ChampQuiALeFocus() is { } champ ? (champ, champ.SelectionStart, champ.SelectionEnd) : null;
+    }
+
+    /// <summary>Le champ de texte qui a le focus : une zone du dock ou de la barre, la saisie d'un champ numérique ou d'un bloc.</summary>
+    private TextBox? ChampQuiALeFocus() =>
+        FocusManager?.GetFocusedElement() is Visual focus
+            ? focus.GetSelfAndVisualAncestors().OfType<TextBox>().FirstOrDefault()
+            : null;
+
+    /// <summary>
+    /// Rend le geste du presse-papiers au champ de texte, s'il y en a un, et dit s'il l'a fait :
+    /// au champ qui a le focus, sur-le-champ ; pour une entrée du menu, au champ que la barre de
+    /// menus en a privé, ou à défaut à la zone de saisie ouverte sur la page.
+    ///
+    /// Ce dernier geste attend que le menu se soit refermé. Le menu reprend le focus en se
+    /// refermant, après le clic sur son entrée, et le <c>TextBox</c> ne lit sa sélection qu'en
+    /// différé (<c>TextBox.Copy</c>) : rendu pendant le clic, le champ l'aurait déjà perdue de
+    /// nouveau. Il reprend donc le focus et sa sélection une fois le menu refermé, puis joue le
+    /// geste — et l'on continue d'y taper, comme après le menu d'un traitement de texte.
+    /// </summary>
+    private bool RendreAuChamp(object? sender, Action<TextBox> geste)
+    {
+        if (ChampQuiALeFocus() is { } champ)
+        {
+            geste(champ);
+            return true;
+        }
+
+        if (sender is not MenuItem) return false;
+
+        TextBox? cible;
+        int debut, fin;
+        if (_champSousLeMenu is var (retenu, retenuDebut, retenuFin) && retenu.IsEffectivelyVisible &&
+            ReferenceEquals(retenu.GetVisualRoot(), this))
+        {
+            (cible, debut, fin) = (retenu, retenuDebut, retenuFin);
+        }
+        else if (PageView.IsEditingText &&
+                 PageView.GetVisualDescendants().OfType<TextBox>()
+                     .FirstOrDefault(zone => zone.DataContext is TextFrame { IsEditing: true } && zone.IsVisible) is { } zone)
+        {
+            (cible, debut, fin) = (zone, zone.SelectionStart, zone.SelectionEnd);
+        }
+        else
+        {
+            return false;
+        }
+
+        _champSousLeMenu = null;
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (!cible.IsEffectivelyVisible || !ReferenceEquals(cible.GetVisualRoot(), this)) return;
+            cible.Focus();
+            cible.SelectionStart = debut;
+            cible.SelectionEnd = fin;
+            geste(cible);
+        }, DispatcherPriority.Background);
+        return true;
+    }
+
+    /// <summary>
+    /// Couper (poste N8) : <c>Ctrl+X</c> hors saisie, et l'entrée du menu Édition, qui rend le
+    /// geste au champ de texte en saisie. Hors saisie, la sélection part au presse-papiers et
+    /// quitte la page, en un pas.
+    /// </summary>
+    private void OnCouper(object? sender, RoutedEventArgs e)
+    {
+        if (RendreAuChamp(sender, champ => champ.Cut())) return;
+        if (Vm?.CouperLaSelection() is { } contenu) Poser(contenu);
+    }
+
+    /// <summary>Copier (poste N8), sur le modèle de <see cref="OnCouper"/> ; le document ne change pas.</summary>
+    private void OnCopier(object? sender, RoutedEventArgs e)
+    {
+        if (RendreAuChamp(sender, champ => champ.Copy())) return;
+        if (Vm?.CopierLaSelection() is { } contenu) Poser(contenu);
+    }
+
+    /// <summary>
+    /// Coller (poste N8). En saisie, le champ colle son texte. Hors saisie, des blocs au format
+    /// propre se posent sur la page courante ; un texte venu d'ailleurs devient un bloc.
+    /// </summary>
+    private async void OnColler(object? sender, RoutedEventArgs e)
+    {
+        if (RendreAuChamp(sender, champ => champ.Paste())) return;
+
+        if (Vm is not { } vm || Clipboard is not { } pressePapiers) return;
+
+        try
+        {
+            await _ecritureDuPressePapiers;
+            if (await pressePapiers.TryGetValueAsync(FormatDesBlocs) is { } blocs)
+            {
+                vm.CollerDesBlocs(blocs);
+                return;
+            }
+
+            vm.CollerDuTexte(await pressePapiers.TryGetTextAsync());
+        }
+        catch (Exception ex)
+        {
+            vm.Status = $"Collage impossible : {ex.Message}";
+        }
+    }
+
+    /// <summary>Pose au presse-papiers les blocs et leur texte brut, en une seule écriture.</summary>
+    private async void Poser(MainWindowViewModel.ContenuDuPressePapiers contenu)
+    {
+        if (Clipboard is not { } pressePapiers) return;
+
+        var element = new DataTransferItem();
+        element.Set(FormatDesBlocs, contenu.Blocs);
+        if (contenu.Texte.Length > 0) element.Set(DataFormat.Text, contenu.Texte);
+        var transfert = new DataTransfer();
+        transfert.Add(element);
+
+        try
+        {
+            _ecritureDuPressePapiers = pressePapiers.SetDataAsync(transfert);
+            await _ecritureDuPressePapiers;
+        }
+        catch (Exception ex)
+        {
+            _ecritureDuPressePapiers = Task.CompletedTask;
+            if (Vm is { } vm) vm.Status = $"Presse-papiers indisponible : {ex.Message}";
+        }
+    }
+
     // ---------------------------------------------------------------- clavier
 
     /// <summary>
@@ -618,6 +791,20 @@ public partial class MainWindow : Window
         {
             base.OnKeyDown(e);
             return;
+        }
+
+        // Le presse-papiers des blocs (poste N8) : ici, après la garde de la saisie, et jamais
+        // en KeyBinding. Une liaison passerait avant le champ qui a le focus et lui volerait la
+        // touche ; le TextBox, lui, marque toujours Ctrl+X, C et V comme traitées, si bien qu'en
+        // saisie la fenêtre ne les voit jamais, et la garde ci-dessus couvre le reste.
+        if (e.KeyModifiers == KeyModifiers.Control)
+        {
+            switch (e.Key)
+            {
+                case Key.X: OnCouper(this, e); e.Handled = true; return;
+                case Key.C: OnCopier(this, e); e.Handled = true; return;
+                case Key.V: OnColler(this, e); e.Handled = true; return;
+            }
         }
 
         // Raccourcis d'outils à une lettre, comme dans les logiciels de dessin.

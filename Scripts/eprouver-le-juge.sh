@@ -2460,6 +2460,15 @@ saboter "la liste des pages (I5) se laisse vider par un Ctrl + clic" \
     'SelectionMode="Single"' \
     'I5-vignettes|VignettesDePagesTests'
 
+# N8 : le collage pose des clones, jamais les blocs du contenu qu'on lui passe. La fenêtre relit
+# le format à chaque collage, si bien que ses gestes ne verraient pas le défaut : le garde est le
+# test qui colle deux fois le même contenu, au modèle de vue.
+saboter "le collage (N8) réutilise l'instance copiée au lieu d'un clone" \
+    MyPublisher/ViewModels/MainWindowViewModel.PressePapiers.cs \
+    'var pose = bloc.Clone();' \
+    'var pose = bloc;' \
+    'N8-presse-papiers|PressePapiersTests'
+
 # Un motif qui ne désigne aucun sabotage ne prouve rien. « eprouver-le-juge.sh I4 » sortait
 # en 0 sur « 0 sabotages, 0 attrapés », quand les intitulés de la planche ne portaient pas
 # encore le code du poste : le filet passait pour éprouvé sans qu'on l'ait troué.

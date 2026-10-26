@@ -353,6 +353,7 @@ domaine où il est rangé.
 |---|---|
 | `Ctrl+Z` / `Ctrl+Y` (ou `Ctrl+Maj+Z`) | Annuler / Rétablir |
 | `Ctrl+D` | Dupliquer la sélection |
+| `Ctrl+X` / `Ctrl+C` / `Ctrl+V` | Couper / Copier / Coller les blocs sélectionnés, à leur place ou 12 pt plus loin si l'original y est encore ; un texte venu d'ailleurs devient un bloc. En saisie et dans un champ, le texte |
 | `Ctrl+A` | Sélectionner tous les blocs de la page |
 | `Échap` | Désarme l'outil, sinon désélectionne ; dans un champ de la barre contextuelle, le quitte |
 

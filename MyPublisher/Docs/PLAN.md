@@ -111,7 +111,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **N5** | Quitter la saisie d'un clic qui agit | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 2 |
 | **N6** | Les raccourcis de la fenêtre laissent la touche au champ | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 2 |
 | **N7** | Mesurer l'écart de la première voie, et s'arrêter | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 2. **Arrêt** : la voie de R7 revient au propriétaire |
-| **N8** | Couper, copier, coller des blocs | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 2 |
+| **N8** | Couper, copier, coller des blocs | **100 %** | `Ctrl+X`, `Ctrl+C` et `Ctrl+V` hors saisie, pris par `OnKeyDown` après la garde de la saisie et jamais en `KeyBinding` (`OnCouper`, `OnCopier`, `OnColler`) ; le menu Édition porte Couper, Copier, Coller, qui passent par la fenêtre et rendent le geste au champ de texte — la zone de saisie, que la barre de menus prive du focus, le reprend avec sa sélection une fois le menu refermé. Le format `mypublisher-blocs` est le JSON d'un document d'une page portant des clones de la sélection, dans l'ordre de la page, avec le texte brut des blocs à côté (`MainWindowViewModel.PressePapiers.cs`) ; le collage pose des clones, en un pas, au même endroit, ou 12 pt plus loin — puis 24 — tant que la place est prise, comme `Ctrl+D` ; Couper fait un seul pas ; un texte venu d'ailleurs devient un bloc de texte. Un collage d'une version plus récente du format est refusé ; les références au jeu se résolvent dans le document d'arrivée ; les chemins d'images, absolus en mémoire depuis A3, se rebasent à son enregistrement. Le presse-papiers du banc sans affichage suffit, aucun faux. Onze tests ; un sabotage au juge ; relecture et juge après fusion. Recette dans `Scripts/recettes/` |
 | **N9** | La langue du texte | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 2 |
 | **N10** | Les raccourcis de Publisher en français | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 3 ; écrit la fiche 24 |
 | **N11** | Ne rien perdre en fermant, retrouver ses documents | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 3 |
@@ -6523,6 +6523,80 @@ chemins d'images relatifs (A3) se rebasent sur le document d'arrivée.
 
 Fichiers : `MainWindowViewModel.PressePapiers.cs` (neuf), `MainWindow.axaml` (menu Édition),
 `MainWindow.axaml.cs` (`OnKeyDown`), README (Édition). Dépend de N1. Effort : moyen.
+
+*Livré le 26 octobre 2026*, dans la salve Saisie 2 ; la relecture adversariale vient après la
+fusion. Le poste écrit les fichiers nommés, la classe `PressePapiersTests` (onze tests sous
+`poste=N8`), la recette `Scripts/recettes/N8-presse-papiers.sh` et le sabotage du plan au juge ;
+aucun fichier du noyau ne change, ni `PageCanvas.axaml.cs`, ni le dock. Le modèle de vue ne parle
+pas au presse-papiers : il rend ce qu'il faut y mettre (`CopierLaSelection`, `CouperLaSelection`)
+et reçoit ce qu'on en a lu (`CollerDesBlocs`, `Coller`, `CollerDuTexte`) ; la fenêtre lit et
+écrit, et décide qui reçoit le geste. Elle tient la règle que N6 pose sans écrire son
+`ConsumesTyping` : les trois touches sont aiguillées après la garde de la saisie d'`OnKeyDown`
+(celle qui lit le `ConsumesTyping` statique de la fenêtre, déjà là), et le menu rend le geste au
+champ de texte ; l'intégrateur raccorde les deux. Le presse-papiers du banc sans affichage
+(`HeadlessClipboardImplStub`) fait l'aller-retour d'un format propre, comme N1 l'a éprouvé :
+aucun faux n'est écrit.
+
+*Recette jouée* : `Scripts/recettes/N8-presse-papiers.sh`. Les sources d'abord : les trois
+touches dans `OnKeyDown`, sous Contrôle seul, après la garde, menées à `OnCouper`, `OnCopier`,
+`OnColler`, aucune en `KeyBinding` ; les trois entrées du menu Édition sur ces gestionnaires,
+sans commande, avec leur touche ; le README ; le partiel, son format et ses clones, l'écriture et
+la lecture sans dossier ; le presse-papiers touché par la seule fenêtre. Puis les onze tests :
+trois blocs copiés, désignés dans le désordre, collés sur l'autre page — instances distinctes,
+au même endroit, dans l'ordre de la page, un pas, le texte brut des deux blocs de texte au
+presse-papiers ; sur la même page, +12 pt, puis +24, comme `Ctrl+D` ; Couper en un pas, et le
+collage qui rend l'état d'avant ; en saisie, `Ctrl+C` qui ne met que le texte et ne change rien,
+`Ctrl+V` et `Ctrl+X` qui restent au texte ; de même dans le champ Nom du dock ; un texte brut
+devenu bloc, en un pas, un texte blanc qui ne pose rien ; le format 6 refusé, avec un message ;
+une forme en `scheme:accent1` collée dans un document au jeu Bordeaux, qui y prend son accent ;
+une image copiée d'un document qui l'écrit `images/trame.png`, collée puis enregistrée à côté
+d'elle, qui s'y écrit `trame.png` ; le menu Édition, hors saisie et en saisie. Le sabotage au
+juge, le collage qui réutilise l'instance copiée au lieu d'un clone, est attrapé par
+`Le_collage_pose_des_clones_et_non_les_blocs_du_contenu_copie` : la fenêtre relit le format à
+chaque collage, si bien que ses gestes ne verraient pas le défaut ; le test colle deux fois le même
+contenu, au modèle de vue. La suite d'interface passe de 346 à 357 tests, tous verts ; les
+recettes A4, Q24-Q25, A3, Q1, N1 et I1 passent, `Scripts/controle.sh` aussi.
+
+*Ce que l'implémentation a appris.*
+- Une entrée de la barre de menus prend le focus à la pression, et un `TextBox` qui le perd vide
+  sa sélection (`TextBox.OnLostFocus`) : rendre le geste au « `TextBox` qui a le focus » ne se
+  peut pas tel quel, puisqu'au clic sur Copier c'est l'entrée du menu qui l'a. La fenêtre retient
+  donc le champ de texte et sa sélection à la pression sur la barre — en tunnel, avant que le
+  focus ne parte —, ou à `Alt` et `F10`, qui l'ouvrent au clavier (ce second chemin n'est pas
+  éprouvé au banc). Et elle ne le lui rend
+  qu'après la fermeture du menu : le menu reprend le focus en se refermant, et `TextBox.Copy` ne
+  lit la sélection qu'en différé — rendu pendant le clic, le champ la reperdait avant la copie, et
+  le presse-papiers gardait ce qu'il avait. Le champ reprend ensuite le focus, et on continue d'y
+  taper.
+- Le sabotage du plan ne se voit pas par la fenêtre : le format est relu à chaque collage, et deux
+  collages donnent toujours deux jeux d'instances. Il se voit au modèle de vue, dont `Coller`
+  reçoit un document qu'il ne possède pas.
+- Les chemins d'images ne demandent rien au poste : passé `FromJson`, le modèle ne porte que des
+  chemins absolus (A3), le format s'écrit sans dossier, et l'enregistrement du document
+  d'arrivée les rapporte à son dossier à lui. Les références au jeu non plus : elles restent des
+  références, et se résolvent là où elles se dessinent.
+
+*Choisi sans certitude* :
+- « l'original y est encore » se lit comme un bloc de même sorte et de même taille posé au même
+  point ; tant que la place est prise — l'original, un collage précédent —, le collage avance de
+  12 pt, si bien que des `Ctrl+V` successifs s'échelonnent comme dans Publisher, cent fois au plus ;
+- un texte collé hors saisie prend le gabarit du bloc de texte du menu Insertion, 260 × 90 pt, à
+  la place que lui donne le menu ; un texte long y déborde, et le marqueur le dit ; un texte blanc
+  ne pose rien ;
+- le texte brut des blocs est celui qu'on lit sur la page, champs résolus ; un tableau donne ses
+  cases séparées par des tabulations, ligne par ligne ; un groupe, ses blocs à la suite ; une
+  forme ou une image, rien — une sélection sans texte ne met que le format propre ;
+- Couper, Copier et Coller ne se grisent jamais au menu : leur état dépend du focus, que N6 fait
+  suivre aux commandes ; hors saisie et sans sélection, Couper et Copier ne font rien ;
+- un collage dont le format ne se lit pas — version plus récente, JSON abîmé — ne retombe pas sur
+  le texte brut qui l'accompagne : il est refusé, et la barre d'état le dit.
+
+*Relevé, non corrigé.* Une liste déroulante du dock qui a le focus (la police) ouvre la
+transaction de son panneau ; un collage de blocs fait par le menu pendant ce temps s'y emboîte et
+fond son pas avec elle. N6 tait les commandes d'objet tant qu'un champ a le clavier : la question
+se reposera là, à la fusion. Le presse-papiers
+du système, X11 ou Wayland, et ce qu'un autre logiciel lit du texte brut ou un second processus
+du format propre, ne s'éprouvent pas au banc.
 
 #### N9 — La langue du texte *(fiche 23, a26)*
 
