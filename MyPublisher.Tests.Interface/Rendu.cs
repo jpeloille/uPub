@@ -503,6 +503,20 @@ public static class Rendu
         UneImage();
     }
 
+    /// <summary>
+    /// Un clic en deux temps : la pression, une image, le relâchement, une image. Ce que la
+    /// pression poste passe, dans l'application, tantôt avant le relâchement, tantôt après ;
+    /// <see cref="Cliquer(TopLevel, Point, RawInputModifiers, MouseButton, bool)"/> joue le
+    /// second ordre, celui-ci le premier. Repris de la relecture de I8 (l'œil d'un bloc).
+    /// </summary>
+    public static void CliquerEnDeuxTemps(TopLevel racine, Point point)
+    {
+        racine.MouseDown(point, MouseButton.Left);
+        Battre();
+        racine.MouseUp(point, MouseButton.Left);
+        Battre();
+    }
+
     /// <summary>Le bouton tenu, tel qu'un mouvement le dit.</summary>
     private static RawInputModifiers Tenu(MouseButton bouton) => bouton switch
     {
@@ -569,6 +583,13 @@ public static class Rendu
 
         Battre(8);
     }
+
+    /// <summary>
+    /// Mène le pointeur en <paramref name="point"/>, sans bouton : le survol, qui fait choisir
+    /// son curseur à la planche. Repris de la relecture de I8, dont le test du curseur au survol
+    /// le jouait en copie.
+    /// </summary>
+    public static void Survoler(TopLevel racine, Point point) => racine.MouseMove(point);
 
     /// <summary>
     /// Saisit en <paramref name="depart"/>, mène en <paramref name="arrivee"/> en

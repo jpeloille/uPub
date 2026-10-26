@@ -177,10 +177,94 @@ public class MasquerEcranTests
         Rendu.Cliquer(fenetre, Rendu.SurLaPage(fenetre, CentreX, CentreY));
         Assert.Equal("Dessous", vm.Selected?.Name);
 
-        // Seul, masqué, sur du vide : le clic ne prend rien.
+        // Seul, masqué, sur du vide : le clic ne prend rien, et le pointeur, qui annonçait
+        // un déplacement, n'annonce plus rien (repris après relecture, 26 octobre 2026 : ce
+        // résumé le promettait, le test ne le lisait pas).
+        vm.SetSelection([]);
+        Assert.Same(CurseurDeDeplacement, CurseurAuSurvol(fenetre, CentreX, CentreY));
         vm.BasculerLaVisibiliteCommand.Execute(Bloc(vm, "Dessous"));
+        Assert.NotSame(CurseurDeDeplacement, CurseurAuSurvol(fenetre, CentreX, CentreY));
         Rendu.Cliquer(fenetre, Rendu.SurLaPage(fenetre, CentreX, CentreY));
         Assert.Empty(vm.Selection);
+    }
+
+    /// <summary>Le curseur que la planche pose sur un bloc qu'on peut saisir — le sien, et non un égal.</summary>
+    private static Cursor CurseurDeDeplacement =>
+        (Cursor)typeof(PageCanvas).GetField("MoveCursor", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!
+            .GetValue(null)!;
+
+    /// <summary>Le curseur de la couche de saisie, le pointeur posé sur ce point de la page.</summary>
+    private static Cursor? CurseurAuSurvol(Window fenetre, double x, double y)
+    {
+        Rendu.Survoler(fenetre, Rendu.SurLaPage(fenetre, x + 1, y + 1));
+        Rendu.Survoler(fenetre, Rendu.SurLaPage(fenetre, x, y));
+        Rendu.Battre();
+        return Trouver<Border>(fenetre, "InputLayer").Cursor;
+    }
+
+    /// <summary>
+    /// Repris après relecture. Un bloc masqué pris dans la liste n'a ni cadre ni poignée sur
+    /// la planche ; une pression là où serait sa poignée ne le redimensionne pas non plus.
+    /// La contre-épreuve : visible, le même geste le redimensionne.
+    /// </summary>
+    [AvaloniaFact]
+    [Trait("poste", "I8")]
+    public void La_poignee_d_un_bloc_masque_ne_se_saisit_pas()
+    {
+        var bloc = new ShapeFrame { Name = "Caché", X = 100, Y = 100, Width = 100, Height = 60 };
+        var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(bloc));
+
+        void TirerLeCoin()
+        {
+            vm.SelectOnly(bloc);
+            Rendu.Battre();
+            var coin = Rendu.SurLaPage(fenetre, bloc.X + bloc.Width, bloc.Y + bloc.Height);
+            Rendu.Glisser(fenetre, coin, new Point(coin.X + 40, coin.Y + 30));
+            Rendu.Battre();
+        }
+
+        TirerLeCoin();
+        Assert.True(bloc.Width > 100, "visible, le coin tiré devait agrandir le bloc");
+        vm.UndoCommand.Execute(null);
+        Rendu.Battre();
+        bloc = (ShapeFrame)Bloc(vm, "Caché");
+        Assert.Equal(100, bloc.Width);
+
+        vm.BasculerLaVisibiliteCommand.Execute(bloc);
+        Rendu.Battre();
+        var pas = vm.CanUndo;
+        TirerLeCoin();
+        Assert.Equal(100, bloc.Width);
+        Assert.Equal(60, bloc.Height);
+        vm.UndoCommand.Execute(null);
+        Assert.True(Bloc(vm, "Caché").Visible, "le coin tiré d'un bloc masqué a empilé un pas");
+        Assert.True(pas);
+    }
+
+    /// <summary>
+    /// Repris après relecture. Un bloc de texte masqué ne se saisit pas sur la page : pris
+    /// dans la liste, un Ctrl+double-clic sur la page — qui garde la sélection — n'ouvre
+    /// pas sa saisie.
+    /// </summary>
+    [AvaloniaFact]
+    [Trait("poste", "I8")]
+    public void Un_texte_masque_ne_s_ouvre_pas_en_saisie_sur_la_page()
+    {
+        var texte = new TextFrame { Name = "Caché", Text = "Escamoté", X = 100, Y = 100, Width = 200, Height = 60, Visible = false };
+        var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(texte));
+        Rendu.Cliquer(NomDansLaListe(fenetre, texte));
+        Assert.Same(texte, vm.SingleSelected);
+
+        var point = Rendu.SurLaPage(fenetre, texte.X + 40, texte.Y + 8);
+        for (var clic = 0; clic < 2; clic++)
+        {
+            fenetre.MouseDown(point, MouseButton.Left, RawInputModifiers.Control);
+            fenetre.MouseUp(point, MouseButton.Left, RawInputModifiers.Control);
+        }
+
+        Rendu.Battre(8);
+        Assert.Same(texte, vm.SingleSelected);
+        Assert.False(texte.IsEditing, "un texte masqué s'est ouvert en saisie sur la page");
     }
 
     /// <summary>
@@ -363,6 +447,184 @@ public class MasquerEcranTests
 
         var (neuve, _) = Rendu.Ouvrir(Deux(premierVisible: true));
         Assert.Equal(Bande(neuve), rouvert);
+    }
+
+    // ------------------------------------------------------------------ repris après relecture
+
+    /// <summary>Le nom d'un bloc dans sa ligne : c'est là qu'on clique pour le sélectionner.</summary>
+    private static TextBlock NomDansLaListe(Window fenetre, Frame bloc) =>
+        Ligne(fenetre, bloc).GetVisualDescendants().OfType<TextBlock>().Single(t => t.Text == bloc.DisplayName);
+
+    /// <summary>
+    /// Un clic sur l'œil d'un bloc. Ce que la pression poste passe, dans l'application, tantôt
+    /// avant le relâchement, tantôt après : deux événements que le serveur d'affichage livre
+    /// d'un même trait ne laissent rien passer entre eux. Les deux ordres sont joués.
+    /// </summary>
+    private static void CliquerLOeil(Window fenetre, Frame bloc, bool entreLesDeux)
+    {
+        var oeil = Oeil(fenetre, bloc);
+        if (!entreLesDeux)
+        {
+            Rendu.Cliquer(oeil);
+            return;
+        }
+
+        AvaloniaHeadlessPlatform.ForceRenderTimerTick();
+        Rendu.Battre();
+        Rendu.CliquerEnDeuxTemps(fenetre, Rendu.Centre(oeil));
+    }
+
+    /// <summary>
+    /// Repris après relecture (26 octobre 2026). Une sélection de plusieurs blocs ne porte
+    /// que ce que la planche saisit ; or un bloc masqué pris seul dans la liste, puis un
+    /// Ctrl+clic ou un Maj+clic sur un bloc de la planche, faisaient une sélection de deux
+    /// blocs dont l'un ne se voit pas — et Suppr emportait les deux. Étendue depuis un bloc
+    /// masqué, la sélection le lâche.
+    /// </summary>
+    [AvaloniaFact]
+    [Trait("poste", "I8")]
+    public void Etendre_la_selection_depuis_un_bloc_masque_le_lache()
+    {
+        var (fenetre, vm) = Rendu.Ouvrir(DeuxBlocs());
+        var dessous = Bloc(vm, "Dessous");
+        var dessus = Bloc(vm, "Dessus");
+        vm.BasculerLaVisibiliteCommand.Execute(dessus);
+        Rendu.Battre();
+
+        foreach (var touche in new[] { RawInputModifiers.Control, RawInputModifiers.Shift })
+        {
+            Rendu.Cliquer(NomDansLaListe(fenetre, dessus));
+            Assert.Equal([dessus], vm.Selection);
+
+            Rendu.Cliquer(fenetre, Rendu.SurLaPage(fenetre, CentreX, CentreY), touche);
+            Assert.Equal([dessous], vm.Selection);
+        }
+
+        fenetre.KeyPressQwerty(PhysicalKey.Delete, RawInputModifiers.None);
+        Rendu.Battre();
+        Assert.Equal([dessus], vm.CurrentPage!.Frames);
+    }
+
+    /// <summary>
+    /// Repris après relecture. Fermer l'œil du bloc qu'on tape sur la page le laissait en
+    /// saisie : invisible mais « IsEditing », la couche de saisie éteinte, Échap sans effet,
+    /// et le clic suivant sur la planche ne servait qu'à sortir de cette saisie fantôme. Un
+    /// bloc masqué ne se saisit pas sur la page : la saisie se referme, la frappe faite
+    /// garde son pas, l'œil a le sien, et le clic suivant prend le bloc qu'il vise.
+    /// </summary>
+    [AvaloniaTheory]
+    [Trait("poste", "I8")]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Fermer_l_oeil_du_bloc_qu_on_tape_referme_la_saisie(bool entreLesDeux)
+    {
+        var texte = new TextFrame { Name = "Texte", Text = "abc", X = 100, Y = 100, Width = 200, Height = 60 };
+        var voisin = new ShapeFrame { Name = "Voisin", X = 100, Y = 300, Width = 100, Height = 100, Fill = new SolidFill("#FF000000") };
+        var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(voisin, texte));
+
+        Rendu.EntrerEnSaisie(fenetre, vm, texte);
+        fenetre.KeyPressQwerty(PhysicalKey.End, RawInputModifiers.Control);
+        fenetre.KeyTextInput("X");
+        Rendu.Battre();
+        CliquerLOeil(fenetre, texte, entreLesDeux);
+
+        Assert.False(texte.Visible);
+        Assert.False(texte.IsEditing, "le bloc masqué est resté en saisie sur la page");
+        Assert.Equal("abcX", texte.Text);
+
+        Rendu.Cliquer(fenetre, Rendu.SurLaPage(fenetre, 150, 350));
+        Assert.Equal("Voisin", vm.Selected?.Name);
+
+        vm.UndoCommand.Execute(null);
+        Assert.True(Bloc(vm, "Texte").Visible);
+        Assert.Equal("abcX", ((TextFrame)Bloc(vm, "Texte")).Text);
+        vm.UndoCommand.Execute(null);
+        Assert.Equal("abc", ((TextFrame)Bloc(vm, "Texte")).Text);
+        Assert.False(vm.CanUndo);
+    }
+
+    /// <summary>
+    /// Repris après relecture. L'œil ne prend pas le focus : la frappe en cours garde le
+    /// sien. Le bouton n'est pas focalisable, mais la pression donnait le focus à sa ligne,
+    /// premier ancêtre qui l'est : le champ du dock qu'on tapait le perdait, et la lettre
+    /// suivante armait un outil au lieu de s'écrire. Chaque geste garde son pas : le début
+    /// du nom, l'œil, la fin du nom.
+    /// </summary>
+    [AvaloniaTheory]
+    [Trait("poste", "I8")]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void L_oeil_laisse_le_focus_au_champ_du_dock_qu_on_tape(bool entreLesDeux)
+    {
+        var (fenetre, vm) = Rendu.Ouvrir(DeuxBlocs());
+        var dessous = Bloc(vm, "Dessous");
+        var dessus = Bloc(vm, "Dessus");
+        vm.SelectOnly(dessous);
+        Rendu.Battre();
+
+        var nom = Trouver<TextBox>(fenetre, "ChampNom");
+        Rendu.Cliquer(nom);
+        fenetre.KeyPressQwerty(PhysicalKey.End, RawInputModifiers.None);
+        fenetre.KeyTextInput("1");
+        Rendu.Battre();
+        CliquerLOeil(fenetre, dessus, entreLesDeux);
+
+        Assert.False(dessus.Visible);
+        Assert.Same(nom, fenetre.FocusManager?.GetFocusedElement());
+        fenetre.KeyTextInput("2");
+        Rendu.Battre();
+        Assert.Equal("Dessous12", dessous.Name);
+        Assert.Equal(EditorTool.Select, vm.ActiveTool);
+
+        vm.SetSelection([]);
+        Rendu.Battre();
+        vm.UndoCommand.Execute(null);
+        Assert.Equal("Dessous1", Bloc(vm, "Dessous1").Name);
+        vm.UndoCommand.Execute(null);
+        Assert.True(Bloc(vm, "Dessus").Visible);
+        vm.UndoCommand.Execute(null);
+        Assert.Equal("Dessous", Bloc(vm, "Dessous").Name);
+        Assert.False(vm.CanUndo);
+    }
+
+    /// <summary>
+    /// Repris après relecture. Pendant une saisie sur la page, l'œil d'un autre bloc le
+    /// masque sans interrompre la frappe : le bloc qu'on tape reste en saisie, avec le
+    /// focus, et la suite du texte y arrive. Trois pas : avant l'œil, l'œil, après.
+    /// </summary>
+    [AvaloniaTheory]
+    [Trait("poste", "I8")]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void L_oeil_d_un_voisin_laisse_la_saisie_sur_la_page_se_poursuivre(bool entreLesDeux)
+    {
+        var texte = new TextFrame { Name = "Texte", Text = "abc", X = 100, Y = 100, Width = 200, Height = 60 };
+        var voisin = new ShapeFrame { Name = "Voisin", X = 100, Y = 300, Width = 100, Height = 100 };
+        var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(voisin, texte));
+
+        Rendu.EntrerEnSaisie(fenetre, vm, texte);
+        fenetre.KeyPressQwerty(PhysicalKey.End, RawInputModifiers.Control);
+        fenetre.KeyTextInput("X");
+        Rendu.Battre();
+        CliquerLOeil(fenetre, voisin, entreLesDeux);
+
+        Assert.False(voisin.Visible);
+        Assert.True(texte.IsEditing);
+        fenetre.KeyTextInput("Y");
+        Rendu.Battre();
+        Assert.Equal("abcXY", texte.Text);
+        fenetre.KeyPressQwerty(PhysicalKey.Escape, RawInputModifiers.None);
+        Rendu.Battre();
+        Assert.False(texte.IsEditing);
+
+        vm.UndoCommand.Execute(null);
+        Assert.Equal("abcX", ((TextFrame)Bloc(vm, "Texte")).Text);
+        Assert.False(Bloc(vm, "Voisin").Visible);
+        vm.UndoCommand.Execute(null);
+        Assert.True(Bloc(vm, "Voisin").Visible);
+        vm.UndoCommand.Execute(null);
+        Assert.Equal("abc", ((TextFrame)Bloc(vm, "Texte")).Text);
+        Assert.False(vm.CanUndo);
     }
 
     // ------------------------------------------------------------------ l'import

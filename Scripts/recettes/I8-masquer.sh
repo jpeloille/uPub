@@ -21,7 +21,11 @@
 #   3. l'export n'avertit pas des polices d'un bloc masqué (Q8 : seules les polices
 #      dessinées) ; visible, le même bloc fait nommer sa police ;
 #   4. un pas d'annulation rouvre l'œil : test d'interface, au clic sur l'œil puis au
-#      clavier. Les tests « poste=I8 » des deux projets sont comptés.
+#      clavier. Les tests « poste=I8 » des deux projets sont comptés — vingt d'interface
+#      depuis la relecture du 26 octobre 2026, qui en a ajouté neuf : la sélection étendue
+#      depuis un bloc masqué, la saisie sur la page refermée par l'œil, le focus que l'œil
+#      laisse au champ qu'on tape (chacun dans les deux ordres où la pression et le
+#      relâchement arrivent), la poignée et la saisie d'un bloc masqué.
 #
 # Ce qu'elle ne prouve PAS :
 #   - l'aimantation à un bloc masqué : l'aimantation aux autres blocs n'existe pas encore
@@ -252,7 +256,7 @@ tests() {
 }
 
 noyau="$(tests MyPublisher.Tests/MyPublisher.Tests.csproj 14 "du noyau")"
-interface="$(tests MyPublisher.Tests.Interface/MyPublisher.Tests.Interface.csproj 11 "d'interface")"
+interface="$(tests MyPublisher.Tests.Interface/MyPublisher.Tests.Interface.csproj 20 "d'interface")"
 echo "  4. l'œil se ferme en un pas, que l'annulation défait ; PageRoot, clic, liste, alignement, groupe, vignette ($noyau tests du noyau, $interface d'interface)."
 
 echo "I8 : un bloc masqué reste dans le document et dans la liste, et nulle part ailleurs."

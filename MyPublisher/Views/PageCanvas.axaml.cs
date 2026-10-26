@@ -336,7 +336,25 @@ public partial class PageCanvas : UserControl
         }
     }
 
-    private void OnFramePropertyChanged(object? sender, PropertyChangedEventArgs e) => RefreshOverlay();
+    private void OnFramePropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        // Un bloc masqué ne se saisit pas sur la page (poste I8) : fermer l'œil du bloc qu'on
+        // tape referme la saisie, comme un clic hors du bloc. Fermée tout de suite, elle
+        // refermerait la transaction de l'œil, au milieu de sa commande ; elle l'est donc
+        // une fois la commande jouée, et le pas de l'œil reste le sien. Trouvé par la
+        // relecture du 26 octobre 2026 : le bloc restait en saisie, invisible, Échap sans
+        // effet, et le clic suivant sur la planche ne servait qu'à en sortir.
+        if (e.PropertyName == nameof(Frame.Visible) && sender is TextFrame { Visible: false } masque &&
+            ReferenceEquals(masque, _editing))
+        {
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (ReferenceEquals(_editing, masque) && !masque.Visible) EndTextEdit();
+            });
+        }
+
+        RefreshOverlay();
+    }
 
     /// <summary>
     /// Annuler ou Rétablir a refermé les transactions de la planche avec les autres (poste

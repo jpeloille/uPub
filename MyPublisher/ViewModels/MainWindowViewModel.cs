@@ -501,11 +501,19 @@ public partial class MainWindowViewModel : ViewModelBase
     /// <summary>Sélectionne ce seul bloc, ou vide la sélection si le bloc est nul.</summary>
     public void SelectOnly(Frame? frame) => SetSelection(frame is null ? [] : [frame]);
 
-    /// <summary>Ctrl+clic : ajoute le bloc à la sélection, ou l'en retire s'il y était.</summary>
+    /// <summary>
+    /// Ctrl+clic : ajoute le bloc à la sélection, ou l'en retire s'il y était.
+    ///
+    /// Une sélection de plusieurs blocs ne porte que ce que la planche saisit (poste I8) :
+    /// étendue depuis un bloc masqué pris seul dans la liste, elle le lâche. Sans quoi Suppr
+    /// emportait, avec le bloc qu'on vient de prendre, un bloc que rien ne montre (trouvé
+    /// par la relecture du 26 octobre 2026).
+    /// </summary>
     public void ToggleSelection(Frame frame)
     {
         var frames = Selection.ToList();
         if (!frames.Remove(frame)) frames.Add(frame);
+        if (frames.Count > 1) frames.RemoveAll(bloc => !bloc.Visible);
         SetSelection(frames);
     }
 
