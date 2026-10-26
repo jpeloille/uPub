@@ -23,6 +23,7 @@ public partial class BarreContextuelle : UserControl
     {
         InitializeComponent();
         AddHandler(KeyDownEvent, SurTouche, RoutingStrategies.Bubble);
+        AddHandler(Button.ClickEvent, SurCommande, RoutingStrategies.Bubble);
 
         // Le bloc change sous un sélecteur ouvert — un clic sur la planche, une annulation :
         // le sélecteur se referme avec sa transaction, avant que le gabarit qui le portait
@@ -78,6 +79,24 @@ public partial class BarreContextuelle : UserControl
 
         focus.ClearFocus();
         e.Handled = true;
+    }
+
+    /// <summary>
+    /// Une commande de la barre — Aligner, Répartir, Dissocier — fait son pas au clic, comme
+    /// un bouton de la barre principale. Repris le 26 octobre 2026, après relecture : le
+    /// bouton prenait le focus, la fenêtre ouvrait à ce focus la transaction de la barre
+    /// (règle 2), où la commande s'emboîtait sans rien empiler ; son pas attendait que le
+    /// focus quitte la barre, et une flèche ou <c>Suppr</c> frappées entre-temps s'y
+    /// fondaient. Elle ne prend donc plus le focus (<c>Button.menu</c>), et le champ qui
+    /// l'avait — la marge d'un onglet du dock, en pleine saisie — le rend avant qu'elle ne
+    /// joue : sa saisie fait son pas à elle, comme à l'ouverture du sélecteur de couleur.
+    /// Le clic arrive ici avant la commande, que le bouton joue après l'avoir annoncé.
+    /// </summary>
+    private void SurCommande(object? sender, RoutedEventArgs e)
+    {
+        if (e.Source is not Button bouton || !bouton.Classes.Contains("menu")) return;
+
+        TopLevel.GetTopLevel(this)?.FocusManager?.ClearFocus();
     }
 
     // ------------------------------------------------------------ la couleur du texte

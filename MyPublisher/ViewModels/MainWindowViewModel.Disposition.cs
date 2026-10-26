@@ -438,6 +438,8 @@ public partial class MainWindowViewModel
         BasculerGrasCommand.NotifyCanExecuteChanged();
         BasculerItaliqueCommand.NotifyCanExecuteChanged();
         AlignerLeTexteCommand.NotifyCanExecuteChanged();
+        // Le souligné de I7, au menu Texte et dans la barre depuis I3 : un bloc de texte seul.
+        SoulignerCommand.NotifyCanExecuteChanged();
     }
 
     private void SurBlocRetouche(object? sender, PropertyChangedEventArgs e)

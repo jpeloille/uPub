@@ -39,9 +39,12 @@ public partial class MainWindowViewModel
     /// qu'on tape ensuite ait encore son pas quand la saisie se refermera.
     ///
     /// Sans bloc de texte seul sélectionné, la commande ne fait rien et le dit : une image,
-    /// une forme, un groupe ou un tableau ne portent pas de souligné.
+    /// une forme, un groupe ou un tableau ne portent pas de souligné. Elle ne s'offre pas
+    /// non plus (repris le 26 octobre 2026, après la relecture de I3) : au menu Texte, où I3
+    /// l'a posée, elle se grise comme les alignements, et <c>Ctrl+U</c> s'y tait comme
+    /// <c>Ctrl+G</c> sur une image ; la sélection le lui redit (<c>NotifierLaDisposition</c>).
     /// </summary>
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(EstUnBlocDeTexte))]
     private void Souligner()
     {
         if (SingleSelected is not TextFrame bloc)

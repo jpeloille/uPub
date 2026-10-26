@@ -1745,6 +1745,78 @@ saboter "la planche (I4) décroche un repère du bord où il vient de s'aimanter
     'candidates.RemoveAll(valeur => valeur == _draggedGuide.Position);' \
     'I4-Q10-planche|PlancheTests'
 
+# I3 : la barre contextuelle. Posés le 26 octobre 2026, à la relecture qui a suivi la fusion :
+# le poste n'en avait aucun. Chaque intitulé dit « la barre contextuelle (I3) » :
+# « eprouver-le-juge.sh I3 » les joue tous, et eux seuls. Chacun est attendu par la recette du
+# poste ou par ses tests (BarreContextuelleTests).
+
+# Un bouton à bascule ordinaire : « Centrer » sur un texte déjà centré se décoche tout seul.
+saboter "la barre contextuelle (I3) laisse un bouton à état s'inverser au clic" \
+    MyPublisher/Views/BoutonDEtat.cs \
+    $'    protected override void Toggle()\n    {\n    }\n' \
+    '' \
+    'I3-barre-contextuelle|BarreContextuelleTests'
+
+# Le sélecteur de couleur sans sa transaction : la pastille choisie change le bloc sans pas.
+saboter "la barre contextuelle (I3) ouvre le sélecteur de couleur hors de toute transaction" \
+    MyPublisher/Views/BarreContextuelle.axaml.cs \
+    $'        _couleurOuverte = sender as FlyoutBase;\n        vm.BeginEdit();' \
+    '        _couleurOuverte = sender as FlyoutBase;' \
+    'I3-barre-contextuelle|BarreContextuelleTests'
+
+# Échap absorbé sans rendre le focus : la lettre suivante s'écrit encore dans le corps.
+saboter "la barre contextuelle (I3) garde le champ sous Échap" \
+    MyPublisher/Views/BarreContextuelle.axaml.cs \
+    $'        focus.ClearFocus();\n        e.Handled = true;' \
+    '        e.Handled = true;' \
+    'I3-barre-contextuelle|BarreContextuelleTests'
+
+# Le bouton « Centrer le texte » qui aligne à gauche : le texte ne bouge pas, ni à l'écran ni
+# au PDF.
+saboter "la barre contextuelle (I3) aligne à gauche sous « Centrer le texte »" \
+    MyPublisher/Views/BarreContextuelle.axaml \
+    'CommandParameter="{x:Static models:TextAlign.Center}"/>' \
+    'CommandParameter="{x:Static models:TextAlign.Left}"/>' \
+    'I3-barre-contextuelle|BarreContextuelleTests'
+
+# Règle 1 : l'interligne monté dans la barre, et resté au dock — deux contrôles pour une
+# propriété.
+saboter "la barre contextuelle (I3) laisse l'interligne au dock" \
+    MyPublisher/Views/MainWindow.axaml \
+    '<TextBlock Classes="libelle libelleAuDessus" Text="Retrait à gauche"/>' \
+    '<TextBlock Classes="libelle libelleAuDessus" Text="Retrait à gauche"/><NumericUpDown Classes="champ" TextConverter="{x:Static conv:Unite.Multiple}" Increment="0.05" Minimum="0.5" Value="{Binding LineHeight, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>' \
+    'I3-barre-contextuelle|BarreContextuelleTests'
+
+# Les commandes de plusieurs blocs montrées pour un seul : « Répartir » sur un bloc de texte.
+saboter "la barre contextuelle (I3) montre les commandes de plusieurs blocs pour un seul" \
+    MyPublisher/Views/BarreContextuelle.axaml \
+    'IsVisible="{Binding HasMultipleSelection}">' \
+    'IsVisible="{Binding HasSelection}">' \
+    'I3-barre-contextuelle|BarreContextuelleTests'
+
+# Repris après relecture (26 octobre 2026). Une commande qui prend le focus : la transaction de
+# la barre s'ouvre, l'alignement y attend son pas, et la flèche frappée ensuite s'y fond.
+saboter "la barre contextuelle (I3) laisse ses commandes prendre le focus" \
+    MyPublisher/Views/BarreContextuelle.axaml \
+    $'        <Style Selector="Button.menu">\n            <Setter Property="Focusable" Value="False"/>\n' \
+    $'        <Style Selector="Button.menu">\n' \
+    'I3-barre-contextuelle|BarreContextuelleTests'
+
+# La commande sans focus qui ne le reprend pas au champ qui l'a : la marge saisie au dock et
+# l'alignement ne font qu'un pas.
+saboter "la barre contextuelle (I3) fond la saisie d'un champ dans la commande qui suit" \
+    MyPublisher/Views/BarreContextuelle.axaml.cs \
+    $'        if (e.Source is not Button bouton || !bouton.Classes.Contains("menu")) return;\n\n        TopLevel.GetTopLevel(this)?.FocusManager?.ClearFocus();' \
+    '        if (e.Source is not Button bouton || !bouton.Classes.Contains("menu")) return;' \
+    'I3-barre-contextuelle|BarreContextuelleTests'
+
+# « Souligné » offert au menu Texte sur une forme, où il ne fait rien.
+saboter "la barre contextuelle (I3) offre le souligné sans bloc de texte" \
+    MyPublisher/ViewModels/MainWindowViewModel.Souligne.cs \
+    '[RelayCommand(CanExecute = nameof(EstUnBlocDeTexte))]' \
+    '[RelayCommand]' \
+    'I3-barre-contextuelle|BarreContextuelleTests'
+
 # Q23 : les réglages du bloc — les trois sections du dock, la barre contextuelle — sont
 # construits une fois par sorte de bloc et gardés. Reconstruits à chaque sélection, ils
 # figeaient la pression : c'est la cause du poste. Le chronomètre la verrait sur une machine
