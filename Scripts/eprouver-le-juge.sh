@@ -2576,6 +2576,21 @@ saboter "la mesure de la saisie (N7) laisse au champ l'interligne de la configur
     '' \
     'N7-mesure-de-la-saisie|MesureDeLaSaisieTests'
 
+# N11 : la question oubliée à la fermeture de la fenêtre — Alt+F4 jetterait de nouveau les
+# modifications sans un mot ; et la saisie ouverte qu'on ne referme plus avant de lire IsDirty,
+# dont la frappe se perdrait sans question.
+saboter "la fenêtre se ferme sur un document modifié sans rien demander (N11)" \
+    MyPublisher/Views/MainWindow.Fermer.cs \
+    'if (!_fermetureAccordee && AvantDePerdre is not null && Vm is { } vm)' \
+    'if (_fermetureAccordee && AvantDePerdre is not null && Vm is { } vm)' \
+    'N11-fermer-sans-perdre|FermerSansPerdreTests'
+
+saboter "la saisie ouverte n'est pas refermée avant la question, sa frappe se perd (N11)" \
+    MyPublisher/Views/MainWindow.Fermer.cs \
+    $'        PageView.EndTextEdit();\n        ClosePropertyEdit();\n\n        if (!vm.IsDirty || AvantDePerdre' \
+    $'        if (!vm.IsDirty || AvantDePerdre' \
+    'N11-fermer-sans-perdre|FermerSansPerdreTests'
+
 # Un motif qui ne désigne aucun sabotage ne prouve rien. « eprouver-le-juge.sh I4 » sortait
 # en 0 sur « 0 sabotages, 0 attrapés », quand les intitulés de la planche ne portaient pas
 # encore le code du poste : le filet passait pour éprouvé sans qu'on l'ait troué.

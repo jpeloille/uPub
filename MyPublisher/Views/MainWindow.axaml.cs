@@ -108,6 +108,7 @@ public partial class MainWindow : Window
         {
             _vm.PropertyChanged -= OnViewModelPropertyChanged;
             _vm.TransactionsRefermees -= OnTransactionsRefermees;
+            _vm.FermetureDemandee -= OnFermetureDemandee;
             _vm.SuivreLeClavier(null);
         }
 
@@ -116,8 +117,11 @@ public partial class MainWindow : Window
         {
             _vm.PropertyChanged += OnViewModelPropertyChanged;
             _vm.TransactionsRefermees += OnTransactionsRefermees;
+            _vm.FermetureDemandee += OnFermetureDemandee;
             _vm.SuivreLeClavier(() => ConsumesTyping(FocusManager?.GetFocusedElement()));
         }
+
+        ConstruireLesRecents();
     }
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -131,6 +135,8 @@ public partial class MainWindow : Window
         {
             ClosePropertyEdit();
         }
+
+        if (e.PropertyName == nameof(MainWindowViewModel.DocumentsRecents)) ConstruireLesRecents();
 
         // Le bloc choisi sur la planche se montre dans « Blocs de la page », qui n'en
         // montre que six : la liste ne le fait pas d'elle-même quand la sélection lui
@@ -161,7 +167,8 @@ public partial class MainWindow : Window
 
     /// <summary>
     /// Propose le catalogue et donne suite au choix. Renoncer ne touche à rien : le
-    /// document en cours reste ce qu'il est.
+    /// document en cours reste ce qu'il est. Le choix fait, et seulement alors, la question
+    /// d'avant la perte est posée (poste N11) : Annuler y rend aussi le document intact.
     /// </summary>
     private async Task ChooseTemplateAsync()
     {
@@ -173,6 +180,7 @@ public partial class MainWindow : Window
         };
 
         if (await dialog.ShowDialog<TemplateChoice?>(this) is not { } choice) return;
+        if (!await LaisserPartirLeDocument()) return;
 
         if (choice.IsBlank)
         {
@@ -190,9 +198,13 @@ public partial class MainWindow : Window
         }
     }
 
+    /// <summary>
+    /// Le document choisi s'ouvre par <see cref="OuvrirLeDocument"/>, comme un document récent
+    /// du menu Fichier : la question d'avant la perte vient une fois le fichier choisi (N11).
+    /// </summary>
     private async void OnOpen(object? sender, RoutedEventArgs e)
     {
-        if (Vm is not { } vm) return;
+        if (Vm is null) return;
 
         var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
         {
@@ -203,14 +215,7 @@ public partial class MainWindow : Window
 
         if (files.FirstOrDefault()?.TryGetLocalPath() is not { } path) return;
 
-        try
-        {
-            vm.LoadFrom(path);
-        }
-        catch (Exception ex)
-        {
-            vm.Status = $"Ouverture impossible : {ex.Message}";
-        }
+        await OuvrirLeDocument(path);
     }
 
     private async void OnSave(object? sender, RoutedEventArgs e)

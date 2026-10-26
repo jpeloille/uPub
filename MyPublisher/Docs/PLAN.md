@@ -114,7 +114,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **N8** | Couper, copier, coller des blocs | **100 %** | `Ctrl+X`, `Ctrl+C` et `Ctrl+V` hors saisie, pris par `OnKeyDown` après la garde de la saisie et jamais en `KeyBinding` (`OnCouper`, `OnCopier`, `OnColler`) ; le menu Édition porte Couper, Copier, Coller, qui passent par la fenêtre et rendent le geste au champ de texte — la zone de saisie, que la barre de menus prive du focus, le reprend avec sa sélection une fois le menu refermé. Le format `mypublisher-blocs` est le JSON d'un document d'une page portant des clones de la sélection, dans l'ordre de la page, avec le texte brut des blocs à côté (`MainWindowViewModel.PressePapiers.cs`) ; le collage pose des clones, en un pas, au même endroit, ou 12 pt plus loin — puis 24 — tant que la place est prise, comme `Ctrl+D` ; Couper fait un seul pas ; un texte venu d'ailleurs devient un bloc de texte. Un collage d'une version plus récente du format est refusé ; les références au jeu se résolvent dans le document d'arrivée ; les chemins d'images, absolus en mémoire depuis A3, se rebasent à son enregistrement. Le presse-papiers du banc sans affichage suffit, aucun faux. Onze tests ; un sabotage au juge ; relecture et juge après fusion. Recette dans `Scripts/recettes/` |
 | **N9** | La langue du texte | **100 %** | `Document.Langue`, une étiquette BCP 47, toujours là — `fr-FR` pour un document vierge ou écrit avant N9, jamais la langue de la machine ; celle du modèle pour un document qui en part — ; `TextFrame.Langue` et `StyleSpan.Langue`, nulles pour « comme le bloc », puis « comme le document » (`Langues.DuCaractere`, pour N25). Clés additives, `FormatVersion` à 5, Samples et Templates réenregistrés par `--resave`. L'import lit `fo:language`, `fo:script` et `fo:country`, les clés que `pub2raw` écrit sur chaque fragment : ATA 21 en déclare 73 en `fr-FR`, les Fiches 298 en `en-US` et 31 en `fr-FR` ; les 50, 294 et 17 qui portent un caractère gardent leur langue caractère par caractère, comparés au relevé lui-même, seize titres français que les Fiches écrivent dans des cases de tableau compris. La langue la plus écrite va au bloc, puis au document — ATA 21 en `fr-FR`, les Fiches en `en-US` — ; un fragment qui ne diffère de son bloc que par elle reste, et ne dit qu'elle. Le dock Document la règle en un pas, section « Langue » ; une langue inconnue s'y montre telle quelle et ne se perd pas. Elle n'entre pas dans `StyleEffectif` : rien de ce qui se dessine n'en dépend — l'empreinte des 18 documents du corpus est identique avant et après le poste, et chaque document se rend au bit près dans une autre langue. La mise en forme d'une plage la garde, `Ctrl+Espace` aussi. Trente-deux tests, vingt-six purs et six sur la fenêtre ; quatre sabotages au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **N10** | Les raccourcis de Publisher en français | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 3 ; écrit la fiche 24 |
-| **N11** | Ne rien perdre en fermant, retrouver ses documents | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 3 |
+| **N11** | Ne rien perdre en fermant, retrouver ses documents | **100 %** | Nouveau, Ouvrir, Fermer, Quitter et la fermeture de la fenêtre passent par `LaisserPartirLeDocument` (`MainWindow.Fermer.cs`) : la saisie ouverte et le champ du dock ou de la barre sont refermés d'abord, pour que leur frappe compte, puis, sur un document modifié, un dialogue neuf (`QuestionAvantDePerdre.axaml`, aux couleurs de l'apparence) demande « Enregistrer les modifications apportées à « nom » ? » : Enregistrer, le bouton par défaut, écrit — par « Enregistrer sous » sans chemin — et ne laisse poursuivre que si l'écriture a eu lieu ; Ne pas enregistrer poursuit ; Annuler, le bouton d'annulation, ou le dialogue refermé, laisse tout tel quel. La fenêtre suspend sa fermeture (`OnClosing`) le temps de la question. La question n'est branchée que par `App.axaml.cs` (`MainWindow.AvantDePerdre`) : une fenêtre de test ne demande rien. Fermer (`Ctrl+W`, `Ctrl+F4`, menu Fichier) ferme le document et rend le catalogue des modèles ; le catalogue et Ouvrir demandent une fois le modèle ou le fichier choisi. Les six derniers documents ouverts ou enregistrés sont au menu Fichier, numérotés, gardés dans `MyPublisher.Core/Services/Preferences.cs`, le magasin des réglages de l'utilisateur (`~/.config/MyPublisher/preferences.json`, ou le dossier de `MYPUBLISHER_PREFERENCES`), qui réécrit telles quelles les clés qu'il ne connaît pas, pour A11 et N25 ; seul `App.axaml.cs` le charge, un modèle de vue construit ailleurs en prend un en mémoire qui n'écrit nulle part. GNOME ne prend ni `Ctrl+W` ni `Ctrl+F4`. Trente-six tests, sept purs et vingt-neuf sur la fenêtre ; deux sabotages au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **N12** | Entrer dans le texte d'un clic, le curseur au point visé | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 4 |
 | **N13** | Les menus de Publisher | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 4 |
 | **N14** | Les champs | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 4 |
@@ -7110,6 +7110,89 @@ que `IsDirty` dise vrai.
 
 Fichiers : `MainWindow.axaml` (menu Fichier), `MainWindow.axaml.cs` (`Closing`), `App.axaml.cs`,
 un dialogue neuf, `Services/Preferences.cs` (neuf). Dépend de Q24. Effort : moyen.
+
+*Livré le 26 octobre 2026*, dans la salve Saisie 3 ; la relecture adversariale vient après la
+fusion. Chaque geste qui va perdre le document passe par `LaisserPartirLeDocument`
+(`MainWindow.Fermer.cs`, partiel de la fenêtre) : elle referme la saisie ouverte sur la page et la
+transaction du champ du dock ou de la barre, puis lit `IsDirty` ; sur un document modifié, si la
+question est branchée, elle la pose. Enregistrer écrit le document — par « Enregistrer sous »
+s'il n'a pas de chemin — et ne laisse poursuivre que si `IsDirty` est retombé : une écriture
+refusée, ou le sélecteur abandonné, ne perd rien ; Ne pas enregistrer poursuit ; Annuler, ou le
+dialogue refermé par sa barre de titre, laisse tout tel quel, et le champ qui garde le focus
+rouvre sa transaction (Q24). La fenêtre qui se ferme — Quitter, `Alt+F4`, la case de la barre de
+titre — suspend sa fermeture (`OnClosing`, `e.Cancel`) le temps de la question, puis la reprend ;
+une seconde fermeture pendant la question ne la repose pas. Le catalogue (`ChooseTemplateAsync`)
+pose la question une fois le modèle choisi, Ouvrir une fois le fichier choisi
+(`OuvrirLeDocument`, que le sélecteur et les récents partagent). Fermer — `Ctrl+W`, `Ctrl+F4`
+(liaisons de la fenêtre, vers `FermerLeDocumentCommand` du partiel
+`MainWindowViewModel.Fermer.cs`, qui lève un avis que la fenêtre écoute) et *Fichier ▸ Fermer* —
+ferme le document, qui laisse une page blanche sans titre, et rend le catalogue. Le dialogue,
+`QuestionAvantDePerdre.axaml`, a Enregistrer pour bouton par défaut et Annuler pour bouton
+d'annulation, cite l'apparence et entre dans `vues_de_la_phase` de I1. La question n'est
+branchée que par `App.axaml.cs`, d'une ligne (`fenetre.AvantDePerdre = nom =>
+QuestionAvantDePerdre.Poser(fenetre, nom);`) ; les tests du poste la branchent par la même.
+
+Les six derniers documents ouverts ou enregistrés (`LoadFrom`, `SaveTo`) sont au menu Fichier,
+avant Quitter, numérotés `_1` à `_6`, le nom du fichier en libellé — un `_` du nom doublé —, son
+chemin en bulle ; le séparateur ne se voit qu'avec eux. Un récent disparu du disque quitte la
+liste sans rien demander. Le magasin, `MyPublisher.Core/Services/Preferences.cs`, est un JSON à
+côté des coordonnées, `~/.config/MyPublisher/preferences.json`, ou dans le dossier que désigne
+`MYPUBLISHER_PREFERENCES` ; il s'écrit par un fichier provisoire renommé, rend un magasin vide
+sur un fichier illisible, garde six chemins complets sans doublon, et réécrit telles quelles les
+clés qu'il ne connaît pas (`JsonExtensionData`), pour A11 et N25. Seul `App.axaml.cs` charge
+celui de l'utilisateur ; le modèle de vue construit sans lui en prend un en mémoire, qui n'écrit
+nulle part, et les tests d'interface pointent en plus la variable vers un dossier temporaire dès
+le chargement de leur assemblage (`[ModuleInitializer]`). GNOME ne prend ni `Ctrl+W` ni
+`Ctrl+F4` (relevé le 26 octobre 2026 : `Alt+F4` ferme la fenêtre, `Ctrl+Alt+F4` change de
+console). Le README le dit au sous-tableau « Fichier », à la liste de ce que l'application sait
+faire et à « Où sont rangés les réglages ».
+
+*Recette jouée* : `Scripts/recettes/N11-fermer-sans-perdre.sh`. Les sources d'abord : la question
+et les préférences de l'utilisateur, branchées par `App.axaml.cs` seul, nulle part ailleurs dans
+l'application ni au banc ; chaque geste passe par `LaisserPartirLeDocument`, qui referme la saisie
+et le champ avant de lire `IsDirty` ; le dialogue, ses deux boutons et son inscription à I1 ;
+`Ctrl+W` et `Ctrl+F4` vers Fermer, au README, et ni `W` ni `F4` dans `OnKeyDown` ; le partiel du
+poste et la variable du magasin. Puis, `MYPUBLISHER_PREFERENCES` pointée vers un dossier de la
+recette et la configuration de la personne relevée avant et après, sept tests purs
+(`PreferencesTests`) et vingt-neuf sur la vraie fenêtre (`FermerSansPerdreTests`), sous
+`poste=N11` : les trois réponses sur Nouveau (`Ctrl+N`, le catalogue, Entrée), Ouvrir (le
+deuxième récent, au menu), Fermer (`Ctrl+W`) et la fenêtre (Quitter, au menu) ; aucune question
+sur un document intact ; `Ctrl+W`, `Ctrl+F4` et le menu ; la frappe d'une saisie ouverte, écrite
+par Enregistrer ; Entrée, Échap et la barre de titre du dialogue ; Enregistrer qui échoue, sans
+titre ou sur un dossier absent ; les récents relus d'une seconde fenêtre sur un second magasin du
+même dossier, sans doublon, le plus récent en tête, rouverts d'un clic ; un récent disparu ; une
+fenêtre de test sans la question, qui se ferme modifiée sans rien demander. Puis les voisins : le
+catalogue (B1) et `MasquerEcranTests`. Deux sabotages au juge : la question oubliée à la fermeture
+de la fenêtre — celui du plan — et la saisie qu'on ne referme plus avant de lire `IsDirty`.
+
+*Ce que l'implémentation a appris.* La recette de N6 compte `PageView.EndTextEdit();` une seule
+fois dans `MainWindow.axaml.cs` — la cible d'un sabotage de B2 : le code du poste vit donc dans un
+partiel de la fenêtre, `MainWindow.Fermer.cs`, `OnClosing` compris, et non dans
+`MainWindow.axaml.cs`, que le plan nommait ; c'est aussi ce qui laisse à N10 les liaisons et
+`OnKeyDown`. Sans affichage, un dialogue modal resté ouvert à la fin d'un test qui passe bloque
+l'hôte des tests indéfiniment — le catalogue comme la question, mesuré : chaque test du poste
+répond à chaque dialogue qu'il ouvre et referme le catalogue.
+
+*Choisi sans certitude* :
+- la question vient après le choix — du modèle au catalogue, du fichier au sélecteur —, au
+  moment où le document va être perdu, et non avant d'ouvrir le catalogue ou le sélecteur ;
+  Fermer, qui n'a rien à choisir, demande d'abord ;
+- Fermer laisse une page blanche sans titre sous le catalogue : MyPublisher n'a pas d'état sans
+  document, et c'est le plus près de l'écran d'accueil de Publisher. Le catalogue abandonné la
+  laisse ;
+- un récent porte le nom du fichier, le chemin en bulle : deux documents de même nom dans deux
+  dossiers ne se distinguent qu'à la bulle. Un récent disparu quitte la liste sans question ;
+- *Fichier ▸ Fermer* montre `Ctrl+F4`, la touche de Publisher, et Quitter `Alt+F4`, que le
+  bureau traduit en fermeture de la fenêtre ; ni l'un ni l'autre n'est une liaison de plus ;
+- le magasin est rangé dans le noyau (`MyPublisher.Core/Services/`), à côté des coordonnées, et
+  non dans l'application : A11 et N25, qui le reprendront, ont leur logique dans le noyau ;
+- des préférences qui ne s'écrivent pas — un dossier en lecture seule — ne font échouer ni
+  l'ouverture ni l'enregistrement, et ne le disent pas.
+
+*Relevé, non corrigé.* La fin de session du bureau (`ShutdownRequested` de la durée de vie de
+l'application) n'est pas traitée à part : elle passe par la fermeture de la fenêtre, qui la
+suspend sur un document modifié. Un modèle choisi au catalogue n'entre pas dans les récents —
+il n'a pas de chemin ; il y entre à son premier enregistrement.
 
 #### N12 — Entrer dans le texte d'un clic, le curseur au point visé *(fiche 10 ; fiche 23, a2 à a5, a10)*
 

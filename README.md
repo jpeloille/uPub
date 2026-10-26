@@ -309,6 +309,11 @@ Fenêtre masque aussi l'un ou l'autre.
   souris que les champs du dock, quel que soit leur onglet, et ceux de la barre
   contextuelle.
 - Enregistrement au format `.mypub` (JSON lisible) et export PDF.
+- **Rien ne se perd en fermant** : Nouveau, Ouvrir, *Fichier ▸ Fermer* (`Ctrl+W`,
+  `Ctrl+F4`), Quitter et la fermeture de la fenêtre demandent, sur un document modifié,
+  s'il faut l'enregistrer — la frappe d'une saisie encore ouverte comprise. Fermer rend
+  le catalogue des modèles. Les six derniers documents ouverts ou enregistrés sont au
+  menu Fichier, numérotés, d'une session à l'autre.
 - **Un dossier de travail se déplace sans casser ses images** : les images rangées à
   côté du document — ou sous son dossier — y sont référencées relativement à lui.
   Celles qui vivent ailleurs gardent leur chemin absolu.
@@ -350,6 +355,8 @@ dock ou de la barre —, les raccourcis d'objet se taisent et leur touche revien
 | Raccourci | Action |
 |---|---|
 | `Ctrl+N` / `Ctrl+O` / `Ctrl+S` | Nouveau (catalogue de modèles) / Ouvrir / Enregistrer |
+| `Ctrl+W` ou `Ctrl+F4` | Fermer le document, puis rendre le catalogue des modèles |
+| `Alt+F4` | Quitter. Avant de perdre des modifications, Nouveau, Ouvrir, Fermer et Quitter demandent : Enregistrer (`Entrée`), Ne pas enregistrer, Annuler (`Échap`) |
 | `Ctrl+E` | Exporter en PDF |
 
 ### Édition
@@ -511,6 +518,13 @@ pas partie. Elles vivent dans `~/.config/MyPublisher/informations.json`, parce q
 suivent la personne et non le fichier : un document envoyé à un collègue affiche les
 coordonnées de ce collègue, ce qui est précisément l'intérêt d'un modèle. Rien n'y est
 écrit tant qu'on n'a pas validé le dialogue.
+
+Les **préférences** — aujourd'hui les six derniers documents ouverts ou enregistrés, que
+le menu Fichier numérote — vivent à côté, dans `~/.config/MyPublisher/preferences.json`.
+La variable `MYPUBLISHER_PREFERENCES` désigne un autre dossier : les tests et les
+recettes la pointent vers un dossier temporaire, et n'écrivent jamais dans la
+configuration de la personne. Une clé que le fichier porte sans que cette version la
+connaisse est réécrite telle quelle.
 
 ## Format de fichier
 

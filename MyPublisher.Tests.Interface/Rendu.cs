@@ -41,12 +41,17 @@ public static class Rendu
 
     public sealed record Image(byte[] Pixels, int Largeur, int Hauteur);
 
-    /// <summary>Une fenêtre sur un document, sans horloge ni configuration de machine.</summary>
-    public static (Window Fenetre, MainWindowViewModel Vm) Ouvrir(Document document)
+    /// <summary>
+    /// Une fenêtre sur un document, sans horloge ni configuration de machine. Les préférences
+    /// sont un magasin en mémoire, sauf si l'on en donne un — chargé, alors, dans un dossier
+    /// temporaire (poste N11) : jamais celles de la personne.
+    /// </summary>
+    public static (Window Fenetre, MainWindowViewModel Vm) Ouvrir(Document document, Preferences? preferences = null)
     {
         var vm = new MainWindowViewModel(
             contacts: new BusinessInfoStore(),
-            horloge: () => new DateTime(2026, 9, 6));
+            horloge: () => new DateTime(2026, 9, 6),
+            preferences: preferences);
 
         vm.Document = document;
         vm.CurrentPage = document.Pages[0];

@@ -129,9 +129,17 @@ public partial class MainWindowViewModel : ViewModelBase
     /// D'où vient la date des champs, ou <c>null</c> pour l'heure courante. Même raison :
     /// un document portant un champ de date change tous les jours.
     /// </param>
-    public MainWindowViewModel(BusinessInfoStore? contacts = null, Func<DateTime>? horloge = null)
+    /// <param name="preferences">
+    /// Les réglages de l'utilisateur, ou <c>null</c> pour un magasin en mémoire, qui ne s'écrit
+    /// jamais (poste N11). À l'inverse des coordonnées, c'est l'application seule
+    /// (<c>App.axaml.cs</c>) qui charge ceux de l'utilisateur : une fenêtre ouverte par un test
+    /// enregistre et ouvre des documents, et chaque fois, les récents s'écrivent.
+    /// </param>
+    public MainWindowViewModel(BusinessInfoStore? contacts = null, Func<DateTime>? horloge = null,
+                               Preferences? preferences = null)
     {
         Contacts = contacts ?? BusinessInfoStore.Load();
+        Preferences = preferences ?? Preferences.EnMemoire();
         _horloge = horloge ?? (() => DateTime.Now);
         CurrentPage = Document.Pages.FirstOrDefault();
         FontFamilies = PolicesProposees(Document);
@@ -826,8 +834,11 @@ public partial class MainWindowViewModel : ViewModelBase
         Status = "Nouveau document";
     }
 
-    public void LoadFrom(string path) =>
+    public void LoadFrom(string path)
+    {
         Adopt(DocumentSerializer.Load(path), path, $"Ouvert : {Path.GetFileName(path)}");
+        RetenirLeDocument(path);
+    }
 
     /// <summary>
     /// Démarre un document neuf à partir d'un modèle. Tout se passe comme à l'ouverture,
@@ -873,6 +884,7 @@ public partial class MainWindowViewModel : ViewModelBase
         FilePath = path;
         IsDirty = false;
         Status = $"Enregistré : {Path.GetFileName(path)}";
+        RetenirLeDocument(path);
     }
 
     public void ExportPdf(string path)
