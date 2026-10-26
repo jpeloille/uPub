@@ -31,6 +31,9 @@
 
     <ItemGroup>
         <ProjectReference Include="..\MyPublisher\MyPublisher.csproj"/>
+        <!-- La mesure de la saisie (poste N7) : les tests éprouvent la commande « saisie » du
+             banc elle-même, et non une copie de sa mesure. -->
+        <ProjectReference Include="..\MyPublisher.Banc\MyPublisher.Banc.csproj"/>
     </ItemGroup>
 
 </Project>

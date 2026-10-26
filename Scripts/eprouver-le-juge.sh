@@ -2558,6 +2558,23 @@ saboter "Ctrl+Espace (N9) efface la langue avec le style" \
     '_ => default,' \
     'N9-langue|Langue(DuDocument)?Tests'
 
+# L'écart de la saisie vaut max(|Δx|, |Δ ligne de base|). Sans l'ordonnée, l'espace après les
+# paragraphes de l'étalonnage — 6 puis 12 pt, tout en hauteur — ne se verrait plus, ni rien de
+# ce qui décale les lignes : la mesure rendrait la voie 1 meilleure qu'elle n'est.
+saboter "la mesure de la saisie (N7) oublie l'ordonnée" \
+    MyPublisher.Banc/Saisie.cs \
+    'public double Ecart => Math.Max(Math.Abs(Dx), Math.Abs(Dy));' \
+    'public double Ecart => Math.Abs(Dx);' \
+    'N7-mesure-de-la-saisie|MesureDeLaSaisieTests'
+
+# La configuration B pose l'interligne de la composition sur l'instance du champ, et le lui
+# rend : sans cela, la mesure changerait l'application qu'elle mesure.
+saboter "la mesure de la saisie (N7) laisse au champ l'interligne de la configuration B" \
+    MyPublisher.Banc/Saisie.cs \
+    'zone.ClearValue(TextBox.LineHeightProperty);' \
+    '' \
+    'N7-mesure-de-la-saisie|MesureDeLaSaisieTests'
+
 # Un motif qui ne désigne aucun sabotage ne prouve rien. « eprouver-le-juge.sh I4 » sortait
 # en 0 sur « 0 sabotages, 0 attrapés », quand les intitulés de la planche ne portaient pas
 # encore le code du poste : le filet passait pour éprouvé sans qu'on l'ait troué.
