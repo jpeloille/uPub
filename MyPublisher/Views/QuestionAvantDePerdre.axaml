@@ -1,0 +1,57 @@
+<!--
+    La question qu'on pose avant de perdre des modifications (poste N11, fiche 23, f25) : à
+    Nouveau, Ouvrir, Fermer, Quitter et à la fermeture de la fenêtre. Trois réponses, comme
+    Publisher et Office : Enregistrer, le bouton par défaut (Entrée) ; Ne pas enregistrer ;
+    Annuler, le bouton d'annulation (Échap). Refermer le dialogue par sa barre de titre vaut
+    Annuler : rien ne se perd sans qu'on l'ait dit.
+
+    Une vue de la phase : elle ne cite que l'apparence (Apparence.axaml), aucune couleur en dur.
+-->
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="MyPublisher.Views.QuestionAvantDePerdre"
+        Title="MyPublisher"
+        Width="440" SizeToContent="Height"
+        CanResize="False" ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner"
+        Background="{StaticResource Blanc}">
+
+    <Window.Styles>
+        <!-- Le bouton par défaut, plein d'accent comme « Exporter en PDF » dans la fenêtre. -->
+        <Style Selector="Button.principal">
+            <Setter Property="Background" Value="{StaticResource Accent}"/>
+            <Setter Property="Foreground" Value="{StaticResource Blanc}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+        <Style Selector="Button.principal:pointerover /template/ ContentPresenter#PART_ContentPresenter,
+                         Button.principal:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{StaticResource AccentSurvol}"/>
+            <Setter Property="Foreground" Value="{StaticResource Blanc}"/>
+        </Style>
+        <Style Selector="Button.reponse">
+            <Setter Property="MinWidth" Value="96"/>
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="8,0,0,0"/>
+        </Style>
+    </Window.Styles>
+
+    <StackPanel Margin="20,18,20,16">
+        <TextBlock x:Name="Question" FontSize="14" FontWeight="SemiBold"
+                   Foreground="{StaticResource Texte}" TextWrapping="Wrap"/>
+        <TextBlock Classes="libelle" Margin="0,6,0,0" TextWrapping="Wrap"
+                   Text="Si vous ne les enregistrez pas, elles seront perdues."/>
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,18,0,0">
+            <Button x:Name="BoutonEnregistrer" Classes="reponse principal" Content="Enregistrer"
+                    IsDefault="True" Click="OnEnregistrer"/>
+            <Button x:Name="BoutonNePasEnregistrer" Classes="reponse" Content="Ne pas enregistrer"
+                    Click="OnNePasEnregistrer"/>
+            <Button x:Name="BoutonAnnuler" Classes="reponse" Content="Annuler"
+                    IsCancel="True" Click="OnAnnuler"/>
+        </StackPanel>
+    </StackPanel>
+</Window>

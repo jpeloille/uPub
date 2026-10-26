@@ -91,6 +91,13 @@
         <!-- B7 : replier les panneaux, comme le Ctrl+F1 de Publisher (fiche 04). Ni GNOME
              ni KDE ne le prennent par défaut, à la différence d'Alt+F6 (poste A4). -->
         <KeyBinding Gesture="Ctrl+F1" Command="{Binding ReplierLesPanneauxCommand}"/>
+        <!-- Fermer le document (poste N11) : Ctrl+F4, comme Publisher en français, et Ctrl+W,
+             comme les autres applications du bureau. Ni GNOME ni la fenêtre ne prennent l'une
+             ou l'autre (relevé le 26 octobre 2026 : le bureau ferme la fenêtre à Alt+F4 et
+             change de console à Ctrl+Alt+F4) ; OnKeyDown ne prend pas W. La fenêtre pose la
+             question avant de perdre des modifications, puis rend le catalogue. -->
+        <KeyBinding Gesture="Ctrl+W" Command="{Binding FermerLeDocumentCommand}"/>
+        <KeyBinding Gesture="Ctrl+F4" Command="{Binding FermerLeDocumentCommand}"/>
     </Window.KeyBindings>
 
     <Window.Styles>
@@ -582,16 +589,22 @@
                         </ItemsPanelTemplate>
                     </Menu.ItemsPanel>
 
-                    <MenuItem Header="_Fichier">
+                    <!-- Le menu Fichier de Publisher (p. 61) : Fermer, et les six derniers documents,
+                         numérotés, que la fenêtre pose avant leur séparateur (poste N11,
+                         MainWindow.Fermer.cs) ; le séparateur ne se voit qu'avec eux. -->
+                    <MenuItem x:Name="MenuFichier" Header="_Fichier">
                         <MenuItem Header="_Nouveau…" InputGesture="Ctrl+N" Click="OnNew"/>
                         <Separator/>
                         <MenuItem Header="_Ouvrir…" InputGesture="Ctrl+O" Click="OnOpen"/>
+                        <MenuItem x:Name="MenuFermer" Header="_Fermer" InputGesture="Ctrl+F4"
+                                  Command="{Binding FermerLeDocumentCommand}"/>
                         <MenuItem Header="_Enregistrer" InputGesture="Ctrl+S" Click="OnSave"/>
                         <MenuItem Header="Enregistrer _sous…" Click="OnSaveAs"/>
                         <Separator/>
                         <MenuItem Header="Exporter en _PDF…" InputGesture="Ctrl+E" Click="OnExportPdf"/>
                         <Separator/>
-                        <MenuItem Header="_Quitter" Click="OnQuit"/>
+                        <Separator x:Name="SeparateurDesRecents" IsVisible="False"/>
+                        <MenuItem x:Name="MenuQuitter" Header="_Quitter" InputGesture="Alt+F4" Click="OnQuit"/>
                     </MenuItem>
 
                     <MenuItem Header="_Édition">

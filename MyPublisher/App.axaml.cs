@@ -6,6 +6,7 @@ using System;
 using System.IO;
 using System.Linq;
 using Avalonia.Markup.Xaml;
+using MyPublisher.Services;
 using MyPublisher.ViewModels;
 using MyPublisher.Views;
 
@@ -26,7 +27,10 @@ public partial class App : Application
             // More info: https://docs.avaloniaui.net/docs/guides/development-guides/data-validation#manage-validationplugins
             DisableAvaloniaDataAnnotationValidation();
 
-            var viewModel = new MainWindowViewModel();
+            // Les préférences de l'utilisateur — les documents récents (poste N11) : chargées
+            // ici, et seulement ici. Un modèle de vue construit ailleurs, par un test ou par le
+            // banc, en prend un magasin en mémoire, qui n'écrit nulle part.
+            var viewModel = new MainWindowViewModel(preferences: Preferences.Charger());
 
             // « MyPublisher document.mypub » ouvre directement le document, ce qui
             // permet aussi d'associer l'extension au gestionnaire de fichiers.
@@ -45,7 +49,14 @@ public partial class App : Application
                 }
             }
 
-            desktop.MainWindow = new MainWindow { DataContext = viewModel };
+            var fenetre = new MainWindow { DataContext = viewModel };
+
+            // La question avant de perdre des modifications (poste N11) : branchée ici, jamais
+            // par la fenêtre elle-même. Les tests ferment des fenêtres modifiées, et une
+            // question que personne ne regarde les bloquerait.
+            fenetre.AvantDePerdre = nom => QuestionAvantDePerdre.Poser(fenetre, nom);
+
+            desktop.MainWindow = fenetre;
         }
 
         base.OnFrameworkInitializationCompleted();
