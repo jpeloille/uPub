@@ -110,7 +110,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **N4** | L'affichage au clavier | **100 %** | `F9` bascule entre l'affichage courant et la taille réelle, autour du centre de la sélection — ou du milieu de la zone visible —, qui garde sa place à l'écran ; le second `F9` rend l'affichage d'avant, zoom et défilement, tant qu'aucun autre geste n'a changé le zoom. `Ctrl+Maj+L` joue « Page entière ». La valeur du zoom de la barre principale est un champ (`Views/ChampDuZoom.axaml`) à l'allure du libellé de la maquette tant qu'il n'a pas le focus : un clic y entre et déroule la liste de Publisher — Page entière, Objets sélectionnés, de 400 à 10 % — ; un pourcentage part à Entrée, Échap renonce et rend la planche, un zoom hors de 10 à 800 % est refusé avec un message ; aucune transaction. « Limites et repères » (`Ctrl+Maj+O`) est la case « Repères » d'avant ; « Repères de lignes de base » (`Ctrl+F7`), `ShowBaselines`, ne masque que les lignes de base. Le menu Affichage montre ses gestes. Le bureau (GNOME 50.1 sous Wayland, sans KDE) ne prend aucune des quatre touches — seulement `Alt+F7`, `Ctrl+Alt+F7` et `Ctrl+Alt+F9`. Dix tests ; relecture et juge après fusion. Recette dans `Scripts/recettes/` |
 | **N5** | Quitter la saisie d'un clic qui agit | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 2 |
 | **N6** | Les raccourcis de la fenêtre laissent la touche au champ | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 2 |
-| **N7** | Mesurer l'écart de la première voie, et s'arrêter | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 2. **Arrêt** : la voie de R7 revient au propriétaire |
+| **N7** | Mesurer l'écart de la première voie, et s'arrêter | **100 %** | **Arrêt** : la voie de R7 revient au propriétaire. La commande `saisie` du banc (`MyPublisher.Banc/Saisie.cs`) ouvre la saisie de chaque bloc sans transaction et mesure, position par position, l'écart entre le point d'insertion du champ (`HitTestTextPosition` sur le `PART_TextPresenter`, la ligne de base de sa ligne) et celui du caractère composé (`PointDe` de N3), en A — le champ tel qu'il est — et en B — l'interligne de la composition posé et l'arrondi retiré, sur l'instance du champ seule ; elle dit pour chaque bloc ses causes et, pour chaque position au-dessus du seuil, ce qui l'y met. `Scripts/mesurer-la-saisie.sh` la joue sur l'étalonnage (`Samples/recette-saisie.mypub` : 0, puis 6 et 12 pt, puis 13,8 pt), le corpus — l'exemple, ATA 21, les Fiches, `recette-coupure`, 116 blocs et 32 340 positions — et la contre-épreuve au zoom 2, identique à 0,0000 pt. **Mesuré** : le maximum de B est 471,2 pt, son 95ᵉ centile 102,2 pt, 13 600 positions et 113 blocs sur 116 au-dessus de 0,75 pt — **au-dessus du seuil** ; coupures, colonnes, hauteur des lignes, espaces de paragraphe et justification en tête ; chiffres et note de décision dans la section R7. Aucune ligne de l'application. 13 tests sous `poste=N7`, qui jouent la commande elle-même ; deux sabotages au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **N8** | Couper, copier, coller des blocs | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 2 |
 | **N9** | La langue du texte | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 2 |
 | **N10** | Les raccourcis de Publisher en français | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 3 ; écrit la fiche 24 |
@@ -2989,6 +2989,99 @@ Q14 face à une valeur nulle ; les comptes de la recette I3.
 *Recette*, en plus : sur une sélection mixte, `Ctrl+G` met le gras partout ; le corps 14 posé à la
 barre fait un pas. Dépend de R6, N10, N19 et N21. Effort : moyen, les préalables portant
 l'essentiel.
+
+*Mesuré le 26 octobre 2026*, par N7 (`Scripts/mesurer-la-saisie.sh`, commande `saisie` du banc).
+Pour chaque position du curseur, l'écart entre le point d'insertion du champ et celui du
+caractère composé, `max(|Δx|, |Δ ligne de base|)`, en points, dans le repère du bloc. A : le
+champ tel qu'il est ; B : « au mieux de la voie 1 », l'interligne de la composition posé sur
+l'instance du champ et l'arrondi de mise en page retiré du champ et de ses parties. Les valeurs
+en pixels sont rapportées à 100 % (÷ 0,75) puis à 200 % (÷ 0,375).
+
+**L'étalonnage** (`Samples/recette-saisie.mypub`), le même en A et en B : un seul style,
+0,000 pt ; 6 pt après chaque paragraphe, 0,000 puis 6,000 puis 12,000 pt ; un fragment de 16 pt
+dans 10, 13,784 pt (la ligne de base descend de 5,57 pt, et l'abscisse suit le corps).
+
+**Par document** — blocs mesurés et positions ; puis maximum, 95ᵉ centile et positions
+au-dessus de 0,75 pt, en points ; entre parenthèses, les blocs au-dessus du seuil :
+
+| Document | Blocs | Positions | A : max · p95 · > 0,75 pt | B : max · p95 · > 0,75 pt (blocs) | B en px à 100 % / 200 % : max · p95 |
+|---|---|---|---|---|---|
+| L'exemple, deux pages (1 tourné) | 15 | 2 398 | 320,9 · 56,2 · 2 398 | 320,9 · 38,6 · 1 013 (12) | 428 / 856 · 51 / 103 |
+| ATA 21 (2 tournés) | 9 | 3 211 | 471,3 · 286,1 · 3 206 | 471,2 · 286,0 · 3 206 (9) | 628 / 1 256 · 381 / 762 |
+| Les Fiches (51 cases comptées) | 18 | 2 703 | 191,9 · 74,2 · 2 282 | 191,8 · 74,4 · 2 286 (18) | 256 / 511 · 99 / 198 |
+| `recette-coupure` | 74 | 24 028 | 162,2 · 97,4 · 21 110 | 162,2 · 97,4 · 7 095 (74) | 216 / 433 · 130 / 260 |
+| **Les quatre** | **116** | **32 340** | **471,3 · 102,2 · 28 996** | **471,2 · 102,2 · 13 600 (113)** | **628 / 1 256 · 136 / 273** |
+
+En B, 18 740 positions sur 32 340 sont sous le seuil : 58 % de l'exemple, 0,2 % d'ATA 21 (5 sur
+3 211), 15 % des Fiches, 70 % de `recette-coupure` ; et trois blocs sur 116, tous de l'exemple —
+ses deux titres, à 0,000 pt, et la mention tournée, à 0,629 pt.
+
+**Par cause.** Ce qui met une position au-dessus du seuil, lu sur sa ligne — la première raison
+qui s'applique, le *motif* —, en positions, en B :
+
+| Motif | Exemple | ATA 21 | Fiches | Coupure | Ce que c'est |
+|---|---|---|---|---|---|
+| coupure | 44 | 522 | 66 | 4 396 | la ligne ne commence pas au même caractère : le champ coupe à sa mesure, sur la largeur arrondie de son cadre ; la composition, au plus large de l'écran et du PDF, sur la largeur du modèle (Q13) |
+| coupure en amont | — | 650 | 664 | 399 | même début, mais une ligne de plus ou de moins au-dessus |
+| colonnes | — | — | — | 2 254 | les 22 blocs à deux colonnes, que le champ ignore |
+| hauteur des lignes | — | 1 731 | — | — | une ligne plus haute que le style du bloc — un titre d'un autre corps ou d'une autre graisse, 2,14 pt sur sa ligne —, qui descend toutes les suivantes |
+| espaces de paragraphe | — | — | 901 | — | les 29 espaces après paragraphe des Fiches |
+| justification | 864 | — | — | — | le champ justifie aussi la dernière ligne de chaque paragraphe (jusqu'à 320,9 pt), et répartit le blanc autrement (jusqu'à 1,6 pt) |
+| tabulations | — | — | 511 | — | les 157 tabulations des Fiches, que le champ avance à son pas |
+| retraits | — | 193 | 1 | — | le retrait négatif de première ligne des listes |
+| fragments | — | 58 | 119 | — | un fragment d'un autre style avant la position, sur la ligne |
+| taille minimale du champ | 98 | 52 | 24 | — | 7 blocs de moins de 32 pt de haut : le thème donne au champ 32 pt au moins, centré sur le bloc (jusqu'à 11,8 pt) |
+| crénage ou ligature | 7 | — | — | 46 | la composition s'écarte là de son propre dessin (voir la voie 2a) |
+
+En A, l'interligne passe devant : il est le motif de 2 256 positions de l'exemple et de 14 061 de
+`recette-coupure`, et de plus aucune en B. Par bloc, les causes présentes — un bloc en porte
+souvent plusieurs, et aucun n'en porte aucune — : coupure 46 blocs (38 n'ont pas autant de
+lignes des deux côtés), colonnes 22, graisse 18, écarts de paragraphe 18, police 16,
+tabulations 16, police de symboles 16 (Wingdings et Wingdings 3, dans les Fiches), corps 14,
+justifié 10, débordement 9, taille minimale du champ 7, italique, exposant et calage 1 chacun.
+
+**La contre-épreuve au zoom 2** (un point y vaut 2,667 px, contre 1 au zoom du banc), sur les
+2 398 positions de l'exemple : **0,0000 pt** de différence, en A comme en B. L'arrondi de mise
+en page se fait à l'échelle de la fenêtre, et non à celle du zoom : sous la mise à l'échelle de
+la page, il tombe au point entier à tous les zooms.
+
+**Au-dessus du seuil.** Le maximum de B sur les quatre documents est 471,2 pt, six cent
+vingt-huit fois le seuil, et 113 blocs sur 116 le dépassent : **la voie 1 ne tient pas** ; le
+choix revient au propriétaire.
+
+**La note de décision.**
+- *Voie 1* — lier l'interligne, couper l'arrondi, empêcher le champ de défiler, `NewLine` à
+  « \n », lier le calage, les retraits du bloc dans le `Padding`, un pinceau de curseur, une
+  sélection translucide. Elle suit l'interligne (le motif de 16 317 positions en A, d'aucune en
+  B) et l'arrondi (au plus 0,5 pt) ; la mesure lui ajoute `MinHeight` et `MinWidth` à zéro sur
+  le champ (174 positions, 7 blocs). Elle ne suit pas les 13 426 autres positions de B, toutes du
+  texte réel ou d'une recette du dépôt : 6 741 de coupure ou de coupure en amont, 2 254 de
+  colonnes, 1 731 de hauteur de ligne, 901 d'espaces de paragraphe, 864 de justification, 511
+  de tabulations, 194 de retraits, 177 de fragments, 53 de crénage. Au mieux, elle serait sous
+  le pixel sur trois blocs du corpus.
+- *Voie 1 renforcée* — un présentateur dérivé qui suit en plus les fragments et les taquets. Elle
+  gagnerait la hauteur des lignes, les fragments, les tabulations et les polices de symboles
+  (2 419 positions, l'essentiel d'ATA 21) ; il resterait les coupures (6 741), les colonnes
+  (2 254), les espaces de paragraphe (901), la justification (864) et les retraits (194) : près
+  de 11 000 positions, dans les quatre documents. Fragile, comme N7 l'écrivait : `_constraint`
+  est privé, et le gabarit Fluent à recopier.
+- *Ce qu'aucune voie 1 ne suivra jamais*, chiffré : la règle de coupure de Q13 (5 028 positions
+  dont la ligne commence ailleurs, dans 46 blocs), les colonnes (22 blocs), les écarts de
+  paragraphe d'ATA 21 — 31 paragraphes justifiés et 17 au fer à gauche parmi ses 48 non vides,
+  53 avec les vides —, le retrait négatif de première ligne de 36 d'entre eux, les 29 espaces
+  après paragraphe des Fiches, la justification d'Avalonia, qui ne laisse pas au fer la dernière
+  ligne d'un paragraphe, et, pour la voie simple, les polices de symboles des Fiches.
+- *Voie 2a* — un champ caché pour la frappe, la méthode d'entrée et le presse-papiers ; curseur,
+  sélection et souris calculés sur la composition. L'écart du champ n'y compte plus ; ce qui
+  reste est **l'écart de la composition à son propre dessin** : `PointDe` compte la chasse de ce
+  qui précède, mesurée seule, quand le dessin façonne le morceau d'un tenant — un crénage
+  (« F. », 0,96 pt) ou une ligature (« fi », « fl », 3,70 pt) ; au plus de 3,40 à 3,87 pt selon
+  le document. La voie 2 devra le reprendre dans N3, en lisant le bord dans le morceau façonné. Environ la voie 1 plus un poste moyen.
+- *Voie 2b* — un éditeur complet sur `Compositeur`, frappe et méthode d'entrée comprises : le
+  même écart à reprendre, et le seuil D.
+
+Rien de ce qui dépend de la voie ne part avant la réponse du propriétaire : N21, R6, R7, N22 à
+N28.
 
 ---
 
@@ -6488,6 +6581,86 @@ N28. Les salves Saisie 3 à 5 et A12 continuent pendant ce temps.
 
 Fichiers : `MyPublisher.Banc/`, `Scripts/mesurer-la-saisie.sh`, `Samples/recette-saisie.mypub`,
 la recette. Dépend de N3. Effort : moyen.
+
+*Livré le 26 octobre 2026*, dans la salve Saisie 2 ; la relecture adversariale vient après la
+fusion. **Arrêt : la voie de R7 revient au propriétaire.** Les chiffres et la note de décision
+sont dans la section R7 (*Mesuré le 26 octobre 2026*) : le maximum de B, sur les 32 340
+positions des 116 blocs, est 471,2 pt — au-dessus du seuil de 0,75 pt.
+
+**L'outil.** `MyPublisher.Banc saisie <doc> --sortie <écarts.json> [--au-mieux] [--zoom 2]`
+(`MyPublisher.Banc/Saisie.cs`). Pour chaque bloc de texte visible, sans champ, au premier niveau
+de chaque page, il relève d'abord la composition telle qu'elle est dessinée (`Geometrie()`,
+`PointDe` de chaque position), puis ouvre la saisie lui-même — `IsEditing` posé, la zone au
+focus — sans transaction : la planche n'en ouvre que pour la saisie qu'elle a ouverte. Il lit le
+`PART_TextPresenter` (`HitTestTextPosition`, la ligne de base de la ligne où il place le curseur,
+les lignes empilées comme le présentateur les dessine), ramène le point dans le repère du texte
+composé, puis referme. En B, il pose sur l'instance du champ `LineHeight` à
+`Compositeur.Avance(naturelle résolue, interligne du bloc)` et `UseLayoutRounding=False` sur le
+champ et chacune de ses parties, et les lui rend après. Le relevé donne, par bloc, l'écart
+maximal, le 95ᵉ centile au rang le plus proche, le nombre de positions au-dessus du seuil, la
+première qui diverge, les lignes de chaque côté, les causes présentes, et chaque position — Δx,
+Δy et, au-dessus du seuil, son motif. Les membres de groupe et les cases sont comptés sans
+mesure. `Scripts/mesurer-la-saisie.sh [dossier]` le joue sur l'étalonnage et le corpus, en A et
+en B, et sur l'exemple au zoom 2, puis écrit le rapport ; il ne sort en erreur que si une mesure
+n'a pas pu se faire. Une demi-minute sur cette machine.
+
+**Les nombres du plan se retrouvent** : l'exemple a 15 blocs sur deux pages, dont un tourné ;
+ATA 21, 9 blocs dont 2 tournés, mesurés dans leur repère ; les Fiches, 18 blocs, et 51 cases
+comptées ; `recette-coupure`, 74 blocs. Un seul ne se retrouve pas : ATA 21 n'a pas
+« 31 paragraphes justifiés et 21 au fer à gauche », mais 31 et 17 parmi ses 48 paragraphes non
+vides, et 36 et 17 sur ses 53 paragraphes, vides compris ; les 36 listes en retrait négatif sont
+36 paragraphes non vides (38 avec les vides). Les 29 espaces après paragraphe des Fiches y sont.
+
+Le poste écrit, outre les fichiers nommés, la classe `MesureDeLaSaisieTests` (treize tests sous
+`poste=N7`) et une référence de `MyPublisher.Tests.Interface` au projet du banc, pour que les
+tests jouent la commande elle-même et non une copie de sa mesure ; deux sabotages au juge — la
+mesure qui oublie l'ordonnée, et l'interligne de B laissé au champ. La recette
+`N7-mesure-de-la-saisie.sh` lit les sources, contrôle les trois nombres de l'étalonnage en A et
+en B, joue les tests, puis le corpus, qui ne la fait pas échouer.
+
+*Ce que l'implémentation a appris.*
+- **L'arrondi de mise en page ne dépend pas du zoom.** Avalonia arrondit à l'échelle de la
+  fenêtre, et non à celle du `LayoutTransformControl` : sous la mise à l'échelle de la page, il
+  tombe au point entier à tous les zooms. La contre-épreuve au zoom 2 rend les mêmes écarts à
+  0,0000 pt près, en A comme en B.
+- **Le thème donne au champ 32 pt de haut au moins** (`MinHeight` du `TextBox` de Fluent), et le
+  centre sur un bloc plus bas : 4 pt pour un sous-titre de 24 pt, 6 pt pour un pied de page de
+  20 pt, jusqu'à 11,8 pt. N7 ne le nommait pas parmi ce que la voie 1 lie.
+- **Avalonia justifie la dernière ligne de chaque paragraphe**, sauf la dernière du texte : sur
+  l'exemple, la ligne « susceptible de diverger de l'un ou de l'autre. » s'étale sur toute la
+  colonne, et son dernier mot part 237,6 pt plus loin ; sur une ligne justifiée des deux côtés, le
+  blanc se répartit autrement, jusqu'à 1,6 pt.
+- **À interligne 1, la ligne d'Avalonia est la hauteur naturelle de la composition**, et avec un
+  `LineHeight`, il centre le surplus comme elle : le titre de l'exemple, à 1,4, tombe juste en B.
+- **`PointDe` s'écarte du dessin de la composition** dans un crénage ou une ligature : il compte
+  la chasse du début du morceau mesurée seule, quand le dessin façonne le morceau d'un tenant.
+  Le premier texte de l'étalonnage le montrait — « finir » donnait 3,52 pt dans la ligature
+  « fi », « premier » 0,22 pt de crénage — ; le relevé le mesure par bloc, de 3,40 à 3,87 pt au
+  plus selon le document.
+- Le champ montre le texte du modèle tel quel : aucun « \r » dans le corpus, aucune conversion de
+  `NewLine` ; la mesure le vérifie à chaque bloc.
+
+*Choisi sans certitude* :
+- la saisie ouverte par le banc (`IsEditing` et le focus) plutôt que par `BeginTextEdit`, privé :
+  un test vérifie, sur l'étalonnage, qu'elle donne les mêmes points que la saisie ouverte au
+  double-clic, au millième de point ;
+- les textes de l'étalonnage sont choisis sans crénage ni ligature en DejaVu Sans, sans quoi le
+  premier bloc ne tiendrait pas sous 0,1 pt : la spécification le promettait d'un texte
+  quelconque, et c'est faux de quelques dixièmes, ou de 3,5 pt sur une ligature ;
+- en B, l'arrondi n'est retiré qu'au champ et à ses parties, comme N7 le dit : le cadre du bloc,
+  arrondi au point, garde au champ une largeur entière, que la composition n'a pas (« largeur
+  fractionnaire », 108 blocs) ;
+- les causes que N7 ne nommait pas, ajoutées au relevé : italique, exposant, justifié, marges et
+  largeur fractionnaires, taille minimale du champ, crénage ou ligature ; le motif d'une position
+  est la première raison qui s'applique, dans un ordre fixé (`Saisie.Motif`), une lecture et non
+  une preuve ;
+- le curseur n'est mesuré qu'au début du texte : le défilement du champ vers le curseur, dans un
+  bloc qui déborde, n'est pas mesuré.
+
+*Relevé, non corrigé.* L'écart de `PointDe` à son propre dessin, dans un crénage ou une
+ligature, concerne toutes les voies, et la voie 2 la première ; il est de N3, que le poste ne
+touche pas. Les blocs de moins de 32 pt de haut et la justification des dernières lignes sont
+dans la note de décision, pour la voie qui sera choisie.
 
 #### N8 — Couper, copier, coller des blocs *(fiche 23, a17, a18, c21, d7)*
 
