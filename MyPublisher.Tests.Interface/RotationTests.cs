@@ -57,33 +57,6 @@ public class RotationTests
     private static Panel Page(Window fenetre) =>
         fenetre.GetVisualDescendants().OfType<Panel>().First(p => p.Name == "PageRoot");
 
-    /// <summary>Un point de la page, en points typographiques, dans le repère fenêtre.</summary>
-    private static Point SurLaPage(Window fenetre, double x, double y)
-    {
-        var origine = Page(fenetre).TranslatePoint(new Point(0, 0), fenetre) ?? new Point(0, 0);
-        return new Point(origine.X + x, origine.Y + y);
-    }
-
-    /// <summary>
-    /// La poignée de rotation, relue dans la couche de poignées : c'est le seul disque
-    /// qu'elle porte, les huit autres étant des carrés. On lit sa position plutôt que
-    /// de la recalculer — un test qui refait le calcul du code ne prouve rien de lui.
-    /// </summary>
-    private static Ellipse? Poignee(Window fenetre) =>
-        fenetre.GetVisualDescendants()
-            .OfType<Canvas>().First(c => c.Name == "Overlay")
-            .Children.OfType<Ellipse>()
-            .FirstOrDefault(e => e.IsVisible);
-
-    /// <summary>Centre de la poignée, en coordonnées de page.</summary>
-    private static Point CentrePoignee(Window fenetre)
-    {
-        var poignee = Poignee(fenetre) ?? throw new InvalidOperationException("aucune poignée de rotation");
-        return new Point(
-            Canvas.GetLeft(poignee) + poignee.Width / 2,
-            Canvas.GetTop(poignee) + poignee.Height / 2);
-    }
-
     /// <summary>
     /// Saisit la poignée de rotation et amène le pointeur à <paramref name="vise"/>,
     /// exprimé en coordonnées de page. Le point de destination est pris LOIN du centre :
@@ -92,13 +65,10 @@ public class RotationTests
     /// </summary>
     private static void Tourner(Window fenetre, Point vise, bool maj = false)
     {
-        var prise = CentrePoignee(fenetre);
+        var prise = Rendu.CentreDeLaRotation(fenetre);
         var touches = maj ? RawInputModifiers.Shift : RawInputModifiers.None;
 
-        fenetre.MouseDown(SurLaPage(fenetre, prise.X, prise.Y), MouseButton.Left, touches);
-        fenetre.MouseMove(SurLaPage(fenetre, vise.X, vise.Y), touches);
-        fenetre.MouseUp(SurLaPage(fenetre, vise.X, vise.Y), MouseButton.Left, touches);
-        Rendu.Battre();
+        Rendu.Glisser(fenetre, Rendu.SurLaPage(fenetre, prise.X, prise.Y), Rendu.SurLaPage(fenetre, vise.X, vise.Y), touches, pas: 1);
     }
 
     [AvaloniaFact]
@@ -107,7 +77,7 @@ public class RotationTests
         var (fenetre, _, bloc) = Ouvrir();
 
         // Au-dessus du bord haut, dans l'axe du bloc, à distance d'écran constante.
-        var centre = CentrePoignee(fenetre);
+        var centre = Rendu.CentreDeLaRotation(fenetre);
         Assert.Equal(bloc.X + bloc.Width / 2, centre.X, precision: 6);
         Assert.True(centre.Y < bloc.Y, $"la poignée est à {centre.Y}, le bord haut à {bloc.Y}");
         Assert.InRange(bloc.Y - centre.Y, 15, 30);
@@ -123,7 +93,7 @@ public class RotationTests
         // R1. On regarde donc l'image, et non l'arbre visuel : la boîte du Polyline
         // s'arrête à l'ordonnée nulle, elle ne dit rien de ce qui est peint au-dessus.
         var (fenetre, _, bloc) = Ouvrir();
-        var poignee = CentrePoignee(fenetre);
+        var poignee = Rendu.CentreDeLaRotation(fenetre);
 
         // Entre le bas du disque et le haut du bloc, il ne peut y avoir que la tige.
         var encre = EncreDansLaBande(fenetre, bloc.X + bloc.Width / 2, poignee.Y + 6, bloc.Y - 2);
@@ -139,15 +109,15 @@ public class RotationTests
         var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(premier, second));
 
         Rendu.Battre();
-        Assert.Null(Poignee(fenetre));          // rien de sélectionné
+        Assert.Null(Rendu.PoigneeDeRotation(fenetre));          // rien de sélectionné
 
         vm.SelectOnly(premier);
         Rendu.Battre();
-        Assert.NotNull(Poignee(fenetre));
+        Assert.NotNull(Rendu.PoigneeDeRotation(fenetre));
 
         vm.SetSelection([premier, second]);
         Rendu.Battre();
-        Assert.Null(Poignee(fenetre));          // deux blocs : on groupe pour tourner
+        Assert.Null(Rendu.PoigneeDeRotation(fenetre));          // deux blocs : on groupe pour tourner
     }
 
     [AvaloniaFact]
@@ -204,7 +174,7 @@ public class RotationTests
         vm.SelectOnly(bloc);
         Rendu.Battre();
 
-        Assert.True(CentrePoignee(fenetre).Y < 0, "la poignée devrait être au-dessus de la page");
+        Assert.True(Rendu.CentreDeLaRotation(fenetre).Y < 0, "la poignée devrait être au-dessus de la page");
 
         Tourner(fenetre, new Point(bloc.X + bloc.Width / 2 + 200, bloc.Y + bloc.Height / 2), maj: true);
 
@@ -242,7 +212,7 @@ public class RotationTests
         Rendu.Battre();
 
         var centre = new Point(bloc.X + bloc.Width / 2, bloc.Y + bloc.Height / 2);
-        var prise = CentrePoignee(fenetre);
+        var prise = Rendu.CentreDeLaRotation(fenetre);
         var vise = Math.Atan2(prise.Y - centre.Y, prise.X - centre.X) + 28 * Math.PI / 180;
 
         Tourner(fenetre, new Point(
@@ -304,11 +274,11 @@ public class RotationTests
         // Un quart de tour amène le haut du bloc à sa droite : la poignée doit y aller
         // aussi, sans quoi le second geste partirait d'un point qui n'est plus le sien.
         var (fenetre, _, bloc) = Ouvrir();
-        var ecart = bloc.Y + bloc.Height / 2 - CentrePoignee(fenetre).Y;
+        var ecart = bloc.Y + bloc.Height / 2 - Rendu.CentreDeLaRotation(fenetre).Y;
 
         Tourner(fenetre, new Point(bloc.X + bloc.Width / 2 + 200, bloc.Y + bloc.Height / 2), maj: true);
 
-        var centre = CentrePoignee(fenetre);
+        var centre = Rendu.CentreDeLaRotation(fenetre);
         Assert.Equal(bloc.X + bloc.Width / 2 + ecart, centre.X, precision: 6);
         Assert.Equal(bloc.Y + bloc.Height / 2, centre.Y, precision: 6);
     }

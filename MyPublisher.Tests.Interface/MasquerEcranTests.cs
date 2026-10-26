@@ -41,23 +41,6 @@ public class MasquerEcranTests
     private static T Trouver<T>(Visual racine, string nom) where T : Control =>
         racine.GetVisualDescendants().OfType<T>().First(c => c.Name == nom);
 
-    private static Point SurLaPage(Window fenetre, double x, double y)
-    {
-        var origine = Trouver<Panel>(fenetre, "PageRoot").TranslatePoint(new Point(0, 0), fenetre) ?? new Point(0, 0);
-        return new Point(origine.X + x, origine.Y + y);
-    }
-
-    private static void Cliquer(Window fenetre, Point point, RawInputModifiers touches = RawInputModifiers.None)
-    {
-        fenetre.MouseDown(point, MouseButton.Left, touches);
-        fenetre.MouseUp(point, MouseButton.Left, touches);
-        Rendu.Battre();
-    }
-
-    private static Point Centre(Window fenetre, Control controle) =>
-        controle.TranslatePoint(new Point(controle.Bounds.Width / 2, controle.Bounds.Height / 2), fenetre)
-        ?? throw new InvalidOperationException($"« {controle.Name} » n'est pas dans la fenêtre");
-
     /// <summary>La ligne d'un bloc dans « Blocs de la page ».</summary>
     private static ListBoxItem Ligne(Window fenetre, Frame bloc) =>
         (ListBoxItem)Trouver<ListBox>(fenetre, "ListeDesBlocs").ContainerFromItem(bloc)!;
@@ -92,7 +75,7 @@ public class MasquerEcranTests
         Assert.True(Trouver<Viewbox>(Ligne(fenetre, dessus), "OeilFerme").IsVisible is false);
         Assert.False(vm.IsDirty);
 
-        Cliquer(fenetre, Centre(fenetre, Oeil(fenetre, dessus)));
+        Rendu.Cliquer(fenetre, Rendu.Centre(Oeil(fenetre, dessus)));
 
         Assert.False(dessus.Visible);
         Assert.False(Encre(fenetre, CentreX, CentreY));
@@ -132,7 +115,7 @@ public class MasquerEcranTests
     {
         var (fenetre, vm) = Rendu.Ouvrir(DeuxBlocs());
         var dessus = Bloc(vm, "Dessus");
-        var depart = Centre(fenetre, Oeil(fenetre, dessus));
+        var depart = Rendu.Centre(Oeil(fenetre, dessus));
         var bas = Ligne(fenetre, Bloc(vm, "Dessous"));
         var arrivee = bas.TranslatePoint(new Point(bas.Bounds.Width / 2, bas.Bounds.Height * 0.9), fenetre)!.Value;
 
@@ -161,7 +144,7 @@ public class MasquerEcranTests
 
         vm.BeginEdit();
         dessus.Name = "Renommé";
-        Cliquer(fenetre, Centre(fenetre, Oeil(fenetre, dessus)));
+        Rendu.Cliquer(fenetre, Rendu.Centre(Oeil(fenetre, dessus)));
         vm.CommitEdit();
 
         Assert.False(dessus.Visible);
@@ -184,19 +167,19 @@ public class MasquerEcranTests
     {
         var (fenetre, vm) = Rendu.Ouvrir(DeuxBlocs());
 
-        Cliquer(fenetre, SurLaPage(fenetre, CentreX, CentreY));
+        Rendu.Cliquer(fenetre, Rendu.SurLaPage(fenetre, CentreX, CentreY));
         Assert.Equal("Dessus", vm.Selected?.Name);
 
         vm.SetSelection([]);
         vm.BasculerLaVisibiliteCommand.Execute(Bloc(vm, "Dessus"));
         Rendu.Battre();
 
-        Cliquer(fenetre, SurLaPage(fenetre, CentreX, CentreY));
+        Rendu.Cliquer(fenetre, Rendu.SurLaPage(fenetre, CentreX, CentreY));
         Assert.Equal("Dessous", vm.Selected?.Name);
 
         // Seul, masqué, sur du vide : le clic ne prend rien.
         vm.BasculerLaVisibiliteCommand.Execute(Bloc(vm, "Dessous"));
-        Cliquer(fenetre, SurLaPage(fenetre, CentreX, CentreY));
+        Rendu.Cliquer(fenetre, Rendu.SurLaPage(fenetre, CentreX, CentreY));
         Assert.Empty(vm.Selection);
     }
 
@@ -217,7 +200,7 @@ public class MasquerEcranTests
 
         // Sur le nom, et non sur l'œil : c'est la ligne qui sélectionne.
         var nom = Ligne(fenetre, cache).GetVisualDescendants().OfType<TextBlock>().Single(t => t.Text == "Caché");
-        Cliquer(fenetre, Centre(fenetre, nom));
+        Rendu.Cliquer(fenetre, Rendu.Centre(nom));
 
         Assert.Same(cache, vm.Selected);
         Assert.Same(cache, vm.SingleSelected);
@@ -246,11 +229,11 @@ public class MasquerEcranTests
         var dessus = Bloc(vm, "Dessus");
 
         vm.SetSelection([dessous, dessus]);
-        Cliquer(fenetre, Centre(fenetre, Oeil(fenetre, dessus)));
+        Rendu.Cliquer(fenetre, Rendu.Centre(Oeil(fenetre, dessus)));
         Assert.Equal([dessous], vm.Selection);
 
         vm.SelectOnly(dessous);
-        Cliquer(fenetre, Centre(fenetre, Oeil(fenetre, dessous)));
+        Rendu.Cliquer(fenetre, Rendu.Centre(Oeil(fenetre, dessous)));
         Assert.Equal([dessous], vm.Selection);
         Assert.Equal(0, MarquesDeSelection(fenetre));
     }

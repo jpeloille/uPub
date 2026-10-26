@@ -61,14 +61,6 @@ public class GestesTests
     private static Panel Page(Window fenetre) =>
         fenetre.GetVisualDescendants().OfType<Panel>().First(p => p.Name == "PageRoot");
 
-    /// <summary>Un point de la page, en points typographiques, dans le repère fenêtre.</summary>
-    private static Point SurLaPage(Window fenetre, double x, double y)
-    {
-        var page = Page(fenetre);
-        var origine = page.TranslatePoint(new Point(0, 0), fenetre) ?? new Point(0, 0);
-        return new Point(origine.X + x, origine.Y + y);
-    }
-
     private static Document DocumentAvecUnBloc(out ShapeFrame bloc)
     {
         var document = Document.CreateDefault();
@@ -107,9 +99,9 @@ public class GestesTests
         Battre();
 
         var saisie = Saisie(fenetre);
-        fenetre.MouseDown(SurLaPage(fenetre, 130, 130), MouseButton.Left);
-        fenetre.MouseMove(SurLaPage(fenetre, 230, 190));
-        fenetre.MouseUp(SurLaPage(fenetre, 230, 190), MouseButton.Left);
+        fenetre.MouseDown(Rendu.SurLaPage(fenetre, 130, 130), MouseButton.Left);
+        fenetre.MouseMove(Rendu.SurLaPage(fenetre, 230, 190));
+        fenetre.MouseUp(Rendu.SurLaPage(fenetre, 230, 190), MouseButton.Left);
         Battre();
 
         Assert.NotNull(saisie);
@@ -135,9 +127,9 @@ public class GestesTests
         // mais il n'a rien à voir avec ce que ce test éprouve.
         var avant = DocumentSerializer.ToJson(vm.Document);
 
-        fenetre.MouseDown(SurLaPage(fenetre, 130, 130), MouseButton.Left);
-        fenetre.MouseMove(SurLaPage(fenetre, 230, 190));
-        fenetre.MouseUp(SurLaPage(fenetre, 230, 190), MouseButton.Left);
+        fenetre.MouseDown(Rendu.SurLaPage(fenetre, 130, 130), MouseButton.Left);
+        fenetre.MouseMove(Rendu.SurLaPage(fenetre, 230, 190));
+        fenetre.MouseUp(Rendu.SurLaPage(fenetre, 230, 190), MouseButton.Left);
         Battre();
 
         Assert.True(vm.CanUndo);
@@ -167,9 +159,9 @@ public class GestesTests
 
         // On lâche à deux points du bord de colonne : l'aimantation doit finir le geste.
         var visee = colonne + 2;
-        fenetre.MouseDown(SurLaPage(fenetre, bloc.X + 30, bloc.Y + 30), MouseButton.Left);
-        fenetre.MouseMove(SurLaPage(fenetre, visee + 30, bloc.Y + 30));
-        fenetre.MouseUp(SurLaPage(fenetre, visee + 30, bloc.Y + 30), MouseButton.Left);
+        fenetre.MouseDown(Rendu.SurLaPage(fenetre, bloc.X + 30, bloc.Y + 30), MouseButton.Left);
+        fenetre.MouseMove(Rendu.SurLaPage(fenetre, visee + 30, bloc.Y + 30));
+        fenetre.MouseUp(Rendu.SurLaPage(fenetre, visee + 30, bloc.Y + 30), MouseButton.Left);
         Battre();
 
         Assert.Equal(colonne, bloc.X, precision: 6);

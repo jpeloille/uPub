@@ -112,33 +112,6 @@ public class ImportTexteTests : IDisposable
         return Compositeur.Debordement(lignes, hauteur, bloc.PaddingBottom, bloc.VerticalAlign);
     }
 
-    private static Panel Planche(Window fenetre) =>
-        fenetre.GetVisualDescendants().OfType<Panel>().First(p => p.Name == "PageRoot");
-
-    /// <summary>La zone de saisie du bloc, si elle est à l'écran.</summary>
-    private static TextBox? ZoneDeSaisie(Window fenetre, TextFrame bloc) =>
-        Planche(fenetre).GetVisualDescendants().OfType<TextBox>()
-            .SingleOrDefault(zone => ReferenceEquals(zone.DataContext, bloc) && zone.IsVisible);
-
-    /// <summary>Entre en saisie sur la page par un double-clic, comme l'utilisateur.</summary>
-    private static void EntrerEnSaisie(Window fenetre, MainWindowViewModel vm, TextFrame bloc)
-    {
-        vm.SelectOnly(bloc);
-        Rendu.Battre();
-
-        var origine = Planche(fenetre).TranslatePoint(new Point(0, 0), fenetre) ?? new Point(0, 0);
-        var point = new Point(origine.X + bloc.X + 40, origine.Y + bloc.Y + 8);
-        for (var clic = 0; clic < 2; clic++)
-        {
-            fenetre.MouseDown(point, MouseButton.Left);
-            fenetre.MouseUp(point, MouseButton.Left);
-        }
-
-        Rendu.Battre(8);
-        Assert.True(bloc.IsEditing, "le double-clic n'a pas ouvert la saisie sur la page");
-        Assert.NotNull(ZoneDeSaisie(fenetre, bloc));
-    }
-
     // ------------------------------------------------------------------ les tests
 
     [AvaloniaFact]
@@ -336,7 +309,7 @@ public class ImportTexteTests : IDisposable
         var bloc = Bloc("Texte d'avant");
         var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(bloc));
 
-        EntrerEnSaisie(fenetre, vm, bloc);
+        Rendu.EntrerEnSaisie(fenetre, vm, bloc);
         var ouverture = DocumentSerializer.ToJson(vm.Document);
         fenetre.KeyPressQwerty(PhysicalKey.End, RawInputModifiers.Control);
         fenetre.KeyTextInput(" tapé");
@@ -351,7 +324,7 @@ public class ImportTexteTests : IDisposable
         // tomberait plus dans le bloc hors de toute transaction.
         Assert.Equal("Importé", bloc.Text);
         Assert.False(bloc.IsEditing, "la saisie sur la page est restée ouverte après l'import");
-        Assert.Null(ZoneDeSaisie(fenetre, bloc));
+        Assert.Null(Rendu.ZoneDeSaisie(fenetre, bloc));
 
         // Deux pas : l'import, puis la frappe. Emboîtés, une seule annulation rendrait
         // le texte d'avant la frappe.

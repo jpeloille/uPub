@@ -75,13 +75,6 @@ public class ExcedentEcranTests
 
     private static string Lignes(int n) => string.Join("\n", Enumerable.Range(1, n).Select(i => $"Ligne {i}"));
 
-    private static Point SurLaPage(Window fenetre, double x, double y)
-    {
-        var planche = fenetre.GetVisualDescendants().OfType<Panel>().First(p => p.Name == "PageRoot");
-        var origine = planche.TranslatePoint(new Point(0, 0), fenetre) ?? new Point(0, 0);
-        return new Point(origine.X + x, origine.Y + y);
-    }
-
     // ------------------------------------------------------------------ les tests
 
     [AvaloniaFact]
@@ -168,16 +161,8 @@ public class ExcedentEcranTests
         Rendu.Battre();
         Assert.Null(TexteDeLAlerte(fenetre));
 
-        // Le double-clic de l'utilisateur ouvre la saisie sur la page.
-        var point = SurLaPage(fenetre, bloc.X + 40, bloc.Y + 8);
-        for (var clic = 0; clic < 2; clic++)
-        {
-            fenetre.MouseDown(point, MouseButton.Left);
-            fenetre.MouseUp(point, MouseButton.Left);
-        }
-
-        Rendu.Battre(8);
-        Assert.True(bloc.IsEditing, "le double-clic n'a pas ouvert la saisie sur la page");
+        // L'utilisateur ouvre la saisie sur la page, comme il le fait (Rendu.EntrerEnSaisie).
+        Rendu.EntrerEnSaisie(fenetre, vm, bloc);
 
         // En fin de texte, une cinquième ligne : elle sort du bloc, l'alerte paraît.
         fenetre.KeyPressQwerty(PhysicalKey.End, RawInputModifiers.Control);

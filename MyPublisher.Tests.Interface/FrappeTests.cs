@@ -95,35 +95,6 @@ public class FrappeTests
     private static Panel Planche(Window fenetre) =>
         fenetre.GetVisualDescendants().OfType<Panel>().First(p => p.Name == "PageRoot");
 
-    private static Point SurLaPage(Window fenetre, double x, double y)
-    {
-        var origine = Planche(fenetre).TranslatePoint(new Point(0, 0), fenetre) ?? new Point(0, 0);
-        return new Point(origine.X + x, origine.Y + y);
-    }
-
-    /// <summary>
-    /// Entre en saisie sur la page par un double-clic, comme l'utilisateur. Le bloc est
-    /// pris d'abord : le double-clic édite le bloc sélectionné.
-    /// </summary>
-    private static TextBox EntrerEnSaisie(Window fenetre, MainWindowViewModel vm, TextFrame bloc)
-    {
-        vm.SelectOnly(bloc);
-        Rendu.Battre();
-
-        var point = SurLaPage(fenetre, bloc.X + 40, bloc.Y + 8);
-        for (var clic = 0; clic < 2; clic++)
-        {
-            fenetre.MouseDown(point, MouseButton.Left);
-            fenetre.MouseUp(point, MouseButton.Left);
-        }
-
-        Rendu.Battre(8);
-        Assert.True(bloc.IsEditing, "le double-clic n'a pas ouvert la saisie sur la page");
-
-        return Planche(fenetre).GetVisualDescendants().OfType<TextBox>()
-            .Single(zone => ReferenceEquals(zone.DataContext, bloc) && zone.IsVisible);
-    }
-
     /// <summary>
     /// Le geste du poste : entrer dans le bloc, aller en tête, taper un mot, sortir.
     /// L'entrée en saisie sélectionne tout le texte ; c'est Ctrl+Début qui y pose le
@@ -131,18 +102,16 @@ public class FrappeTests
     /// </summary>
     private static void TaperEnTete(Window fenetre, MainWindowViewModel vm, TextFrame bloc)
     {
-        EntrerEnSaisie(fenetre, vm, bloc);
+        Rendu.EntrerEnSaisie(fenetre, vm, bloc);
         TaperEnTeteDejaEnSaisie(fenetre, bloc);
     }
 
     private static void TaperEnTeteDejaEnSaisie(Window fenetre, TextFrame bloc)
     {
-        fenetre.KeyPressQwerty(PhysicalKey.Home, RawInputModifiers.Control);
-        fenetre.KeyTextInput(Tape);
-        Rendu.Battre();
+        Rendu.Touche(fenetre, PhysicalKey.Home, RawInputModifiers.Control);
+        Rendu.Taper(fenetre, Tape);
 
-        fenetre.KeyPressQwerty(PhysicalKey.Escape, RawInputModifiers.None);
-        Rendu.Battre();
+        Rendu.Touche(fenetre, PhysicalKey.Escape);
         Assert.False(bloc.IsEditing, "Échap n'a pas refermé la saisie");
     }
 
@@ -234,7 +203,7 @@ public class FrappeTests
 
         // Un retour à la ligne au bout du premier paragraphe — le titre « Air
         // Production » —, là où l'on ouvrirait un paragraphe neuf sous lui.
-        var zone = EntrerEnSaisie(fenetre, vm, bloc);
+        var zone = Rendu.EntrerEnSaisie(fenetre, vm, bloc);
         zone.CaretIndex = bloc.Text.IndexOf('\n');
         Rendu.Battre();
         fenetre.KeyPressQwerty(PhysicalKey.Enter, RawInputModifiers.None);

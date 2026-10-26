@@ -67,13 +67,6 @@ public class ReperesTests
     private static Panel Page(Window fenetre) =>
         fenetre.GetVisualDescendants().OfType<Panel>().First(p => p.Name == "PageRoot");
 
-    /// <summary>Un point de la page, en points typographiques, dans le repère fenêtre.</summary>
-    private static Point SurLaPage(Window fenetre, double x, double y)
-    {
-        var origine = Page(fenetre).TranslatePoint(new Point(0, 0), fenetre) ?? new Point(0, 0);
-        return new Point(origine.X + x, origine.Y + y);
-    }
-
     /// <summary>
     /// Un point de la règle du haut, à l'abscisse de page donnée, à mi-hauteur de la
     /// règle. La règle est fixe au bord de la planche depuis le poste I4, et se gradue de
@@ -87,7 +80,7 @@ public class ReperesTests
 
         var zero = regle.TranslatePoint(new Point(regle.Origine, regle.Bounds.Height / 2), fenetre)
                    ?? throw new InvalidOperationException("la règle n'est pas dans la fenêtre");
-        Assert.Equal(SurLaPage(fenetre, 0, 0).X, zero.X, precision: 6);
+        Assert.Equal(Rendu.SurLaPage(fenetre, 0, 0).X, zero.X, precision: 6);
         return new Point(zero.X + x, zero.Y);
     }
 
@@ -103,18 +96,8 @@ public class ReperesTests
 
         var zero = regle.TranslatePoint(new Point(regle.Bounds.Width / 2, regle.Origine), fenetre)
                    ?? throw new InvalidOperationException("la règle n'est pas dans la fenêtre");
-        Assert.Equal(SurLaPage(fenetre, 0, 0).Y, zero.Y, precision: 6);
+        Assert.Equal(Rendu.SurLaPage(fenetre, 0, 0).Y, zero.Y, precision: 6);
         return new Point(zero.X, zero.Y + y);
-    }
-
-    /// <summary>Saisit en <paramref name="de"/>, mène en <paramref name="vers"/>, lâche.</summary>
-    private static void Glisser(Window fenetre, Point de, Point vers, bool alt = false)
-    {
-        var touches = alt ? RawInputModifiers.Alt : RawInputModifiers.None;
-        fenetre.MouseDown(de, MouseButton.Left, touches);
-        fenetre.MouseMove(vers, touches);
-        fenetre.MouseUp(vers, MouseButton.Left, touches);
-        Rendu.Battre();
     }
 
     private static ShapeFrame Bloc(string nom, double x, double y) => new()
@@ -152,7 +135,7 @@ public class ReperesTests
 
             var prise = new Point(bloc.X + 30, bloc.Y + 20);
             var dx = bord + ecart - bloc.X;
-            Glisser(fenetre, SurLaPage(fenetre, prise.X, prise.Y), SurLaPage(fenetre, prise.X + dx, prise.Y));
+            Rendu.Glisser(fenetre, Rendu.SurLaPage(fenetre, prise.X, prise.Y), Rendu.SurLaPage(fenetre, prise.X + dx, prise.Y), pas: 1);
         }
 
         // Exactement, et non à un pixel près : c'est la table des repères qui pose le
@@ -176,7 +159,7 @@ public class ReperesTests
         // Le même lâcher que ci-dessus, Alt tenu : le bloc reste où on l'a mis, à deux
         // points du bord. Si l'aimantation l'emportait, il serait SUR le bord.
         var vise = Math.Round(bord) + 2;
-        Glisser(fenetre, SurLaPage(fenetre, 110, 140), SurLaPage(fenetre, 110 + vise - 80, 140), alt: true);
+        Rendu.Glisser(fenetre, Rendu.SurLaPage(fenetre, 110, 140), Rendu.SurLaPage(fenetre, 110 + vise - 80, 140), RawInputModifiers.Alt, pas: 1);
 
         Assert.Equal(vise, bloc.X, precision: 6);
         Assert.True(Math.Abs(bloc.X - bord) > 1, $"le bloc s'est aimanté malgré Alt ({bloc.X} contre {bord})");
@@ -192,7 +175,7 @@ public class ReperesTests
         Rendu.Battre();
 
         // 333 pt : loin de tout bord de colonne, de la marge et du milieu de page.
-        Glisser(fenetre, SurLaRegleDuHaut(fenetre, 200), SurLaPage(fenetre, 333, 400));
+        Rendu.Glisser(fenetre, SurLaRegleDuHaut(fenetre, 200), Rendu.SurLaPage(fenetre, 333, 400), pas: 1);
 
         var repere = Assert.Single(document.VerticalRulerGuides);
         Assert.Equal(333, repere.Position, precision: 6);
@@ -222,12 +205,12 @@ public class ReperesTests
 
         // Lâché à trois points du bord : il s'y pose exactement. C'est ce qui permet de
         // poser un repère SUR une colonne sans le saisir au chiffre.
-        Glisser(fenetre, SurLaRegleDuHaut(fenetre, 200), SurLaPage(fenetre, bord + 3, 400));
+        Rendu.Glisser(fenetre, SurLaRegleDuHaut(fenetre, 200), Rendu.SurLaPage(fenetre, bord + 3, 400), pas: 1);
         Assert.Equal(bord, Assert.Single(document.VerticalRulerGuides).Position, precision: 9);
 
         // Le même lâcher sous Alt : il reste où on l'a mis.
         var vise = Math.Round(bord) - 3;
-        Glisser(fenetre, SurLaRegleDuHaut(fenetre, 450), SurLaPage(fenetre, vise, 400), alt: true);
+        Rendu.Glisser(fenetre, SurLaRegleDuHaut(fenetre, 450), Rendu.SurLaPage(fenetre, vise, 400), RawInputModifiers.Alt, pas: 1);
         Assert.Equal(2, document.VerticalRulerGuides.Count);
         Assert.Equal(vise, document.VerticalRulerGuides[1].Position, precision: 6);
     }
@@ -242,12 +225,12 @@ public class ReperesTests
         var repere = document.VerticalRulerGuides[0];
 
         // Reprendre : on le saisit sur la page, là où aucun bloc ne s'interpose.
-        Glisser(fenetre, SurLaPage(fenetre, 250, 400), SurLaPage(fenetre, 350, 400));
+        Rendu.Glisser(fenetre, Rendu.SurLaPage(fenetre, 250, 400), Rendu.SurLaPage(fenetre, 350, 400), pas: 1);
         Assert.Same(repere, Assert.Single(document.VerticalRulerGuides));
         Assert.Equal(350, repere.Position, precision: 6);
 
         // Retirer : le ramener au-delà du bord de la page, d'où il venait.
-        Glisser(fenetre, SurLaPage(fenetre, 350, 400), SurLaPage(fenetre, -15, 400));
+        Rendu.Glisser(fenetre, Rendu.SurLaPage(fenetre, 350, 400), Rendu.SurLaPage(fenetre, -15, 400), pas: 1);
         Assert.Empty(document.VerticalRulerGuides);
         Assert.Equal("Repère retiré", vm.Status);
 
@@ -281,7 +264,7 @@ public class ReperesTests
 
         // Poser : tiré de la règle de gauche, lâché à trois points sous le bord de la
         // ligne. Il s'y pose exactement, et c'est un repère HORIZONTAL.
-        Glisser(fenetre, SurLaRegleDeGauche(fenetre, 200), SurLaPage(fenetre, 300, ligne + 3));
+        Rendu.Glisser(fenetre, SurLaRegleDeGauche(fenetre, 200), Rendu.SurLaPage(fenetre, 300, ligne + 3), pas: 1);
         Assert.Equal(ligne, Assert.Single(document.HorizontalRulerGuides).Position, precision: 9);
         Assert.Empty(document.VerticalRulerGuides);
 
@@ -291,11 +274,11 @@ public class ReperesTests
         Assert.Empty(vm.Document.HorizontalRulerGuides);
 
         // Le reposer, puis le retirer en le ramenant au-dessus de la page.
-        Glisser(fenetre, SurLaRegleDeGauche(fenetre, 200), SurLaPage(fenetre, 300, ligne + 3));
+        Rendu.Glisser(fenetre, SurLaRegleDeGauche(fenetre, 200), Rendu.SurLaPage(fenetre, 300, ligne + 3), pas: 1);
         var repere = Assert.Single(vm.Document.HorizontalRulerGuides);
         Assert.Equal(ligne, repere.Position, precision: 9);
 
-        Glisser(fenetre, SurLaPage(fenetre, 300, ligne), SurLaPage(fenetre, 300, -15));
+        Rendu.Glisser(fenetre, Rendu.SurLaPage(fenetre, 300, ligne), Rendu.SurLaPage(fenetre, 300, -15), pas: 1);
         Assert.Empty(vm.Document.HorizontalRulerGuides);
         Assert.Equal("Repère retiré", vm.Status);
 
@@ -324,8 +307,8 @@ public class ReperesTests
 
         // Lâché à trois points du repère vertical par son bord gauche, et à deux points
         // de l'horizontal par son bord BAS : les deux axes s'aimantent chacun de leur côté.
-        Glisser(fenetre, SurLaPage(fenetre, 110, 140),
-            SurLaPage(fenetre, 110 + (336 - 80), 140 + (615 - 160)));
+        Rendu.Glisser(fenetre, Rendu.SurLaPage(fenetre, 110, 140),
+            Rendu.SurLaPage(fenetre, 110 + (336 - 80), 140 + (615 - 160)), pas: 1);
 
         Assert.Equal(333.3, bloc.X, precision: 9);
         Assert.Equal(612.7, bloc.Y + bloc.Height, precision: 9);

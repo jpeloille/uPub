@@ -49,23 +49,6 @@ public class GroupementTests
     /// <summary>Le déplacement que la recette nomme.</summary>
     private const double Dx = 30, Dy = 20;
 
-    private static Panel Page(Window fenetre) =>
-        fenetre.GetVisualDescendants().OfType<Panel>().First(p => p.Name == "PageRoot");
-
-    private static Point SurLaPage(Window fenetre, double x, double y)
-    {
-        var origine = Page(fenetre).TranslatePoint(new Point(0, 0), fenetre) ?? new Point(0, 0);
-        return new Point(origine.X + x, origine.Y + y);
-    }
-
-    private static void Cliquer(Window fenetre, double x, double y, RawInputModifiers touches = RawInputModifiers.None)
-    {
-        var point = SurLaPage(fenetre, x, y);
-        fenetre.MouseDown(point, MouseButton.Left, touches);
-        fenetre.MouseUp(point, MouseButton.Left, touches);
-        Rendu.Battre();
-    }
-
     /// <summary>
     /// Chaque bloc porte un fond : quatre mots seuls ne pèsent que quelques milliers de
     /// pixels, et un groupe que l'écran poserait ailleurs que le PDF passerait sous le
@@ -90,8 +73,8 @@ public class GroupementTests
         var blocs = page.Frames.ToList();
 
         // C3a — un clic, puis trois Maj-clics. Chacun vise le milieu de son bloc.
-        Cliquer(fenetre, Blocs[0].X + 20, Blocs[0].Y + 20);
-        foreach (var b in Blocs.Skip(1)) Cliquer(fenetre, b.X + 20, b.Y + 20, RawInputModifiers.Shift);
+        Rendu.Cliquer(fenetre, Rendu.SurLaPage(fenetre, Blocs[0].X + 20, Blocs[0].Y + 20));
+        foreach (var b in Blocs.Skip(1)) Rendu.Cliquer(fenetre, Rendu.SurLaPage(fenetre, b.X + 20, b.Y + 20), RawInputModifiers.Shift);
 
         Assert.Equal(4, vm.Selection.Count);
         Assert.All(blocs, bloc => Assert.Contains(bloc, vm.Selection));
@@ -137,9 +120,9 @@ public class GroupementTests
         // page : seul le pointeur décide, et il se déplace d'un nombre entier de points.
         var avant = (groupe.X, groupe.Y);
         var prise = (X: gauche + 40, Y: Blocs[0].Y + 20);
-        fenetre.MouseDown(SurLaPage(fenetre, prise.X, prise.Y), MouseButton.Left);
-        fenetre.MouseMove(SurLaPage(fenetre, prise.X + Dx, prise.Y + Dy));
-        fenetre.MouseUp(SurLaPage(fenetre, prise.X + Dx, prise.Y + Dy), MouseButton.Left);
+        fenetre.MouseDown(Rendu.SurLaPage(fenetre, prise.X, prise.Y), MouseButton.Left);
+        fenetre.MouseMove(Rendu.SurLaPage(fenetre, prise.X + Dx, prise.Y + Dy));
+        fenetre.MouseUp(Rendu.SurLaPage(fenetre, prise.X + Dx, prise.Y + Dy), MouseButton.Left);
         Rendu.Battre();
 
         Assert.Equal(avant.X + Dx, groupe.X, precision: 9);

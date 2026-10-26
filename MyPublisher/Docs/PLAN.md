@@ -104,7 +104,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **I7** | Souligné | **100 %** | Le souligné porte sa sorte — plein, pointillé, tiret, tiret long, tiret-point, tiret-point-point ou vague ; simple ou double, épais ou non, « mots seuls » — au bloc, au fragment, où `null` laisse celui du bloc, et dans le style effectif. Il s'écrit `false`, `true` pour le trait simple, ou en objet `{ Line, Double, Thick, WordsOnly }` ; `FormatVersion` ne change pas, Samples et Templates sont réenregistrés. Il se trace à l'écran et au PDF à la place et à l'épaisseur de la table `post`, sous la ligne de base de son morceau, exposant compris, et à la couleur de son texte ; seize des dix-sept sortes de libmspub s'importent, le double en double. La commande `SoulignerCommand` est dans `MainWindowViewModel.Souligne.cs`, sans bouton : le bouton S, `Ctrl+U` et le menu viennent de I3. Recette dans `Scripts/recettes/`, vingt-six sabotages au juge |
 | **I8** | Masquer un bloc | **100 %** | L'œil de « Blocs de la page », à la place que I2 avait réservée : un clic masque le bloc, ou le montre, en un pas d'annulation, même pendant une saisie, sans le sélectionner ni prendre le focus ; le document est « modifié ». `Visible` sur tout bloc, `true` par défaut ; `FormatVersion` ne change pas, Samples et Templates sont réenregistrés — un « Visible » de plus par bloc, rien d'autre. Masqué, le bloc n'est dessiné ni dans `PageRoot` ni au PDF, ni ce que porte un groupe masqué ; rien de lui n'avertit, ni sa police (Q8), ni son image, ni son débordement ; son filet n'élargit plus la découpe d'un groupe. Un clic à sa place prend le bloc d'en dessous ; l'alignement et la répartition ne le voient pas, « Tout sélectionner » non plus. Il reste dans la liste, l'œil fermé, et s'y sélectionne, sans cadre ni poignée sur la planche ; masqué, il quitte une sélection multiple. Une recopie le garde, dissocier un groupe masqué laisse ses blocs masqués ; les cases d'un tableau ne portent pas la propriété. La vignette de la page (I5) ne le dessine pas. L'icône du poste sert. Vingt-cinq tests ; relecture et juge après fusion. Recette dans `Scripts/recettes/` |
 | **I9** | Compter les lignes en excédent | **100 %** | `Compositeur.LignesEnExcedent`, fonction pure du noyau : les lignes dont l'encre — la hauteur naturelle, au milieu de l'avance — sort du bloc, au calage vertical (A7), au bord du bloc et non de la zone (C6), au seuil du marqueur de A2 ; les colonnes et les blocs tournés sans chemin à part. Le dock l'affiche à la section « Cadre de texte », dans la place que I2 avait réservée : « Texte en excédent : 4 lignes » au fond, à la couleur et à l'icône d'alerte de l'apparence, au singulier pour une ligne, rien à zéro ; il suit la frappe et chaque réglage du bloc sans changement de sélection, et ne touche pas au document. Le modèle de vue le porte dans `MainWindowViewModel.Excedent.cs`. Aucune clé sérialisée ; l'avertissement d'export et le relevé de P2 inchangés. Sur `recette-debordement.mypub` et sur une variante en colonnes, marges, interligne 1,5 et rotation, le compte du dock est celui des lignes absentes du PDF, bloc par bloc, lu par la commande `excedent` du banc. Dix-huit tests, douze purs et six sur la fenêtre ; recette dans `Scripts/recettes/`. Relecture et juge après fusion |
-| **N1** | Le banc des gestes | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 1 |
+| **N1** | Le banc des gestes | **100 %** | Les gestes des tests d'interface sont synthétisés à un seul endroit, la région « Les gestes » de `Rendu.cs` : vingt-deux aides — `SurLaPage`, à l'échelle de la planche, qui échoue sans `PageRoot` ; `Centre`, `Coin`, `Poignee`, la poignée de rotation et son centre ; `Cliquer` sur un contrôle, qui attend l'image, ou en un point, touches, bouton et mouvement nul de Q14 compris ; `CliquerDroit`, qui rend le `ContextMenu` ouvert ; `DoubleCliquer` ; `Glisser`, toujours bouton tenu ; `Touche`, `ToucheAzerty`, `Taper`, `Saisir` ; `ZoneDeSaisie` et `EntrerEnSaisie`, le seul endroit que N12 changera ; `BordDuCaractere`, `SelectionnerDuTexte`, `TexteCopie`, `UnSeulPas`. Quarante et une copies retirées de dix-sept classes, quatre aides de classe réécrites sur celles du banc, un homonyme renommé, les deux entrées en saisie écrites en ligne remplacées ; les défauts des copies corrigés — deux glissés et une rotation sans le bouton tenu, deux clics sans l'attente d'image, dix `SurLaPage` qui retombaient sur (0, 0), deux `UnSeulPas` qui ne vérifiaient pas que le pas change le document — sans qu'aucun test change d'issue ni qu'un `poste=` perde un test. `BancTests`, dix tests sous `poste=N1`, éprouvent ce qu'Avalonia 11.3.9 sans affichage permet : le clic droit et la touche Menu, le presse-papiers et un format propre, `Ctrl+C`, le glissé dans un `TextBox` et dans la saisie d'un bloc, l'AZERTY, le double-clic à 3 px. Un contrôle des sources, `Scripts/aides-de-geste.py`, refuse toute aide de geste hors du banc ; la recette de Q23 lit le clic du banc. Trois sabotages au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **N2** | Mettre en forme une plage, dans le noyau | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 1 |
 | **N3** | Chaque morceau composé sait d'où il vient | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 1 |
 | **N4** | L'affichage au clavier | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 1 |
@@ -5562,6 +5562,96 @@ mouvement nul, celui de Q14 ; l'aide le garde, en paramètre.
 - au juge : `Glisser` sans `LeftMouseButton` ; `EntrerEnSaisie` qui ne clique qu'une fois.
 
 Fichiers : `MyPublisher.Tests.Interface/` seul. Effort : faible à moyen.
+
+*Livré le 26 octobre 2026.* Aucune ligne de `MyPublisher/` ni de `MyPublisher.Core/` ne change.
+
+**Les aides**, dans la région « Les gestes » de `Rendu.cs`, une par geste. Où viser :
+`SurLaPage(fenetre, x, y)`, lue comme `NavigationTests` la lisait — le coin de `PageRoot` dans
+`Surface`, puis l'échelle de la planche —, qui échoue en le disant si `PageRoot` manque ;
+`Centre(fenetre, bloc)` et `Centre(controle)` ; `Coin(fenetre, bloc, fx, fy)` ; `Poignee(fenetre,
+bloc, fx, fy)`, la poignée de redimensionnement, 3,25 px d'écran hors du bloc ;
+`PoigneeDeRotation(fenetre)` et `CentreDeLaRotation(fenetre)`, relues dans l'`Overlay`. La souris :
+`Cliquer(controle)`, celui de I3, qui attend que l'image montre le contrôle ; `Cliquer(racine,
+point, touches, bouton, mouvementNul)`, qui finit par une image (`UneImage`) ;
+`CliquerDroit(controle)`, qui rend le `ContextMenu` ouvert, et `MenuOuvert(racine, geste)`, qui
+l'attend dix images au plus ; `DoubleCliquer(racine, point)` ; `Glisser(racine, depart, arrivee,
+touches, pas = 2)`, toujours bouton tenu. Le clavier : `Touche(racine, place, touches, relacher)` en
+QWERTY, `ToucheAzerty` avec la même signature, `Taper(racine, texte)`, `Saisir(fenetre, champ,
+texte)`. Le texte : `ZoneDeSaisie(fenetre, bloc)`, `EntrerEnSaisie(fenetre, vm, bloc, dx = 40, dy =
+8)`, qui rend la zone et que N12 sera seul à changer, `BordDuCaractere(zone, indice)`,
+`SelectionnerDuTexte(zone, debut, fin)`, `TexteCopie(racine)`. L'annulation : `UnSeulPas(vm, avant,
+quoi)`, qui rend le bloc sélectionné. `Attendre`, qui fait tourner la file le temps d'une tâche du
+presse-papiers, est hors de la région : ce n'est pas un geste.
+
+**La migration**, copie pour copie, inventoriée par le contrôle même de la recette : quarante-trois
+définitions hors de `Rendu.cs`, dans dix-sept classes. Quarante et une copies sont retirées — les
+treize `SurLaPage`, les six `Cliquer`, les trois `Glisser`, les quatre `UnSeulPas`, les quatre
+`Saisir`, les deux `EntrerEnSaisie` et la fonction locale de `NavigationTests` qui double-cliquait,
+`ZoneDeSaisie`, les `Centre`, la poignée de rotation et son centre, `DansLaFenetre` de
+`NavigationTests`, l'`Image` de `PressionTests` ; quatre aides de classe sont réécrites sur celles
+du banc — `Tracer`, les deux `Tourner`, `TaperEnTeteDejaEnSaisie` — et `TirerLaPoignee` compose
+`Poignee` et `Glisser` ; la fonction locale `Centre` de `DispositionTests`, qui lit une couleur, est
+renommée `CouleurAuCentre`, un homonyme comptant pour une copie. Les deux entrées en saisie écrites
+en ligne (`ExcedentEcranTests`, `SouligneEcranTests`) passent par `EntrerEnSaisie`. Les défauts que
+les copies portaient sont corrigés au passage : `NavigationTests.Glisser`, `ReperesTests.Glisser` et
+`RotationTests.Tourner` disent le bouton tenu ; `NavigationTests.Cliquer` et
+`VignettesDePagesTests.Cliquer` attendent l'image ; dix `SurLaPage` ne retombent plus sur (0, 0) ;
+les `UnSeulPas` de `NavigationTests` et de `TraitTests` vérifient, comme les deux autres, que le pas
+a changé le document. Aucun test n'en change d'issue : aucun ne passait pour une mauvaise raison. Le
+mouvement nul de `DoubleClicTests.Cliquer` est le paramètre `mouvementNul`, et la recette de Q23,
+qui lisait le premier clic de ses deux tests du double-clic, lit désormais celui du banc.
+
+**Le banc**, `BancTests`, dix tests sous `poste=N1`, dans une fenêtre nue pour sept d'entre eux, la
+vraie pour trois. Ce qu'Avalonia 11.3.9 permet sans affichage, et que le banc éprouve : un clic
+droit ouvre le `ContextMenu` au relâché — le contrôle atteint lève `ContextRequested`
+(`Control.OnPointerReleased`), qui remonte au premier qui porte un menu —, posé en surimpression sur
+la fenêtre, et `Cliquer` atteint son entrée, qui joue sa commande ; la touche Menu l'ouvre au
+relâché (`Control.OnKeyUp`, `PlatformHotkeyConfiguration.OpenContextMenu`), `Maj+F10` non ; le
+presse-papiers est un magasin en mémoire (`HeadlessClipboardImplStub`) où un texte et un format
+propre (`DataFormat.CreateStringApplicationFormat`) font l'aller-retour ; `Ctrl+C` dans un `TextBox`
+y met la sélection ; un glissé du 4ᵉ au 7ᵉ caractère sélectionne [4, 7), le même sans le bouton dit
+tenu ne sélectionne rien (`TextBox.OnPointerMoved`) ; `Key.A` sur `PhysicalKey.Q` sous Ctrl
+déclenche une liaison `Ctrl+A`, la liaison comparant la touche et non sa place
+(`KeyGesture.Matches`) ; deux clics à 3 px ne font pas un double-clic, à 2 px si (`MouseDevice`,
+carré de 4 px, 500 ms) ; `SurLaPage` suit l'échelle 2 et échoue sans `PageRoot` ; `EntrerEnSaisie`
+ouvre la zone du bloc et la rend ; dans cette zone, sur la planche, un glissé sélectionne et
+`Ctrl+C` copie. Ce qui ne s'éprouve pas : le presse-papiers du système, les touches que prend le
+bureau, ce que X11 livre pour une touche AZERTY — « < » d'abord —, l'allure d'un curseur.
+
+*Recette jouée* : `Scripts/recettes/N1-banc-des-gestes.sh`. Les sources d'abord, par
+`Scripts/aides-de-geste.py` : une aide de geste est un membre ou une fonction locale qui n'est pas
+un test et qui synthétise lui-même une entrée — `MouseDown`, `MouseUp`, `MouseMove`, `MouseWheel`,
+`KeyPress`, `KeyPressQwerty`, `KeyRelease`, `KeyReleaseQwerty`, `KeyTextInput`, `DragDrop` —, ou qui
+porte le nom d'une aide de la région ; aucune n'est définie hors de `Rendu.cs`, et dans `Rendu.cs`
+aucune entrée n'est synthétisée hors de la région. Un test qui joue ses entrées en ligne n'en est
+pas une, ni une aide de classe qui compose celles du banc ; commentaires et littéraux sont blanchis
+avant la lecture. Puis les quinze aides que nomme le poste, présentes dans la région, et les dix
+tests sous `poste=N1`. La suite d'interface passe de 284 à 294 tests, tous verts, sans qu'un
+`poste=` en perde ni en gagne hors de N1 ; la recette de Q14 passe, celle de Q23 aussi, vingt
+passages sur vingt. Trois sabotages au juge : `Glisser` sans `LeftMouseButton` et `EntrerEnSaisie`
+qui ne clique qu'une fois, pris par `BancTests` ; une classe qui synthétise de nouveau sa touche,
+que seul le contrôle des sources voit.
+
+*Ce que l'implémentation a appris.* Le glissé dans la zone de saisie d'un bloc sélectionne déjà du
+texte : la couche de saisie le laisse passer, et N15 peut s'éprouver au banc dès maintenant. Chaque
+fenêtre sans tête a sa souris, donc son compte de clics : un test qui rejoue un geste au même point
+dans la même demi-seconde ouvre une fenêtre neuve, ou il fait un double-clic sans le vouloir. Le
+presse-papiers d'Avalonia 11.3 parle en `DataFormat` et `DataTransfer` ; l'identifiant d'un format
+propre n'admet que des lettres ASCII, des chiffres, le point et le tiret (N8).
+
+*Choisi sans certitude.* `Cliquer` en un point finit par une image, comme celui de `PressionTests` :
+ceux de `GroupementTests` et de `MasquerEcranTests` ne faisaient que battre la file, celui de
+`DoubleClicTests` rien, si bien que les deux clics du double-clic de Q14 sont désormais séparés
+d'une image — la recette de Q23 les a joués vingt fois. `Glisser` fait deux mouvements par défaut ;
+les copies qui n'en faisaient qu'un (`ReperesTests`, les deux `Tourner`, `Tracer`) passent `pas: 1`.
+`Touche` presse sans relâcher, comme les tests l'ont toujours fait ; `relacher` est là pour la
+touche Menu. `ToucheAzerty` ne traduit que les lettres qui changent de place et la rangée du bas, et
+refuse la rangée des chiffres, dont elle ne saurait pas ce qu'un AZERTY livre sans Maj.
+
+*Relevé, non corrigé.* Cinq glissés écrits en ligne dans le corps de tests ne disent pas le bouton
+tenu — trois dans `GestesTests`, un dans `GroupementTests`, la main de `NavigationTests` — : ce ne
+sont pas des aides, ils passent, et N17 les croisera. Q24, Q25 et N4, partis avec N1, écrivent des
+aides privées en tête de leurs classes : elles migreront au rebasage de N1, fusionné en dernier.
 
 #### N2 — Mettre en forme une plage, dans le noyau *(fiche 23, b1, b9)*
 

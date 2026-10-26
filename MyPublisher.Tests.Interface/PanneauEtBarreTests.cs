@@ -35,13 +35,6 @@ public class PanneauEtBarreTests
     private static Panel Planche(Window fenetre) =>
         fenetre.GetVisualDescendants().OfType<Panel>().First(p => p.Name == "PageRoot");
 
-    /// <summary>Un point de la page, en points typographiques, dans le repère fenêtre.</summary>
-    private static Point SurLaPage(Window fenetre, double x, double y)
-    {
-        var origine = Planche(fenetre).TranslatePoint(new Point(0, 0), fenetre) ?? new Point(0, 0);
-        return new Point(origine.X + x, origine.Y + y);
-    }
-
     private static T Trouver<T>(Window fenetre, string nom) where T : Control =>
         fenetre.GetVisualDescendants().OfType<T>().First(c => c.Name == nom);
 
@@ -366,14 +359,10 @@ public class PanneauEtBarreTests
         var page = vm.CurrentPage!;
         var avant = page.Frames.ToList();
 
-        fenetre.KeyPressQwerty(outil, RawInputModifiers.None);
-        Rendu.Battre();
+        Rendu.Touche(fenetre, outil);
         Assert.True(vm.IsDrawing, $"la touche {outil} n'a armé aucun outil");
 
-        fenetre.MouseDown(SurLaPage(fenetre, x1, y1), MouseButton.Left);
-        fenetre.MouseMove(SurLaPage(fenetre, x2, y2), RawInputModifiers.LeftMouseButton);
-        fenetre.MouseUp(SurLaPage(fenetre, x2, y2), MouseButton.Left);
-        Rendu.Battre();
+        Rendu.Glisser(fenetre, Rendu.SurLaPage(fenetre, x1, y1), Rendu.SurLaPage(fenetre, x2, y2), pas: 1);
 
         return Assert.Single(page.Frames.Except(avant));
     }
@@ -423,8 +412,8 @@ public class PanneauEtBarreTests
 
         // Poignée sud-est, tirée de 60 pt. Le bouton n'est PAS relâché : c'est
         // précisément pendant le geste que la mesure doit se lire.
-        fenetre.MouseDown(SurLaPage(fenetre, 160, 160), MouseButton.Left);
-        fenetre.MouseMove(SurLaPage(fenetre, 220, 220), RawInputModifiers.LeftMouseButton);
+        fenetre.MouseDown(Rendu.SurLaPage(fenetre, 160, 160), MouseButton.Left);
+        fenetre.MouseMove(Rendu.SurLaPage(fenetre, 220, 220), RawInputModifiers.LeftMouseButton);
         Rendu.Battre();
 
         Assert.Equal(120, bloc.Width, precision: 6);
@@ -435,7 +424,7 @@ public class PanneauEtBarreTests
         // même si plus rien ne se rafraîchissait.
         Assert.NotEqual(avant, Rendu.Bande(fenetre, taille));
 
-        fenetre.MouseUp(SurLaPage(fenetre, 220, 220), MouseButton.Left);
+        fenetre.MouseUp(Rendu.SurLaPage(fenetre, 220, 220), MouseButton.Left);
     }
 
     [AvaloniaFact]
@@ -450,8 +439,8 @@ public class PanneauEtBarreTests
         var avant = Rendu.Bande(fenetre, position);
 
         // Alt écarte l'aimantation : ce test mesure la barre d'état, pas les repères.
-        fenetre.MouseDown(SurLaPage(fenetre, 130, 130), MouseButton.Left);
-        fenetre.MouseMove(SurLaPage(fenetre, 230, 190),
+        fenetre.MouseDown(Rendu.SurLaPage(fenetre, 130, 130), MouseButton.Left);
+        fenetre.MouseMove(Rendu.SurLaPage(fenetre, 230, 190),
             RawInputModifiers.LeftMouseButton | RawInputModifiers.Alt);
         Rendu.Battre();
 
@@ -459,7 +448,7 @@ public class PanneauEtBarreTests
         Assert.Equal($"X {Millimetres(200)}   Y {Millimetres(160)} mm", position.Text);
         Assert.NotEqual(avant, Rendu.Bande(fenetre, position));
 
-        fenetre.MouseUp(SurLaPage(fenetre, 230, 190), MouseButton.Left);
+        fenetre.MouseUp(Rendu.SurLaPage(fenetre, 230, 190), MouseButton.Left);
     }
 
     [AvaloniaFact]
@@ -484,7 +473,7 @@ public class PanneauEtBarreTests
         var second = Tracer(fenetre, vm, PhysicalKey.R, 200, 300, 260, 360);
         Assert.Same(second, vm.SingleSelected);
 
-        var point = SurLaPage(fenetre, 130, 130);
+        var point = Rendu.SurLaPage(fenetre, 130, 130);
         fenetre.MouseDown(point, MouseButton.Left, RawInputModifiers.Control);
         fenetre.MouseUp(point, MouseButton.Left, RawInputModifiers.Control);
         Rendu.Battre();

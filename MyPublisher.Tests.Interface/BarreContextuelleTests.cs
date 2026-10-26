@@ -44,39 +44,10 @@ public class BarreContextuelleTests
     private static Point Origine(Window fenetre) =>
         Trouver<Panel>(fenetre, "PageRoot").TranslatePoint(new Point(0, 0), fenetre) ?? throw new InvalidOperationException();
 
-    /// <summary>Tape dans un champ numérique, valide, et rend le focus — comme on quitte un champ.</summary>
-    private static void Saisir(Window fenetre, NumericUpDown champ, string texte)
-    {
-        var saisie = champ.GetVisualDescendants().OfType<TextBox>().First();
-        saisie.Focus();
-        Rendu.Battre();
-        saisie.SelectAll();
-        fenetre.KeyTextInput(texte);
-        fenetre.KeyPressQwerty(PhysicalKey.Enter, RawInputModifiers.None);
-        Rendu.Battre();
-        Quitter(fenetre);
-    }
-
     private static void Quitter(Window fenetre)
     {
         fenetre.FocusManager!.ClearFocus();
         Rendu.Battre();
-    }
-
-    /// <summary>
-    /// Le geste a fait exactement un pas : il y en a un, et une seule annulation rend le
-    /// document d'avant. L'annulation relit le document : le test reprend son bloc dans la
-    /// sélection, que l'annulation rétablit.
-    /// </summary>
-    private static TextFrame UnSeulPas(MainWindowViewModel vm, string avant, string quoi)
-    {
-        Assert.True(vm.CanUndo, $"{quoi} : aucun pas d'annulation");
-        Assert.NotEqual(avant, DocumentSerializer.ToJson(vm.Document));
-        vm.UndoCommand.Execute(null);
-        Rendu.Battre();
-        Assert.False(vm.CanUndo, $"{quoi} : plus d'un pas d'annulation");
-        Assert.Equal(avant, DocumentSerializer.ToJson(vm.Document));
-        return Assert.IsType<TextFrame>(vm.SingleSelected);
     }
 
     private static TextFrame Texte(string nom, double x, double y, string texte = "Texte") => new()
@@ -179,7 +150,7 @@ public class BarreContextuelleTests
             Directory.Delete(dossier, recursive: true);
         }
 
-        UnSeulPas(vm, avant, "Centrer le texte");
+        Assert.IsType<TextFrame>(Rendu.UnSeulPas(vm, avant, "Centrer le texte"));
     }
 
     /// <summary>L'abscisse, en points, du milieu de l'encre que le texte du bloc laisse sur la page.</summary>
@@ -247,15 +218,15 @@ public class BarreContextuelleTests
         Rendu.Battre();
         Quitter(fenetre);
         Assert.NotEqual("DejaVu Sans", bloc.FontFamily);
-        bloc = UnSeulPas(vm, avant, "police");
+        bloc = Assert.IsType<TextFrame>(Rendu.UnSeulPas(vm, avant, "police"));
 
-        Saisir(fenetre, Trouver<NumericUpDown>(Barre(fenetre), "CorpsDuBloc"), "14");
+        Rendu.Saisir(fenetre, Trouver<NumericUpDown>(Barre(fenetre), "CorpsDuBloc"), "14");
         Assert.Equal(14, bloc.FontSize);
-        bloc = UnSeulPas(vm, avant, "corps");
+        bloc = Assert.IsType<TextFrame>(Rendu.UnSeulPas(vm, avant, "corps"));
 
-        Saisir(fenetre, Trouver<NumericUpDown>(Barre(fenetre), "InterligneDuBloc"), "1.5");
+        Rendu.Saisir(fenetre, Trouver<NumericUpDown>(Barre(fenetre), "InterligneDuBloc"), "1.5");
         Assert.Equal(1.5, bloc.LineHeight, precision: 9);
-        bloc = UnSeulPas(vm, avant, "interligne");
+        bloc = Assert.IsType<TextFrame>(Rendu.UnSeulPas(vm, avant, "interligne"));
 
         // La couleur : la vignette ouvre le sélecteur, dont une pastille écrit la référence.
         Rendu.Cliquer(Trouver<Button>(Barre(fenetre), "CouleurDuTexte"));
@@ -269,7 +240,7 @@ public class BarreContextuelleTests
         Assert.True(vm.PeutAnnuler, "Annuler s'est grisé pendant le choix de la couleur");
         Assert.IsType<Flyout>(Trouver<Button>(Barre(fenetre), "CouleurDuTexte").Flyout).Hide();
         Rendu.Battre();
-        bloc = UnSeulPas(vm, avant, "couleur du texte");
+        bloc = Assert.IsType<TextFrame>(Rendu.UnSeulPas(vm, avant, "couleur du texte"));
 
         // Les boutons : la commande du menu Texte, un pas chacun.
         foreach (var (bulle, verifier) in new (string, Func<TextFrame, bool>)[]
@@ -281,7 +252,7 @@ public class BarreContextuelleTests
         {
             Rendu.Cliquer(Bouton<ToggleButton>(fenetre, bulle)!);
             Assert.True(verifier(bloc), bulle);
-            bloc = UnSeulPas(vm, avant, bulle);
+            bloc = Assert.IsType<TextFrame>(Rendu.UnSeulPas(vm, avant, bulle));
         }
     }
 
@@ -391,7 +362,7 @@ public class BarreContextuelleTests
         Rendu.Battre();
         Assert.Equal(Souligne.Simple, bloc.Underline);
         Assert.True(bouton.IsChecked);
-        bloc = UnSeulPas(vm, avant, "Ctrl+U");
+        bloc = Assert.IsType<TextFrame>(Rendu.UnSeulPas(vm, avant, "Ctrl+U"));
         Assert.False(Bouton<ToggleButton>(fenetre, "Souligné (Ctrl+U)")!.IsChecked);
 
         // Le menu Texte porte « Souligné » sur la même commande.
@@ -421,7 +392,7 @@ public class BarreContextuelleTests
         Assert.Equal(Souligne.Aucun, bloc.Underline);
         vm.UndoCommand.Execute(null);
         Rendu.Battre();
-        bloc = UnSeulPas(vm, avant, "souligné double");
+        bloc = Assert.IsType<TextFrame>(Rendu.UnSeulPas(vm, avant, "souligné double"));
 
         // Les trois autres sortes, chacune la sienne.
         foreach (var (sorte, attendu) in new[]
@@ -434,7 +405,7 @@ public class BarreContextuelleTests
             vm.SoulignerEnCommand.Execute(sorte);
             Rendu.Battre();
             Assert.Equal(attendu, bloc.Underline);
-            bloc = UnSeulPas(vm, avant, sorte.ToString());
+            bloc = Assert.IsType<TextFrame>(Rendu.UnSeulPas(vm, avant, sorte.ToString()));
         }
     }
 
@@ -658,6 +629,6 @@ public class BarreContextuelleTests
 
         // Ce qu'on avait tapé est validé, en un pas.
         Assert.Equal(12, bloc.FontSize);
-        UnSeulPas(vm, avant, "corps quitté par Échap");
+        Assert.IsType<TextFrame>(Rendu.UnSeulPas(vm, avant, "corps quitté par Échap"));
     }
 }

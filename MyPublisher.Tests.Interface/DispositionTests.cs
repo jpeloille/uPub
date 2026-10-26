@@ -42,12 +42,6 @@ public class DispositionTests
     private static Point Origine(Window fenetre) =>
         Planche(fenetre).TranslatePoint(new Point(0, 0), fenetre) ?? throw new InvalidOperationException();
 
-    private static Point SurLaPage(Window fenetre, double x, double y)
-    {
-        var origine = Origine(fenetre);
-        return new Point(origine.X + x, origine.Y + y);
-    }
-
     /// <summary>La boîte d'un contrôle dans le repère de la fenêtre.</summary>
     private static Rect Boite(Window fenetre, Control controle)
     {
@@ -195,7 +189,7 @@ public class DispositionTests
 
         foreach (var (bloc, nature) in new (Frame, string)[] { (texte, "Bloc de texte"), (forme, "Rectangle") })
         {
-            var point = SurLaPage(fenetre, bloc.X + 20, bloc.Y + 20);
+            var point = Rendu.SurLaPage(fenetre, bloc.X + 20, bloc.Y + 20);
             fenetre.MouseDown(point, MouseButton.Left);
             Rendu.Battre();
             Assert.Same(bloc, vm.SingleSelected);
@@ -223,39 +217,10 @@ public class DispositionTests
 
     // ------------------------------------------------------------- règle 2
 
-    /// <summary>Tape dans un champ numérique, valide, et rend le focus — comme on quitte un champ.</summary>
-    private static void Saisir(Window fenetre, NumericUpDown champ, string texte)
-    {
-        var saisie = champ.GetVisualDescendants().OfType<TextBox>().First();
-        saisie.Focus();
-        Rendu.Battre();
-        saisie.SelectAll();
-        fenetre.KeyTextInput(texte);
-        fenetre.KeyPressQwerty(PhysicalKey.Enter, RawInputModifiers.None);
-        Rendu.Battre();
-        Quitter(fenetre);
-    }
-
     private static void Quitter(Window fenetre)
     {
         fenetre.FocusManager!.ClearFocus();
         Rendu.Battre();
-    }
-
-    /// <summary>
-    /// Le geste a fait exactement un pas : il y en a un, et une seule annulation rend le
-    /// document d'avant, sans en laisser d'autre.
-    /// </summary>
-    /// L'annulation relit le document : les blocs d'avant sont d'autres instances, et le
-    /// test reprend le sien dans la sélection, que l'annulation rétablit.
-    private static void UnSeulPas(MainWindowViewModel vm, string avant, string quoi)
-    {
-        Assert.True(vm.CanUndo, $"{quoi} : aucun pas d'annulation");
-        Assert.NotEqual(avant, DocumentSerializer.ToJson(vm.Document));
-        vm.UndoCommand.Execute(null);
-        Rendu.Battre();
-        Assert.False(vm.CanUndo, $"{quoi} : plus d'un pas d'annulation");
-        Assert.Equal(avant, DocumentSerializer.ToJson(vm.Document));
     }
 
     [AvaloniaFact]
@@ -268,16 +233,16 @@ public class DispositionTests
         var avant = DocumentSerializer.ToJson(vm.Document);
 
         // Propriétés : un champ en millimètres.
-        Saisir(fenetre, Trouver<NumericUpDown>(fenetre, "ChampX"), "52.5");
+        Rendu.Saisir(fenetre, Trouver<NumericUpDown>(fenetre, "ChampX"), "52.5");
         Assert.Equal(Units.MmToPoints(52.5), bloc.X, precision: 9);
-        UnSeulPas(vm, avant, "Propriétés, X");
+        Rendu.UnSeulPas(vm, avant, "Propriétés, X");
 
         // Propriétés : la marge commune, qui écrit quatre propriétés du bloc.
         bloc = Assert.IsType<TextFrame>(vm.SingleSelected);
-        Saisir(fenetre, Trouver<NumericUpDown>(fenetre, "MargeInterieureCommune"), "3");
+        Rendu.Saisir(fenetre, Trouver<NumericUpDown>(fenetre, "MargeInterieureCommune"), "3");
         Assert.All(new[] { bloc.PaddingLeft, bloc.PaddingRight, bloc.PaddingTop, bloc.PaddingBottom },
             marge => Assert.Equal(Units.MmToPoints(3), marge, precision: 9));
-        UnSeulPas(vm, avant, "Propriétés, marge commune");
+        Rendu.UnSeulPas(vm, avant, "Propriétés, marge commune");
 
         // Propriétés : le fond, deux propriétés du modèle sous une seule liste.
         bloc = Assert.IsType<TextFrame>(vm.SingleSelected);
@@ -287,13 +252,13 @@ public class DispositionTests
         Rendu.Battre();
         Quitter(fenetre);
         Assert.IsType<GradientFill>(bloc.Fill);
-        UnSeulPas(vm, avant, "Propriétés, fond");
+        Rendu.UnSeulPas(vm, avant, "Propriétés, fond");
 
         // Document : une marge de la page.
         Rendu.Onglet(fenetre, "Document");
-        Saisir(fenetre, Trouver<NumericUpDown>(fenetre, "MargeGauche"), "25");
+        Rendu.Saisir(fenetre, Trouver<NumericUpDown>(fenetre, "MargeGauche"), "25");
         Assert.Equal(Units.MmToPoints(25), vm.Document.MarginLeft, precision: 9);
-        UnSeulPas(vm, avant, "Document, marge");
+        Rendu.UnSeulPas(vm, avant, "Document, marge");
 
         // Styles et Couleurs : les jeux du document.
         Rendu.Onglet(fenetre, "Styles");
@@ -302,7 +267,7 @@ public class DispositionTests
         polices.SelectedItem = JeuxPredefinis.Polices.First(j => j != vm.Document.FontScheme);
         Rendu.Battre();
         Quitter(fenetre);
-        UnSeulPas(vm, avant, "Styles, jeu de polices");
+        Rendu.UnSeulPas(vm, avant, "Styles, jeu de polices");
 
         Rendu.Onglet(fenetre, "Couleurs");
         var couleurs = Trouver<ComboBox>(fenetre, "JeuDeCouleurs");
@@ -310,7 +275,7 @@ public class DispositionTests
         couleurs.SelectedItem = JeuxPredefinis.Couleurs.First(j => j != vm.Document.ColorScheme);
         Rendu.Battre();
         Quitter(fenetre);
-        UnSeulPas(vm, avant, "Couleurs, jeu de couleurs");
+        Rendu.UnSeulPas(vm, avant, "Couleurs, jeu de couleurs");
     }
 
     [AvaloniaFact]
@@ -331,7 +296,7 @@ public class DispositionTests
         Rendu.Onglet(fenetre, "Document");
         Assert.True(vm.CanUndo, "la saisie laissée dans l'onglet quitté n'a pas fait son pas");
 
-        Saisir(fenetre, Trouver<NumericUpDown>(fenetre, "MargeGauche"), "30");
+        Rendu.Saisir(fenetre, Trouver<NumericUpDown>(fenetre, "MargeGauche"), "30");
         vm.UndoCommand.Execute(null);
         Rendu.Battre();
         Assert.Equal(Units.MmToPoints(40), bloc.Y, precision: 9);
@@ -358,12 +323,12 @@ public class DispositionTests
         // La virgule comme le point, et l'unité ou non : « 52,5 mm » ne devient pas 525.
         foreach (var (tape, attendu) in new[] { ("52,5 mm", 52.5), ("41.25", 41.25), ("30 mm", 30.0) })
         {
-            Saisir(fenetre, x, tape);
+            Rendu.Saisir(fenetre, x, tape);
             Assert.Equal(Units.MmToPoints(attendu), bloc.X, precision: 9);
         }
 
         // Un texte illisible ne touche pas au bloc.
-        Saisir(fenetre, x, "trente");
+        Rendu.Saisir(fenetre, x, "trente");
         Assert.Equal(Units.MmToPoints(30), bloc.X, precision: 9);
 
         Assert.EndsWith("°", Trouver<NumericUpDown>(fenetre, "ChampAngle").Text);
@@ -679,13 +644,13 @@ public class DispositionTests
         fenetre.KeyPressQwerty(PhysicalKey.G, RawInputModifiers.Control);
         Rendu.Battre();
         Assert.True(bloc.Bold);
-        UnSeulPas(vm, avant, "Ctrl+G");
+        Rendu.UnSeulPas(vm, avant, "Ctrl+G");
 
         bloc = Assert.IsType<TextFrame>(vm.SingleSelected);
         fenetre.KeyPressQwerty(PhysicalKey.I, RawInputModifiers.Control);
         Rendu.Battre();
         Assert.True(bloc.Italic);
-        UnSeulPas(vm, avant, "Ctrl+I");
+        Rendu.UnSeulPas(vm, avant, "Ctrl+I");
 
         bloc = Assert.IsType<TextFrame>(vm.SingleSelected);
 
@@ -799,7 +764,7 @@ public class DispositionTests
         avec.StrokeThickness = 2;
         var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(sans, avec));
 
-        Color Centre(string nom, out Rect boite)
+        Color CouleurAuCentre(string nom, out Rect boite)
         {
             var vignette = Trouver<Border>(fenetre, nom);
             vignette.BringIntoView();
@@ -813,7 +778,7 @@ public class DispositionTests
         Rendu.Battre();
         foreach (var nom in new[] { "VignetteDuFond", "VignetteDuContour" })
         {
-            Assert.Equal(Couleur("CouleurAucun"), Centre(nom, out var boite));
+            Assert.Equal(Couleur("CouleurAucun"), CouleurAuCentre(nom, out var boite));
             // Hors de la diagonale, le blanc ; sur le bord, le bord des champs.
             Assert.Equal(Couleur("CouleurBlanc"), Pixel(fenetre, (int)boite.X + 5, (int)boite.Y + 5));
             Assert.Equal(Couleur("CouleurBordChamp"), Pixel(fenetre, (int)boite.Center.X, (int)boite.Y));
@@ -821,8 +786,8 @@ public class DispositionTests
 
         vm.SelectOnly(avec);
         Rendu.Battre();
-        Assert.Equal(Color.Parse("#336699"), Centre("VignetteDuFond", out _));
-        Assert.Equal(Color.Parse("#884422"), Centre("VignetteDuContour", out _));
+        Assert.Equal(Color.Parse("#336699"), CouleurAuCentre("VignetteDuFond", out _));
+        Assert.Equal(Color.Parse("#884422"), CouleurAuCentre("VignetteDuContour", out _));
         Assert.False(vm.CanUndo, "montrer la couleur a écrit dans le document");
     }
 

@@ -42,18 +42,6 @@ public class PressionTests(ITestOutputHelper sortie)
     /// </summary>
     private const double Seuil = 100;
 
-    private static Panel Planche(Window fenetre) =>
-        fenetre.GetVisualDescendants().OfType<Panel>().First(p => p.Name == "PageRoot");
-
-    private static Point SurLaPage(Window fenetre, double x, double y)
-    {
-        var origine = Planche(fenetre).TranslatePoint(new Point(0, 0), fenetre) ?? new Point(0, 0);
-        return new Point(origine.X + x, origine.Y + y);
-    }
-
-    private static Point Centre(Window fenetre, Frame bloc) =>
-        SurLaPage(fenetre, bloc.X + bloc.Width / 2, bloc.Y + bloc.Height / 2);
-
     /// <summary>
     /// Les blocs de la page qu'une pression en leur centre désigne eux-mêmes, de toutes
     /// sortes : sur ATA 21, sept blocs de texte et un cadre.
@@ -63,22 +51,6 @@ public class PressionTests(ITestOutputHelper sortie)
             .Where(bloc => bloc.Visible && ReferenceEquals(bloc, page.Frames.LastOrDefault(
                 f => f.Visible && f.HitTest(bloc.X + bloc.Width / 2, bloc.Y + bloc.Height / 2))))
             .ToList();
-
-    /// <summary>Une image, comme l'écran la rendrait, et ce qu'elle a laissé à faire.</summary>
-    private static void Image()
-    {
-        Rendu.Battre();
-        AvaloniaHeadlessPlatform.ForceRenderTimerTick();
-        Rendu.Battre();
-    }
-
-    /// <summary>Un clic au pointeur, à cet endroit de la page.</summary>
-    private static void Cliquer(Window fenetre, Point point)
-    {
-        fenetre.MouseDown(point, MouseButton.Left);
-        fenetre.MouseUp(point, MouseButton.Left);
-        Image();
-    }
 
     private static T Trouver<T>(Visual racine, string nom) where T : Control =>
         racine.GetVisualDescendants().OfType<T>().Single(c => c.Name == nom);
@@ -122,7 +94,7 @@ public class PressionTests(ITestOutputHelper sortie)
             foreach (var bloc in blocs)
             {
                 vm.SetSelection([]);
-                Image();
+                Rendu.UneImage();
 
                 GC.Collect();
                 GC.WaitForPendingFinalizers();
@@ -131,10 +103,10 @@ public class PressionTests(ITestOutputHelper sortie)
                 // Deux pressions de suite ne tombent jamais au même endroit : un bloc n'est
                 // pressé de nouveau qu'après les sept autres, et Avalonia n'y voit pas un
                 // double-clic, qui ouvrirait la saisie.
-                var centre = Centre(fenetre, bloc);
+                var centre = Rendu.Centre(fenetre, bloc);
                 var chrono = Stopwatch.StartNew();
                 fenetre.MouseDown(centre, MouseButton.Left);
-                Image();
+                Rendu.UneImage();
                 chrono.Stop();
 
                 Assert.Same(bloc, vm.SingleSelected);
@@ -175,7 +147,7 @@ public class PressionTests(ITestOutputHelper sortie)
         var cadre = new ShapeFrame { Name = "Cadre", X = 60, Y = 220, Width = 120, Height = 80 };
         var b = new TextFrame { Name = "B", X = 300, Y = 60, Width = 180, Height = 100, Text = "Second bloc." };
         var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(a, cadre, b));
-        var vide = SurLaPage(fenetre, 400, 500);
+        var vide = Rendu.SurLaPage(fenetre, 400, 500);
 
         // Un champ de chaque réglage gardé : « Position et taille », les sections du type,
         // « Fond et contour », la barre contextuelle.
@@ -186,19 +158,19 @@ public class PressionTests(ITestOutputHelper sortie)
             Trouver<ComboBox>(fenetre, "SorteDeFond"), Trouver<ComboBox>(fenetre, "PoliceDuBloc"),
         ];
 
-        Cliquer(fenetre, Centre(fenetre, a));
+        Rendu.Cliquer(fenetre, Rendu.Centre(fenetre, a));
         Assert.Same(a, vm.SingleSelected);
         var premiers = Champs();
         Assert.All(premiers, champ => Assert.True(champ.IsEffectivelyVisible));
         Assert.All(premiers, champ => Assert.Same(a, champ.DataContext));
 
         // Rien de sélectionné : les champs restent, masqués.
-        Cliquer(fenetre, vide);
+        Rendu.Cliquer(fenetre, vide);
         Assert.Null(vm.SingleSelected);
         Assert.All(Champs(), champ => Assert.False(champ.IsEffectivelyVisible, "un champ du bloc se montre sans bloc"));
 
         // Un cadre : la position et le fond le suivent, les sections du texte et la barre se taisent.
-        Cliquer(fenetre, Centre(fenetre, cadre));
+        Rendu.Cliquer(fenetre, Rendu.Centre(fenetre, cadre));
         Assert.Same(cadre, vm.SingleSelected);
         var auCadre = Champs();
         Assert.True(auCadre[0].IsEffectivelyVisible && auCadre[2].IsEffectivelyVisible);
@@ -208,9 +180,9 @@ public class PressionTests(ITestOutputHelper sortie)
 
         // Puis rien, puis l'autre bloc de texte : ce sont les mêmes champs, liés à lui, et la
         // pression n'a rien construit.
-        Cliquer(fenetre, vide);
+        Rendu.Cliquer(fenetre, vide);
         var visuels = fenetre.GetVisualDescendants().Count();
-        Cliquer(fenetre, Centre(fenetre, b));
+        Rendu.Cliquer(fenetre, Rendu.Centre(fenetre, b));
         Assert.Same(b, vm.SingleSelected);
         var crees = fenetre.GetVisualDescendants().Count() - visuels;
         sortie.WriteLine($"visuels de la fenêtre : {visuels} avant la pression, {visuels + crees} après");
@@ -240,7 +212,7 @@ public class PressionTests(ITestOutputHelper sortie)
     {
         var a = new TextFrame { Name = "A", X = 60, Y = 60, Width = 200, Height = 80, Text = "Un bloc." };
         var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(a));
-        Cliquer(fenetre, Centre(fenetre, a));
+        Rendu.Cliquer(fenetre, Rendu.Centre(fenetre, a));
 
         var nom = Trouver<TextBox>(fenetre, "ChampNom");
         nom.Focus();
@@ -283,14 +255,14 @@ public class PressionTests(ITestOutputHelper sortie)
 
         // Le bloc du fond est la dernière ligne, hors de vue : la liste défile jusqu'à lui.
         Assert.False(EnVue(blocs[0]));
-        Cliquer(fenetre, Centre(fenetre, blocs[0]));
+        Rendu.Cliquer(fenetre, Rendu.Centre(fenetre, blocs[0]));
         Assert.Same(blocs[0], vm.SingleSelected);
         Assert.True(EnVue(blocs[0]), "la ligne du bloc pris sur la planche n'est pas en vue");
 
         // Un bloc dont la ligne est déjà en vue : la liste ne bouge pas.
         var decalage = defilement.Offset;
         var voisin = blocs.Skip(1).First(EnVue);
-        Cliquer(fenetre, Centre(fenetre, voisin));
+        Rendu.Cliquer(fenetre, Rendu.Centre(fenetre, voisin));
         Assert.Same(voisin, vm.SingleSelected);
         Assert.Equal(decalage, defilement.Offset);
         Assert.True(EnVue(voisin));

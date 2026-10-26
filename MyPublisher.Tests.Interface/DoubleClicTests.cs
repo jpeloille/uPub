@@ -28,14 +28,6 @@ namespace MyPublisher.Tests.Interface;
 /// </summary>
 public class DoubleClicTests
 {
-    private static Panel Planche(Window fenetre) =>
-        fenetre.GetVisualDescendants().OfType<Panel>().First(p => p.Name == "PageRoot");
-
-    private static Point SurLaPage(Window fenetre, double x, double y)
-    {
-        var origine = Planche(fenetre).TranslatePoint(new Point(0, 0), fenetre) ?? new Point(0, 0);
-        return new Point(origine.X + x, origine.Y + y);
-    }
 
     /// <summary>
     /// Les blocs de texte de la première page qu'un clic en leur centre désigne
@@ -51,19 +43,6 @@ public class DoubleClicTests
     /// <summary>Le bloc où Q1 a vu le défaut, reconnu à son ordonnée telle que l'import la donne.</summary>
     private static TextFrame BlocDeQ1(IEnumerable<TextFrame> blocs) =>
         blocs.First(bloc => bloc.Y.ToString("R") == "107.15039999999999");
-
-    /// <summary>
-    /// Un clic tel qu'une vraie plate-forme peut le livrer : le bouton pressé, un
-    /// mouvement qui ne va nulle part, le bouton relâché. Le mouvement nul n'est pas
-    /// une fantaisie du banc : c'est lui qui passait par l'aimantation, et un banc qui
-    /// ne l'émettrait pas ne verrait que la moitié du défaut.
-    /// </summary>
-    private static void Cliquer(Window fenetre, Point point)
-    {
-        fenetre.MouseDown(point, MouseButton.Left);
-        fenetre.MouseMove(point, RawInputModifiers.LeftMouseButton);
-        fenetre.MouseUp(point, MouseButton.Left);
-    }
 
     // Le geste entier : le premier clic prend le bloc, le second ouvre la saisie.
     //
@@ -105,11 +84,11 @@ public class DoubleClicTests
             Assert.False(vm.IsDirty);
 
             var avant = DocumentSerializer.ToJson(vm.Document);
-            var centre = SurLaPage(fenetre, bloc.X + bloc.Width / 2, bloc.Y + bloc.Height / 2);
+            var centre = Rendu.SurLaPage(fenetre, bloc.X + bloc.Width / 2, bloc.Y + bloc.Height / 2);
 
-            Cliquer(fenetre, centre);
+            Rendu.Cliquer(fenetre, centre, mouvementNul: true);
             Assert.Same(bloc, vm.SingleSelected);
-            Cliquer(fenetre, centre);
+            Rendu.Cliquer(fenetre, centre, mouvementNul: true);
             Rendu.Battre(8);
 
             Assert.True(bloc.IsEditing, $"le double-clic n'a pas ouvert la saisie de « {bloc.Name} »");
@@ -147,10 +126,10 @@ public class DoubleClicTests
         var avant = DocumentSerializer.ToJson(vm.Document);
         Assert.False(vm.HasSelection);
 
-        var centre = SurLaPage(fenetre, bloc.X + bloc.Width / 2, bloc.Y + bloc.Height / 2);
-        Cliquer(fenetre, centre);
+        var centre = Rendu.SurLaPage(fenetre, bloc.X + bloc.Width / 2, bloc.Y + bloc.Height / 2);
+        Rendu.Cliquer(fenetre, centre, mouvementNul: true);
         Assert.Same(bloc, vm.SingleSelected);
-        Cliquer(fenetre, centre);
+        Rendu.Cliquer(fenetre, centre, mouvementNul: true);
         Rendu.Battre(8);
 
         Assert.True(bloc.IsEditing, "le double-clic n'a pas ouvert la saisie");
@@ -174,7 +153,7 @@ public class DoubleClicTests
         var depart = bloc.Y;
 
         var avant = DocumentSerializer.ToJson(vm.Document);
-        var centre = SurLaPage(fenetre, bloc.X + bloc.Width / 2, bloc.Y + bloc.Height / 2);
+        var centre = Rendu.SurLaPage(fenetre, bloc.X + bloc.Width / 2, bloc.Y + bloc.Height / 2);
         var arrivee = new Point(centre.X, centre.Y + 1);
 
         fenetre.MouseDown(centre, MouseButton.Left);
@@ -201,7 +180,7 @@ public class DoubleClicTests
         // laisser au dernier endroit où le pointeur l'a mené. Alt écarte l'aimantation.
         var bloc = new ShapeFrame { Name = "A", X = 100, Y = 100, Width = 100, Height = 100 };
         var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(bloc));
-        var prise = SurLaPage(fenetre, 150, 150);
+        var prise = Rendu.SurLaPage(fenetre, 150, 150);
 
         fenetre.MouseDown(prise, MouseButton.Left);
         fenetre.MouseMove(new Point(prise.X + 40, prise.Y + 30),
@@ -228,10 +207,10 @@ public class DoubleClicTests
         var b = new ShapeFrame { Name = "B", X = 300, Y = 300, Width = 100, Height = 100 };
         var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(a, b));
 
-        Cliquer(fenetre, SurLaPage(fenetre, 100, 100));
+        Rendu.Cliquer(fenetre, Rendu.SurLaPage(fenetre, 100, 100), mouvementNul: true);
         Rendu.Battre();
         Assert.Same(a, vm.SingleSelected);
-        Cliquer(fenetre, SurLaPage(fenetre, 350, 350));
+        Rendu.Cliquer(fenetre, Rendu.SurLaPage(fenetre, 350, 350), mouvementNul: true);
         Rendu.Battre();
         Assert.Same(b, vm.SingleSelected);
 

@@ -1755,6 +1755,32 @@ saboter "les réglages du bloc (Q23) se reconstruisent à chaque sélection" \
     'if (gabarit is not null)' \
     'Q23-selection|PressionTests'
 
+# N1 : les gestes des tests d'interface sont synthétisés par Rendu.cs seul. Un glissé qui ne
+# dit pas le bouton tenu était le défaut de deux des trois copies : un TextBox n'y étend pas sa
+# sélection, et le banc le voit ; une entrée en saisie qui ne clique qu'une fois n'ouvre rien,
+# et l'aide le dit au lieu de laisser le test taper ailleurs ; une aide de classe qui synthétise
+# de nouveau sa touche ne change rien aux tests — seul le contrôle des sources la voit.
+saboter "le glissé du banc (N1) ne dit plus le bouton tenu" \
+    MyPublisher.Tests.Interface/Rendu.cs \
+    'racine.MouseMove(ici, touches | RawInputModifiers.LeftMouseButton);' \
+    'racine.MouseMove(ici, touches);' \
+    'N1-banc-des-gestes|BancTests'
+
+saboter "l'entrée en saisie du banc (N1) ne clique qu'une fois" \
+    MyPublisher.Tests.Interface/Rendu.cs \
+    'DoubleCliquer(fenetre, SurLaPage(fenetre, bloc.X + dx, bloc.Y + dy));' \
+    'Cliquer(fenetre, SurLaPage(fenetre, bloc.X + dx, bloc.Y + dy));' \
+    'N1-banc-des-gestes|BancTests'
+
+saboter "une classe de tests (N1) synthétise de nouveau sa touche hors du banc" \
+    MyPublisher.Tests.Interface/FrappeTests.cs \
+    '        Rendu.Touche(fenetre, PhysicalKey.Escape);
+        Assert.False(bloc.IsEditing, "Échap n'"'"'a pas refermé la saisie");' \
+    '        fenetre.KeyPressQwerty(PhysicalKey.Escape, RawInputModifiers.None);
+        Rendu.Battre();
+        Assert.False(bloc.IsEditing, "Échap n'"'"'a pas refermé la saisie");' \
+    'N1-banc-des-gestes'
+
 # Un motif qui ne désigne aucun sabotage ne prouve rien. « eprouver-le-juge.sh I4 » sortait
 # en 0 sur « 0 sabotages, 0 attrapés », quand les intitulés de la planche ne portaient pas
 # encore le code du poste : le filet passait pour éprouvé sans qu'on l'ait troué.

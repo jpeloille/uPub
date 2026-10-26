@@ -89,16 +89,6 @@ public class VignettesDePagesTests(ITestOutputHelper sortie)
             $"{quoi} : {lue} au lieu de {attendue}");
     }
 
-    /// <summary>Un clic de la souris au centre d'un contrôle de la fenêtre.</summary>
-    private static void Cliquer(Window fenetre, Control controle)
-    {
-        var centre = controle.TranslatePoint(new Point(controle.Bounds.Width / 2, controle.Bounds.Height / 2), fenetre)
-                     ?? throw new InvalidOperationException();
-        fenetre.MouseDown(centre, MouseButton.Left);
-        fenetre.MouseUp(centre, MouseButton.Left);
-        Rendu.Battre();
-    }
-
     // ------------------------------------------------------------ l'allure
 
     [AvaloniaFact]
@@ -329,7 +319,7 @@ public class VignettesDePagesTests(ITestOutputHelper sortie)
         var (fenetre, vm) = OuvrirLExemple();
         var vignettes = Vignettes(fenetre);
 
-        Cliquer(fenetre, vignettes[1]);
+        Rendu.Cliquer(vignettes[1]);
         Assert.Same(vm.Document.Pages[1], vm.CurrentPage);
         Assert.Equal(2, vm.CurrentPageNumber);
         Assert.Equal(new Thickness(2), Cadre(vignettes[1]).BorderThickness);
@@ -340,7 +330,7 @@ public class VignettesDePagesTests(ITestOutputHelper sortie)
         Assert.False(vm.CanUndo);
         Assert.False(vm.IsDirty);
 
-        Cliquer(fenetre, vignettes[0]);
+        Rendu.Cliquer(vignettes[0]);
         Assert.Same(vm.Document.Pages[0], vm.CurrentPage);
     }
 

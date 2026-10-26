@@ -36,21 +36,7 @@ public class NavigationTests
 
     private static ScrollViewer Defilement(Window fenetre) => Trouver<ScrollViewer>(fenetre, "Scroller");
 
-    /// <summary>
-    /// Où tombe un point de page dans la fenêtre. Lu depuis le coin de PageRoot dans
-    /// Surface, que la planche ne fait que mettre à l'échelle : de PageRoot droit à la
-    /// fenêtre, à travers la mise à l'échelle, Avalonia peut se tromper (poste I4).
-    /// </summary>
-    private static Point DansLaFenetre(Window fenetre, MainWindowViewModel vm, double x, double y)
-    {
-        var page = Trouver<Panel>(fenetre, "PageRoot");
-        var surface = Trouver<Panel>(fenetre, "Surface");
-        var coin = page.TranslatePoint(default, surface) ?? throw new InvalidOperationException();
-        var point = new Point(coin.X + x * vm.RenderScale, coin.Y + y * vm.RenderScale);
-        return surface.TranslatePoint(point, fenetre) ?? throw new InvalidOperationException();
-    }
-
-    /// <summary>Le point de page sous un point de la fenêtre : l'inverse de <see cref="DansLaFenetre"/>.</summary>
+    /// <summary>Le point de page sous un point de la fenêtre : l'inverse de <see cref="Rendu.SurLaPage"/>.</summary>
     private static Point SousLaFenetre(Window fenetre, MainWindowViewModel vm, Point point)
     {
         var page = Trouver<Panel>(fenetre, "PageRoot");
@@ -68,55 +54,8 @@ public class NavigationTests
                ?? throw new InvalidOperationException();
     }
 
-    private static void Glisser(Window fenetre, Point depart, Vector chemin, RawInputModifiers modificateurs = RawInputModifiers.None)
-    {
-        fenetre.MouseDown(depart, MouseButton.Left, modificateurs);
-        Rendu.Battre();
-        // En deux temps, comme une main : un geste qui ne verrait que son arrivée ne dirait
-        // pas s'il suit le chemin ou s'il saute.
-        fenetre.MouseMove(depart + chemin / 2, modificateurs);
-        fenetre.MouseMove(depart + chemin, modificateurs);
-        Rendu.Battre();
-        fenetre.MouseUp(depart + chemin, MouseButton.Left, modificateurs);
-        Rendu.Battre();
-    }
-
-    private static void Cliquer(Control controle)
-    {
-        var racine = controle.GetVisualRoot() as TopLevel ?? throw new InvalidOperationException("hors de l'arbre");
-        var centre = controle.TranslatePoint(new Point(controle.Bounds.Width / 2, controle.Bounds.Height / 2), racine)
-                     ?? throw new InvalidOperationException();
-        racine.MouseDown(centre, MouseButton.Left);
-        racine.MouseUp(centre, MouseButton.Left);
-        Rendu.Battre();
-    }
-
     private static TextFrame Texte(double x, double y, double largeur, double hauteur) =>
         new() { Name = "Texte", X = x, Y = y, Width = largeur, Height = hauteur, Text = "Texte" };
-
-    /// <summary>Tape dans un champ numérique, valide, et rend le focus — comme on quitte un champ.</summary>
-    private static void Saisir(Window fenetre, NumericUpDown champ, string texte)
-    {
-        var saisie = champ.GetVisualDescendants().OfType<TextBox>().First();
-        saisie.Focus();
-        Rendu.Battre();
-        saisie.SelectAll();
-        fenetre.KeyTextInput(texte);
-        fenetre.KeyPressQwerty(PhysicalKey.Enter, RawInputModifiers.None);
-        Rendu.Battre();
-        fenetre.FocusManager!.ClearFocus();
-        Rendu.Battre();
-    }
-
-    /// <summary>Le geste a fait exactement un pas : une annulation rend le document d'avant, et il n'en reste pas.</summary>
-    private static void UnSeulPas(MainWindowViewModel vm, string avant, string quoi)
-    {
-        Assert.True(vm.CanUndo, $"{quoi} : aucun pas d'annulation");
-        vm.UndoCommand.Execute(null);
-        Rendu.Battre();
-        Assert.False(vm.CanUndo, $"{quoi} : plus d'un pas d'annulation");
-        Assert.Equal(avant, DocumentSerializer.ToJson(vm.Document));
-    }
 
     // ------------------------------------------------------------------ la main
 
@@ -139,13 +78,13 @@ public class NavigationTests
             var avant = DocumentSerializer.ToJson(vm.Document);
             var depart = MilieuDeLaZone(fenetre);
             Assert.Same(bloc, vm.CurrentPage!.Frames.Last(f => f.HitTest(
-                (depart.X - DansLaFenetre(fenetre, vm, 0, 0).X) / vm.RenderScale,
-                (depart.Y - DansLaFenetre(fenetre, vm, 0, 0).Y) / vm.RenderScale)));
+                (depart.X - Rendu.SurLaPage(fenetre, 0, 0).X) / vm.RenderScale,
+                (depart.Y - Rendu.SurLaPage(fenetre, 0, 0).Y) / vm.RenderScale)));
 
             // Le glissé part du bloc : sans la main, il le déplacerait.
             fenetre.KeyPressQwerty(PhysicalKey.Space, RawInputModifiers.None);
             Rendu.Battre();
-            Glisser(fenetre, depart, new Vector(-100, -60));
+            Rendu.Glisser(fenetre, depart, depart + new Vector(-100, -60));
             fenetre.KeyReleaseQwerty(PhysicalKey.Space, RawInputModifiers.None);
             Rendu.Battre();
 
@@ -159,7 +98,8 @@ public class NavigationTests
             // Espace relâché, un glissé reprend le bloc. Ailleurs qu'au point de départ :
             // deux pressions au même point, sans que l'horloge du banc avance, font un
             // double-clic, qui ouvrirait la saisie du bloc.
-            Glisser(fenetre, MilieuDeLaZone(fenetre) + new Vector(30, 30), new Vector(-20, 0));
+            var prise = MilieuDeLaZone(fenetre) + new Vector(30, 30);
+            Rendu.Glisser(fenetre, prise, prise + new Vector(-20, 0));
             Assert.Equal(250, zone.Offset.X, precision: 6);
             Assert.Same(bloc, vm.SingleSelected);
             Assert.Equal(60 - 20 / vm.RenderScale, bloc.X, precision: 6);
@@ -182,7 +122,7 @@ public class NavigationTests
             var couche = Trouver<Border>(fenetre, "InputLayer");
             var auRepos = couche.Cursor;
 
-            Cliquer(Trouver<Avalonia.Controls.Primitives.ToggleButton>(fenetre, "OutilMain"));
+            Rendu.Cliquer(Trouver<Avalonia.Controls.Primitives.ToggleButton>(fenetre, "OutilMain"));
             Assert.Equal(EditorTool.Main, vm.ActiveTool);
             Assert.False(vm.IsDrawing, "la main passe pour un outil de tracé");
             var ouverte = couche.Cursor;
@@ -208,18 +148,7 @@ public class NavigationTests
             vm.SelectOnly(vm.CurrentPage!.Frames[0]);
             Rendu.Battre();
             var point = MilieuDeLaZone(fenetre);
-            void DoubleClic()
-            {
-                for (var clic = 0; clic < 2; clic++)
-                {
-                    fenetre.MouseDown(point, MouseButton.Left);
-                    fenetre.MouseUp(point, MouseButton.Left);
-                }
-
-                Rendu.Battre(8);
-            }
-
-            DoubleClic();
+            Rendu.DoubleCliquer(fenetre, point);
             var planche = Trouver<PageCanvas>(fenetre, "PageView");
             Assert.False(planche.IsEditingText, "la main a ouvert la saisie");
 
@@ -229,7 +158,7 @@ public class NavigationTests
             Rendu.Battre();
             Assert.Equal(EditorTool.Select, vm.ActiveTool);
             Assert.NotNull(vm.SingleSelected);
-            DoubleClic();
+            Rendu.DoubleCliquer(fenetre, point);
             Assert.True(planche.IsEditingText, "le double-clic de contrôle n'a pas ouvert la saisie");
         }
         finally
@@ -294,7 +223,7 @@ public class NavigationTests
     /// </summary>
     private static void SousLePointeur(Window fenetre, MainWindowViewModel vm, Point pointeur, Point vise, string quoi)
     {
-        var ici = DansLaFenetre(fenetre, vm, vise.X, vise.Y);
+        var ici = Rendu.SurLaPage(fenetre, vise.X, vise.Y);
         Assert.True(Math.Abs(ici.X - pointeur.X) <= 1 && Math.Abs(ici.Y - pointeur.Y) <= 1,
             $"{quoi} : le point visé est passé de {pointeur} à {ici}");
     }
@@ -317,7 +246,7 @@ public class NavigationTests
             Assert.Equal(EditorTool.Zoom, vm.ActiveTool);
 
             // Sur le bloc : la loupe ne le prend pas.
-            var pointeur = DansLaFenetre(fenetre, vm, 300, 400);
+            var pointeur = Rendu.SurLaPage(fenetre, 300, 400);
             var vise = SousLaFenetre(fenetre, vm, pointeur);
             var zoom = vm.Zoom;
             fenetre.MouseDown(pointeur, MouseButton.Left);
@@ -430,7 +359,7 @@ public class NavigationTests
 
             // Un A4 : à l'échelle 1, il déborde en hauteur.
             Assert.True(zone.Extent.Height > zone.Viewport.Height);
-            Cliquer(bouton);
+            Rendu.Cliquer(bouton);
             Tient("A4 portrait");
             Assert.True(vm.Zoom < 1 / Units.PointToDip);
 
@@ -440,7 +369,7 @@ public class NavigationTests
             Rendu.Battre();
             var avant = DocumentSerializer.ToJson(vm.Document);
             var pas = vm.CanUndo;
-            Cliquer(bouton);
+            Rendu.Cliquer(bouton);
             Tient("A4 paysage");
 
             // Ni l'un ni l'autre ne touche au document.
@@ -453,7 +382,7 @@ public class NavigationTests
             Rendu.Battre();
             // Au neuvième chiffre : le curseur du zoom de la barre d'état, lié dans les deux
             // sens en échelle logarithmique, rend 7,999999999999998 pour 8.
-            Cliquer(bouton);
+            Rendu.Cliquer(bouton);
             Assert.Equal(MainWindowViewModel.ZoomMaximum, vm.Zoom, precision: 9);
         }
         finally
@@ -487,17 +416,12 @@ public class NavigationTests
 
     // ------------------------------------------------------------------ les proportions
 
-    /// <summary>
-    /// Tire une poignée d'un bloc droit, au zoom du banc — un point par pixel. Les poignées
-    /// sont posées sur le cadre de sélection, 3,25 px hors du bloc (poste I4).
-    /// </summary>
-    private static void TirerLaPoignee(Window fenetre, MainWindowViewModel vm, Frame bloc,
+    /// <summary>Tire une poignée d'un bloc droit, de <paramref name="chemin"/> pixels (voir <see cref="Rendu.Poignee"/>).</summary>
+    private static void TirerLaPoignee(Window fenetre, Frame bloc,
                                        double fx, double fy, Vector chemin, RawInputModifiers modificateurs = RawInputModifiers.None)
     {
-        var ecart = 3.25 / vm.RenderScale;
-        var x = bloc.X + (fx == 0 ? -ecart : fx == 1 ? bloc.Width + ecart : bloc.Width / 2);
-        var y = bloc.Y + (fy == 0 ? -ecart : fy == 1 ? bloc.Height + ecart : bloc.Height / 2);
-        Glisser(fenetre, DansLaFenetre(fenetre, vm, x, y), chemin, modificateurs);
+        var prise = Rendu.Poignee(fenetre, bloc, fx, fy);
+        Rendu.Glisser(fenetre, prise, prise + chemin, modificateurs);
     }
 
     [AvaloniaFact]
@@ -511,7 +435,7 @@ public class NavigationTests
             Rendu.Battre();
 
             // La case, cochée au pointeur : un état de la session, ni pas ni « modifié ».
-            Cliquer(Trouver<CheckBox>(fenetre, "ConserverLesProportions"));
+            Rendu.Cliquer(Trouver<CheckBox>(fenetre, "ConserverLesProportions"));
             Assert.True(vm.ConserverLesProportions);
             Assert.False(vm.IsDirty, "la case a rendu le document « modifié »");
             Assert.False(vm.CanUndo, "la case a empilé un pas d'annulation");
@@ -519,46 +443,46 @@ public class NavigationTests
             var avant = DocumentSerializer.ToJson(vm.Document);
             var rapport = bloc.Width / bloc.Height;
             var vingt = Units.MmToPoints(20) * vm.RenderScale;
-            TirerLaPoignee(fenetre, vm, bloc, 1, 1, new Vector(vingt, vingt / 3));
+            TirerLaPoignee(fenetre, bloc, 1, 1, new Vector(vingt, vingt / 3));
             Assert.True(bloc.Width > 240, "le coin n'a pas agrandi le bloc");
             Assert.Equal(rapport, bloc.Width / bloc.Height, precision: 2);
             Assert.True(Math.Abs(rapport - bloc.Width / bloc.Height) <= 0.01);
-            UnSeulPas(vm, avant, "coin tiré, case cochée");
+            Rendu.UnSeulPas(vm, avant, "coin tiré, case cochée");
 
             // Le coin d'en haut à gauche aussi, en rétrécissant.
             bloc = Assert.IsType<TextFrame>(vm.SingleSelected);
-            TirerLaPoignee(fenetre, vm, bloc, 0, 0, new Vector(vingt, vingt / 4));
+            TirerLaPoignee(fenetre, bloc, 0, 0, new Vector(vingt, vingt / 4));
             Assert.True(Math.Abs(rapport - bloc.Width / bloc.Height) <= 0.01, $"rapport {bloc.Width / bloc.Height} au lieu de {rapport}");
-            UnSeulPas(vm, avant, "coin haut gauche, case cochée");
+            Rendu.UnSeulPas(vm, avant, "coin haut gauche, case cochée");
 
             // Une poignée de côté ne garde pas le rapport, case cochée ou non.
             bloc = Assert.IsType<TextFrame>(vm.SingleSelected);
-            TirerLaPoignee(fenetre, vm, bloc, 1, 0.5, new Vector(vingt, 0));
+            TirerLaPoignee(fenetre, bloc, 1, 0.5, new Vector(vingt, 0));
             Assert.Equal(120, bloc.Height, precision: 9);
             Assert.Equal(240 + vingt / vm.RenderScale, bloc.Width, precision: 6);
-            UnSeulPas(vm, avant, "côté tiré, case cochée");
+            Rendu.UnSeulPas(vm, avant, "côté tiré, case cochée");
 
             // Maj pendant le geste fait l'inverse de la case : cochée, le coin est libre.
             bloc = Assert.IsType<TextFrame>(vm.SingleSelected);
-            TirerLaPoignee(fenetre, vm, bloc, 1, 1, new Vector(vingt, 0), RawInputModifiers.Shift);
+            TirerLaPoignee(fenetre, bloc, 1, 1, new Vector(vingt, 0), RawInputModifiers.Shift);
             Assert.Equal(120, bloc.Height, precision: 9);
             Assert.Equal(240 + vingt / vm.RenderScale, bloc.Width, precision: 6);
-            UnSeulPas(vm, avant, "coin tiré sous Maj, case cochée");
+            Rendu.UnSeulPas(vm, avant, "coin tiré sous Maj, case cochée");
 
             // Décochée, le coin est libre, et Maj garde le rapport, comme avant le poste.
-            Cliquer(Trouver<CheckBox>(fenetre, "ConserverLesProportions"));
+            Rendu.Cliquer(Trouver<CheckBox>(fenetre, "ConserverLesProportions"));
             Assert.False(vm.ConserverLesProportions);
             bloc = Assert.IsType<TextFrame>(vm.SingleSelected);
-            TirerLaPoignee(fenetre, vm, bloc, 1, 1, new Vector(vingt, 0));
+            TirerLaPoignee(fenetre, bloc, 1, 1, new Vector(vingt, 0));
             Assert.Equal(120, bloc.Height, precision: 9);
-            UnSeulPas(vm, avant, "coin tiré, case décochée");
+            Rendu.UnSeulPas(vm, avant, "coin tiré, case décochée");
             // Un autre coin que le précédent : deux pressions au même point, sans que
             // l'horloge du banc avance, font un double-clic, qui ouvrirait la saisie.
             bloc = Assert.IsType<TextFrame>(vm.SingleSelected);
-            TirerLaPoignee(fenetre, vm, bloc, 1, 0, new Vector(vingt, -vingt / 3), RawInputModifiers.Shift);
+            TirerLaPoignee(fenetre, bloc, 1, 0, new Vector(vingt, -vingt / 3), RawInputModifiers.Shift);
             Assert.True(bloc.Width > 240, "le coin n'a pas agrandi le bloc");
             Assert.True(Math.Abs(rapport - bloc.Width / bloc.Height) <= 0.01);
-            UnSeulPas(vm, avant, "coin tiré sous Maj, case décochée");
+            Rendu.UnSeulPas(vm, avant, "coin tiré sous Maj, case décochée");
         }
         finally
         {
@@ -578,10 +502,10 @@ public class NavigationTests
             var avant = DocumentSerializer.ToJson(vm.Document);
 
             // Décochée : L n'écrit que la largeur, comme avant.
-            Saisir(fenetre, Trouver<NumericUpDown>(fenetre, "ChampLargeur"), "100");
+            Rendu.Saisir(fenetre, Trouver<NumericUpDown>(fenetre, "ChampLargeur"), "100");
             Assert.Equal(Units.MmToPoints(100), bloc.Width, precision: 6);
             Assert.Equal(Units.MmToPoints(40), bloc.Height, precision: 6);
-            UnSeulPas(vm, avant, "L, case décochée");
+            Rendu.UnSeulPas(vm, avant, "L, case décochée");
 
             // La case ne change ni l'historique ni l'état « modifié », que l'annulation
             // vient de poser.
@@ -593,18 +517,18 @@ public class NavigationTests
 
             // Cochée : L entraîne H, et le champ H le montre.
             bloc = Assert.IsType<TextFrame>(vm.SingleSelected);
-            Saisir(fenetre, Trouver<NumericUpDown>(fenetre, "ChampLargeur"), "100");
+            Rendu.Saisir(fenetre, Trouver<NumericUpDown>(fenetre, "ChampLargeur"), "100");
             Assert.Equal(Units.MmToPoints(100), bloc.Width, precision: 6);
             Assert.Equal(Units.MmToPoints(50), bloc.Height, precision: 6);
             Assert.Equal(50m, Math.Round(Trouver<NumericUpDown>(fenetre, "ChampHauteur").Value ?? 0, 6));
-            UnSeulPas(vm, avant, "L, case cochée");
+            Rendu.UnSeulPas(vm, avant, "L, case cochée");
 
             // H entraîne L.
             bloc = Assert.IsType<TextFrame>(vm.SingleSelected);
-            Saisir(fenetre, Trouver<NumericUpDown>(fenetre, "ChampHauteur"), "20");
+            Rendu.Saisir(fenetre, Trouver<NumericUpDown>(fenetre, "ChampHauteur"), "20");
             Assert.Equal(Units.MmToPoints(20), bloc.Height, precision: 6);
             Assert.Equal(Units.MmToPoints(40), bloc.Width, precision: 6);
-            UnSeulPas(vm, avant, "H, case cochée");
+            Rendu.UnSeulPas(vm, avant, "H, case cochée");
 
             // Le côté qui suit ne descend pas sous la taille minimale d'un bloc.
             Assert.Equal((Snap.MinFrameSize * 2, Snap.MinFrameSize),

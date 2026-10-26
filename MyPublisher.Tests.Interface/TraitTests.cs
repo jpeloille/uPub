@@ -35,15 +35,6 @@ public class TraitTests
         racine.GetVisualDescendants().OfType<T>().FirstOrDefault(c => c.Name == nom)
         ?? throw new InvalidOperationException($"« {nom} » n'est pas dans la fenêtre");
 
-    private static Panel Page(Window fenetre) => Trouver<Panel>(fenetre, "PageRoot");
-
-    /// <summary>Un point de page dans la fenêtre : à l'échelle du banc, un point y vaut un pixel.</summary>
-    private static Point SurLaPage(Window fenetre, double x, double y)
-    {
-        var origine = Page(fenetre).TranslatePoint(new Point(0, 0), fenetre) ?? throw new InvalidOperationException();
-        return new Point(origine.X + x, origine.Y + y);
-    }
-
     private static ShapeFrame Trait(double x1, double y1, double x2, double y2, double epaisseur = 2)
     {
         var trait = new ShapeFrame
@@ -52,41 +43,6 @@ public class TraitTests
         };
         trait.PoserLesExtremites(x1, y1, x2, y2);
         return trait;
-    }
-
-    private static void Glisser(Window fenetre, Point depart, Point arrivee, RawInputModifiers modificateurs = RawInputModifiers.None)
-    {
-        fenetre.MouseDown(depart, MouseButton.Left, modificateurs);
-        Rendu.Battre();
-        fenetre.MouseMove(depart + (arrivee - depart) / 2, modificateurs | RawInputModifiers.LeftMouseButton);
-        fenetre.MouseMove(arrivee, modificateurs | RawInputModifiers.LeftMouseButton);
-        Rendu.Battre();
-        fenetre.MouseUp(arrivee, MouseButton.Left, modificateurs);
-        Rendu.Battre();
-    }
-
-    /// <summary>Le geste a fait exactement un pas : une annulation rend le document d'avant, et il n'en reste pas.</summary>
-    private static void UnSeulPas(MainWindowViewModel vm, string avant, string quoi)
-    {
-        Assert.True(vm.CanUndo, $"{quoi} : aucun pas d'annulation");
-        vm.UndoCommand.Execute(null);
-        Rendu.Battre();
-        Assert.False(vm.CanUndo, $"{quoi} : plus d'un pas d'annulation");
-        Assert.Equal(avant, DocumentSerializer.ToJson(vm.Document));
-    }
-
-    /// <summary>Tape dans un champ numérique, valide, et rend le focus — comme on quitte un champ.</summary>
-    private static void Saisir(Window fenetre, NumericUpDown champ, string texte)
-    {
-        var saisie = champ.GetVisualDescendants().OfType<TextBox>().First();
-        saisie.Focus();
-        Rendu.Battre();
-        saisie.SelectAll();
-        fenetre.KeyTextInput(texte);
-        fenetre.KeyPressQwerty(PhysicalKey.Enter, RawInputModifiers.None);
-        Rendu.Battre();
-        fenetre.FocusManager!.ClearFocus();
-        Rendu.Battre();
     }
 
     /// <summary>Les poignées visibles de l'Overlay, leur centre en points de page.</summary>
@@ -133,8 +89,8 @@ public class TraitTests
         Rendu.Battre();
 
         // Pendant le tracé : l'aperçu est un trait, et la bulle dit la longueur et l'angle.
-        fenetre.MouseDown(SurLaPage(fenetre, 100, 300), MouseButton.Left);
-        fenetre.MouseMove(SurLaPage(fenetre, 300, 307), RawInputModifiers.LeftMouseButton | RawInputModifiers.Shift);
+        fenetre.MouseDown(Rendu.SurLaPage(fenetre, 100, 300), MouseButton.Left);
+        fenetre.MouseMove(Rendu.SurLaPage(fenetre, 300, 307), RawInputModifiers.LeftMouseButton | RawInputModifiers.Shift);
         Rendu.Battre();
         var apercu = Trouver<Canvas>(fenetre, "Overlay").Children.OfType<Line>().Single(l => l.Classes.Contains("traitEnCours"));
         Assert.True(apercu.IsVisible);
@@ -142,7 +98,7 @@ public class TraitTests
         var bulle = Trouver<Canvas>(fenetre, "Overlay").Children.OfType<Border>().Single(b => b.Classes.Contains("bulleDeDimensions"));
         Assert.Equal($"L {Units.PointsToMm(200):0.0} mm · 0°", Assert.IsType<TextBlock>(bulle.Child).Text);
 
-        fenetre.MouseUp(SurLaPage(fenetre, 300, 307), MouseButton.Left, RawInputModifiers.Shift);
+        fenetre.MouseUp(Rendu.SurLaPage(fenetre, 300, 307), MouseButton.Left, RawInputModifiers.Shift);
         Rendu.Battre();
 
         var trait = Assert.IsType<ShapeFrame>(vm.CurrentPage!.Frames.Single());
@@ -158,7 +114,7 @@ public class TraitTests
         Assert.Same(trait, vm.SingleSelected);
         Assert.Equal(EditorTool.Select, vm.ActiveTool);
 
-        UnSeulPas(vm, avant, "le tracé d'un trait");
+        Rendu.UnSeulPas(vm, avant, "le tracé d'un trait");
     }
 
     [AvaloniaFact]
@@ -167,7 +123,7 @@ public class TraitTests
         var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille());
 
         vm.ActiveTool = EditorTool.Line;
-        Glisser(fenetre, SurLaPage(fenetre, 300, 400), SurLaPage(fenetre, 200, 300));
+        Rendu.Glisser(fenetre, Rendu.SurLaPage(fenetre, 300, 400), Rendu.SurLaPage(fenetre, 200, 300));
         var oblique = Assert.IsType<ShapeFrame>(vm.CurrentPage!.Frames.Single());
         Assert.Equal(225, oblique.Rotation, precision: 6);
         Assert.Equal(300, oblique.Debut.X, precision: 6);
@@ -175,8 +131,8 @@ public class TraitTests
 
         // Un clic : la longueur par défaut, à plat depuis le point de départ.
         vm.ActiveTool = EditorTool.Line;
-        fenetre.MouseDown(SurLaPage(fenetre, 50, 600), MouseButton.Left);
-        fenetre.MouseUp(SurLaPage(fenetre, 50, 600), MouseButton.Left);
+        fenetre.MouseDown(Rendu.SurLaPage(fenetre, 50, 600), MouseButton.Left);
+        fenetre.MouseUp(Rendu.SurLaPage(fenetre, 50, 600), MouseButton.Left);
         Rendu.Battre();
         var pose = Assert.IsType<ShapeFrame>(vm.CurrentPage.Frames[1]);
         Assert.Equal((50.0, 600.0), pose.Debut);
@@ -210,20 +166,20 @@ public class TraitTests
         var couche = Trouver<Border>(fenetre, "InputLayer");
 
         // À 4 pt de l'axe, soit 3,5 de l'encre : rien, ni curseur, ni sélection.
-        fenetre.MouseMove(SurLaPage(fenetre, 250, 304));
+        fenetre.MouseMove(Rendu.SurLaPage(fenetre, 250, 304));
         Rendu.Battre();
         Assert.NotSame(CurseurDeDeplacement, couche.Cursor);
-        fenetre.MouseDown(SurLaPage(fenetre, 250, 304), MouseButton.Left);
-        fenetre.MouseUp(SurLaPage(fenetre, 250, 304), MouseButton.Left);
+        fenetre.MouseDown(Rendu.SurLaPage(fenetre, 250, 304), MouseButton.Left);
+        fenetre.MouseUp(Rendu.SurLaPage(fenetre, 250, 304), MouseButton.Left);
         Rendu.Battre();
         Assert.Null(vm.SingleSelected);
 
         // À 3 pt de l'axe, 2,5 de l'encre : le curseur de déplacement, et le clic le prend.
-        fenetre.MouseMove(SurLaPage(fenetre, 250, 303));
+        fenetre.MouseMove(Rendu.SurLaPage(fenetre, 250, 303));
         Rendu.Battre();
         Assert.Same(CurseurDeDeplacement, couche.Cursor);
-        fenetre.MouseDown(SurLaPage(fenetre, 250, 303), MouseButton.Left);
-        fenetre.MouseUp(SurLaPage(fenetre, 250, 303), MouseButton.Left);
+        fenetre.MouseDown(Rendu.SurLaPage(fenetre, 250, 303), MouseButton.Left);
+        fenetre.MouseUp(Rendu.SurLaPage(fenetre, 250, 303), MouseButton.Left);
         Rendu.Battre();
         Assert.Same(trait, vm.SingleSelected);
     }
@@ -265,26 +221,26 @@ public class TraitTests
         var avant = DocumentSerializer.ToJson(vm.Document);
 
         // La fin, menée près de la diagonale descendante, sous Maj.
-        Glisser(fenetre, SurLaPage(fenetre, 300, 300), SurLaPage(fenetre, 295, 497), RawInputModifiers.Shift);
+        Rendu.Glisser(fenetre, Rendu.SurLaPage(fenetre, 300, 300), Rendu.SurLaPage(fenetre, 295, 497), RawInputModifiers.Shift);
 
         Assert.Equal(100, trait.Debut.X, precision: 6);
         Assert.Equal(300, trait.Debut.Y, precision: 6);
         Assert.Equal(45, trait.Rotation, precision: 6);
         Assert.Equal(trait.Fin.X - 100, trait.Fin.Y - 300, precision: 6);
         Assert.Equal(0, trait.Height);
-        UnSeulPas(vm, avant, "une extrémité tirée");
+        Rendu.UnSeulPas(vm, avant, "une extrémité tirée");
 
         // L'annulation relit le document : le trait est une autre instance, toujours prise.
         trait = Assert.IsType<ShapeFrame>(vm.SingleSelected);
 
         // Le début, sans Maj : il suit le pointeur, la fin reste.
-        Glisser(fenetre, SurLaPage(fenetre, 100, 300), SurLaPage(fenetre, 130, 250), RawInputModifiers.Alt);
+        Rendu.Glisser(fenetre, Rendu.SurLaPage(fenetre, 100, 300), Rendu.SurLaPage(fenetre, 130, 250), RawInputModifiers.Alt);
         Assert.Equal(130, trait.Debut.X, precision: 6);
         Assert.Equal(250, trait.Debut.Y, precision: 6);
         Assert.Equal(300, trait.Fin.X, precision: 6);
         Assert.Equal(300, trait.Fin.Y, precision: 6);
         // Un trait raccourci sous la taille minimale d'un bloc le reste : il n'a pas de cadre.
-        Glisser(fenetre, SurLaPage(fenetre, 130, 250), SurLaPage(fenetre, 299, 300), RawInputModifiers.Alt);
+        Rendu.Glisser(fenetre, Rendu.SurLaPage(fenetre, 130, 250), Rendu.SurLaPage(fenetre, 299, 300), RawInputModifiers.Alt);
         Assert.True(trait.Width < Snap.MinFrameSize, $"trait de {trait.Width} pt");
     }
 
@@ -297,7 +253,7 @@ public class TraitTests
         Rendu.Battre();
         var avant = DocumentSerializer.ToJson(vm.Document);
 
-        var prise = SurLaPage(fenetre, trait.Fin.X, trait.Fin.Y);
+        var prise = Rendu.SurLaPage(fenetre, trait.Fin.X, trait.Fin.Y);
         fenetre.MouseDown(prise, MouseButton.Left);
         fenetre.MouseMove(prise, RawInputModifiers.LeftMouseButton);
         fenetre.MouseUp(prise, MouseButton.Left);
@@ -339,12 +295,12 @@ public class TraitTests
         Assert.Single(fenetre.GetVisualDescendants().OfType<CheckBox>(), c => c.Name == "PointeALaFin");
 
         // La fin, saisie au dock : un pas d'annulation, le début ne bouge pas.
-        Saisir(fenetre, Trouver<NumericUpDown>(fenetre, "ChampFinY"), Units.PointsToMm(500).ToString("0.###"));
+        Rendu.Saisir(fenetre, Trouver<NumericUpDown>(fenetre, "ChampFinY"), Units.PointsToMm(500).ToString("0.###"));
         Assert.Equal(500, trait.Fin.Y, precision: 2);
         Assert.Equal(300, trait.Fin.X, precision: 2);
         Assert.Equal((100.0, 300.0), (Math.Round(trait.Debut.X, 6), Math.Round(trait.Debut.Y, 6)));
         Assert.Equal(0, trait.Height);
-        UnSeulPas(vm, avant, "une extrémité saisie au dock");
+        Rendu.UnSeulPas(vm, avant, "une extrémité saisie au dock");
 
         // Un rectangle retrouve ses champs.
         var forme = new ShapeFrame { X = 350, Y = 100, Width = 100, Height = 60 };
@@ -384,7 +340,7 @@ public class TraitTests
         Assert.True(Rendu.EstEncre(image, (int)(296 * Rendu.PixelsParPoint), (int)(298.3 * Rendu.PixelsParPoint)));
         Assert.True(Rendu.EstEncre(image, (int)(296 * Rendu.PixelsParPoint), (int)(301.7 * Rendu.PixelsParPoint)));
         Assert.False(Rendu.EstEncre(image, (int)(104 * Rendu.PixelsParPoint), (int)(298.3 * Rendu.PixelsParPoint)));
-        UnSeulPas(vm, avant, "une pointe cochée");
+        Rendu.UnSeulPas(vm, avant, "une pointe cochée");
     }
 
     [AvaloniaFact]
@@ -397,23 +353,23 @@ public class TraitTests
         var avant = DocumentSerializer.ToJson(vm.Document);
 
         // L'épaisseur du contour est celle du trait, en un pas.
-        Saisir(fenetre, Trouver<NumericUpDown>(fenetre, "EpaisseurDuContour"), "5");
+        Rendu.Saisir(fenetre, Trouver<NumericUpDown>(fenetre, "EpaisseurDuContour"), "5");
         Assert.Equal(5, trait.StrokeThickness);
         var image = Rendu.Encre(fenetre);
         var px = Rendu.PixelsParPoint;
         Assert.Equal(5 * px, Enumerable.Range((int)(290 * px), (int)(20 * px)).Count(y => Rendu.EstEncre(image, (int)(200 * px), y)));
-        UnSeulPas(vm, avant, "l'épaisseur du contour");
+        Rendu.UnSeulPas(vm, avant, "l'épaisseur du contour");
 
         // L'angle tourne le trait autour de son milieu, et les extrémités du dock le suivent.
         trait = Assert.IsType<ShapeFrame>(vm.SingleSelected);
-        Saisir(fenetre, Trouver<NumericUpDown>(fenetre, "ChampAngle"), "90");
+        Rendu.Saisir(fenetre, Trouver<NumericUpDown>(fenetre, "ChampAngle"), "90");
         Assert.Equal(200, trait.Debut.X, precision: 6);
         Assert.Equal(200, trait.Debut.Y, precision: 6);
         Assert.Equal(200, trait.Fin.X, precision: 6);
         Assert.Equal(400, trait.Fin.Y, precision: 6);
         Assert.Equal(200, vm.DebutDuTraitX, precision: 6);
         Assert.Equal(400, vm.FinDuTraitY, precision: 6);
-        UnSeulPas(vm, avant, "l'angle du trait");
+        Rendu.UnSeulPas(vm, avant, "l'angle du trait");
     }
 
     // ------------------------------------------------------------------ l'encre

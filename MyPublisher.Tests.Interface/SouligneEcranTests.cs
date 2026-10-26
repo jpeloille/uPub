@@ -257,19 +257,7 @@ public class SouligneEcranTests
         var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(bloc));
 
         // Entrer en saisie comme l'utilisateur : le bloc pris, puis un double-clic.
-        vm.SelectOnly(bloc);
-        Rendu.Battre();
-        var planche = fenetre.GetVisualDescendants().OfType<Panel>().First(p => p.Name == "PageRoot");
-        var origine = planche.TranslatePoint(new Point(0, 0), fenetre) ?? new Point(0, 0);
-        var point = new Point(origine.X + bloc.X + 40, origine.Y + bloc.Y + 10);
-        for (var clic = 0; clic < 2; clic++)
-        {
-            fenetre.MouseDown(point, MouseButton.Left);
-            fenetre.MouseUp(point, MouseButton.Left);
-        }
-
-        Rendu.Battre(8);
-        Assert.True(bloc.IsEditing, "le double-clic n'a pas ouvert la saisie sur la page");
+        Rendu.EntrerEnSaisie(fenetre, vm, bloc, dy: 10);
 
         // Au bout du texte, donc au bout du fragment : la frappe prend le style du
         // caractère qui la précède (Q1).

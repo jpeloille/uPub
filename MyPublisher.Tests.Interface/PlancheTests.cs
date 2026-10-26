@@ -158,12 +158,6 @@ public class PlancheTests
     private static Point Origine(Window fenetre) =>
         Page(fenetre).TranslatePoint(new Point(0, 0), fenetre) ?? throw new InvalidOperationException();
 
-    private static Point SurLaPage(Window fenetre, double x, double y)
-    {
-        var origine = Origine(fenetre);
-        return new Point(origine.X + x, origine.Y + y);
-    }
-
     /// <summary>Le zéro d'une règle, dans la fenêtre — celui qu'elle dessine.</summary>
     private static Point Zero(Window fenetre, string nom)
     {
@@ -424,13 +418,13 @@ public class PlancheTests
         Assert.Equal((100.0, 180.0), (haut.DebutProjete, haut.FinProjetee));
 
         // Mené de 50 et de 40 points, Alt tenu contre l'aimantation, et NON relâché.
-        fenetre.MouseDown(SurLaPage(fenetre, 140, 150), MouseButton.Left);
-        fenetre.MouseMove(SurLaPage(fenetre, 190, 190), RawInputModifiers.LeftMouseButton | RawInputModifiers.Alt);
+        fenetre.MouseDown(Rendu.SurLaPage(fenetre, 140, 150), MouseButton.Left);
+        fenetre.MouseMove(Rendu.SurLaPage(fenetre, 190, 190), RawInputModifiers.LeftMouseButton | RawInputModifiers.Alt);
         Rendu.Battre();
 
         Assert.Equal((150.0, 230.0), (haut.DebutProjete, haut.FinProjetee));
         Assert.Equal((160.0, 220.0), (gauche.DebutProjete, gauche.FinProjetee));
-        fenetre.MouseUp(SurLaPage(fenetre, 190, 190), MouseButton.Left);
+        fenetre.MouseUp(Rendu.SurLaPage(fenetre, 190, 190), MouseButton.Left);
 
         // Deux blocs pris ensemble : la projection couvre les deux, du plus à gauche au plus
         // à droite, du plus haut au plus bas — et non le premier seul.
@@ -460,7 +454,7 @@ public class PlancheTests
         // pas encore lâché.
         var zero = Zero(fenetre, "TopRuler");
         fenetre.MouseDown(new Point(zero.X + 300, zero.Y), MouseButton.Left);
-        fenetre.MouseMove(SurLaPage(fenetre, -20, 300), RawInputModifiers.LeftMouseButton);
+        fenetre.MouseMove(Rendu.SurLaPage(fenetre, -20, 300), RawInputModifiers.LeftMouseButton);
         Rendu.Battre();
 
         Assert.Equal(-20, Assert.Single(vm.Document.VerticalRulerGuides).Position, precision: 6);
@@ -470,7 +464,7 @@ public class PlancheTests
         Pareil(repere, image[o.X - 20, o.Y - 10], "le repère, au-dessus de la page");
 
         // Lâché là, sur la planche hors de la page : il est retiré, et ne se voit plus.
-        fenetre.MouseUp(SurLaPage(fenetre, -20, 300), MouseButton.Left);
+        fenetre.MouseUp(Rendu.SurLaPage(fenetre, -20, 300), MouseButton.Left);
         Rendu.Battre();
 
         Assert.Empty(vm.Document.VerticalRulerGuides);
@@ -488,22 +482,22 @@ public class PlancheTests
         // pas un mouvement sur deux.
         var zero = Zero(fenetre, "TopRuler");
         fenetre.MouseDown(new Point(zero.X + 300, zero.Y), MouseButton.Left);
-        fenetre.MouseMove(SurLaPage(fenetre, -4, 300), RawInputModifiers.LeftMouseButton);
+        fenetre.MouseMove(Rendu.SurLaPage(fenetre, -4, 300), RawInputModifiers.LeftMouseButton);
         Assert.Equal(0, Assert.Single(vm.Document.VerticalRulerGuides).Position, precision: 9);
-        fenetre.MouseMove(SurLaPage(fenetre, -3, 300), RawInputModifiers.LeftMouseButton);
+        fenetre.MouseMove(Rendu.SurLaPage(fenetre, -3, 300), RawInputModifiers.LeftMouseButton);
         Assert.Equal(0, Assert.Single(vm.Document.VerticalRulerGuides).Position, precision: 9);
 
         // Lâché là, hors de la page : il est retiré, bien que l'aimantation l'ait posé sur
         // le bord. C'est le pointeur qui dit où on le lâche.
-        fenetre.MouseUp(SurLaPage(fenetre, -3, 300), MouseButton.Left);
+        fenetre.MouseUp(Rendu.SurLaPage(fenetre, -3, 300), MouseButton.Left);
         Rendu.Battre();
         Assert.Empty(vm.Document.VerticalRulerGuides);
         Assert.Equal("Repère retiré", vm.Status);
 
         // Et lâché à 3 points DANS la page, il reste, aimanté au bord.
         fenetre.MouseDown(new Point(zero.X + 300, zero.Y), MouseButton.Left);
-        fenetre.MouseMove(SurLaPage(fenetre, 3, 300), RawInputModifiers.LeftMouseButton);
-        fenetre.MouseUp(SurLaPage(fenetre, 3, 300), MouseButton.Left);
+        fenetre.MouseMove(Rendu.SurLaPage(fenetre, 3, 300), RawInputModifiers.LeftMouseButton);
+        fenetre.MouseUp(Rendu.SurLaPage(fenetre, 3, 300), MouseButton.Left);
         Rendu.Battre();
         Assert.Equal(0, Assert.Single(vm.Document.VerticalRulerGuides).Position, precision: 9);
     }
@@ -753,14 +747,14 @@ public class PlancheTests
             // Le coin sud-est, pris : la bulle paraît, et déjà centrée sous le bloc — et non
             // décalée de sa demi-largeur, mesurée quand elle était encore cachée.
             var o = Origine(fenetre);
-            fenetre.MouseDown(SurLaPage(fenetre, 220, 180), MouseButton.Left);
+            fenetre.MouseDown(Rendu.SurLaPage(fenetre, 220, 180), MouseButton.Left);
             Rendu.Battre();
             Assert.True(bulle.IsEffectivelyVisible, "pas de bulle à la prise de la poignée");
             Assert.Equal(o.X + 160, DansLaFenetre(fenetre, bulle).Center.X, precision: 0);
 
             // Tiré de 30 et de 20 points, et NON relâché : c'est pendant le geste que les
             // deux se lisent.
-            fenetre.MouseMove(SurLaPage(fenetre, 250, 200), RawInputModifiers.LeftMouseButton);
+            fenetre.MouseMove(Rendu.SurLaPage(fenetre, 250, 200), RawInputModifiers.LeftMouseButton);
             Rendu.Battre();
 
             Assert.Equal((150.0, 100.0), (bloc.Width, bloc.Height));
@@ -781,7 +775,7 @@ public class PlancheTests
             // Un fond sombre, le texte blanc : la couleur du texte de l'interface.
             Assert.Equal(Couleur("CouleurTexte"), Assert.IsAssignableFrom<ISolidColorBrush>(bulle.Background).Color);
 
-            fenetre.MouseUp(SurLaPage(fenetre, 250, 200), MouseButton.Left);
+            fenetre.MouseUp(Rendu.SurLaPage(fenetre, 250, 200), MouseButton.Left);
             Rendu.Battre();
             Assert.False(bulle.IsVisible, "la bulle reste après le geste");
         });
@@ -805,8 +799,8 @@ public class PlancheTests
         // La poignée sud-est, là où elle se dessine : sur le cadre, 3,25 px hors du coin,
         // tournée avec le bloc. Menée de 10 px sans être lâchée.
         var (px, py) = bloc.ToPage(bloc.Width + 3.25, bloc.Height + 3.25);
-        fenetre.MouseDown(SurLaPage(fenetre, px, py), MouseButton.Left);
-        fenetre.MouseMove(SurLaPage(fenetre, px + 10, py + 10), RawInputModifiers.LeftMouseButton);
+        fenetre.MouseDown(Rendu.SurLaPage(fenetre, px, py), MouseButton.Left);
+        fenetre.MouseMove(Rendu.SurLaPage(fenetre, px + 10, py + 10), RawInputModifiers.LeftMouseButton);
         Rendu.Battre();
 
         Assert.NotEqual(120, bloc.Width);
@@ -818,7 +812,7 @@ public class PlancheTests
         Assert.Equal(Nombres(barre), Nombres(texte));
         Assert.NotEqual($"L {Millimetres(bloc.Extent.Width)} mm · H {Millimetres(bloc.Extent.Height)} mm", texte);
 
-        fenetre.MouseUp(SurLaPage(fenetre, px + 10, py + 10), MouseButton.Left);
+        fenetre.MouseUp(Rendu.SurLaPage(fenetre, px + 10, py + 10), MouseButton.Left);
     }
 
     [AvaloniaFact]
@@ -830,8 +824,8 @@ public class PlancheTests
         Rendu.Battre();
         Assert.True(vm.IsDrawing);
 
-        fenetre.MouseDown(SurLaPage(fenetre, 300, 300), MouseButton.Left);
-        fenetre.MouseMove(SurLaPage(fenetre, 380, 360), RawInputModifiers.LeftMouseButton);
+        fenetre.MouseDown(Rendu.SurLaPage(fenetre, 300, 300), MouseButton.Left);
+        fenetre.MouseMove(Rendu.SurLaPage(fenetre, 380, 360), RawInputModifiers.LeftMouseButton);
         Rendu.Battre();
 
         var bulle = Bulle(fenetre);
@@ -845,7 +839,7 @@ public class PlancheTests
         // Le cadre tracé se projette aussi sur les règles.
         Assert.Equal((300.0, 380.0), (Trouver<Ruler>(fenetre, "TopRuler").DebutProjete, Trouver<Ruler>(fenetre, "TopRuler").FinProjetee));
 
-        fenetre.MouseUp(SurLaPage(fenetre, 380, 360), MouseButton.Left);
+        fenetre.MouseUp(Rendu.SurLaPage(fenetre, 380, 360), MouseButton.Left);
         Rendu.Battre();
         Assert.False(bulle.IsVisible);
     }
@@ -863,7 +857,7 @@ public class PlancheTests
         vm.SelectOnly(bloc);
         Rendu.Battre();
 
-        var prise = SurLaPage(fenetre, 223.25, 183.25);
+        var prise = Rendu.SurLaPage(fenetre, 223.25, 183.25);
         fenetre.MouseDown(prise, MouseButton.Left);
         fenetre.MouseMove(new Point(prise.X + 10, prise.Y + 10), RawInputModifiers.LeftMouseButton);
         fenetre.MouseUp(new Point(prise.X + 10, prise.Y + 10), MouseButton.Left);
@@ -872,13 +866,6 @@ public class PlancheTests
         Assert.Equal(130, bloc.Width, precision: 6);
         Assert.Equal(90, bloc.Height, precision: 6);
         Assert.Equal((100.0, 100.0), (bloc.X, bloc.Y));
-    }
-
-    /// <summary>Le centre de la poignée de rotation, relu dans l'Overlay, en points de page.</summary>
-    private static Point CentreDeLaRotation(Window fenetre)
-    {
-        var disque = Trouver<Canvas>(fenetre, "Overlay").Children.OfType<Ellipse>().Single(e => e.IsVisible);
-        return new Point(Canvas.GetLeft(disque) + disque.Width / 2, Canvas.GetTop(disque) + disque.Height / 2);
     }
 
     [AvaloniaFact]
@@ -900,13 +887,11 @@ public class PlancheTests
         // point qui fait un angle droit avec elle autour du centre du bloc.
         void Tourner(Window fenetre, Frame bloc)
         {
-            var prise = CentreDeLaRotation(fenetre);
+            var prise = Rendu.CentreDeLaRotation(fenetre);
             var centre = new Point(bloc.X + bloc.Width / 2, bloc.Y + bloc.Height / 2);
             var vise = new Point(centre.X - 2 * (prise.Y - centre.Y), centre.Y + 2 * (prise.X - centre.X));
-            fenetre.MouseDown(SurLaPage(fenetre, prise.X, prise.Y), MouseButton.Left, RawInputModifiers.Shift);
-            fenetre.MouseMove(SurLaPage(fenetre, vise.X, vise.Y), RawInputModifiers.LeftMouseButton | RawInputModifiers.Shift);
-            fenetre.MouseUp(SurLaPage(fenetre, vise.X, vise.Y), MouseButton.Left, RawInputModifiers.Shift);
-            Rendu.Battre();
+            Rendu.Glisser(fenetre, Rendu.SurLaPage(fenetre, prise.X, prise.Y), Rendu.SurLaPage(fenetre, vise.X, vise.Y),
+                          RawInputModifiers.Shift, pas: 1);
         }
 
         // Un bloc collé au haut, règles masquées : sa poignée de rotation est sur le gris.
@@ -915,7 +900,7 @@ public class PlancheTests
         vm.ShowRulers = false;
         vm.SelectOnly(haut);
         Rendu.Battre();
-        Assert.True(CentreDeLaRotation(fenetre).Y < 0, "la poignée devrait être au-dessus de la page");
+        Assert.True(Rendu.CentreDeLaRotation(fenetre).Y < 0, "la poignée devrait être au-dessus de la page");
         Tourner(fenetre, haut);
         Assert.Equal(90, haut.Rotation);
 
@@ -924,7 +909,7 @@ public class PlancheTests
         (fenetre, vm) = Ouvrir(Feuille(bas));
         vm.SelectOnly(bas);
         Rendu.Battre();
-        Assert.True(CentreDeLaRotation(fenetre).Y > 400, "la poignée devrait être sous la page");
+        Assert.True(Rendu.CentreDeLaRotation(fenetre).Y > 400, "la poignée devrait être sous la page");
         Tourner(fenetre, bas);
         Assert.Equal(270, bas.Rotation);
 
@@ -934,9 +919,9 @@ public class PlancheTests
         (fenetre, vm) = Ouvrir(Feuille(colle));
         vm.SelectOnly(colle);
         Rendu.Battre();
-        fenetre.MouseDown(SurLaPage(fenetre, 46.75, -3.25), MouseButton.Left);
-        fenetre.MouseMove(SurLaPage(fenetre, 66.75, 16.75), RawInputModifiers.LeftMouseButton);
-        fenetre.MouseUp(SurLaPage(fenetre, 66.75, 16.75), MouseButton.Left);
+        fenetre.MouseDown(Rendu.SurLaPage(fenetre, 46.75, -3.25), MouseButton.Left);
+        fenetre.MouseMove(Rendu.SurLaPage(fenetre, 66.75, 16.75), RawInputModifiers.LeftMouseButton);
+        fenetre.MouseUp(Rendu.SurLaPage(fenetre, 66.75, 16.75), MouseButton.Left);
         Rendu.Battre();
         Assert.Equal((70.0, 20.0, 80.0, 40.0), (colle.X, colle.Y, colle.Width, colle.Height));
         Assert.Empty(vm.Document.VerticalRulerGuides);
@@ -959,8 +944,8 @@ public class PlancheTests
 
         foreach (var (x, y) in new[] { (-25.0, 300.0), (300.0, -20.0) })
         {
-            fenetre.MouseDown(SurLaPage(fenetre, x, y), MouseButton.Left);
-            fenetre.MouseUp(SurLaPage(fenetre, x, y), MouseButton.Left);
+            fenetre.MouseDown(Rendu.SurLaPage(fenetre, x, y), MouseButton.Left);
+            fenetre.MouseUp(Rendu.SurLaPage(fenetre, x, y), MouseButton.Left);
             Rendu.Battre();
 
             Assert.Empty(vm.CurrentPage!.Frames);
@@ -968,8 +953,8 @@ public class PlancheTests
         }
 
         // Sur la page, le même clic pose bien le bloc.
-        fenetre.MouseDown(SurLaPage(fenetre, 100, 100), MouseButton.Left);
-        fenetre.MouseUp(SurLaPage(fenetre, 100, 100), MouseButton.Left);
+        fenetre.MouseDown(Rendu.SurLaPage(fenetre, 100, 100), MouseButton.Left);
+        fenetre.MouseUp(Rendu.SurLaPage(fenetre, 100, 100), MouseButton.Left);
         Rendu.Battre();
         Assert.Single(vm.CurrentPage!.Frames);
     }
@@ -986,17 +971,17 @@ public class PlancheTests
         vm.SelectOnly(pris);
         Rendu.Battre();
 
-        fenetre.MouseDown(SurLaPage(fenetre, -30, 140), MouseButton.Left);
-        fenetre.MouseMove(SurLaPage(fenetre, 10, 140), RawInputModifiers.LeftMouseButton);
-        fenetre.MouseUp(SurLaPage(fenetre, 10, 140), MouseButton.Left);
+        fenetre.MouseDown(Rendu.SurLaPage(fenetre, -30, 140), MouseButton.Left);
+        fenetre.MouseMove(Rendu.SurLaPage(fenetre, 10, 140), RawInputModifiers.LeftMouseButton);
+        fenetre.MouseUp(Rendu.SurLaPage(fenetre, 10, 140), MouseButton.Left);
         Rendu.Battre();
 
         Assert.Empty(vm.Selection);
         Assert.Equal((-60.0, 100.0), (fond.X, fond.Y));
 
         // Sur la page, la part visible du même bloc se prend toujours.
-        fenetre.MouseDown(SurLaPage(fenetre, 30, 140), MouseButton.Left);
-        fenetre.MouseUp(SurLaPage(fenetre, 30, 140), MouseButton.Left);
+        fenetre.MouseDown(Rendu.SurLaPage(fenetre, 30, 140), MouseButton.Left);
+        fenetre.MouseUp(Rendu.SurLaPage(fenetre, 30, 140), MouseButton.Left);
         Rendu.Battre();
         Assert.Equal([fond], vm.Selection);
     }
@@ -1009,7 +994,7 @@ public class PlancheTests
         vm.SelectOnly(bloc);
         Rendu.Battre();
 
-        var dehors = SurLaPage(fenetre, -25, 300);
+        var dehors = Rendu.SurLaPage(fenetre, -25, 300);
         fenetre.MouseDown(dehors, MouseButton.Left);
         fenetre.MouseUp(dehors, MouseButton.Left);
         Rendu.Battre();

@@ -89,8 +89,9 @@ for test in ("Un_double_clic_ouvre_la_saisie_sans_rien_reecrire", "Un_double_cli
     if corps:
         exige("SetSelection([bloc])" not in corps.group(1) and "SelectOnly(bloc)" not in corps.group(1),
               f"« {test} » sélectionne encore le bloc par le modèle de vue avant le geste.")
-        exige(re.search(r"Cliquer\(fenetre, centre\);\s*Assert\.Same\(bloc, vm\.SingleSelected\);\s*Cliquer\(fenetre, centre\);",
-                        corps.group(1)) is not None,
+        # Le clic du banc (Rendu.Cliquer, poste N1), avec le mouvement nul de Q14.
+        clic = r"Rendu\.Cliquer\(fenetre, centre, mouvementNul: true\);"
+        exige(re.search(clic + r"\s*Assert\.Same\(bloc, vm\.SingleSelected\);\s*" + clic, corps.group(1)) is not None,
               f"« {test} » ne prend plus le bloc par son premier clic.")
 print("    b. les deux tests du double-clic : le premier clic prend le bloc")
 
