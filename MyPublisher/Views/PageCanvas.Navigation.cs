@@ -71,6 +71,14 @@ public partial class PageCanvas
     private bool _mainTenue;
 
     /// <summary>
+    /// La dernière pression de la planche, et celle d'avant, étaient-elles de la main ou de
+    /// la loupe ? Un double-clic dont la première pression faisait glisser la planche n'en
+    /// est pas un : Espace relâché, un clic au même point ouvrait la saisie du bloc
+    /// sélectionné (relecture du 26 octobre 2026).
+    /// </summary>
+    private bool _pressionNaviguait, _pressionPrecedenteNaviguait;
+
+    /// <summary>
     /// <c>Espace</c> est tenu : la planche se conduit comme sous l'outil Main, quel que soit
     /// l'outil armé, jusqu'au relâchement de la touche. C'est la fenêtre qui le dit — elle
     /// seule sait si la touche irait à une saisie ou à un bouton qui a le focus.
