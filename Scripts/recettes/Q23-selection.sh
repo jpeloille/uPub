@@ -10,7 +10,7 @@
 # pression suivante reconstruisait — un millier de visuels par pression. Ils sont
 # désormais construits une fois par sorte de bloc, et gardés (Views/GabaritsGardes.cs).
 #
-# Trois temps :
+# Quatre temps :
 #
 #   1. LES SOURCES : aucun réglage du bloc n'est plus un ContentControl lié au bloc seul —
 #      les trois sections du dock et la barre sont des GabaritsGardes —, et les tests du
@@ -20,7 +20,12 @@
 #      100 ms, médiane de trois passes ; les champs du dock et de la barre sont les mêmes
 #      d'une sélection à l'autre, et une pression n'ajoute presque rien à la fenêtre ; un
 #      champ masqué rend le focus ; la liste des blocs ne défile que pour montrer le bloc ;
-#   3. LE DOUBLE-CLIC AU GESTE ENTIER, le premier clic prenant le bloc : les deux tests de
+#   3. LE SÉLECTEUR DE COULEUR REFERMÉ, par les deux tests de la barre qui le voient
+#      (BarreContextuelleTests, sous le trait de I3) : il ne rend le focus à aucun champ
+#      gardé — ni au corps de la barre, ni à la position X du dock (repris le 26 octobre
+#      2026, sur la décision du propriétaire) — ; « T » arme alors l'outil texte et une
+#      flèche pousse le bloc. Seule la zone de saisie de la page le reprend (Q25) ;
+#   4. LE DOUBLE-CLIC AU GESTE ENTIER, le premier clic prenant le bloc : les deux tests de
 #      Q14 qui le jouent, vingt fois de suite, chacun dans un processus neuf — c'est la
 #      première pression d'un processus qui est la plus lente, et c'est là qu'ils tombaient.
 #
@@ -121,7 +126,22 @@ fi
 grep -E "médiane" "$travail/tests.txt" | sed 's/^ */       /' || true
 echo "  2. les tests du poste : $joues"
 
-# ------------------------------------------------------------------------ 3. le double-clic
+# ------------------------------------------------------------------------ 3. le sélecteur refermé
+
+if ! dotnet test MyPublisher.Tests.Interface/MyPublisher.Tests.Interface.csproj ${MYPUBLISHER_DEJA_COMPILE:+--no-build} \
+        --nologo -v q --filter "FullyQualifiedName~BarreContextuelleTests.Le_selecteur_de_couleur_referme" > "$travail/focus.txt" 2>&1; then
+    sed 's/^/    /' "$travail/focus.txt" >&2
+    echo "ÉCHEC : le sélecteur de couleur refermé rend le focus à un champ de la barre ou du dock." >&2
+    exit 1
+fi
+joues="$(sed -n 's/.*Passed: *\([0-9][0-9]*\).*/\1/p' "$travail/focus.txt" | head -1)"
+if [ "${joues:-0}" -lt 2 ]; then
+    echo "ÉCHEC : 2 tests du sélecteur refermé attendus, ${joues:-0} joués." >&2
+    exit 1
+fi
+echo "  3. le sélecteur de couleur refermé : aucun champ de la barre ni du dock ne reprend le focus ($joues tests)"
+
+# ------------------------------------------------------------------------ 4. le double-clic
 
 for passage in $(seq 1 20); do
     if ! dotnet test MyPublisher.Tests.Interface/MyPublisher.Tests.Interface.csproj ${MYPUBLISHER_DEJA_COMPILE:+--no-build} \
@@ -136,6 +156,6 @@ for passage in $(seq 1 20); do
         exit 1
     fi
 done
-echo "  3. le double-clic au geste entier : 20 passages sur 20, chacun dans un processus neuf"
+echo "  4. le double-clic au geste entier : 20 passages sur 20, chacun dans un processus neuf"
 
-echo "Q23 : une pression sur un bloc non sélectionné rend la main en moins de 100 ms ; les réglages du bloc sont construits une fois et gardés."
+echo "Q23 : une pression sur un bloc non sélectionné rend la main en moins de 100 ms ; les réglages du bloc sont construits une fois et gardés ; le sélecteur de couleur refermé ne rend le focus à aucun d'eux."

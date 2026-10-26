@@ -6,6 +6,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.VisualTree;
+using MyPublisher.Models;
 using MyPublisher.ViewModels;
 
 namespace MyPublisher.Views;
@@ -134,17 +135,18 @@ public partial class BarreContextuelle : UserControl
     {
         if (sender is not FlyoutBase) return;
 
-        // Le volet refermé rend le focus au dernier champ qui l'avait dans la fenêtre. Un champ
-        // de la barre est gardé d'une sélection à l'autre depuis Q23 : il le reprenait, et la
-        // transaction que la fenêtre ouvre à son focus engloutissait celle de la couleur, qui
-        // ne faisait plus son pas. Depuis Q25, celle-ci se referme avant (Closing) ; reste le
-        // clavier : le champ repris gardait les touches de la planche — « T » s'écrivait dans
-        // le corps au lieu d'armer l'outil texte, une flèche y déplaçait le curseur au lieu du
-        // bloc, Suppr y effaçait le chiffre au lieu du bloc. Il le rend donc aussitôt, comme à
-        // l'ouverture du sélecteur. La zone de saisie de la page, elle, le garde : la frappe
-        // continue (Q25).
+        // Le volet refermé rend le focus au dernier champ qui l'avait dans la fenêtre. Les champs
+        // de la barre et du dock sont gardés d'une sélection à l'autre depuis Q23 : l'un d'eux le
+        // reprenait, et la transaction que la fenêtre ouvre à son focus engloutissait celle de la
+        // couleur, qui ne faisait plus son pas. Depuis Q25, celle-ci se referme avant (Closing) ;
+        // reste le clavier : le champ repris gardait les touches de la planche — « T » s'écrivait
+        // dans le corps ou dans la position X au lieu d'armer l'outil texte, une flèche y
+        // déplaçait le curseur au lieu du bloc, Suppr y effaçait le chiffre au lieu du bloc. Il le
+        // rend donc aussitôt, comme à l'ouverture du sélecteur ; un champ que l'on clique ensuite
+        // le prend comme toujours. La zone de saisie de la page, seule, le garde : la frappe
+        // continue (Q25). Le dock y est venu le 26 octobre 2026, sur la décision du propriétaire.
         if (TopLevel.GetTopLevel(this)?.FocusManager is { } focus &&
-            focus.GetFocusedElement() is Control champ && champ.GetSelfAndVisualAncestors().Contains(this))
+            focus.GetFocusedElement() is Control champ && !EstLaZoneDeSaisieDeLaPage(champ))
         {
             focus.ClearFocus();
         }
@@ -153,6 +155,14 @@ public partial class BarreContextuelle : UserControl
         // pas sa transaction ouverte.
         RefermerLaTransactionDeLaCouleur(sender);
     }
+
+    /// <summary>
+    /// La zone de saisie ouverte sur la page : un <c>TextBox</c> de la planche dont le bloc est
+    /// en saisie. Le champ Contenu du dock est lié au même bloc, mais hors de la planche.
+    /// </summary>
+    private static bool EstLaZoneDeSaisieDeLaPage(Control champ) =>
+        champ is TextBox { DataContext: TextFrame { IsEditing: true } } &&
+        champ.FindAncestorOfType<PageCanvas>() is not null;
 
     private void RefermerLaTransactionDeLaCouleur(object? volet)
     {

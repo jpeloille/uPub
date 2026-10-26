@@ -2514,6 +2514,16 @@ saboter "Alt+flèche en saisie (N6) se fond dans le pas de la frappe" \
     'NudgeSelection(dx, dy, fine);' \
     'N6-touche-au-champ|ToucheAuChampTests'
 
+# Q23, repris le 26 octobre 2026 sur la décision du propriétaire : le sélecteur de couleur de la
+# barre refermé ne rend le focus qu'à la zone de saisie de la page. L'ancienne condition, qui
+# ne le retirait qu'à un champ de la barre, laissait la position X du dock le reprendre : « T »
+# s'y écrivait au lieu d'armer l'outil texte, et une flèche y bougeait le curseur au lieu du bloc.
+saboter "le sélecteur de couleur refermé (Q23) rend le focus à un champ du dock" \
+    MyPublisher/Views/BarreContextuelle.axaml.cs \
+    '!EstLaZoneDeSaisieDeLaPage(champ))' \
+    'champ.GetSelfAndVisualAncestors().Contains(this))' \
+    'BarreContextuelleTests\.Le_selecteur_de_couleur_referme_ne_rend_pas_le_focus_a_un_champ_du_dock'
+
 # Un motif qui ne désigne aucun sabotage ne prouve rien. « eprouver-le-juge.sh I4 » sortait
 # en 0 sur « 0 sabotages, 0 attrapés », quand les intitulés de la planche ne portaient pas
 # encore le code du poste : le filet passait pour éprouvé sans qu'on l'ait troué.

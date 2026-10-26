@@ -814,4 +814,46 @@ public class BarreContextuelleTests
         Assert.Equal(EditorTool.Text, vm.ActiveTool);
         Assert.Equal(EnPoints(14), corps.Text);
     }
+
+    [AvaloniaFact]
+    public void Le_selecteur_de_couleur_referme_ne_rend_pas_le_focus_a_un_champ_du_dock()
+    {
+        // Écrit le 26 octobre 2026, sur la décision du propriétaire d'appliquer au dock la règle
+        // de la barre. Le volet refermé rend le focus au dernier champ qui l'avait dans la
+        // fenêtre : la position X du dock, gardée d'une sélection à l'autre depuis Q23, le
+        // reprenait sans avoir été cliquée — une flèche y bougeait le curseur au lieu du bloc,
+        // et « T » s'y écrivait au lieu d'armer l'outil texte. Le code ne retirait le focus
+        // qu'à un champ de la barre.
+        var bloc = Texte("Texte", 60, 60);
+        var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(bloc));
+        vm.SelectOnly(bloc);
+        Rendu.Battre();
+
+        var champX = Trouver<NumericUpDown>(fenetre, "ChampX").GetVisualDescendants().OfType<TextBox>().First();
+        Rendu.Cliquer(champX);
+        Assert.True(champX.IsFocused, "la position X n'a pas le focus");
+        var texteDeX = champX.Text;
+
+        Rendu.Cliquer(Trouver<Button>(Barre(fenetre), "CouleurDuTexte"));
+        Rendu.Cliquer(SelecteurOuvert(fenetre).GetVisualDescendants().OfType<Button>().Single(x => x.Tag is EmplacementDeCouleur.Accent2));
+        Rendu.Touche(fenetre, PhysicalKey.Escape);
+        Assert.False(Assert.IsType<Flyout>(Trouver<Button>(Barre(fenetre), "CouleurDuTexte").Flyout).IsOpen,
+            "Échap n'a pas refermé le sélecteur");
+        Assert.Equal("scheme:accent2", bloc.Foreground);
+        Assert.False(champX.IsKeyboardFocusWithin, "le sélecteur refermé a rendu le focus à la position X du dock");
+
+        // Une flèche pousse le bloc, « T » arme l'outil texte, et rien ne s'écrit dans X.
+        var x = bloc.X;
+        Rendu.Touche(fenetre, PhysicalKey.ArrowRight);
+        Assert.True(bloc.X > x, "la flèche n'a pas poussé le bloc");
+        Rendu.Touche(fenetre, PhysicalKey.T);
+        Rendu.Taper(fenetre, "T");
+        Assert.Equal(EditorTool.Text, vm.ActiveTool);
+        Assert.DoesNotContain("T", champX.Text ?? "");
+        Assert.NotEqual(texteDeX, champX.Text);
+
+        // Un champ que l'on clique ensuite prend le focus, comme avant.
+        Rendu.Cliquer(champX);
+        Assert.True(champX.IsFocused, "un clic ne rend plus le focus à la position X");
+    }
 }
