@@ -627,6 +627,45 @@ public static class Rendu
         Battre();
     }
 
+    /// <summary>
+    /// Un glissé qui passe d'abord au-delà du seuil de la planche, puis revient : saisit en
+    /// <paramref name="depart"/>, mène à <paramref name="detour"/> pixels à droite de la prise,
+    /// puis en <paramref name="arrivee"/>, et lâche là, le bouton dit tenu tout du long. C'est
+    /// ainsi qu'une main fait un glissé plus court que le seuil (postes Q21 et Q22) : un
+    /// pointeur qui ne s'est jamais écarté de trois pixels de sa prise n'a pas glissé, il a
+    /// tremblé. L'arrivée peut être la prise elle-même : le glissé revenu à son départ.
+    /// </summary>
+    public static void GlisserEtRamener(TopLevel racine, Point depart, Point arrivee,
+                                        RawInputModifiers touches = RawInputModifiers.None, double detour = 12)
+    {
+        Assert.True(detour >= 3, "le détour d'un glissé ramené passe le seuil de trois pixels");
+        racine.MouseDown(depart, MouseButton.Left, touches);
+        Battre();
+        racine.MouseMove(depart + new Vector(detour, 0), touches | RawInputModifiers.LeftMouseButton);
+        Battre();
+        racine.MouseMove(arrivee, touches | RawInputModifiers.LeftMouseButton);
+        Battre();
+        racine.MouseUp(arrivee, MouseButton.Left, touches);
+        UneImage();
+    }
+
+    /// <summary>
+    /// Un clic qui tremble : la pression en <paramref name="point"/>, un mouvement de
+    /// <paramref name="ecart"/> pixels d'écran, bouton tenu, le relâchement là où le pointeur
+    /// est allé, puis l'image qui le montre. C'est le clic d'une vraie main (fiche 23, c5) :
+    /// un pixel de mouvement entre la pression et le relâchement faisait sauter le bloc sur
+    /// une marge voisine (poste Q21), et redimensionnait celui dont on pressait une poignée
+    /// (Q22).
+    /// </summary>
+    public static void Trembler(TopLevel racine, Point point, Vector ecart,
+                                RawInputModifiers touches = RawInputModifiers.None)
+    {
+        racine.MouseDown(point, MouseButton.Left, touches);
+        racine.MouseMove(point + ecart, touches | RawInputModifiers.LeftMouseButton);
+        racine.MouseUp(point + ecart, MouseButton.Left, touches);
+        UneImage();
+    }
+
     // ------------------------------------------------------------------ le clavier
 
     /// <summary>
