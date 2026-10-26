@@ -2460,6 +2460,25 @@ saboter "la liste des pages (I5) se laisse vider par un Ctrl + clic" \
     'SelectionMode="Single"' \
     'I5-vignettes|VignettesDePagesTests'
 
+# N5 : en saisie, un clic hors du texte referme la saisie, puis fait ce qu'il ferait hors saisie
+# — il prend un autre bloc, une poignée, un repère, ou vide la sélection.
+
+# La pression referme la saisie et rend la main : c'est le défaut d'avant, où la couche éteinte
+# laissait la pression à la page — rien n'était pris, il fallait recliquer.
+saboter "le clic qui sort de la saisie (N5) ne fait rien d'autre" \
+    MyPublisher/Views/PageCanvas.axaml.cs \
+    'if (_editing is not null) EndTextEdit();' \
+    'if (_editing is not null) { EndTextEdit(); return; }' \
+    'N5-clic-de-sortie|ClicDeSortieTests'
+
+# La couche couvre aussi le texte en saisie : un clic dans le texte, au lieu d'y poser le
+# curseur, referme la saisie.
+saboter "la couche de saisie (N5) ne laisse plus le texte à son champ" \
+    MyPublisher/Views/CoucheDeSaisie.cs \
+    'new Rect(Bounds.Size).Contains(point) && Laisse?.Invoke(point) != true;' \
+    'new Rect(Bounds.Size).Contains(point);' \
+    'N5-clic-de-sortie|ClicDeSortieTests'
+
 # Un motif qui ne désigne aucun sabotage ne prouve rien. « eprouver-le-juge.sh I4 » sortait
 # en 0 sur « 0 sabotages, 0 attrapés », quand les intitulés de la planche ne portaient pas
 # encore le code du poste : le filet passait pour éprouvé sans qu'on l'ait troué.

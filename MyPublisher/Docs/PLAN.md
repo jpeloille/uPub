@@ -108,7 +108,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **N2** | Mettre en forme une plage, dans le noyau | **100 %** | `MiseEnForme`, fonctions pures du noyau sur le modèle de `Recalage` : `Lire` (la valeur commune de chaque propriété, nulle si mixte, police et couleur comparées résolues par la charte), `Allume`, `Poser`, `Basculer` (Gras, Italique, Souligné ; retirer pose la valeur éteinte, `Bold = false` sur un bloc gras) et `Retirer` (`Ctrl+Espace`), sur les fragments et, à l'échelle du paragraphe, sur les écarts (`Basculer` d'un fer, `Paragraphes` d'une sélection) ; une pose coupe aux bornes par `Clone`, ne tranche « le dernier l'emporte » que dans la plage, rend nulle une valeur égale au bloc comparée brute (`scheme:accent1`), recolle les voisins identiques et retire ce qui ne dit plus rien ; l'écriture passe par les opérations de la collection, sans fragment modifié sur place, et une pose sans changement à l'œil n'écrit rien. `Recalage.ParagrapheDe` et `NombreDeParagraphes` publics ; `StyleEffectif.Etendue` et `ParagrapheEffectif.Etendue` partagées avec la composition. Rien de l'application ne l'appelle encore : R6 et R7. Vingt-six tests purs, dont deux balayages de deux mille poses ; recette dans `Scripts/recettes/`, deux sabotages au juge. Relecture et juge après fusion |
 | **N3** | Chaque morceau composé sait d'où il vient | **100 %** | `Morceau` porte en dernier membre `Debut`, la position de son premier caractère ; `LigneComposee` sa plage `Debut`–`Fin`, blancs rognés compris, saut exclu, et son `Paragraphe`, compté comme `Recalage` le compte. `Decouper` lit le texte tel qu'il est, sans `Replace` : seule exception, déclarée, un « \r\n » que deux fragments se partagent ne fait plus qu'un paragraphe — aucun document du dépôt n'en porte. Deux fonctions pures du noyau, `Compositeur.Abscisse` et `PositionLaPlusProche`, taquets, justification et blancs pendants compris ; `Compositeur.LigneDuTexteVide` pour le curseur d'un bloc vide. La vue pose, dans la passe même du dessin, une `TexteCompose.LignePosee` par ligne, lignes vides comprises ; `TexteCompose.Geometrie()` les rend avec `PointDe(index)` et `IndexSous(point)`, en coordonnées du bloc, colonnes et calage compris, rien pour un bloc à champ. **La sortie ne change pas, mesuré** : l'empreinte de la composition (`Scripts/empreinte-composition.sh`, commande `empreinte` du banc) — 2 492 lignes à la règle de l'écran et du PDF, 13 880 morceaux au bit près, ce que l'écran pose et souligne, les pixels de 29 pages, le PDF exporté et ses 6 634 mots — est identique avant et après sur les 18 documents du dépôt : `Samples/`, `Templates/`, ATA 21 et les Fiches. 76 tests sous `poste=N3`, 66 purs et 10 sur la vraie fenêtre ; un sabotage au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **N4** | L'affichage au clavier | **100 %** | `F9` bascule entre l'affichage courant et la taille réelle, autour du centre de la sélection — ou du milieu de la zone visible —, qui garde sa place à l'écran ; le second `F9` rend l'affichage d'avant, zoom et défilement, tant qu'aucun autre geste n'a changé le zoom. `Ctrl+Maj+L` joue « Page entière ». La valeur du zoom de la barre principale est un champ (`Views/ChampDuZoom.axaml`) à l'allure du libellé de la maquette tant qu'il n'a pas le focus : un clic y entre et déroule la liste de Publisher — Page entière, Objets sélectionnés, de 400 à 10 % — ; un pourcentage part à Entrée, Échap renonce et rend la planche, un zoom hors de 10 à 800 % est refusé avec un message ; aucune transaction. « Limites et repères » (`Ctrl+Maj+O`) est la case « Repères » d'avant ; « Repères de lignes de base » (`Ctrl+F7`), `ShowBaselines`, ne masque que les lignes de base. Le menu Affichage montre ses gestes. Le bureau (GNOME 50.1 sous Wayland, sans KDE) ne prend aucune des quatre touches — seulement `Alt+F7`, `Ctrl+Alt+F7` et `Ctrl+Alt+F9`. Dix tests ; relecture et juge après fusion. Recette dans `Scripts/recettes/` |
-| **N5** | Quitter la saisie d'un clic qui agit | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 2 |
+| **N5** | Quitter la saisie d'un clic qui agit | **100 %** | En saisie, un clic hors du texte referme la saisie, puis fait ce qu'il ferait hors saisie, d'un seul geste comme Publisher : il prend un autre bloc — et le déplace s'il glisse —, tire une poignée du bloc en saisie, reprend un repère, ou vide la sélection ; la frappe garde son pas, le geste fait le sien, la sélection aucun. Avant, la couche de saisie s'éteignait pendant la frappe : le clic refermait la saisie et ne prenait rien, il fallait recliquer, et les poignées dessinées autour du bloc étaient inertes. « InputLayer » est désormais une `CoucheDeSaisie` (`Views/CoucheDeSaisie.cs`), un `Border` qui répond lui-même au test de survol : atteignable partout, sauf sur le texte en saisie, que la planche lui désigne — tourné avec son bloc, sur la page seulement, ses poignées passant avant lui. Un clic dans le texte y pose le curseur et laisse la saisie ouverte ; la pression du bouton droit en sort aussi et atteint la couche, où A12 la prendra ; le survol d'un autre bloc montre le curseur de déplacement ; un double-clic sur un autre texte l'ouvre d'un geste. Rien n'est rejoué ; le gestionnaire descendant reste, pour les règles. Le double-clic d'entrée (Q14) et la frappe continue (Q25) ne changent pas. Dix tests, dont huit tombaient sur le code d'avant ; aucun test existant ne jouait l'ancien sens ; deux sabotages au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **N6** | Les raccourcis de la fenêtre laissent la touche au champ | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 2 |
 | **N7** | Mesurer l'écart de la première voie, et s'arrêter | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 2. **Arrêt** : la voie de R7 revient au propriétaire |
 | **N8** | Couper, copier, coller des blocs | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 2 |
@@ -6375,6 +6375,50 @@ fabriqué. Le gestionnaire descendant reste, pour les règles.
 
 Fichiers : `Views/CoucheDeSaisie.cs` (neuf), `PageCanvas.axaml`, `PageCanvas.axaml.cs`.
 Dépend de Q25, même fichier, et de N1. Effort : faible.
+
+*Livré le 26 octobre 2026*, dans la salve Saisie 2 ; la relecture adversariale vient après la
+fusion. « InputLayer » est une `CoucheDeSaisie : Border, ICustomHitTest`, toujours sous son nom
+(règle 6) ; `NavigationTests` la trouve encore par `Trouver<Border>`. Elle répond au test de
+survol par sa propriété `Laisse`, que la planche lui donne : `LaisseAuTexteEnSaisie` laisse au
+champ le point qui tombe dans le `TextBox` du bloc en saisie — retenu quand la mise en page l'a
+posé, lu par `TranslatePoint`, si bien que la rotation du bloc et le zoom sont compris —, sur la
+page seulement, et hors des poignées du bloc. `BeginTextEdit` et `EndTextEdit` n'éteignent ni ne
+rallument plus la couche. `OnPointerPressed` commence par refermer la saisie, avant même le choix
+du bouton, puis agit comme d'habitude ; le gestionnaire descendant reste pour les règles et les
+barres de défilement, et laisse à la couche la pression qui l'atteint. La couche est inscrite à
+la liste des vues de la recette I1. La classe `ClicDeSortieTests`, dix tests sous `poste=N5`,
+joue la recette du plan et ce qui l'entoure : un autre bloc pris d'un clic, et tiré dès la
+pression qui sort de la saisie ; une poignée du bloc en saisie tirée ; un clic dans le texte, au
+coin à 200 % et sur un bloc tourné ; le vide ; un repère repris, un repère tiré de la règle ; le
+bouton droit ; le survol. Huit tombaient sur le code d'avant ; les deux autres — le clic dans le
+texte, la règle — tiennent ce qui ne change pas. **Règle 14** : aucun test existant ne jouait
+l'ancien sens du geste — la suite d'interface, 356 tests, passe sans retouche. Deux sabotages au
+juge : le `return` juste après `EndTextEdit` du plan, et la couche qui ne laisse plus le texte à
+son champ.
+
+*Ce que l'implémentation a appris.*
+- Le point que le compositeur d'Avalonia 11.3.9 passe à `ICustomHitTest.HitTest` est dans le
+  repère de la couche elle-même, et non « in global coordinate space » comme le dit sa
+  documentation : mesuré en lisant le point dans celui de la fenêtre, et le clic au coin du texte,
+  à 200 %, la planche décalée par les barres, refermait la saisie.
+- Le gestionnaire descendant refermait la saisie avant que la pression n'atteigne la couche :
+  laissé tel quel, le `EndTextEdit` d'`OnPointerPressed` n'aurait jamais rien eu à refermer, et
+  le sabotage du plan — un `return` juste après lui — passait inaperçu. Il laisse donc à la couche
+  la pression qui l'atteint.
+- Un double-clic sur un autre bloc de texte pendant une saisie ouvre la sienne d'un geste : la
+  première pression referme la saisie et prend le bloc, la seconde atteint la même couche, et
+  Avalonia y compte deux clics. Vérifié une fois, non gardé par un test — le délai de 500 ms du
+  double-clic en ferait un test d'horloge.
+
+*Choisi sans certitude* :
+- les poignées du bloc en saisie passent avant son texte là où elles le chevauchent — 3,75 px
+  d'écran en deçà du bord —, comme dans Publisher ;
+- ce que `PageRoot` rogne du texte d'un bloc qui déborde de la page n'est pas laissé au champ : un
+  clic sur le gris referme la saisie et vide la sélection, comme hors saisie ;
+- un repère qui traverse le texte en saisie ne se reprend pas à travers lui : le clic y pose le
+  curseur. Hors saisie, le repère passe avant les blocs ;
+- entre le double-clic et le passage de mise en page qui pose le `TextBox`, la couche couvre
+  aussi le texte : un clic dans ce délai, qui ne dure pas une image, refermerait la saisie.
 
 #### N6 — Les raccourcis de la fenêtre laissent la touche au champ *(fiche 23, a13, d2, d21)*
 

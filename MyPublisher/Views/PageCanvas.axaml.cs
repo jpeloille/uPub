@@ -218,11 +218,14 @@ public partial class PageCanvas : UserControl
         InputLayer.PointerMoved += OnPointerMoved;
         InputLayer.PointerReleased += OnPointerReleased;
         InputLayer.DoubleTapped += OnDoubleTapped;
+        // Pendant la saisie, la couche laisse le texte à son champ, et à lui seul (poste N5).
+        InputLayer.Laisse = LaisseAuTexteEnSaisie;
         // Au passage descendant : la zone qui défile consommerait la molette avant nous
         // (poste I6, voir PageCanvas.Navigation.cs).
         Scroller.AddHandler(PointerWheelChangedEvent, OnPointerWheelChanged, RoutingStrategies.Tunnel);
 
-        // En phase de tunnel : on quitte la saisie avant que le clic n'atteigne sa cible.
+        // En phase de tunnel : on quitte la saisie avant que le clic n'atteigne sa cible — une
+        // règle, une barre de défilement. La couche de saisie, elle, la quitte elle-même.
         AddHandler(PointerPressedEvent, OnTunnelPointerPressed, RoutingStrategies.Tunnel);
 
         // La transaction de la saisie suit le focus de sa zone (poste Q25) : un champ de la
@@ -545,6 +548,13 @@ public partial class PageCanvas : UserControl
 
     private void OnPointerPressed(object? sender, PointerPressedEventArgs e)
     {
+        // Un clic hors du texte en saisie la referme, puis fait ce qu'il ferait hors saisie :
+        // il prend une poignée, un repère, un autre bloc, ou vide la sélection — d'un seul
+        // geste, comme Publisher (poste N5, fiche 23, a8 et a9). Rien n'est rejoué. Avant le
+        // choix du bouton : la pression du bouton droit sort aussi de la saisie, et c'est ici
+        // que le menu contextuel la prendra (A12).
+        if (_editing is not null) EndTextEdit();
+
         if (_vm?.CurrentPage is null) return;
         if (!e.GetCurrentPoint(Surface).Properties.IsLeftButtonPressed) return;
 
@@ -1154,9 +1164,10 @@ public partial class PageCanvas : UserControl
 
         // La transaction ne s'ouvre pas ici : elle s'ouvrira quand la zone prendra le focus, et
         // se refermera chaque fois qu'elle le perdra (poste Q25, SuivreLeFocusDeLaSaisie).
+        // La couche de saisie reste atteignable : elle laisse au champ le seul texte en saisie,
+        // dès qu'il existe (poste N5, LaisseAuTexteEnSaisie).
         _editing = frame;
         frame.IsEditing = true;
-        InputLayer.IsHitTestVisible = false;
         RefreshOverlay();
 
         // Le TextBox n'existe qu'après le passage de mise en page suivant.
@@ -1165,6 +1176,7 @@ public partial class PageCanvas : UserControl
             var box = Scaler.GetVisualDescendants()
                 .OfType<TextBox>()
                 .FirstOrDefault(t => ReferenceEquals(t.DataContext, frame));
+            if (ReferenceEquals(_editing, frame)) _zoneDeSaisie = box;
             box?.Focus();
             box?.SelectAll();
         }, DispatcherPriority.Background);
@@ -1177,8 +1189,31 @@ public partial class PageCanvas : UserControl
         FermerLaTransactionDeLaSaisie();
         _editing.IsEditing = false;
         _editing = null;
-        InputLayer.IsHitTestVisible = true;
+        _zoneDeSaisie = null;
         RefreshOverlay();
+    }
+
+    /// <summary>Le champ du texte en saisie, une fois que la mise en page l'a posé.</summary>
+    private TextBox? _zoneDeSaisie;
+
+    /// <summary>
+    /// Ce que la couche de saisie laisse au champ du texte en saisie, le point lu dans son
+    /// repère à elle (poste N5) : le texte, et rien d'autre. Ce que <c>PageRoot</c> rogne d'un
+    /// bloc qui déborde de la page ne se voit pas, et ne se tape pas : la couche le garde, comme
+    /// elle garde les poignées du bloc, qui débordent un peu sur son texte et passent avant lui.
+    /// </summary>
+    private bool LaisseAuTexteEnSaisie(Point surLaCouche)
+    {
+        if (_editing is null || _zoneDeSaisie is not { IsEffectivelyVisible: true } zone) return false;
+
+        if (InputLayer.TranslatePoint(surLaCouche, zone) is not { } dansLaZone ||
+            !new Rect(zone.Bounds.Size).Contains(dansLaZone))
+        {
+            return false;
+        }
+
+        if (InputLayer.TranslatePoint(surLaCouche, Surface) is not { } surfacePoint) return false;
+        return DansLaPage(ToPageCoordinates(surfacePoint)) && HitHandle(_editing, surfacePoint) is null;
     }
 
     /// <summary>
@@ -1235,6 +1270,10 @@ public partial class PageCanvas : UserControl
     private void OnTunnelPointerPressed(object? sender, PointerPressedEventArgs e)
     {
         if (_editing is null) return;
+
+        // La pression qui atteint la couche de saisie y referme elle-même la saisie, puis agit
+        // (poste N5, OnPointerPressed) : la refermer ici l'y précéderait sans rien changer.
+        if (ReferenceEquals(e.Source, InputLayer)) return;
 
         // Un clic dans la zone de saisie elle-même ne doit pas en sortir.
         if (e.Source is Visual visual &&
