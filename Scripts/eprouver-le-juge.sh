@@ -2461,21 +2461,22 @@ saboter "la liste des pages (I5) se laisse vider par un Ctrl + clic" \
     'I5-vignettes|VignettesDePagesTests'
 
 # N6 : les raccourcis de la fenêtre laissent la touche au champ. Une liaison ne rend la touche
-# au contrôle qui a le focus que si sa commande ne peut pas s'exécuter : « Tout sélectionner »
-# qui ne lit plus le focus reprend Ctrl+A à la saisie et aux champs du dock, sélectionne les
-# blocs, et referme la transaction du champ — la marge tapée ensuite n'entre dans aucun pas.
-saboter "Tout sélectionner (N6) ne lit plus le focus" \
+# au contrôle qui a le focus que si sa commande ne peut pas s'exécuter : la commande du clavier
+# de « Tout sélectionner » qui ne lit plus le focus reprend Ctrl+A à la saisie et aux champs du
+# dock, sélectionne les blocs, et referme la transaction du champ — la marge tapée ensuite
+# n'entre dans aucun pas.
+saboter "Tout sélectionner au clavier (N6) ne lit plus le focus" \
     MyPublisher/ViewModels/MainWindowViewModel.Clavier.cs \
-    'private bool PeutToutSelectionner() => !ConsumesTyping;' \
-    'private bool PeutToutSelectionner() => true;' \
+    'private bool PeutToutSelectionnerAuClavier() => !ConsumesTyping && SelectAllCommand.CanExecute(null);' \
+    'private bool PeutToutSelectionnerAuClavier() => SelectAllCommand.CanExecute(null);' \
     'N6-touche-au-champ|ToucheAuChampTests'
 
-# Un bouton ne se grise que sur CanExecuteChanged : la commande qui n'est plus notifiée au
-# changement de focus laisse Premier plan allumé pendant la saisie, et grisé après.
-saboter "Premier plan (N6) n'est plus notifié au changement de focus" \
+# Premier plan au clavier qui ne lit plus le focus : Ctrl+Maj+F, en saisie, porte le bloc au
+# premier plan et fond la frappe et le geste en un seul pas.
+saboter "Premier plan au clavier (N6) ne lit plus le focus" \
     MyPublisher/ViewModels/MainWindowViewModel.Clavier.cs \
-    $'        BringToFrontCommand.NotifyCanExecuteChanged();\n' \
-    '' \
+    'private bool PeutPorterAuPremierPlanAuClavier() => !ConsumesTyping && BringToFrontCommand.CanExecute(null);' \
+    'private bool PeutPorterAuPremierPlanAuClavier() => BringToFrontCommand.CanExecute(null);' \
     'N6-touche-au-champ|ToucheAuChampTests'
 
 # Alt+flèche en saisie fait son propre pas : sans UnGesteUnPas, le déplacement s'emboîte dans

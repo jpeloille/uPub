@@ -1,4 +1,5 @@
 using System;
+using CommunityToolkit.Mvvm.Input;
 
 namespace MyPublisher.ViewModels;
 
@@ -14,14 +15,17 @@ namespace MyPublisher.ViewModels;
 /// <c>Ctrl+Maj+G</c>, <c>H</c>, <c>F</c> et <c>B</c> se fondaient aussi dans la saisie du champ
 /// (relevé de la relecture de I3).
 ///
-/// La règle : <b>tant qu'un champ de texte a le clavier, les commandes d'objet se taisent</b> —
+/// La règle : <b>tant qu'un champ de texte a le clavier, les raccourcis d'objet se taisent</b> —
 /// tout sélectionner, dupliquer, grouper, dissocier, premier plan, arrière-plan, et demain le
 /// presse-papiers de N8, qui lira <see cref="ConsumesTyping"/>. Leur touche revient au champ :
-/// <c>Ctrl+A</c> y sélectionne le texte. Les boutons qui portent ces commandes se grisent pendant
-/// ce temps, la fenêtre levant <see cref="LeClavierAChange"/> à chaque changement de focus — un
-/// contrôle ne se grise que sur <c>CanExecuteChanged</c>. Les entrées des menus aussi, mais on ne
-/// le voit pas : un menu qu'on ouvre prend le focus au champ, et ses entrées se rallument (voir
-/// la section du poste au plan). Annuler et Rétablir ne changent pas de sens : c'est l'historique
+/// <c>Ctrl+A</c> y sélectionne le texte.
+///
+/// La garde est au clavier seul — décision du propriétaire, le 26 octobre 2026. Les six
+/// liaisons ont des commandes à elles, ci-dessous, qui jouent la commande d'origine quand aucun
+/// champ n'a le clavier ; les commandes d'origine gardent leur condition d'avant le poste. Les
+/// menus et les boutons qui les portent agissent donc sur les blocs même pendant la frappe :
+/// un menu qu'on ouvre prend de toute façon le focus au champ, et un bouton grisé pendant la
+/// saisie ne se cliquait plus. Annuler et Rétablir ne changent pas de sens : c'est l'historique
 /// du document qui annule (Q24).
 /// </summary>
 public partial class MainWindowViewModel
@@ -34,40 +38,51 @@ public partial class MainWindowViewModel
     /// sur la page, un champ du dock ou de la barre, numérique compris —, ou une liste
     /// déroulante, qui cherche une entrée à la lettre. C'est le prédicat qui fait déjà taire les
     /// outils à une lettre (<c>MainWindow.ConsumesTyping</c>) : la fenêtre le prête au modèle de
-    /// vue, qui le lit à chaque touche. Sans fenêtre, faux : les commandes jouent comme avant.
+    /// vue, qui le lit à chaque touche. Sans fenêtre, faux : les raccourcis jouent comme avant.
     /// </summary>
     public bool ConsumesTyping => _unChampALeClavier();
 
     /// <summary>
     /// La fenêtre dit comment lire son focus — <c>null</c> quand elle lâche le modèle de vue.
+    /// Une liaison lit la condition de sa commande au moment de la touche : rien n'est à notifier
+    /// quand le focus change.
     /// </summary>
-    public void SuivreLeClavier(Func<bool>? unChampALeClavier)
-    {
+    public void SuivreLeClavier(Func<bool>? unChampALeClavier) =>
         _unChampALeClavier = unChampALeClavier ?? (() => false);
-        LeClavierAChange();
-    }
 
-    /// <summary>
-    /// Le focus a changé : les commandes d'objet le relisent, et les menus et les boutons qui les
-    /// portent se grisent ou se rallument.
-    /// </summary>
-    public void LeClavierAChange()
-    {
-        SelectAllCommand.NotifyCanExecuteChanged();
-        DuplicateSelectedCommand.NotifyCanExecuteChanged();
-        GroupSelectedCommand.NotifyCanExecuteChanged();
-        UngroupSelectedCommand.NotifyCanExecuteChanged();
-        BringToFrontCommand.NotifyCanExecuteChanged();
-        SendToBackCommand.NotifyCanExecuteChanged();
-    }
+    // ------------------------------------------------------- les commandes du clavier
 
-    private bool PeutToutSelectionner() => !ConsumesTyping;
+    [RelayCommand(CanExecute = nameof(PeutToutSelectionnerAuClavier))]
+    private void ToucheToutSelectionner() => SelectAllCommand.Execute(null);
 
-    private bool PeutAgirSurLaSelection() => HasSelection && !ConsumesTyping;
+    [RelayCommand(CanExecute = nameof(PeutDupliquerAuClavier))]
+    private void ToucheDupliquer() => DuplicateSelectedCommand.Execute(null);
 
-    private bool PeutGrouper() => CanGroup && !ConsumesTyping;
+    [RelayCommand(CanExecute = nameof(PeutGrouperAuClavier))]
+    private void ToucheGrouper() => GroupSelectedCommand.Execute(null);
 
-    private bool PeutDissocier() => CanUngroup && !ConsumesTyping;
+    [RelayCommand(CanExecute = nameof(PeutDissocierAuClavier))]
+    private void ToucheDissocier() => UngroupSelectedCommand.Execute(null);
+
+    [RelayCommand(CanExecute = nameof(PeutPorterAuPremierPlanAuClavier))]
+    private void ToucheAuPremierPlan() => BringToFrontCommand.Execute(null);
+
+    [RelayCommand(CanExecute = nameof(PeutPorterALArrierePlanAuClavier))]
+    private void ToucheALArrierePlan() => SendToBackCommand.Execute(null);
+
+    private bool PeutToutSelectionnerAuClavier() => !ConsumesTyping && SelectAllCommand.CanExecute(null);
+
+    private bool PeutDupliquerAuClavier() => !ConsumesTyping && DuplicateSelectedCommand.CanExecute(null);
+
+    private bool PeutGrouperAuClavier() => !ConsumesTyping && GroupSelectedCommand.CanExecute(null);
+
+    private bool PeutDissocierAuClavier() => !ConsumesTyping && UngroupSelectedCommand.CanExecute(null);
+
+    private bool PeutPorterAuPremierPlanAuClavier() => !ConsumesTyping && BringToFrontCommand.CanExecute(null);
+
+    private bool PeutPorterALArrierePlanAuClavier() => !ConsumesTyping && SendToBackCommand.CanExecute(null);
+
+    // ------------------------------------------------------------------ Alt+flèches
 
     /// <summary>
     /// <c>Alt</c>+flèche pendant la saisie d'un bloc : le bloc dont le texte a le curseur se

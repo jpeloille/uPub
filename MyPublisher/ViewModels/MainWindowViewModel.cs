@@ -603,7 +603,7 @@ public partial class MainWindowViewModel : ViewModelBase
     public List<Frame> SelectionInPageOrder() =>
         CurrentPage is null ? [] : CurrentPage.Frames.Where(Selection.Contains).ToList();
 
-    [RelayCommand(CanExecute = nameof(PeutToutSelectionner))]
+    [RelayCommand]
     private void SelectAll()
     {
         if (CurrentPage is null) return;
@@ -1196,7 +1196,7 @@ public partial class MainWindowViewModel : ViewModelBase
         Status = doomed.Count == 1 ? "Bloc supprimé" : $"{doomed.Count} blocs supprimés";
     }
 
-    [RelayCommand(CanExecute = nameof(PeutAgirSurLaSelection))]
+    [RelayCommand(CanExecute = nameof(HasSelection))]
     private void DuplicateSelected()
     {
         if (CurrentPage is null || Selection.Count == 0) return;
@@ -1220,10 +1220,10 @@ public partial class MainWindowViewModel : ViewModelBase
         Status = copies.Count == 1 ? "Bloc dupliqué" : $"{copies.Count} blocs dupliqués";
     }
 
-    [RelayCommand(CanExecute = nameof(PeutAgirSurLaSelection))]
+    [RelayCommand(CanExecute = nameof(HasSelection))]
     private void BringToFront() => MoveToEnd(front: true);
 
-    [RelayCommand(CanExecute = nameof(PeutAgirSurLaSelection))]
+    [RelayCommand(CanExecute = nameof(HasSelection))]
     private void SendToBack() => MoveToEnd(front: false);
 
     [RelayCommand(CanExecute = nameof(HasSelection))]
@@ -1363,7 +1363,7 @@ public partial class MainWindowViewModel : ViewModelBase
     /// le groupe se pose au rang du plus avancé d'entre eux, pour que l'ensemble garde
     /// l'aspect qu'il avait.
     /// </summary>
-    [RelayCommand(CanExecute = nameof(PeutGrouper))]
+    [RelayCommand(CanExecute = nameof(CanGroup))]
     private void GroupSelected()
     {
         if (CurrentPage is null || Selection.Count < 2) return;
@@ -1409,7 +1409,7 @@ public partial class MainWindowViewModel : ViewModelBase
     /// fermé ; seuls les blocs visibles restent sélectionnés, comme après « Tout
     /// sélectionner ».
     /// </summary>
-    [RelayCommand(CanExecute = nameof(PeutDissocier))]
+    [RelayCommand(CanExecute = nameof(CanUngroup))]
     private void UngroupSelected()
     {
         if (CurrentPage is null || !CanUngroup) return;

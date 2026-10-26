@@ -47,18 +47,23 @@
         <KeyBinding Gesture="Ctrl+Z" Command="{Binding UndoCommand}"/>
         <KeyBinding Gesture="Ctrl+Y" Command="{Binding RedoCommand}"/>
         <KeyBinding Gesture="Ctrl+Shift+Z" Command="{Binding RedoCommand}"/>
-        <KeyBinding Gesture="Ctrl+D" Command="{Binding DuplicateSelectedCommand}"/>
-        <KeyBinding Gesture="Ctrl+A" Command="{Binding SelectAllCommand}"/>
-        <KeyBinding Gesture="Ctrl+Shift+G" Command="{Binding GroupSelectedCommand}"/>
-        <KeyBinding Gesture="Ctrl+Shift+H" Command="{Binding UngroupSelectedCommand}"/>
+        <!-- Les six commandes d'objet passent par des commandes du clavier, gardées par le focus
+             (poste N6, MainWindowViewModel.Clavier.cs) : tant qu'un champ de texte a le
+             clavier, elles se taisent, et la liaison rend la touche au champ — Ctrl+A y
+             sélectionne le texte. Les menus et les boutons gardent les commandes d'origine,
+             et agissent sur les blocs même pendant la frappe. -->
+        <KeyBinding Gesture="Ctrl+D" Command="{Binding ToucheDupliquerCommand}"/>
+        <KeyBinding Gesture="Ctrl+A" Command="{Binding ToucheToutSelectionnerCommand}"/>
+        <KeyBinding Gesture="Ctrl+Shift+G" Command="{Binding ToucheGrouperCommand}"/>
+        <KeyBinding Gesture="Ctrl+Shift+H" Command="{Binding ToucheDissocierCommand}"/>
         <!-- Ordre de superposition. Publisher ne donne de raccourci qu'aux deux
              extrêmes (fiche 15) : avancer et reculer d'un rang n'en ont pas, et on
              ne leur en invente pas. Publisher 2007 les posait sur Alt+F6 et
              Alt+Maj+F6 ; ce sont les combinaisons modernes qui sont reprises ici,
              Alt+F6 étant capté par la plupart des gestionnaires de fenêtres Linux —
              un raccourci qui ne peut pas arriver jusqu'à l'application ne sert à rien. -->
-        <KeyBinding Gesture="Ctrl+Shift+F" Command="{Binding BringToFrontCommand}"/>
-        <KeyBinding Gesture="Ctrl+Shift+B" Command="{Binding SendToBackCommand}"/>
+        <KeyBinding Gesture="Ctrl+Shift+F" Command="{Binding ToucheAuPremierPlanCommand}"/>
+        <KeyBinding Gesture="Ctrl+Shift+B" Command="{Binding ToucheALArrierePlanCommand}"/>
         <KeyBinding Gesture="Ctrl+OemPlus" Command="{Binding ZoomInCommand}"/>
         <KeyBinding Gesture="Ctrl+Add" Command="{Binding ZoomInCommand}"/>
         <KeyBinding Gesture="Ctrl+OemMinus" Command="{Binding ZoomOutCommand}"/>
