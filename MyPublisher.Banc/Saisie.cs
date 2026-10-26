@@ -228,16 +228,19 @@ public static class Saisie
         var metriques = new MetriquesAvalonia();
 
         var zone = Ouvrir(cadre, bloc);
-        var poses = new List<(Layoutable Partie, bool Arrondi)>();
+        var poses = new List<(Layoutable Partie, bool Pose, bool Arrondi)>();
         try
         {
             if (auMieux)
             {
                 // Au mieux de la voie 1 : l'interligne de la composition, et pas d'arrondi.
                 zone.LineHeight = Compositeur.Avance(metriques.Naturelle(commun), bloc.LineHeight);
-                foreach (var partie in zone.GetSelfAndVisualDescendants().OfType<Layoutable>())
+                // Relevé d'abord, posé ensuite : la propriété s'hérite, et une partie lue après son
+                // parent rendrait la valeur qu'on vient de lui poser.
+                poses.AddRange(zone.GetSelfAndVisualDescendants().OfType<Layoutable>()
+                    .Select(p => (p, p.IsSet(Layoutable.UseLayoutRoundingProperty), p.UseLayoutRounding)).ToList());
+                foreach (var (partie, _, _) in poses)
                 {
-                    poses.Add((partie, partie.UseLayoutRounding));
                     partie.UseLayoutRounding = false;
                     partie.InvalidateMeasure();
                 }
@@ -275,7 +278,11 @@ public static class Saisie
             if (auMieux)
             {
                 zone.ClearValue(TextBox.LineHeightProperty);
-                foreach (var (partie, arrondi) in poses) partie.UseLayoutRounding = arrondi;
+                foreach (var (partie, pose, arrondi) in poses)
+                {
+                    if (pose) partie.UseLayoutRounding = arrondi;
+                    else partie.ClearValue(Layoutable.UseLayoutRoundingProperty);
+                }
             }
 
             Fermer(zone, bloc);

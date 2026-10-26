@@ -140,8 +140,18 @@ public class MesureDeLaSaisieTests
         Assert.DoesNotContain(vm.Document.Pages.SelectMany(p => p.Frames).OfType<TextFrame>(), b => b.IsEditing);
         Assert.False(fenetre.GetVisualDescendants().OfType<PageCanvas>().Single().IsEditingText);
 
-        // Le champ est rendu à ses valeurs : ni interligne posé, ni arrondi retiré.
-        foreach (var zone in MyPublisher.Banc.Banc.Page(fenetre).GetVisualDescendants().OfType<TextBox>())
+        // Le champ est rendu à ses valeurs : ni interligne posé, ni arrondi retiré. Les champs se
+        // lisent sur la page même qu'on vient de mesurer — changer de page reconstruit ses
+        // contrôles, et des champs neufs n'auraient rien à rendre.
+        var zones = MyPublisher.Banc.Banc.Page(fenetre).GetVisualDescendants().OfType<TextBox>().ToList();
+        foreach (var texte in vm.CurrentPage.Frames.OfType<TextFrame>())
+        {
+            Mesure.MesurerLeBloc(fenetre, texte, 1, auMieux);
+        }
+
+        Assert.Equal(zones, MyPublisher.Banc.Banc.Page(fenetre).GetVisualDescendants().OfType<TextBox>().ToList());
+        Assert.NotEmpty(zones);
+        foreach (var zone in zones)
         {
             Assert.False(zone.IsSet(TextBox.LineHeightProperty), $"« {zone.DataContext} » garde l'interligne de la mesure");
             Assert.All(zone.GetSelfAndVisualDescendants().OfType<Layoutable>(), partie => Assert.True(partie.UseLayoutRounding));

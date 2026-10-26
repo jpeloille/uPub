@@ -81,7 +81,7 @@ for attendu, quoi in [
     ("lignes[k].Baseline", "la ligne de base de la ligne du champ"),
     ("indices.Select(geometrie.PointDe)", "PointDe, côté composition"),
     ("zone.ClearValue(TextBox.LineHeightProperty)", "l'interligne de B rendu au champ"),
-    ("partie.UseLayoutRounding = arrondi", "l'arrondi de B rendu au champ"),
+    ("partie.ClearValue(Layoutable.UseLayoutRoundingProperty)", "l'arrondi de B rendu au champ"),
 ]:
     if attendu not in saisie:
         refuser(f"la mesure ne lit plus {quoi} (« {attendu} » introuvable dans Saisie.cs).")

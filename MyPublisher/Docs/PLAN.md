@@ -6639,6 +6639,13 @@ en B, joue les tests, puis le corpus, qui ne la fait pas échouer.
   plus selon le document.
 - Le champ montre le texte du modèle tel quel : aucun « \r » dans le corpus, aucune conversion de
   `NewLine` ; la mesure le vérifie à chaque bloc.
+- **`UseLayoutRounding` s'hérite** : relevée partie après partie pendant qu'on la retire, la valeur
+  d'une partie était déjà celle que son parent venait de recevoir, et B rendait au champ ses
+  parties sans arrondi. Le juge l'a montré — son second sabotage n'était attrapé que par la
+  lecture des sources, le test relisant les champs d'une page reconstruite. B relève désormais
+  tout avant de poser, et rend la valeur héritée ; le test relit les champs mesurés. Les écarts
+  n'en changent pas : chaque bloc n'est mesuré qu'une fois par processus, et les relevés sont
+  identiques avant et après.
 
 *Choisi sans certitude* :
 - la saisie ouverte par le banc (`IsEditing` et le focus) plutôt que par `BeginTextEdit`, privé :
