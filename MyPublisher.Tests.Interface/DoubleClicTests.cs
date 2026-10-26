@@ -147,6 +147,10 @@ public class DoubleClicTests
         // fasse au pointeur est d'un point. Alt écarte l'aimantation, qui pourrait
         // ramener le bloc sur un repère et rendre le geste nul pour une autre raison
         // que la garde.
+        //
+        // Réécrit par le poste Q21 (règle 14) : un pointeur qui ne s'écarte que d'un pixel
+        // de sa prise n'a pas glissé, il a tremblé, et le bloc ne bouge plus. Le glissé
+        // d'un point se fait comme une main le fait, mené au-delà du seuil puis ramené.
         var document = Rendu.Ata21();
         var (fenetre, vm) = Rendu.Ouvrir(document);
         var bloc = BlocDeQ1(BlocsAtteints(vm.CurrentPage!));
@@ -156,10 +160,7 @@ public class DoubleClicTests
         var centre = Rendu.SurLaPage(fenetre, bloc.X + bloc.Width / 2, bloc.Y + bloc.Height / 2);
         var arrivee = new Point(centre.X, centre.Y + 1);
 
-        fenetre.MouseDown(centre, MouseButton.Left);
-        fenetre.MouseMove(arrivee, RawInputModifiers.LeftMouseButton | RawInputModifiers.Alt);
-        fenetre.MouseUp(arrivee, MouseButton.Left, RawInputModifiers.Alt);
-        Rendu.Battre();
+        Rendu.GlisserEtRamener(fenetre, centre, arrivee, RawInputModifiers.Alt);
 
         Assert.Equal(depart + 1, bloc.Y);
         Assert.True(vm.CanUndo, "un glissé d'un point n'a pas empilé de pas d'annulation");

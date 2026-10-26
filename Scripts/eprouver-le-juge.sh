@@ -1248,11 +1248,14 @@ saboter "le panneau arrondit l'angle du bloc qu'on sélectionne" \
     '' \
     'Q14-double-clic|DoubleClicTests'
 
+# Depuis Q21, le seuil du glissé arrête le mouvement nul d'un clic avant ApplyMove : la garde
+# ne sert plus que le glissé qui a franchi le seuil et revient exactement à sa prise, et c'est
+# le test de ce geste-là, près d'une marge, qui l'attrape (règle 14).
 saboter "un mouvement nul du pointeur aimante le bloc cliqué" \
     MyPublisher/Views/PageCanvas.axaml.cs \
     'if (dx == 0 && dy == 0)' \
     'if (dx == 0 && dy == 0 && _moveStart.Count < 0)' \
-    'Q14-double-clic|DoubleClicTests'
+    'Q14-double-clic|DoubleClicTests|Q21-Q22-seuil-du-pointeur|SeuilDuPointeurTests'
 
 # Q14, repris après relecture : la garde ne fait pas que s'abstenir, elle remet le bloc
 # à son départ. Sans cette remise, un geste qui part puis revient au point de prise
@@ -2575,6 +2578,14 @@ saboter "la mesure de la saisie (N7) laisse au champ l'interligne de la configur
     'zone.ClearValue(TextBox.LineHeightProperty);' \
     '' \
     'N7-mesure-de-la-saisie|MesureDeLaSaisieTests'
+
+# Q21 : un clic qui tremble n'est pas un glissé. Sans seuil, un pixel de mouvement pendant le
+# clic, près d'une marge, fait sauter le bloc sur elle par l'aimantation et empile un pas.
+saboter "sans seuil du glissé (Q21), un clic qui tremble aimante le bloc sur la marge" \
+    MyPublisher/Views/PageCanvas.axaml.cs \
+    'private const double SeuilDuGlisse = 3;' \
+    'private const double SeuilDuGlisse = 0;' \
+    'Q21-Q22-seuil-du-pointeur|SeuilDuPointeurTests'
 
 # Un motif qui ne désigne aucun sabotage ne prouve rien. « eprouver-le-juge.sh I4 » sortait
 # en 0 sur « 0 sabotages, 0 attrapés », quand les intitulés de la planche ne portaient pas

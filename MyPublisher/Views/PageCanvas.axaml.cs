@@ -52,6 +52,15 @@ public partial class PageCanvas : UserControl
     private const double SnapPixels = 6;      // tolérance d'aimantation, pixels écran
 
     /// <summary>
+    /// Le seuil du glissé, en pixels d'écran (postes Q21 et Q22) : tant que le pointeur reste
+    /// à moins de trois pixels de sa prise, le geste n'est qu'un clic qui tremble, et il ne
+    /// touche à rien — ni au bloc, ni à ses poignées, ni à sa rotation, ni aux extrémités d'un
+    /// trait ; l'aimantation ne joue qu'au-delà. Une fois franchi, le seuil ne compte plus : un
+    /// glissé mené plus loin, puis ramené à un point de sa prise, déplace d'un point.
+    /// </summary>
+    private const double SeuilDuGlisse = 3;
+
+    /// <summary>
     /// Diamètre de la poignée de rotation : un disque de 9 px de blanc dans le même filet
     /// de 1,5 px que les poignées carrées.
     /// </summary>
@@ -139,6 +148,15 @@ public partial class PageCanvas : UserControl
     private DragMode _mode;
     private Anchor _anchor;
     private Point _startPointer;
+
+    /// <summary>Où le pointeur a pris, en pixels d'écran (le repère de Surface).</summary>
+    private Point _priseALEcran;
+
+    /// <summary>
+    /// Le pointeur a-t-il quitté sa prise d'au moins <see cref="SeuilDuGlisse"/> depuis la
+    /// pression ? Faux, le geste n'est encore qu'un clic.
+    /// </summary>
+    private bool _aGlisse;
     private double _startX, _startY, _startWidth, _startHeight, _startRotation;
 
     /// <summary>Position de départ de chaque bloc déplacé : le geste vaut pour l'ensemble.</summary>
@@ -568,6 +586,8 @@ public partial class PageCanvas : UserControl
 
         var surfacePoint = e.GetPosition(Surface);
         var page = ToPageCoordinates(surfacePoint);
+        _priseALEcran = surfacePoint;
+        _aGlisse = false;
 
         // Un outil armé prend la main : on crée au lieu de sélectionner. Sur le gris, il ne
         // se passe rien, et l'outil reste armé : le bloc tomberait hors de la page, où
@@ -709,6 +729,13 @@ public partial class PageCanvas : UserControl
             return;
         }
 
+        // Un pointeur qui tremble sur sa prise n'a pas encore glissé : le bloc, ses poignées,
+        // sa rotation et les extrémités d'un trait l'ignorent, et rien ne passe par
+        // l'aimantation ni par les cosinus d'un bloc tourné (postes Q21 et Q22). Un pixel de
+        // mouvement près d'une marge faisait sauter le bloc de 3 pt ; une pression sans
+        // mouvement sur une poignée décalait un bloc tourné, et Maj ramenait à 0° un bloc à 7°.
+        if (!AGlisse(surfacePoint)) return;
+
         if (_mode == DragMode.Move)
         {
             ApplyMove(page, e.KeyModifiers);
@@ -726,6 +753,20 @@ public partial class PageCanvas : UserControl
         if (_mode == DragMode.Rotate) ApplyRotate(frame, page, maj);
         else if (_mode == DragMode.Extremite && frame is ShapeFrame trait) TirerUneExtremite(trait, page, e.KeyModifiers);
         else ApplyResize(frame, page, maj != _vm.ConserverLesProportions);
+    }
+
+    /// <summary>
+    /// Le pointeur a-t-il glissé depuis la pression ? Il glisse dès qu'il s'est trouvé une fois
+    /// à <see cref="SeuilDuGlisse"/> pixels d'écran ou plus de sa prise — distance mesurée à
+    /// vol d'oiseau —, et le reste jusqu'au relâché.
+    /// </summary>
+    private bool AGlisse(Point surfacePoint)
+    {
+        if (_aGlisse) return true;
+
+        var ecart = surfacePoint - _priseALEcran;
+        _aGlisse = ecart.X * ecart.X + ecart.Y * ecart.Y >= SeuilDuGlisse * SeuilDuGlisse;
+        return _aGlisse;
     }
 
     private void OnPointerReleased(object? sender, PointerReleasedEventArgs e)
@@ -992,6 +1033,10 @@ public partial class PageCanvas : UserControl
         // les deux clics d'un double-clic, déplaçait alors le bloc et empilait un pas
         // d'annulation (poste Q14). Mesuré sur ATA 21 : trois des huit blocs qu'un clic
         // atteint en leur centre.
+        //
+        // Le seuil du glissé (Q21) arrête désormais ce mouvement-là avant qu'il n'arrive
+        // ici. La garde sert le glissé qui a franchi le seuil puis revient exactement à son
+        // point de prise : elle rend chaque bloc à son départ, sans l'aimanter.
         if (dx == 0 && dy == 0)
         {
             foreach (var (frame, startX, startY) in _moveStart)

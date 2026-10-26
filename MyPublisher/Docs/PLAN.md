@@ -90,7 +90,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **Q18** | Paquets marqués « Legacy » | 0 % | Trouvé par Q12 : `Avalonia.Diagnostics` et xunit 2 ont des remplaçants ; aucun n'est vulnérable |
 | **Q19** | Les autres collections ne se remplacent plus | 0 % | Trouvé par Q17 : `Page.Frames`, `GroupFrame.Children`, `Document.Pages` et les listes de repères ont un setter public que des `ItemsControl` lient sans l'écouter |
 | **Q20** | La liste des polices garde la police du bloc | **100 %** | Trouvé par la relecture de C5b. La liste propose les polices du document absentes de la machine, libellées « (absente) », et la liaison ne renvoie jamais null au bloc. Recette dans `Scripts/recettes/` |
-| **Q21** | Un tremblement ne déplace pas le bloc | 0 % | Trouvé par la relecture de Q14 : un pixel de mouvement pendant le clic, près d'une marge, fait sauter le bloc de 3 pt par l'aimantation. Repris en phase N (salve Saisie 3, avec Q22) |
+| **Q21** | Un tremblement ne déplace pas le bloc | **100 %** | La planche ne compte un geste pour un glissé qu'une fois le pointeur écarté de trois pixels d'écran de sa prise (`SeuilDuGlisse`, `AGlisse`), pour tout glissé — déplacement, poignées, rotation, extrémités de trait — ; en deçà, rien ne bouge et rien ne passe par l'aimantation ; au-delà, le geste est un glissé jusqu'au relâché, ramené ou non. Un clic qui tremble d'un pixel près d'une marge laissait sauter le bloc de 3 pt et empilait un pas : il ne fait plus rien. Le seuil se compte en pixels d'écran, et non en points. La garde du mouvement nul de Q14 reste, et ne sert plus que le glissé revenu exactement à sa prise ; ses deux cibles du juge restent, la première rattrapée par un test neuf. Deux aides au banc, `Rendu.Trembler` et `Rendu.GlisserEtRamener` ; règle 14 : les glissés d'un pixel de Q14 et de Q24 sont menés au-delà du seuil puis ramenés. Six tests, dont quatre tombaient sur le code d'avant ; un sabotage au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **Q22** | Un clic sur une poignée ne redimensionne pas | 0 % | Trouvé par la relecture de Q14 : une pression sans mouvement près d'un coin fait passer le bloc de 100 à 96 pt et empile un pas d'annulation. Repris en phase N (salve Saisie 3) : toujours présent sur un bloc tourné, et Maj arrondit l'angle sans mouvement |
 | **Q23** | Sélectionner un bloc ne fige pas la fenêtre | **100 %** | La cause, mesurée : les trois sections du dock et les réglages de la barre contextuelle étaient des `ContentControl` liés au bloc seul, qu'une sélection vide vidait et que la pression suivante reconstruisait — mille visuels, vingt-quatre champs numériques —, dans la pression même ; la liste des polices n'y était pour rien. Ils sont construits une fois par sorte de bloc et gardés, masqués sans bloc de leur sorte (`Views/GabaritsGardes.cs`) : sur ATA 21, une pression sur un bloc non sélectionné rend la main en 30 à 52 ms au lieu de 107 à 136, l'image comprise, et n'ajoute plus qu'un visuel à la fenêtre. « Blocs de la page » ne défile plus que si la ligne du bloc n'est pas en vue ; le sélecteur de couleur refermé ne rend plus le focus à un champ de la barre, qui engloutissait son pas. Les deux tests du double-clic reprennent le geste entier et passent vingt fois de suite, chacun dans un processus neuf. Quatre tests, et un de la barre ; relu et jugé le 26 octobre 2026 : aucun défaut de l'application ; le chronomètre tombe sous une charge de 18 sur vingt cœurs sans être mou, et le juge ne le prend plus pour garde-fou ; un test du sélecteur de couleur refermé sans clic ; cinq sabotages au lieu d'un. Le même jour, sur la décision du propriétaire, le sélecteur refermé ne rend plus le focus à un champ du dock non plus, la zone de saisie de la page exceptée (un test de la barre, un sixième sabotage). Recette dans `Scripts/recettes/` |
 | **Q24** | Annuler ou Rétablir ne laisse plus une saisie hors de toute transaction | **100 %** | `Undo` et `Redo` referment ce qui est ouvert, comme avant, puis lèvent un avis sur chaque chemin, rien à défaire compris (`MainWindowViewModel.Transactions.cs`), sans rien rouvrir eux-mêmes : chaque propriétaire encore actif rouvre sa propre transaction, et lui seul — la saisie sur la page si elle l'est toujours, le champ du dock ou de la barre s'il a toujours le focus, et deux que le plan ne nommait pas, le glissé dont le bouton est tenu et le sélecteur de couleur resté ouvert. Une annulation qui relit le document referme la saisie, et rien ne se rouvre pour elle. Les trois cas du plan se montraient, le déduit compris : un champ de la barre sous un `Ctrl+Z` sans rien à annuler, une marge de l'onglet Document sous une vraie annulation ; les champs du bloc, eux, perdent le focus à une annulation, la sélection se vidant en passant. Neuf tests, dont sept tombaient sur le code d'avant ; le test du double-clic de Q14 n'est plus joué à froid par la recette, où il tombait sous la charge de la machine, avant Q24 comme après ; relecture et juge après fusion. Recette dans `Scripts/recettes/` |
@@ -4501,6 +4501,49 @@ tout glissé : déplacement, poignées, rotation et extrémités de trait (`Page
 le reprend pour la sélection de texte, N17 pour Ctrl+glisser. Le test de Q14 « un glissé d'un
 point » est mené au-delà du seuil puis ramené. Les cibles du juge `if (dx == 0 && dy == 0)` et
 `frame.X = startX;` restent, une fois chacune. Dépend de N1 et N5.
+
+*Livré le 26 octobre 2026*, dans la salve Saisie 3 ; la relecture adversariale vient après la
+fusion. La planche retient la prise du pointeur dans le repère de `Surface`, en pixels d'écran
+(`_priseALEcran`), et `OnPointerMoved` ne laisse passer au déplacement, au redimensionnement, à
+la rotation et aux extrémités d'un trait qu'un pointeur qui a glissé : `AGlisse` le dit dès qu'il
+s'est trouvé une fois à `SeuilDuGlisse`, trois pixels, ou plus de sa prise, à vol d'oiseau, et le
+dit jusqu'au relâché. La garde est une, posée après le repère et avant le déplacement : les quatre
+gestes la partagent. En deçà, rien n'est écrit dans le bloc, la transaction ouverte à la pression
+se referme sans pas, et l'aimantation ne joue pas. Le tracé d'un bloc, le repère et la main n'y
+passent pas : la mission ne les nommait pas.
+
+La classe `SeuilDuPointeurTests`, six tests sous `poste=Q21` : un clic qui tremble près de la
+marge de gauche — d'un pixel dans chaque direction, et de (1, 1) et (−2, 2) — laisse le document
+identique au caractère près, sans pas ni modification, le premier clic prenant le bloc ; à 50 %,
+deux pixels ne déplacent rien, à 200 %, quatre pixels déplacent de deux points ; un glissé d'un
+point mené au-delà du seuil puis ramené, sans Alt, déplace d'un point et fait son pas ; un glissé
+ramené exactement à sa prise près de la marge rend le bloc sans l'aimanter ; l'extrémité d'un
+trait qui tremble reste ; en saisie, le clic qui en sort sur un autre bloc et tremble le prend
+sans le déplacer, la frappe gardant son seul pas. Quatre tombaient sur le code d'avant ; les deux
+glissés ramenés tiennent ce qui ne change pas. Deux aides dans la région « Les gestes » de
+`Rendu.cs` : `Trembler(racine, point, écart, touches)` et `GlisserEtRamener(racine, départ,
+arrivée, touches, détour = 12)`, qui passe à douze pixels à droite de la prise avant de mener à
+l'arrivée.
+
+**Règle 14.** Deux tests jouaient un glissé d'un pixel tout droit, et tombaient :
+`DoubleClicTests.Un_glisse_dun_point_empile_toujours_son_pas` (Q14) et
+`TransactionsDeSaisieTests.Apres_une_annulation_qui_referme_la_saisie_un_glisse_fait_son_propre_pas`
+(Q24). Ils sont réécrits sur `GlisserEtRamener`, et le disent ; leurs assertions ne changent pas.
+La suite d'interface n'en avait pas d'autre.
+
+**Les cibles du juge de Q14.** `if (dx == 0 && dy == 0)` et `frame.X = startX;` restent, une
+fois chacune. La première perdait sa prise : le mouvement nul du double-clic n'atteint plus
+`ApplyMove`, et la garde sabotée ne faisait plus tomber aucun test de `DoubleClicTests`, mesuré.
+Le test du glissé ramené à sa prise près de la marge la lui rend, et l'attendu du sabotage nomme
+désormais aussi cette recette et cette classe. La seconde reste attrapée par
+`Revenir_au_point_de_prise_dans_le_meme_geste_ramene_le_bloc`, et aussi par le test neuf. Un
+sabotage neuf au juge : le seuil ramené à zéro, attrapé par quatre tests de la classe.
+
+*Choisi sans certitude.*
+- La distance est euclidienne, et le seuil franchi à trois pixels tout juste : (−2, 2), 2,83 px,
+  est un tremblement ; la liste des blocs, elle, compte quatre pixels sur la seule verticale.
+- Une fois franchi, le seuil ne compte plus jusqu'au relâché : le bloc rejoint alors d'un coup le
+  pointeur, à trois pixels de sa prise ou un peu plus. Je n'ai pas vérifié ce que fait Publisher.
 
 ### Q22 — Un clic sur une poignée ne redimensionne pas
 

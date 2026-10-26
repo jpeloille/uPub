@@ -132,7 +132,9 @@ public partial class PageCanvas
     /// Un pointeur qui n'a pas quitté son point de prise ne change rien : le bloc retrouve
     /// exactement ce qu'il était, et le geste n'empile aucun pas — la leçon du poste Q14.
     /// Reposer le trait sur les mêmes extrémités l'aurait fait glisser d'un ulp, assez pour
-    /// que le document diffère et qu'un pas d'annulation vide s'empile.
+    /// que le document diffère et qu'un pas d'annulation vide s'empile. Le seuil du glissé
+    /// (poste Q21) ne laisse plus arriver ici qu'un pointeur qui a franchi trois pixels :
+    /// la garde sert celui qui revient ensuite exactement à sa prise.
     /// </summary>
     private void TirerUneExtremite(ShapeFrame trait, Point page, KeyModifiers modificateurs)
     {

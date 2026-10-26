@@ -274,7 +274,8 @@ public class TransactionsDeSaisieTests
     /// relit le document et referme la saisie par le changement de sélection ; une boucle qui
     /// rouvrirait autant de transactions qu'il y en avait en laisserait une sans propriétaire,
     /// où chaque geste suivant fondrait son pas. Un glissé de 1 pt, Alt tenu pour écarter
-    /// l'aimantation, empile encore le sien.
+    /// l'aimantation, empile encore le sien. Mené au-delà du seuil de la planche, puis ramené,
+    /// depuis le poste Q21 (règle 14) : un pixel tout droit n'est plus qu'un clic qui tremble.
     /// </summary>
     [AvaloniaFact]
     [Trait("poste", "Q24")]
@@ -299,7 +300,7 @@ public class TransactionsDeSaisieTests
 
         var x = relu.X;
         var prise = Rendu.SurLaPage(fenetre, relu.X + 20, relu.Y + 20);
-        Rendu.Glisser(fenetre, prise, prise + new Point(1, 0), RawInputModifiers.Alt);
+        Rendu.GlisserEtRamener(fenetre, prise, prise + new Point(1, 0), RawInputModifiers.Alt);
         Assert.Equal(x + 1, relu.X, precision: 6);
 
         Rendu.UnSeulPas(vm, avant, "le glissé d'après l'annulation");
