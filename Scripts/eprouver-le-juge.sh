@@ -2644,6 +2644,21 @@ saboter "Ctrl+Maj+X en saisie (N10) fond la frappe et la suppression" \
     '        DeleteSelectedCommand.Execute(null);' \
     'N10-raccourcis-francais|RaccourcisFrancaisTests'
 
+# N10, le 28 octobre 2026 : Maj+Suppr coupe, comme dans Publisher en français, et ne supprime
+# plus. Sans son cas, Suppr, lu plus bas sans regarder Maj, emporte la sélection hors du
+# presse-papiers.
+saboter "Maj+Suppr (N10) rendu à la suppression" \
+    MyPublisher/Views/MainWindow.axaml.cs \
+    $'                case Key.Delete: OnCouper(this, e); e.Handled = true; return;\n' \
+    '' \
+    'N10-raccourcis-francais|RaccourcisFrancaisTests'
+
+saboter "Maj+Inser (N10) ne colle plus les blocs" \
+    MyPublisher/Views/MainWindow.axaml.cs \
+    $'                case Key.Insert: OnColler(this, e); e.Handled = true; return;\n' \
+    '' \
+    'N10-raccourcis-francais|RaccourcisFrancaisTests'
+
 # Un motif qui ne désigne aucun sabotage ne prouve rien. « eprouver-le-juge.sh I4 » sortait
 # en 0 sur « 0 sabotages, 0 attrapés », quand les intitulés de la planche ne portaient pas
 # encore le code du poste : le filet passait pour éprouvé sans qu'on l'ait troué.

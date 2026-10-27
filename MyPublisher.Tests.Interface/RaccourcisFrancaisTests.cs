@@ -3,6 +3,7 @@ using System.Linq;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
+using Avalonia.Input.Platform;
 using Avalonia.LogicalTree;
 using Avalonia.VisualTree;
 using MyPublisher.Models;
@@ -430,5 +431,152 @@ public class RaccourcisFrancaisTests
         Assert.Equal(1.25, vm.Zoom, 6);
         Rendu.ToucheAzerty(fenetre, PhysicalKey.Minus, RawInputModifiers.Control);
         Assert.Equal(1, vm.Zoom, 6);
+    }
+
+    // ------------------------------------- les secondes touches du presse-papiers (28 octobre)
+
+    private static readonly DataFormat<string> FormatDesBlocs =
+        DataFormat.CreateStringApplicationFormat(MainWindowViewModel.FormatDesBlocs);
+
+    private static IClipboard PressePapiers(Window fenetre) =>
+        fenetre.Clipboard ?? throw new InvalidOperationException("aucun presse-papiers");
+
+    private static string? BlocsCopies(Window fenetre) =>
+        Rendu.Attendre(PressePapiers(fenetre).TryGetValueAsync(FormatDesBlocs));
+
+    /// <summary>
+    /// Hors saisie, <c>Ctrl+Inser</c> copie les blocs, <c>Maj+Suppr</c> les coupe — en un pas, au
+    /// presse-papiers, et non plus supprimés —, <c>Maj+Inser</c> les colle à leur place : ce que
+    /// font <c>Ctrl+C</c>, <c>Ctrl+X</c> et <c>Ctrl+V</c> (N8). Les secondes touches de l'aide en
+    /// français, que le propriétaire a demandées le 28 octobre 2026.
+    /// </summary>
+    [AvaloniaFact]
+    public void Hors_saisie_Ctrl_Inser_copie_Maj_Suppr_coupe_et_Maj_Inser_colle_les_blocs()
+    {
+        var bloc = Texte("Le titre");
+        var forme = Carre("Forme", 60, 300);
+        var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(bloc, forme));
+        try
+        {
+            Rendu.Attendre(PressePapiers(fenetre).SetTextAsync("rien encore"));
+            vm.SelectOnly(bloc);
+            Rendu.Battre();
+            var avant = Etat(vm);
+
+            Rendu.Touche(fenetre, PhysicalKey.Insert, RawInputModifiers.Control);
+            Assert.NotNull(BlocsCopies(fenetre));
+            Assert.Equal("Le titre", Rendu.TexteCopie(fenetre));
+            Assert.Equal(avant, Etat(vm));
+            Assert.False(vm.CanUndo, "Ctrl+Inser a fait un pas");
+
+            Rendu.Attendre(PressePapiers(fenetre).SetTextAsync("rien encore"));
+            Rendu.Touche(fenetre, PhysicalKey.Delete, RawInputModifiers.Shift);
+            Assert.Equal(new[] { "Forme" }, vm.CurrentPage!.Frames.Select(b => b.Name));
+            Assert.NotNull(BlocsCopies(fenetre));
+            Assert.Equal("Le titre", Rendu.TexteCopie(fenetre));
+            var coupe = Etat(vm);
+            Rendu.UnSeulPas(vm, avant, "Maj+Suppr");
+            vm.RedoCommand.Execute(null);
+            Rendu.Battre();
+            Assert.Equal(coupe, Etat(vm));
+
+            // L'original n'est plus là : le collage le rend à sa place, au-dessus de la forme, en un pas.
+            Rendu.Touche(fenetre, PhysicalKey.Insert, RawInputModifiers.Shift);
+            var colle = Le<TextFrame>(vm, "Bloc");
+            Assert.Equal(("Le titre", 60.0, 60.0), (colle.Text, colle.X, colle.Y));
+            Assert.Same(colle, vm.SingleSelected);
+            vm.UndoCommand.Execute(null);
+            Rendu.Battre();
+            Assert.Equal(coupe, Etat(vm));
+        }
+        finally
+        {
+            fenetre.Close();
+        }
+    }
+
+    /// <summary>
+    /// En saisie, les trois touches agissent sur le texte, comme <c>Ctrl+C</c>, <c>V</c> et <c>X</c> :
+    /// la zone de saisie les tient d'Avalonia, la fenêtre ne les voit pas. Le texte va au
+    /// presse-papiers sans format de bloc, la saisie reste ouverte, et aucun bloc n'est copié,
+    /// coupé ni collé.
+    /// </summary>
+    [AvaloniaFact]
+    public void En_saisie_les_secondes_touches_du_presse_papiers_agissent_sur_le_texte()
+    {
+        var bloc = Texte("Bonjour le monde");
+        var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(bloc));
+        try
+        {
+            // Des blocs au presse-papiers d'abord : la copie du texte doit les remplacer.
+            vm.SelectOnly(bloc);
+            Rendu.Battre();
+            Rendu.Touche(fenetre, PhysicalKey.Insert, RawInputModifiers.Control);
+            Assert.NotNull(BlocsCopies(fenetre));
+
+            var zone = Rendu.EntrerEnSaisie(fenetre, vm, bloc);
+            Rendu.SelectionnerDuTexte(zone, 8, 10);
+            Rendu.Touche(fenetre, PhysicalKey.Insert, RawInputModifiers.Control);
+            Assert.Equal("le", Rendu.TexteCopie(fenetre));
+            Assert.Null(BlocsCopies(fenetre));
+
+            Rendu.SelectionnerDuTexte(zone, 0, 7);
+            Rendu.Touche(fenetre, PhysicalKey.Insert, RawInputModifiers.Shift);
+            Assert.Equal("le le monde", zone.Text);
+
+            Rendu.SelectionnerDuTexte(zone, 3, 5);
+            Rendu.Touche(fenetre, PhysicalKey.Delete, RawInputModifiers.Shift);
+            Assert.Equal("le", Rendu.TexteCopie(fenetre));
+            Assert.Equal("le  monde", zone.Text);
+
+            Assert.Single(vm.CurrentPage!.Frames);
+            Assert.True(bloc.IsEditing, "une seconde touche du presse-papiers a refermé la saisie");
+            Assert.Null(BlocsCopies(fenetre));
+        }
+        finally
+        {
+            fenetre.Close();
+        }
+    }
+
+    /// <summary>
+    /// Dans un champ du dock, la touche reste au champ, comme le veut la garde de N6 : le Nom se
+    /// copie, se coupe et se colle, et aucun bloc ne bouge.
+    /// </summary>
+    [AvaloniaFact]
+    public void Dans_un_champ_du_dock_les_secondes_touches_restent_au_champ()
+    {
+        var bloc = Texte();
+        var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(bloc));
+        try
+        {
+            vm.SelectOnly(bloc);
+            Rendu.Battre();
+            var nom = fenetre.GetVisualDescendants().OfType<TextBox>().Single(t => t.Name == "ChampNom");
+            nom.Focus();
+            nom.SelectAll();
+            Rendu.Battre();
+
+            Rendu.Touche(fenetre, PhysicalKey.Insert, RawInputModifiers.Control);
+            Assert.Equal("Bloc", Rendu.TexteCopie(fenetre));
+            Assert.Null(BlocsCopies(fenetre));
+
+            Rendu.Attendre(PressePapiers(fenetre).SetTextAsync("Collé"));
+            nom.SelectAll();
+            Rendu.Touche(fenetre, PhysicalKey.Insert, RawInputModifiers.Shift);
+            Assert.Equal("Collé", nom.Text);
+
+            nom.SelectAll();
+            Rendu.Touche(fenetre, PhysicalKey.Delete, RawInputModifiers.Shift);
+            Assert.Equal("", nom.Text ?? "");
+            Assert.Equal("Collé", Rendu.TexteCopie(fenetre));
+            Assert.True(nom.IsFocused, "une seconde touche du presse-papiers a pris le focus au champ");
+            Assert.Single(vm.CurrentPage!.Frames);
+            Assert.Null(BlocsCopies(fenetre));
+        }
+        finally
+        {
+            fenetre.Close();
+        }
     }
 }

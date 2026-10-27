@@ -10,9 +10,10 @@ chaque fonction et chaque touche ci-dessous en est recopiée mot pour mot, coqui
 2007 Introduction — Student Guide*, `MyPublisher/Books/`) est relu aux pages 9, 10, 16, 22, 36 et
 61, dont les captures portent des touches.
 **Verdict** : `mixte` — l'aide compte 102 lignes hors du ruban, dont quelques-unes deux fois.
-MyPublisher en lie 31, dont 12 par N10 ; il en garde 2 à un autre usage et en remplace 2 ; 5
-reviennent à un autre poste du plan, 27 sont réservées et 35 écartées. Trois lignes ont une
-seconde touche relevée sans être liée : `Ctrl+Inser`, `Maj+Suppr`, `Maj+Inser`.
+MyPublisher en lie 31, dont 15 touchées par N10 ; il en garde 2 à un autre usage et en remplace
+2 ; 5 reviennent à un autre poste du plan, 27 sont réservées et 35 écartées. Les secondes touches
+du presse-papiers, `Ctrl+Inser`, `Maj+Suppr` et `Maj+Inser`, d'abord relevées sans être liées,
+le sont depuis le 28 octobre 2026, à la demande du propriétaire.
 
 ## Pourquoi une fiche de plus
 
@@ -44,7 +45,7 @@ et non un ruban. N13, les menus de Publisher, s'occupe des lettres d'accès.
   - **réservé** — la fonction n'existe pas : la touche reste libre jusqu'au poste qui la sert,
     ou sans poste ;
   - **relevé, non lié** — la fonction existe, la touche n'est liée à rien, et aucun poste ne la
-    prend : à décider (voir N10 au plan, *Relevé, non corrigé*) ;
+    prend : à décider. Aucune ligne ne l'est plus depuis le 28 octobre 2026 ;
   - **écarté** — hors du périmètre : le ruban, l'aperçu avant impression, la messagerie, les
     macros, les langues de l'Asie de l'Est.
 
@@ -98,6 +99,9 @@ La sonde n'a pas vu `Ctrl+AltGr` + « ) », ni `Ctrl+AltGr` + « ( », ni `Ctrl`
 `Control`, ni « ] » du tout — le propriétaire a frappé AltGr + « = », qui donne « } ». Ce que les
 tests en rejouent est déduit des règles ci-dessus, et le dit (`Rendu.ToucheAzerty`) : « ] » en
 `OemCloseBrackets`, comme « } » ; « [ » et « à » sous `Ctrl` en `D5` et `D0`, avec `Control`.
+Le propriétaire a vérifié à l'écran, le 28 octobre 2026, que `Ctrl+AltGr` + « ) » augmente le
+corps d'un point et ne zoome pas : la frappe n'arrive donc pas en `OemMinus`, que le zoom arrière
+aurait pris, et la déduction « ] » en `OemCloseBrackets` tient.
 
 ## La table de l'aide
 
@@ -165,9 +169,9 @@ Les sections de l'aide, dans son ordre, sans celle du ruban.
 
 | Fonction (aide, mot pour mot) | Touche (aide) | Livre de 2007 | Sort |
 |---|---|---|---|
-| Copier le texte ou l’objet sélectionné | Ctrl+C ou Ctrl+Inser | HR | `Ctrl+C` **lié** (N8) ; `Ctrl+Inser` **relevé, non lié** |
-| Couper le texte ou l’objet sélectionné | Ctrl+X ou Maj+Suppr | HR | `Ctrl+X` **lié** (N8) ; `Maj+Suppr` **relevé, non lié** — hors saisie, `OnKeyDown` lit Suppr sans regarder `Maj`, et supprime |
-| Coller du texte ou un objet | Ctrl+V ou Maj+Inser | HR | `Ctrl+V` **lié** (N8) ; `Maj+Inser` **relevé, non lié** |
+| Copier le texte ou l’objet sélectionné | Ctrl+C ou Ctrl+Inser | HR | `Ctrl+C` **lié** (N8) ; `Ctrl+Inser` **lié** (N10, 28 octobre 2026) : hors saisie, les blocs ; en saisie et dans un champ, le texte, par le champ lui-même |
+| Couper le texte ou l’objet sélectionné | Ctrl+X ou Maj+Suppr | HR | `Ctrl+X` **lié** (N8) ; `Maj+Suppr` **lié** (N10, 28 octobre 2026), comme `Ctrl+Inser` — hors saisie, il coupe, et ne supprime plus |
+| Coller du texte ou un objet | Ctrl+V ou Maj+Inser | HR | `Ctrl+V` **lié** (N8) ; `Maj+Inser` **lié** (N10, 28 octobre 2026), comme `Ctrl+Inser` |
 | Supprimer l’objet sélectionné | Supprimer ou Ctrl+Maj+X | HR | `Suppr` **lié** avant N10, comme Retour arrière ; `Ctrl+Maj+X` **lié** (N10), même en saisie |
 
 #### Annuler ou rétablir une opération

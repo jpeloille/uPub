@@ -726,7 +726,9 @@ public static class Rendu
     /// Deux lignes sont déduites, et le disent : la sonde n'a vu ni « ] », ni « 0 » sous
     /// <c>Maj</c>. « ] » (AltGr + « ) ») est déduit de « } » (AltGr + « = ») : le caractère a une
     /// place sur un QWERTY, la touche nommée la suit ; « 0 » de « à » et de « @ », la rangée des
-    /// chiffres livrant la touche de sa place à tous les niveaux.
+    /// chiffres livrant la touche de sa place à tous les niveaux. La première est confirmée à
+    /// l'écran par le propriétaire, le 28 octobre 2026 : <c>Ctrl+AltGr</c> + « ) » change le corps,
+    /// et le zoom arrière, que <c>OemMinus</c> aurait joué, ne le prend pas.
     /// </summary>
     private static readonly System.Collections.Generic.Dictionary<(PhysicalKey, NiveauAzerty), (Key Touche, string Symbole)>
         AzertyAuNiveau = new()
@@ -737,7 +739,7 @@ public static class Rendu
             [(PhysicalKey.Equal, NiveauAzerty.Maj)] = (Key.OemPlus, "+"),
             [(PhysicalKey.Equal, NiveauAzerty.AltGr)] = (Key.OemCloseBrackets, "}"),
             [(PhysicalKey.Minus, NiveauAzerty.Base)] = (Key.OemMinus, ")"),
-            [(PhysicalKey.Minus, NiveauAzerty.AltGr)] = (Key.OemCloseBrackets, "]"),   // déduit
+            [(PhysicalKey.Minus, NiveauAzerty.AltGr)] = (Key.OemCloseBrackets, "]"),   // déduit, confirmé à l'écran
             [(PhysicalKey.Digit5, NiveauAzerty.AltGr)] = (Key.D5, "["),
             [(PhysicalKey.Digit0, NiveauAzerty.Base)] = (Key.D0, "à"),
             [(PhysicalKey.Digit0, NiveauAzerty.Maj)] = (Key.D0, "0"),                   // déduit

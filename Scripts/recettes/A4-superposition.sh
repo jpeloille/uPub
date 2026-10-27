@@ -27,7 +27,8 @@
 #      d. les touches réservées de la table française libres (règle 12 de la phase N) ;
 #      e. Ctrl+E qui n'exporte plus : il centre, et l'export est sur Ctrl+Maj+P ;
 #      f. Ctrl+Maj+F et Ctrl+Maj+B toujours déclarés, Premier plan et Arrière-plan ;
-#      g. sous Contrôle, OnKeyDown n'intercepte que N, O, S et les touches du presse-papiers,
+#      g. sous Contrôle, OnKeyDown n'intercepte que N, O, S et les touches du presse-papiers —
+#         Ctrl+Inser compris, avec Maj+Inser et Maj+Suppr sous Maj seul (N10, 28 octobre 2026) —,
 #         et aucune n'est aussi une liaison.
 #
 # 2. LES GESTES, joués par « MyPublisher.Tests.Interface » sur la vraie fenêtre. Un
@@ -104,12 +105,14 @@ if corps is None:
     sys.exit("    OnKeyDown est introuvable dans MainWindow.axaml.cs")
 # Chaque « if » qui lit les modificateurs ouvre une section : Contrôle (avec ou sans d'autres
 # touches), aucun modificateur, puis, après « var fine », les touches qui se lisent sans eux.
-sections, mode = {"ctrl+": set(), "ctrl": set(), "aucun": set(), "libre": set()}, None
+sections, mode = {"ctrl+": set(), "ctrl": set(), "maj": set(), "aucun": set(), "libre": set()}, None
 for ligne in corps.group(2).splitlines():
     if re.search(r"if \(e\.KeyModifiers\.HasFlag\(KeyModifiers\.Control\)\)", ligne):
         mode = "ctrl+"
     elif re.search(r"if \(e\.KeyModifiers == KeyModifiers\.Control\)", ligne):
         mode = "ctrl"
+    elif re.search(r"if \(e\.KeyModifiers == KeyModifiers\.Shift\)", ligne):
+        mode = "maj"
     elif re.search(r"if \(e\.KeyModifiers == KeyModifiers\.None\)", ligne):
         mode = "aucun"
     elif "var fine" in ligne:
@@ -117,10 +120,11 @@ for ligne in corps.group(2).splitlines():
     if mode and re.search(r"\bcase\b", ligne):
         sections[mode].update(re.findall(r"Key\.(\w+)", ligne))
 interceptees_ctrl = sections["ctrl+"] | sections["ctrl"]
-traitees = ({f"Ctrl+{k}" for k in interceptees_ctrl} | set(sections["aucun"]) | set(sections["libre"]))
+traitees = ({f"Ctrl+{k}" for k in interceptees_ctrl} | {f"Shift+{k}" for k in sections["maj"]}
+            | set(sections["aucun"]) | set(sections["libre"]))
 
 # Ce que le README écrit pour une touche : « Maj » pour Shift, et les noms français.
-noms = {"Shift": "Maj", "Back": "Retour arrière", "Delete": "Suppr", "Escape": "Échap", "Space": "Espace",
+noms = {"Shift": "Maj", "Back": "Retour arrière", "Delete": "Suppr", "Insert": "Inser", "Escape": "Échap", "Space": "Espace",
         "Left": "Flèches", "Right": "Flèches", "Up": "Flèches", "Down": "Flèches"}
 def au_readme(geste):
     return "+".join(noms.get(partie, partie) for partie in geste.split("+"))
@@ -212,9 +216,14 @@ for attendu in ("Ctrl+Shift+F", "Ctrl+Shift+B"):
 # --------------------------------- g. Ctrl+lettre : N, O, S et le presse-papiers, seulement
 # Les touches que la fenêtre intercepte sous Contrôle n'arrivent pas à une liaison du même
 # nom : un « Ctrl+S » déclaré comme KeyBinding passerait avant elles, ou jamais.
-if interceptees_ctrl != {"N", "O", "S", "X", "C", "V"}:
+if interceptees_ctrl != {"N", "O", "S", "X", "C", "V", "Insert"}:
     refuser("OnKeyDown intercepte sous Contrôle " + ", ".join(sorted(interceptees_ctrl))
-            + " — N, O, S, X, C et V attendues")
+            + " — N, O, S, X, C, V et Insert attendues")
+if sections["maj"] != {"Insert", "Delete"}:
+    refuser("OnKeyDown intercepte sous Maj seul " + ", ".join(sorted(sections["maj"])) + " — Insert et Delete attendues")
+for geste in gestes:
+    if geste in ("Shift+Insert", "Shift+Delete", "Ctrl+Insert"):
+        refuser(f"« {geste} » est déclaré en KeyBinding : il passerait avant le champ, qui le tient lui-même")
 for geste in gestes:
     parties = geste.split("+")
     if parties[0] == "Ctrl" and len(parties) == 2 and parties[1] in interceptees_ctrl:
