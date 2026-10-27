@@ -206,10 +206,12 @@ public class ToucheAuChampTests
     }
 
     /// <summary>
-    /// La recette : <c>Ctrl+Maj+G</c> et <c>Ctrl+Maj+H</c> se taisent aussi dans un champ — ils
-    /// demandent plusieurs blocs, ou un groupe, et la saisie sur la page n'en a jamais : on les
-    /// joue dans une marge de l'onglet Document, que la sélection ne masque pas. Ni groupe ni
-    /// dissociation, et rien d'empilé ; le champ garde le focus.
+    /// La recette : <c>Ctrl+Maj+G</c> se tait aussi dans un champ — il demande plusieurs blocs, ou
+    /// un groupe, et la saisie sur la page n'en a jamais : on le joue dans une marge de l'onglet
+    /// Document, que la sélection ne masque pas. Ni groupe ni dissociation, et rien d'empilé ; le
+    /// champ garde le focus. Depuis N10, la même touche groupe et dissocie, comme dans Publisher,
+    /// et <c>Ctrl+Maj+H</c> est libéré : le test, écrit pour <c>H</c>, dissocie par <c>G</c>
+    /// (règle 14).
     /// </summary>
     [AvaloniaFact]
     public void Dans_un_champ_grouper_et_dissocier_se_taisent()
@@ -233,7 +235,7 @@ public class ToucheAuChampTests
         Assert.False(vm.CanUndo, "Ctrl+Maj+G dans un champ a fait un pas");
 
         // Hors du champ, il groupe, comme avant ; le groupe pris, la marge au clavier :
-        // Ctrl+Maj+H ne le dissocie pas.
+        // Ctrl+Maj+G ne le dissocie pas.
         Rendu.Touche(fenetre, PhysicalKey.G, RawInputModifiers.Control | RawInputModifiers.Shift);
         var groupe = Assert.IsType<GroupFrame>(page.Frames[0]);
         Assert.Same(groupe, vm.Selected);
@@ -241,13 +243,13 @@ public class ToucheAuChampTests
 
         marge.Focus();
         Rendu.Battre();
-        Rendu.Touche(fenetre, PhysicalKey.H, RawInputModifiers.Control | RawInputModifiers.Shift);
+        Rendu.Touche(fenetre, PhysicalKey.G, RawInputModifiers.Control | RawInputModifiers.Shift);
         Assert.Same(groupe, page.Frames[0]);
-        Assert.True(marge.IsFocused, "Ctrl+Maj+H a pris le focus au champ");
+        Assert.True(marge.IsFocused, "Ctrl+Maj+G a pris le focus au champ");
         Quitter(fenetre);
         Assert.Equal(avant, Etat(vm));
 
-        Rendu.Touche(fenetre, PhysicalKey.H, RawInputModifiers.Control | RawInputModifiers.Shift);
+        Rendu.Touche(fenetre, PhysicalKey.G, RawInputModifiers.Control | RawInputModifiers.Shift);
         Assert.Equal(new[] { "A", "B", "C" }, Pile(vm));
     }
 

@@ -704,7 +704,7 @@ public class BarreContextuelleTests
             Assert.Equal(nature, pastille.Text);
             Assert.Equal(police, Bouton<ComboBox>(fenetre, "Police") is not null);
             Assert.Equal(commandes, Trouver<StackPanel>(barre, "CommandesDeLaSelection").IsEffectivelyVisible);
-            Assert.Equal(dissocier, Bouton<Button>(fenetre, "Dissocier (Ctrl+Maj+H)") is not null);
+            Assert.Equal(dissocier, Bouton<Button>(fenetre, "Dissocier (Ctrl+Maj+G)") is not null);
             Assert.Equal(origine, Origine(fenetre));
             Assert.Equal(41, barre.Bounds.Height);
         }
@@ -733,7 +733,7 @@ public class BarreContextuelleTests
         vm.SelectOnly(groupe);
         Rendu.Battre();
         Voir("Groupe", police: false, commandes: false, dissocier: true);
-        Rendu.Cliquer(Bouton<Button>(fenetre, "Dissocier (Ctrl+Maj+H)")!);
+        Rendu.Cliquer(Bouton<Button>(fenetre, "Dissocier (Ctrl+Maj+G)")!);
         Assert.DoesNotContain(groupe, vm.CurrentPage!.Frames);
 
         vm.SelectOnly(null);

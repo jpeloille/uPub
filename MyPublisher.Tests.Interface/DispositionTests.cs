@@ -630,6 +630,9 @@ public class DispositionTests
         Assert.Equal(KeyGesture.Parse("Ctrl+I"), entrees[1].InputGesture);
         // Le souligné y entre avec la barre contextuelle (I3) : sa recette l'éprouve.
         Assert.Equal(KeyGesture.Parse("Ctrl+U"), entrees[2].InputGesture);
+        // Les quatre alignements, aux touches de Publisher en français (N10).
+        Assert.Equal(new[] { "Ctrl+L", "Ctrl+E", "Ctrl+R", "Ctrl+J" },
+            entrees.Skip(3).Take(4).Select(e => e.InputGesture?.ToString()));
 
         // Sans bloc de texte, rien n'est offert.
         vm.SelectOnly(forme);

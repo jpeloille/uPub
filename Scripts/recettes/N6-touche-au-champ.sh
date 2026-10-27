@@ -34,7 +34,8 @@
 #        blocs ne change pas ; de même dans Contenu, Nom, le champ X, et une marge de l'onglet
 #        Document, où la valeur tapée ensuite fait son pas (le relevé de Q24) ;
 #      · Ctrl+D, Ctrl+Maj+F et B ne font rien en saisie et n'empilent rien, la frappe seule a
-#        son pas ; Ctrl+Maj+G et H ne font rien dans un champ ;
+#        son pas ; Ctrl+Maj+G ne groupe ni ne dissocie dans un champ (depuis N10, la même touche
+#        groupe et dissocie, et Ctrl+Maj+H est libéré : la règle 14 a réécrit le test) ;
 #      · en saisie, le bouton Premier plan n'est pas grisé, et un clic sur lui porte le bloc au
 #        premier plan, quand Ctrl+Maj+F ne fait rien ; un menu ouvert prend le focus, et
 #        « Tout sélectionner » y prend les blocs ;
@@ -89,14 +90,18 @@ fenetre = (VUES / "MainWindow.axaml.cs").read_text(encoding="utf-8")
 # ------------------------------------- a. six commandes du clavier, gardées par le focus
 
 axaml_fenetre = (VUES / "MainWindow.axaml").read_text(encoding="utf-8")
-liaisons = {
-    "Ctrl+A": ("ToucheToutSelectionner", "PeutToutSelectionnerAuClavier", "SelectAll"),
-    "Ctrl+D": ("ToucheDupliquer", "PeutDupliquerAuClavier", "DuplicateSelected"),
-    "Ctrl+Shift+G": ("ToucheGrouper", "PeutGrouperAuClavier", "GroupSelected"),
-    "Ctrl+Shift+H": ("ToucheDissocier", "PeutDissocierAuClavier", "UngroupSelected"),
-    "Ctrl+Shift+F": ("ToucheAuPremierPlan", "PeutPorterAuPremierPlanAuClavier", "BringToFront"),
-    "Ctrl+Shift+B": ("ToucheALArrierePlan", "PeutPorterALArrierePlanAuClavier", "SendToBack"),
-}
+# Depuis N10, Ctrl+Maj+G groupe ou dissocie selon la sélection, comme Publisher : la liaison
+# mène à ToucheGrouperOuDissocier (MainWindowViewModel.Raccourcis.cs), qui joue l'une des deux
+# commandes du clavier de ce poste, gardées par le focus ; Ctrl+Maj+H est libéré. Les deux
+# commandes gardées restent ici, sans liaison à elles (None).
+liaisons = [
+    ("Ctrl+A", ("ToucheToutSelectionner", "PeutToutSelectionnerAuClavier", "SelectAll")),
+    ("Ctrl+D", ("ToucheDupliquer", "PeutDupliquerAuClavier", "DuplicateSelected")),
+    (None, ("ToucheGrouper", "PeutGrouperAuClavier", "GroupSelected")),
+    (None, ("ToucheDissocier", "PeutDissocierAuClavier", "UngroupSelected")),
+    ("Ctrl+Shift+F", ("ToucheAuPremierPlan", "PeutPorterAuPremierPlanAuClavier", "BringToFront")),
+    ("Ctrl+Shift+B", ("ToucheALArrierePlan", "PeutPorterALArrierePlanAuClavier", "SendToBack")),
+]
 origines = {
     "SelectAll": r"\[RelayCommand\]",
     "DuplicateSelected": r"\[RelayCommand\(CanExecute = nameof\(HasSelection\)\)\]",
@@ -105,9 +110,10 @@ origines = {
     "GroupSelected": r"\[RelayCommand\(CanExecute = nameof\(CanGroup\)\)\]",
     "UngroupSelected": r"\[RelayCommand\(CanExecute = nameof\(CanUngroup\)\)\]",
 }
-for geste, (touche, garde, origine) in liaisons.items():
-    exige(f'<KeyBinding Gesture="{geste}" Command="{{Binding {touche}Command}}"/>' in axaml_fenetre,
-          f"« {geste} » ne mène pas à la commande du clavier « {touche}Command ».")
+for geste, (touche, garde, origine) in liaisons:
+    if geste:
+        exige(f'<KeyBinding Gesture="{geste}" Command="{{Binding {touche}Command}}"/>' in axaml_fenetre,
+              f"« {geste} » ne mène pas à la commande du clavier « {touche}Command ».")
     exige(re.search(rf"\[RelayCommand\(CanExecute = nameof\({garde}\)\)\]\s*private void {touche}\(\) => {origine}Command\.Execute\(null\);",
                     partiel), f"« {touche} » n'est pas une commande du partiel, gardée par « {garde} », qui joue « {origine} ».")
     exige(f"private bool {garde}() => !ConsumesTyping && {origine}Command.CanExecute(null);" in partiel,
@@ -116,6 +122,11 @@ for geste, (touche, garde, origine) in liaisons.items():
           f"« {origine} » n'a plus sa condition d'avant le poste : les menus et les boutons la liraient.")
     exige(f"{{Binding {origine}Command}}" in axaml_fenetre,
           f"aucun menu ni bouton de la fenêtre ne porte plus « {origine}Command ».")
+exige('<KeyBinding Gesture="Ctrl+Shift+G" Command="{Binding ToucheGrouperOuDissocierCommand}"/>' in axaml_fenetre,
+      "« Ctrl+Shift+G » ne mène pas à ToucheGrouperOuDissocierCommand (N10).")
+raccourcis = (VM / "MainWindowViewModel.Raccourcis.cs").read_text(encoding="utf-8")
+exige("ToucheGrouperCommand.CanExecute(null) || ToucheDissocierCommand.CanExecute(null)" in raccourcis,
+      "Ctrl+Maj+G ne passe plus par les deux commandes du clavier gardées par le focus.")
 exige("ConsumesTyping" not in modele, "MainWindowViewModel.cs lit le focus : la garde est au clavier seul.")
 for commande in ("Undo", "Redo"):
     exige(re.search(rf"\[RelayCommand\]\s*private void {commande}\(\)", modele),
@@ -133,9 +144,10 @@ print("    b. la fenêtre prête son focus au modèle de vue, et le reprend")
 # ------------------------------------------------------- c. aucun second Ctrl+A, ni D
 
 axaml = "\n".join(p.read_text(encoding="utf-8") for p in VUES.glob("*.axaml"))
-for geste in ("Ctrl+A", "Ctrl+D", "Ctrl+Shift+G", "Ctrl+Shift+H", "Ctrl+Shift+F", "Ctrl+Shift+B"):
+for geste, attendu in (("Ctrl+A", 1), ("Ctrl+D", 1), ("Ctrl+Shift+G", 1), ("Ctrl+Shift+H", 0), ("Ctrl+Shift+F", 1),
+                       ("Ctrl+Shift+B", 1)):
     n = len(re.findall(rf'<KeyBinding\s+Gesture="{re.escape(geste)}"', axaml))
-    exige(n == 1, f"« {geste} » est déclaré {n} fois en KeyBinding dans les vues, une attendue.")
+    exige(n == attendu, f"« {geste} » est déclaré {n} fois en KeyBinding dans les vues, {attendu} attendue(s).")
 cle = corps(fenetre, "protected override void OnKeyDown(KeyEventArgs e)") or ""
 sous_controle = cle.split("if (e.KeyModifiers == KeyModifiers.None)")[0]
 for touche in ("A", "D"):

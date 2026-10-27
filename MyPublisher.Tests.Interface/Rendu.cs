@@ -690,7 +690,7 @@ public static class Rendu
     /// <summary>
     /// Ce qu'une touche d'un clavier AZERTY français livre : sa place, la touche qu'elle
     /// nomme et le caractère qu'elle porte. Les lettres seules et la rangée du bas : le
-    /// reste est commun aux deux claviers, ou dépend de Maj.
+    /// reste est commun aux deux claviers, ou dépend de Maj — voir <see cref="AzertyAuNiveau"/>.
     /// </summary>
     private static readonly System.Collections.Generic.Dictionary<PhysicalKey, (Key Touche, string Symbole)> Azerty = new()
     {
@@ -706,26 +706,70 @@ public static class Rendu
     };
 
     /// <summary>
+    /// Le niveau d'une touche AZERTY : sans rien, sous <c>Maj</c>, ou sous AltGr — qui ne se lit
+    /// pas dans les modificateurs (voir <see cref="AzertyAuNiveau"/>).
+    /// </summary>
+    public enum NiveauAzerty { Base, Maj, AltGr }
+
+    /// <summary>
+    /// Ce que les touches dont le caractère change avec le niveau livrent, relevé par la sonde
+    /// du clavier (poste N10, <c>MYPUBLISHER_SONDE_CLAVIER</c>) sur la machine du propriétaire,
+    /// le 27 octobre 2026 : GNOME sous Wayland, X11 par XWayland, disposition <c>fr</c>. Trois
+    /// faits y sont lus. La touche nommée suit le caractère produit, aux places d'un QWERTY
+    /// américain — « &lt; » livre <c>OemComma</c>, « &gt; » <c>OemPeriod</c>, « } » sous AltGr
+    /// <c>OemCloseBrackets</c> —, sauf sur la rangée des chiffres, où elle suit la place :
+    /// « à » et « @ » livrent <c>D0</c>, « [ » sous AltGr <c>D5</c> ; un caractère sans place
+    /// sur un QWERTY, « ) », livre la touche de sa place, <c>OemMinus</c>. Le caractère se lit
+    /// sous <c>Ctrl</c> comme sans lui. AltGr ne se lit pas dans les modificateurs : il arrive
+    /// en frappe à part, <c>RightAlt</c>, et la touche qui suit vient sans modificateur.
+    ///
+    /// Deux lignes sont déduites, et le disent : la sonde n'a vu ni « ] », ni « 0 » sous
+    /// <c>Maj</c>. « ] » (AltGr + « ) ») est déduit de « } » (AltGr + « = ») : le caractère a une
+    /// place sur un QWERTY, la touche nommée la suit ; « 0 » de « à » et de « @ », la rangée des
+    /// chiffres livrant la touche de sa place à tous les niveaux.
+    /// </summary>
+    private static readonly System.Collections.Generic.Dictionary<(PhysicalKey, NiveauAzerty), (Key Touche, string Symbole)>
+        AzertyAuNiveau = new()
+        {
+            [(PhysicalKey.IntlBackslash, NiveauAzerty.Base)] = (Key.OemComma, "<"),
+            [(PhysicalKey.IntlBackslash, NiveauAzerty.Maj)] = (Key.OemPeriod, ">"),
+            [(PhysicalKey.Equal, NiveauAzerty.Base)] = (Key.OemPlus, "="),
+            [(PhysicalKey.Equal, NiveauAzerty.Maj)] = (Key.OemPlus, "+"),
+            [(PhysicalKey.Equal, NiveauAzerty.AltGr)] = (Key.OemCloseBrackets, "}"),
+            [(PhysicalKey.Minus, NiveauAzerty.Base)] = (Key.OemMinus, ")"),
+            [(PhysicalKey.Minus, NiveauAzerty.AltGr)] = (Key.OemCloseBrackets, "]"),   // déduit
+            [(PhysicalKey.Digit5, NiveauAzerty.AltGr)] = (Key.D5, "["),
+            [(PhysicalKey.Digit0, NiveauAzerty.Base)] = (Key.D0, "à"),
+            [(PhysicalKey.Digit0, NiveauAzerty.Maj)] = (Key.D0, "0"),                   // déduit
+            [(PhysicalKey.Digit0, NiveauAzerty.AltGr)] = (Key.D0, "@"),
+        };
+
+    /// <summary>
     /// Une touche d'un clavier AZERTY, nommée par sa place : <c>PhysicalKey.Q</c> livre
     /// <c>Key.A</c> et « a ». Les liaisons de touches d'Avalonia comparent la touche, non
-    /// sa place (<c>KeyGesture.Matches</c>) : Ctrl+A se joue donc sur la place de Q. Ce que
-    /// le banc ne sait pas dire, c'est ce que X11 livre vraiment — pour « &lt; », par
-    /// exemple, sur la touche que n'a pas un clavier QWERTY. Une place hors de la table est
+    /// sa place (<c>KeyGesture.Matches</c>) : Ctrl+A se joue donc sur la place de Q. Les
+    /// touches dont le caractère change avec <c>Maj</c> ou AltGr livrent ce que la sonde du
+    /// clavier a relevé (<see cref="AzertyAuNiveau"/>) : <paramref name="altGr"/> joue AltGr,
+    /// qui ne s'ajoute pas aux modificateurs, comme sous X11. Une place hors des tables est
     /// celle d'une touche commune aux deux claviers — les autres lettres, Entrée, Échap, les
     /// flèches, les touches de fonction — et part en QWERTY ; celles qui diffèrent sans être
-    /// dans la table — la rangée des chiffres, les crochets, l'apostrophe — échouent plutôt
-    /// que de livrer ce qu'un AZERTY ne livre pas.
+    /// dans les tables — le reste de la rangée des chiffres, les crochets, l'apostrophe —
+    /// échouent plutôt que de livrer ce qu'un AZERTY ne livre pas.
     /// </summary>
     public static void ToucheAzerty(TopLevel racine, PhysicalKey touche, RawInputModifiers touches = RawInputModifiers.None,
-                                    bool relacher = false)
+                                    bool relacher = false, bool altGr = false)
     {
-        if (!Azerty.TryGetValue(touche, out var livree))
+        var niveau = altGr ? NiveauAzerty.AltGr
+            : touches.HasFlag(RawInputModifiers.Shift) ? NiveauAzerty.Maj : NiveauAzerty.Base;
+
+        if (!AzertyAuNiveau.TryGetValue((touche, niveau), out var livree) && !Azerty.TryGetValue(touche, out livree))
         {
-            if (touche is >= PhysicalKey.Digit0 and <= PhysicalKey.Digit9 or PhysicalKey.Minus or PhysicalKey.Equal
+            if (altGr || touche is >= PhysicalKey.Digit0 and <= PhysicalKey.Digit9 or PhysicalKey.Minus or PhysicalKey.Equal
                 or PhysicalKey.BracketLeft or PhysicalKey.BracketRight or PhysicalKey.Quote or PhysicalKey.Backquote
                 or PhysicalKey.Backslash or PhysicalKey.IntlBackslash)
             {
-                throw new ArgumentException($"le banc ne sait pas ce que la place {touche} livre sur un AZERTY", nameof(touche));
+                throw new ArgumentException($"le banc ne sait pas ce que la place {touche} livre sur un AZERTY au niveau {niveau}",
+                    nameof(touche));
             }
 
             Touche(racine, touche, touches, relacher);

@@ -109,6 +109,7 @@ public partial class MainWindow : Window
             _vm.PropertyChanged -= OnViewModelPropertyChanged;
             _vm.TransactionsRefermees -= OnTransactionsRefermees;
             _vm.FermetureDemandee -= OnFermetureDemandee;
+            _vm.ExportDemande -= OnExportDemande;
             _vm.SuivreLeClavier(null);
         }
 
@@ -118,6 +119,7 @@ public partial class MainWindow : Window
             _vm.PropertyChanged += OnViewModelPropertyChanged;
             _vm.TransactionsRefermees += OnTransactionsRefermees;
             _vm.FermetureDemandee += OnFermetureDemandee;
+            _vm.ExportDemande += OnExportDemande;
             _vm.SuivreLeClavier(() => ConsumesTyping(FocusManager?.GetFocusedElement()));
         }
 
@@ -261,7 +263,12 @@ public partial class MainWindow : Window
         }
     }
 
-    private async void OnExportPdf(object? sender, RoutedEventArgs e)
+    /// <summary>
+    /// Le modèle de vue demande l'export (poste N10) : le menu Fichier, le bouton de la barre
+    /// principale et <c>Ctrl+Maj+P</c> passent tous par sa commande, et la fenêtre fait ce que
+    /// seule elle sait faire, demander le fichier.
+    /// </summary>
+    private async void OnExportDemande(object? sender, EventArgs e)
     {
         if (Vm is not { } vm) return;
 
@@ -779,11 +786,31 @@ public partial class MainWindow : Window
         element is Visual visual &&
         visual.GetSelfAndVisualAncestors().Any(ancestor => ancestor is TextBox or ComboBox);
 
+    /// <summary>
+    /// Une frappe sous <c>Ctrl</c>, que <c>Maj</c> ou <c>Alt</c> accompagnent ou non, sans la touche
+    /// système : celle que la table des raccourcis par caractère lit (poste N10).
+    /// </summary>
+    private static bool ParCaractere(KeyEventArgs e) =>
+        (e.KeyModifiers & ~(KeyModifiers.Shift | KeyModifiers.Alt)) == KeyModifiers.Control;
+
     protected override void OnKeyDown(KeyEventArgs e)
     {
         if (Vm is not { } vm)
         {
             base.OnKeyDown(e);
+            return;
+        }
+
+        // Les raccourcis qui sont des caractères — Ctrl+], Ctrl+[, Ctrl+Maj+> et Ctrl+Maj+< —,
+        // lus sur le caractère produit, avant la garde de la saisie (poste N10) : une liaison
+        // compare la touche, et sur un AZERTY « < » et « > » partagent une touche, « ] » et « [ »
+        // demandent AltGr. Maj et Alt n'y comptent pas, puisqu'ils produisent le caractère —
+        // AltGr est Ctrl+Alt sous Windows, et ne se voit pas sous X11. Aucun champ ne prend ces
+        // touches : elles remontent jusqu'ici, et, que personne ne les prenne, la zone de saisie
+        // en écrirait le caractère — la sonde l'a vu pour Ctrl+« < ».
+        if (ParCaractere(e) && vm.JouerLeRaccourciParCaractere(e.KeySymbol))
+        {
+            e.Handled = true;
             return;
         }
 
@@ -794,7 +821,6 @@ public partial class MainWindow : Window
                 case Key.N: OnNew(this, e); e.Handled = true; return;
                 case Key.O: OnOpen(this, e); e.Handled = true; return;
                 case Key.S: OnSave(this, e); e.Handled = true; return;
-                case Key.E: OnExportPdf(this, e); e.Handled = true; return;
             }
         }
 

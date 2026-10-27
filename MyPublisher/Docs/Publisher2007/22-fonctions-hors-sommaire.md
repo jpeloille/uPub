@@ -52,7 +52,7 @@ code.
 ## Menu File (p. 61)
 
 *Import Word Document…*, *Publish to the Web…*, **Publish as PDF or XPS…** (`fait` —
-c'est `Ctrl+E`), *Convert to Web Publication…*, **Page Setup…**, *Print Setup…*,
+c'est `Ctrl+Maj+P` depuis N10, `Ctrl+E` avant, qui centre désormais comme dans Publisher), *Convert to Web Publication…*, **Page Setup…**, *Print Setup…*,
 **Print Preview**, **Print…**
 
 - **Print…** — `manquant`, et c'est notable : MyPublisher exporte un PDF mais

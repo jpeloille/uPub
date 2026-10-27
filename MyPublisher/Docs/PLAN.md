@@ -113,7 +113,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **N7** | Mesurer l'écart de la première voie, et s'arrêter | **100 %** | **Arrêt** : la voie de R7 revient au propriétaire. La commande `saisie` du banc (`MyPublisher.Banc/Saisie.cs`) ouvre la saisie de chaque bloc sans transaction et mesure, position par position, l'écart entre le point d'insertion du champ (`HitTestTextPosition` sur le `PART_TextPresenter`, la ligne de base de sa ligne) et celui du caractère composé (`PointDe` de N3), en A — le champ tel qu'il est — et en B — l'interligne de la composition posé et l'arrondi retiré, sur l'instance du champ seule ; elle dit pour chaque bloc ses causes et, pour chaque position au-dessus du seuil, ce qui l'y met. `Scripts/mesurer-la-saisie.sh` la joue sur l'étalonnage (`Samples/recette-saisie.mypub` : 0, puis 6 et 12 pt, puis 13,8 pt), le corpus — l'exemple, ATA 21, les Fiches, `recette-coupure`, 116 blocs et 32 340 positions — et la contre-épreuve au zoom 2, identique à 0,0000 pt. **Mesuré** : le maximum de B est 471,2 pt, son 95ᵉ centile 102,2 pt, 13 600 positions et 113 blocs sur 116 au-dessus de 0,75 pt — **au-dessus du seuil** ; coupures, colonnes, hauteur des lignes, espaces de paragraphe et justification en tête ; chiffres et note de décision dans la section R7. Aucune ligne de l'application. 13 tests sous `poste=N7`, qui jouent la commande elle-même ; deux sabotages au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **N8** | Couper, copier, coller des blocs | **100 %** | `Ctrl+X`, `Ctrl+C` et `Ctrl+V` hors saisie, pris par `OnKeyDown` après la garde de la saisie et jamais en `KeyBinding` (`OnCouper`, `OnCopier`, `OnColler`) ; le menu Édition porte Couper, Copier, Coller, qui passent par la fenêtre et rendent le geste au champ de texte — la zone de saisie, que la barre de menus prive du focus, le reprend avec sa sélection une fois le menu refermé. Le format `mypublisher-blocs` est le JSON d'un document d'une page portant des clones de la sélection, dans l'ordre de la page, avec le texte brut des blocs à côté (`MainWindowViewModel.PressePapiers.cs`) ; le collage pose des clones, en un pas, au même endroit, ou 12 pt plus loin — puis 24 — tant que la place est prise, comme `Ctrl+D` ; Couper fait un seul pas ; un texte venu d'ailleurs devient un bloc de texte. Un collage d'une version plus récente du format est refusé ; les références au jeu se résolvent dans le document d'arrivée ; les chemins d'images, absolus en mémoire depuis A3, se rebasent à son enregistrement. Le presse-papiers du banc sans affichage suffit, aucun faux. Onze tests ; un sabotage au juge ; relecture et juge après fusion. Recette dans `Scripts/recettes/` |
 | **N9** | La langue du texte | **100 %** | `Document.Langue`, une étiquette BCP 47, toujours là — `fr-FR` pour un document vierge ou écrit avant N9, jamais la langue de la machine ; celle du modèle pour un document qui en part — ; `TextFrame.Langue` et `StyleSpan.Langue`, nulles pour « comme le bloc », puis « comme le document » (`Langues.DuCaractere`, pour N25). Clés additives, `FormatVersion` à 5, Samples et Templates réenregistrés par `--resave`. L'import lit `fo:language`, `fo:script` et `fo:country`, les clés que `pub2raw` écrit sur chaque fragment : ATA 21 en déclare 73 en `fr-FR`, les Fiches 298 en `en-US` et 31 en `fr-FR` ; les 50, 294 et 17 qui portent un caractère gardent leur langue caractère par caractère, comparés au relevé lui-même, seize titres français que les Fiches écrivent dans des cases de tableau compris. La langue la plus écrite va au bloc, puis au document — ATA 21 en `fr-FR`, les Fiches en `en-US` — ; un fragment qui ne diffère de son bloc que par elle reste, et ne dit qu'elle. Le dock Document la règle en un pas, section « Langue » ; une langue inconnue s'y montre telle quelle et ne se perd pas. Elle n'entre pas dans `StyleEffectif` : rien de ce qui se dessine n'en dépend — l'empreinte des 18 documents du corpus est identique avant et après le poste, et chaque document se rend au bit près dans une autre langue. La mise en forme d'une plage la garde, `Ctrl+Espace` aussi. Trente-deux tests, vingt-six purs et six sur la fenêtre ; quatre sabotages au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
-| **N10** | Les raccourcis de Publisher en français | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 3 ; écrit la fiche 24 |
+| **N10** | Les raccourcis de Publisher en français | **100 %** | La fiche 24 : l'aide de Microsoft en français, *Raccourcis clavier dans Publisher*, relue mot pour mot sur support.microsoft.com le 27 octobre 2026, 102 lignes hors du ruban, chacune avec la page du livre de 2007 qui la montre et le sort de la règle 12 — 31 liées, 2 gardées, 2 remplacées, 5 à un autre poste, 27 réservées, 35 écartées. `Ctrl+E` centre et n'exporte plus, même sans bloc de texte ; `Ctrl+L`, `R`, `J` alignent, sur le bloc ; l'export devient une commande du modèle de vue (`ExporterEnPdf`), qui lève une demande à la fenêtre, sur `Ctrl+Maj+P`, même en saisie, au menu Fichier et au bouton. Le corps : `Ctrl+]` et `Ctrl+[` d'un point, `Ctrl+Maj+>` et `Ctrl+Maj+<` dans la liste standard d'Office, 8 à 72 pt, que le noyau définit (`CorpsStandard`) ; ils se lisent sur le caractère produit, `Maj` et AltGr comptés pour rien, par une table unique, `RaccourcisParCaractere`, avant la garde de la saisie. `Ctrl+Maj+G` groupe et dissocie, `Ctrl+Maj+H` est libéré ; `Ctrl+Maj+X` supprime l'objet, même en saisie, la frappe gardant son pas ; `Alt+Retour arrière` et `F4` annulent et rétablissent. Une sonde (`MYPUBLISHER_SONDE_CLAVIER`), jouée par le propriétaire sur son AZERTY, a relevé ce que les touches livrent, et `Rendu.ToucheAzerty` le rejoue ; `Ctrl+0` se tape sans `Maj`. Les menus et les infobulles disent les touches ; la recette de A4, étendue, confronte liaisons, table, `OnKeyDown`, menus, README et touches réservées. Neuf tests sur la fenêtre, cinq du noyau (dix-neuf cas) ; trois tests voisins réécrits (règle 14) ; quatre sabotages au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **N11** | Ne rien perdre en fermant, retrouver ses documents | **100 %** | Nouveau, Ouvrir, Fermer, Quitter et la fermeture de la fenêtre passent par `LaisserPartirLeDocument` (`MainWindow.Fermer.cs`) : la saisie ouverte et le champ du dock ou de la barre sont refermés d'abord, pour que leur frappe compte, puis, sur un document modifié, un dialogue neuf (`QuestionAvantDePerdre.axaml`, aux couleurs de l'apparence) demande « Enregistrer les modifications apportées à « nom » ? » : Enregistrer, le bouton par défaut, écrit — par « Enregistrer sous » sans chemin — et ne laisse poursuivre que si l'écriture a eu lieu ; Ne pas enregistrer poursuit ; Annuler, le bouton d'annulation, ou le dialogue refermé, laisse tout tel quel. La fenêtre suspend sa fermeture (`OnClosing`) le temps de la question. La question n'est branchée que par `App.axaml.cs` (`MainWindow.AvantDePerdre`) : une fenêtre de test ne demande rien. Fermer (`Ctrl+W`, `Ctrl+F4`, menu Fichier) ferme le document et rend le catalogue des modèles ; le catalogue et Ouvrir demandent une fois le modèle ou le fichier choisi. Les six derniers documents ouverts ou enregistrés sont au menu Fichier, numérotés, gardés dans `MyPublisher.Core/Services/Preferences.cs`, le magasin des réglages de l'utilisateur (`~/.config/MyPublisher/preferences.json`, ou le dossier de `MYPUBLISHER_PREFERENCES`), qui réécrit telles quelles les clés qu'il ne connaît pas, pour A11 et N25 ; seul `App.axaml.cs` le charge, un modèle de vue construit ailleurs en prend un en mémoire qui n'écrit nulle part. GNOME ne prend ni `Ctrl+W` ni `Ctrl+F4`. Trente-six tests, sept purs et vingt-neuf sur la fenêtre ; deux sabotages au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **N12** | Entrer dans le texte d'un clic, le curseur au point visé | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 4 |
 | **N13** | Les menus de Publisher | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 4 |
@@ -7157,6 +7157,99 @@ Fichiers : `MainWindow.axaml` (liaisons, gestes des menus), `MainWindow.axaml.cs
 demande d'export), `MainWindowViewModel.Raccourcis.cs` (neuf), `BarreContextuelle.axaml`
 (infobulles), README (tous les sous-tableaux), `A4-superposition.sh`, la fiche 24. Dépend de N4,
 N6 et N8. Effort : moyen.
+
+*Livré le 27 octobre 2026*, dans la salve Saisie 3 ; la relecture adversariale vient après la
+fusion. **La table d'abord** : la fiche 24 recopie mot pour mot les 102 lignes de l'aide hors du
+ruban, lue dans son HTML le 27 octobre 2026, avec la page du livre et le sort de chacune ; l'index
+des fiches la range. **Le bureau, vérifié avant d'écrire** (`gsettings list-recursively`, comme
+B7) : GNOME ne prend ni `Ctrl+Maj+P`, ni `Alt+Retour arrière`, ni `F4`, ni `Ctrl+Maj+X` ; il prend
+leurs voisins `Alt+F4` et `Ctrl+Alt+F4`, qu'on ne déclare pas. **La sonde** : `Views/SondeDuClavier.cs`,
+que l'application branche si `MYPUBLISHER_SONDE_CLAVIER` nomme un fichier (`App.axaml.cs`, une
+ligne) — toutes les fenêtres, chaque frappe, sa touche, sa place, son caractère, ses
+modificateurs, et si l'application l'a prise ; inerte sans sa variable, elle reste. Le
+propriétaire l'a jouée le 27 octobre 2026 ; la fiche 24 en donne le relevé. **Le poste**, outre
+les fichiers nommés : `MainWindowViewModel.Raccourcis.cs` porte la table, les quatre commandes du
+corps, l'export et sa demande (`ExportDemande`, sur le modèle de `PageEntiereDemandee`),
+`ToucheGrouperOuDissocier`, qui joue les deux commandes du clavier de N6, et
+`ToucheSupprimerLObjet` ; la liste standard est au noyau, `MyPublisher.Core/Models/CorpsStandard.cs`.
+`OnKeyDown` lit la table sur `e.KeySymbol`, avant la garde de la saisie, sous `Ctrl` avec ou sans
+`Maj` et `Alt` ; son `case Key.E` est parti, et la fenêtre suit la demande d'export, que le menu
+Fichier et le bouton portent par la commande. Le menu Texte montre `Ctrl+L`, `E`, `R`, `J`, le
+menu Disposition `Ctrl+Maj+G` à Grouper comme à Dissocier ; l'infobulle de la barre et l'aide du
+groupe au dock disent `Ctrl+Maj+G`, le bouton d'export `Ctrl+Maj+P`. `Rendu.ToucheAzerty` prend
+un niveau — `Maj`, ou AltGr par `altGr: true` — et rejoue les triplets de la sonde.
+
+*Recette jouée* : `Scripts/recettes/N10-raccourcis-francais.sh`. Les sources d'abord : la fiche 24,
+son adresse, sa date, quatorze lignes de l'aide mot pour mot, l'index ; la table au partiel, lue
+sur le caractère avant la garde ; la liste au noyau, sans Avalonia ; les liaisons, les menus et
+les infobulles ; la sonde et ses relevés au banc ; le README. Puis neuf tests sous `poste=N10`
+(`RaccourcisFrancaisTests`), au clavier sur la vraie fenêtre : `Ctrl+E` qui centre en un pas et
+n'exporte ni sur une forme ni sans sélection ; `Ctrl+Maj+P` qui exporte, en saisie aussi, sans
+refermer la saisie ni faire de pas ; les quatre alignements, hors saisie et en saisie, où la
+frappe garde son pas ; le corps aux frappes de la sonde — `Ctrl+AltGr` + « ) » et « ( »,
+`Ctrl` + « < » et `Ctrl+Maj` + « < » — et en QWERTY, hors saisie et en saisie, la frappe n'écrivant
+rien ; la liste standard, d'un bloc de texte et d'un tableau, et rien sur une forme ; `Ctrl+Maj+G`
+qui groupe puis dissocie, `Ctrl+Maj+H` muet ; `Ctrl+Maj+X` hors saisie et en saisie, deux pas
+défaits dans l'ordre ; `Alt+Retour arrière` et `F4`, et, sans rien à annuler, le bloc qui reste ;
+`Ctrl` + « à » à la taille réelle, `Ctrl+Maj` + « à » muet, `Ctrl` + « = » et `Ctrl` + « ) » qui
+zooment, `Ctrl+Maj` + « = » muet, comme la sonde les a vus. Cinq tests du noyau sous le même
+trait (`CorpsStandardTests`, dix-neuf cas). Puis les voisins réécrits. La recette de A4, étendue,
+tient en plus : chaque geste une fois, en `KeyBinding` ou dans la table ; chaque touche d'`OnKeyDown`
+au README — Retour arrière y manquait ; chaque liaison qui a une entrée de menu l'y affiche, et
+chaque geste affiché est une vraie liaison ; `Ctrl+B`, `Ctrl+M`, `Ctrl+K`, `Ctrl+P`, `Ctrl+Maj+E` et
+`Ctrl+Maj+H` libres ; `Ctrl+E` qui centre, l'export sur `Ctrl+Maj+P` seul ; sous `Ctrl`, `OnKeyDown`
+n'intercepte que N, O, S, X, C et V. Quatre sabotages au juge : `Ctrl+E` rendu à l'export — le
+sabotage du plan —, la table qui ne compte plus `Maj` pour rien, `Ctrl+Maj+G` qui ne dissocie
+plus, `Ctrl+Maj+X` en saisie qui fond la frappe et la suppression.
+
+*Ce que l'implémentation a appris.* **La spécification se trompait sur `Ctrl+0`** : sur l'AZERTY
+du propriétaire, la touche « à/0 » livre `D0` à tous les niveaux — « à », « @ » —, si bien que
+`Ctrl` + « à » est la taille réelle sans `Maj`, et que `Ctrl+Maj` + « à » n'y arrive pas. La sonde
+dit le reste : la touche nommée suit le caractère, aux places d'un QWERTY américain (« < »
+`OemComma`, « > » `OemPeriod`, « } » `OemCloseBrackets`), sauf sur la rangée des chiffres, qui suit
+la place ; un caractère sans place sur un QWERTY, « ) », livre celle de sa touche ; AltGr arrive en
+frappe à part, `RightAlt`, et ne se lit pas dans les modificateurs ; le caractère se lit sous `Ctrl`.
+Une frappe que rien ne prend écrit son caractère dans la saisie, `Ctrl` compris : avant le poste,
+`Ctrl` + « < » tapé en saisie y écrivait « < ». Les liaisons passant avant le champ, la table ne
+peut être qu'après elles ; elle est lue avant la garde de la saisie d'`OnKeyDown`, et le banc
+montre que la zone de saisie laisse remonter ces quatre touches. La règle 14 a réécrit trois
+tests : la marge où `Ctrl+Maj+H` se taisait (N6) se joue à `Ctrl+Maj+G`, l'infobulle de la barre
+dit `Ctrl+Maj+G` (I3), le menu Texte montre ses quatre touches (I2) ; la recette de N6 suit la
+liaison nouvelle. Annuler relit le document entier : un test retrouve ses blocs par leur nom après
+chaque annulation.
+
+*Choisi sans certitude* :
+- la liste standard est celle d'Office, 10,5 compris ; hors d'elle, les pas de Word : la dizaine
+  au-delà de 72, le point entier en deçà de 8, jamais sous 1 pt, sans maximum ;
+- le corps change sur le bloc entier, texte ou tableau, comme le gras : un fragment qui a son
+  propre corps le garde — R7, qui fait viser la sélection et tous les caractères du bloc ;
+- la table compte pour rien `Maj` et `Alt` — AltGr est `Ctrl+Alt` sous Windows —, et refuse la
+  touche système ; sans bloc qui porte du texte, la touche continue son chemin ;
+- `F4` rétablit ; le « Répéter » d'Office, qui rejoue le dernier geste quand rien n'est à rétablir,
+  n'est pas repris ;
+- `Ctrl+Maj+X` agit aussi dans un champ du dock, sans la garde de N6 : « même en saisie », dit le
+  plan ; `Ctrl+Maj+G` garde la garde de N6, et se tait dans un champ ;
+- les alignements, le corps et l'export jouent aussi depuis un champ du dock, comme `Ctrl+G` ;
+- l'aide ne donne pas de préréglage d'interligne : rien n'est lié (fiche 23, b10) ;
+- trois triplets que la sonde n'a pas vus sont déduits, et `Rendu.ToucheAzerty` le dit : « ] »
+  sous AltGr en `OemCloseBrackets`, comme « } » ; `Ctrl` avec AltGr qui arrive en `Control` seul ;
+  « 0 » sous `Maj` en `D0`.
+
+*Relevé, non corrigé* :
+- la sonde n'a vu ni `Ctrl+AltGr` + « ) » ou « ( », ni `Ctrl` + « à », ni `Alt+Retour arrière`,
+  `Ctrl+Maj+X` ou `Ctrl+Maj+G` : le propriétaire a frappé AltGr + « = » pour « ] ». Si X11 livrait
+  `Ctrl+AltGr` + « ) » en `OemMinus`, la place de « ) », le zoom arrière (`Ctrl+OemMinus`) le
+  prendrait avant la table — ce que l'écran seul dira ;
+- qu'une touche prise par `OnKeyDown` n'écrive pas son caractère dans la saisie est vu pour les
+  touches prises par une liaison (`Ctrl` + « = »), pas pour celles de la table : le banc ne
+  synthétise pas le texte d'une frappe ;
+- `Ctrl+Inser`, `Maj+Inser` et `Maj+Suppr`, les secondes touches du presse-papiers dans l'aide, ne
+  sont liées à rien, et aucun poste ne les prend ; hors saisie, `Maj+Suppr` supprime, `OnKeyDown`
+  lisant Suppr sans regarder `Maj` — à décider ;
+- `OnKeyDown` prend `Ctrl+N`, `O` et `S` avec ou sans `Maj` : `Ctrl+Maj+S` enregistre, `Ctrl+Maj+N`
+  propose le catalogue — comme avant le poste ; N18 et « Enregistrer sous » le reprendront ;
+- la recette de A4 admet au menu `Alt+F4`, que le bureau prend et que N11 affiche à Quitter :
+  écrit pour la fusion, que la copie du poste ne voit pas.
 
 #### N11 — Ne rien perdre en fermant, retrouver ses documents *(fiche 23, d19, e19, f25)*
 

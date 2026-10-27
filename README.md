@@ -346,9 +346,22 @@ Rangés par domaine, chacun dans son sous-tableau. Les recettes lisent tous les
 sous-tableaux comme un seul : un geste n'y figure qu'une fois, quel que soit le
 domaine où il est rangé.
 
+Ce sont les touches de Publisher en français, relevées sur l'aide de Microsoft et écrites,
+avec le sort de chacune, dans la fiche 24 (`MyPublisher/Docs/Publisher2007/24-raccourcis-clavier-francais.md`).
+Celles dont la fonction n'existe pas encore restent libres pour le poste qui la servira :
+`Ctrl+B` (Atteindre la page), `Ctrl+M`, `Ctrl+K`, `Ctrl+P` (Imprimer), `Ctrl+Maj+E`,
+`Ctrl+Maj+H` (la coupure de mots). `Ctrl+Maj+F` et `Ctrl+Maj+B`, la boîte Police et le carnet
+d'adresses dans Publisher, restent Premier plan et Arrière-plan, `Alt+F6` étant pris par le
+bureau.
+
 Tant qu'un champ de texte a le clavier — la saisie d'un bloc sur la page, un champ du
 dock ou de la barre —, les raccourcis d'objet se taisent et leur touche revient au champ :
-`Ctrl+A`, `Ctrl+D`, `Ctrl+Maj+G`, `Ctrl+Maj+H`, `Ctrl+Maj+F` et `Ctrl+Maj+B`.
+`Ctrl+A`, `Ctrl+D`, `Ctrl+Maj+G`, `Ctrl+Maj+F` et `Ctrl+Maj+B`. `Ctrl+Maj+X` supprime
+l'objet, même là.
+
+Les raccourcis du corps se lisent sur le caractère que la frappe produit, `Maj` et `AltGr`
+comptés pour rien : sur un AZERTY, `Ctrl+]` se tape `Ctrl+AltGr+)`, `Ctrl+[` se tape
+`Ctrl+AltGr+(`, `Ctrl+Maj+<` se tape `Ctrl+<` et `Ctrl+Maj+>` se tape `Ctrl+Maj+<`.
 
 ### Fichier
 
@@ -357,13 +370,13 @@ dock ou de la barre —, les raccourcis d'objet se taisent et leur touche revien
 | `Ctrl+N` / `Ctrl+O` / `Ctrl+S` | Nouveau (catalogue de modèles) / Ouvrir / Enregistrer |
 | `Ctrl+W` ou `Ctrl+F4` | Fermer le document, puis rendre le catalogue des modèles |
 | `Alt+F4` | Quitter. Avant de perdre des modifications, Nouveau, Ouvrir, Fermer et Quitter demandent : Enregistrer (`Entrée`), Ne pas enregistrer, Annuler (`Échap`) |
-| `Ctrl+E` | Exporter en PDF |
+| `Ctrl+Maj+P` | Exporter en PDF, même en saisie |
 
 ### Édition
 
 | Raccourci | Action |
 |---|---|
-| `Ctrl+Z` / `Ctrl+Y` (ou `Ctrl+Maj+Z`) | Annuler / Rétablir |
+| `Ctrl+Z` (ou `Alt+Retour arrière`) / `Ctrl+Y` (ou `Ctrl+Maj+Z`, `F4`) | Annuler / Rétablir |
 | `Ctrl+D` | Dupliquer la sélection |
 | `Ctrl+X` / `Ctrl+C` / `Ctrl+V` | Couper / Copier / Coller les blocs sélectionnés, à leur place ou 12 pt plus loin si l'original y est encore ; un texte venu d'ailleurs devient un bloc. En saisie et dans un champ, le texte |
 | `Ctrl+A` | Sélectionner tous les blocs de la page ; dans la saisie d'un bloc ou dans un champ, tout le texte du champ |
@@ -373,9 +386,10 @@ dock ou de la barre —, les raccourcis d'objet se taisent et leur touche revien
 
 | Raccourci | Action |
 |---|---|
-| `Ctrl+Maj+G` / `Ctrl+Maj+H` | Grouper / Dissocier |
+| `Ctrl+Maj+G` | Grouper les blocs sélectionnés, ou dissocier le groupe sélectionné |
 | `Ctrl+Maj+F` / `Ctrl+Maj+B` | Premier plan / Arrière-plan |
-| `Suppr` | Supprimer la sélection |
+| `Suppr` ou `Retour arrière` | Supprimer la sélection |
+| `Ctrl+Maj+X` | Supprimer la sélection, même en saisie : la saisie se referme, la frappe garde son pas |
 | Flèches | Déplacer de 3 pt (`Maj` : 0,5 pt) |
 | `Alt` + flèches, dans la saisie d'un bloc | Déplacer le bloc de 3 pt (`Maj` : 0,5 pt), sans quitter la saisie |
 
@@ -384,6 +398,9 @@ dock ou de la barre —, les raccourcis d'objet se taisent et leur touche revien
 | Raccourci | Action |
 |---|---|
 | `Ctrl+G` / `Ctrl+I` / `Ctrl+U` | Gras / Italique / Souligné du bloc de texte sélectionné |
+| `Ctrl+L` / `Ctrl+E` / `Ctrl+R` / `Ctrl+J` | Aligner le texte à gauche / Centrer / Aligner à droite / Justifier, sur le bloc entier |
+| `Ctrl+]` / `Ctrl+[` | Le corps d'un point de plus / de moins, sur le bloc de texte ou le tableau |
+| `Ctrl+Maj+>` / `Ctrl+Maj+<` | La taille suivante / précédente de la liste standard : 8, 9, 10, 10,5, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72 ; au-delà, de dix en dix ; en deçà, d'un point |
 
 ### Affichage
 

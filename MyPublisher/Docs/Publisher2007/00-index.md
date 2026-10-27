@@ -41,9 +41,12 @@ de dialogues relevés à l'image.
 | [21](21-pack-and-go.md) | Pack and Go : emporter les ressources | 61–67 | `manquant` |
 | [22](22-fonctions-hors-sommaire.md) | Fonctions vues dans les captures, hors sommaire | diverses | `mixte` |
 | [23](23-modalites-de-saisie.md) | Modalités de saisie : texte, souris, clavier, menus, champs | toutes | `mixte` |
+| [24](24-raccourcis-clavier-francais.md) | Raccourcis clavier de Publisher en français, et leur sort | 9, 10, 16, 22, 36, 61 | `mixte` |
 
 Sur 21 fonctions comparables : 2 faites, 5 partielles, 10 manquantes, 4 hors périmètre.
-La fiche 23 n'entre pas dans ce compte : elle ne recense pas des fonctions mais des gestes,
+Les fiches 23 et 24 n'entrent pas dans ce compte. La 24 est la table des touches de l'aide de
+Microsoft en français, et le sort que la règle 12 de la phase N fait à chacune (poste N10). La
+fiche 23, elle, ne recense pas des fonctions mais des gestes,
 158 en tout, relevés le 25 octobre 2026.
 
 ## Ce qui ressort du dépouillement

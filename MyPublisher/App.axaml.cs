@@ -27,6 +27,9 @@ public partial class App : Application
             // More info: https://docs.avaloniaui.net/docs/guides/development-guides/data-validation#manage-validationplugins
             DisableAvaloniaDataAnnotationValidation();
 
+            // La sonde du clavier (N10), qui ne s'éveille que si sa variable nomme un fichier.
+            SondeDuClavier.BrancherSiDemandee();
+
             // Les préférences de l'utilisateur — les documents récents (poste N11) : chargées
             // ici, et seulement ici. Un modèle de vue construit ailleurs, par un test ou par le
             // banc, en prend un magasin en mémoire, qui n'écrit nulle part.
