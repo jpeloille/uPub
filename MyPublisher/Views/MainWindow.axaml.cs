@@ -842,6 +842,22 @@ public partial class MainWindow : Window
                 case Key.X: OnCouper(this, e); e.Handled = true; return;
                 case Key.C: OnCopier(this, e); e.Handled = true; return;
                 case Key.V: OnColler(this, e); e.Handled = true; return;
+                // Les secondes touches du presse-papiers de l'aide en français, que le propriétaire
+                // a demandées le 28 octobre 2026 (poste N10) : Ctrl+Inser copie, et, plus bas,
+                // Maj+Inser colle, Maj+Suppr coupe. En saisie et dans un champ, la garde les laisse
+                // au TextBox, qui les tient de lui-même (PlatformHotkeyConfiguration d'Avalonia).
+                case Key.Insert: OnCopier(this, e); e.Handled = true; return;
+            }
+        }
+
+        // Maj+Suppr coupe, et ne supprime plus : sans ce cas, Suppr, lu plus bas sans regarder Maj,
+        // emportait la sélection hors du presse-papiers.
+        if (e.KeyModifiers == KeyModifiers.Shift)
+        {
+            switch (e.Key)
+            {
+                case Key.Insert: OnColler(this, e); e.Handled = true; return;
+                case Key.Delete: OnCouper(this, e); e.Handled = true; return;
             }
         }
 

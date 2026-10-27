@@ -379,6 +379,7 @@ comptés pour rien : sur un AZERTY, `Ctrl+]` se tape `Ctrl+AltGr+)`, `Ctrl+[` se
 | `Ctrl+Z` (ou `Alt+Retour arrière`) / `Ctrl+Y` (ou `Ctrl+Maj+Z`, `F4`) | Annuler / Rétablir |
 | `Ctrl+D` | Dupliquer la sélection |
 | `Ctrl+X` / `Ctrl+C` / `Ctrl+V` | Couper / Copier / Coller les blocs sélectionnés, à leur place ou 12 pt plus loin si l'original y est encore ; un texte venu d'ailleurs devient un bloc. En saisie et dans un champ, le texte |
+| `Maj+Suppr` / `Ctrl+Inser` / `Maj+Inser` | Couper / Copier / Coller, comme `Ctrl+X`, `Ctrl+C` et `Ctrl+V` — les secondes touches de Publisher en français ; `Maj+Suppr` coupe, et ne supprime pas |
 | `Ctrl+A` | Sélectionner tous les blocs de la page ; dans la saisie d'un bloc ou dans un champ, tout le texte du champ |
 | `Échap` | Désarme l'outil, sinon désélectionne ; dans un champ de la barre contextuelle, le quitte |
 

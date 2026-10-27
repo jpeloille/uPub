@@ -25,7 +25,11 @@
 #         annulent et rétablissent ; les menus et les infobulles disent les touches ;
 #      e. la sonde du clavier ne s'éveille que par sa variable ; Rendu.ToucheAzerty rejoue ses
 #         relevés ;
-#      f. le README dit les touches, à leur sous-tableau.
+#      f. le README dit les touches, à leur sous-tableau ;
+#      g. les secondes touches du presse-papiers, demandées par le propriétaire le 28 octobre
+#         2026 : Ctrl+Inser, Maj+Inser et Maj+Suppr mènent, dans OnKeyDown, après la garde de la
+#         saisie, à OnCopier, OnColler et OnCouper (N8) ; aucune n'est une liaison ; la fiche 24
+#         et le README les disent.
 #
 # 2. LES GESTES, joués par « MyPublisher.Tests.Interface » sur la vraie fenêtre, au clavier
 #    (« RaccourcisFrancaisTests », trait « poste=N10 ») — les clauses de la recette du plan :
@@ -41,7 +45,10 @@
 #        Alt+Retour arrière ne supprime pas le bloc ;
 #      · Ctrl+Maj+X supprime le bloc, hors saisie et en saisie, la frappe gardant son pas ;
 #      · Ctrl + « à » donne la taille réelle, sans Maj ; Ctrl + « = » et Ctrl + « ) » zooment,
-#        comme la sonde les a vus pris.
+#        comme la sonde les a vus pris ;
+#      · Ctrl+Inser copie, Maj+Suppr coupe — et ne supprime plus —, Maj+Inser colle les blocs
+#        hors saisie ; en saisie, le texte, la zone les tenant d'Avalonia ; dans un champ du
+#        dock, la touche reste au champ.
 #
 #    Puis la liste standard dans le noyau (« CorpsStandardTests », même trait), et les voisins
 #    que la règle 14 a réécrits : la marge où Ctrl+Maj+G ne groupe ni ne dissocie (N6), la barre
@@ -200,12 +207,35 @@ if tableau:
     exige("`Ctrl+E` | Exporter" not in tableau.group(1), "le README dit encore que Ctrl+E exporte.")
 print("    f. le README dit les touches, à leur sous-tableau")
 
+# ------------------------------------------- g. les secondes touches du presse-papiers
+
+suite = cle[garde:] if garde >= 0 else ""
+controle = re.search(r"if \(e\.KeyModifiers == KeyModifiers\.Control\)\s*\{\s*switch \(e\.Key\)\s*\{(.*?)\}\s*\}", suite, re.S)
+maj = re.search(r"if \(e\.KeyModifiers == KeyModifiers\.Shift\)\s*\{\s*switch \(e\.Key\)\s*\{(.*?)\}\s*\}", suite, re.S)
+exige(controle is not None and "case Key.Insert: OnCopier(this, e); e.Handled = true; return;" in controle.group(1),
+      "Ctrl+Inser ne copie pas, sous Contrôle seul, après la garde de la saisie.")
+exige(maj is not None and "case Key.Insert: OnColler(this, e); e.Handled = true; return;" in maj.group(1),
+      "Maj+Inser ne colle pas, sous Maj seul, après la garde de la saisie.")
+exige(maj is not None and "case Key.Delete: OnCouper(this, e); e.Handled = true; return;" in maj.group(1),
+      "Maj+Suppr ne coupe pas, sous Maj seul, après la garde de la saisie.")
+exige(not any(g in ("Ctrl+Insert", "Shift+Insert", "Shift+Delete") for g, _, _ in liaisons),
+      "une seconde touche du presse-papiers est une liaison : elle passerait avant le champ, qui la tient lui-même.")
+for fonction, touche in (("Copier le texte ou l’objet sélectionné", "Ctrl+C ou Ctrl+Inser"),
+                         ("Couper le texte ou l’objet sélectionné", "Ctrl+X ou Maj+Suppr"),
+                         ("Coller du texte ou un objet", "Ctrl+V ou Maj+Inser")):
+    ligne = next((l for l in fiche.splitlines() if l.startswith(f"| {fonction} | {touche} |")), "")
+    exige("relevé, non lié" not in ligne and "**lié** (N10" in ligne, f"la fiche 24 ne dit pas liée la ligne « {touche} ».")
+if tableau:
+    exige("| `Maj+Suppr` / `Ctrl+Inser` / `Maj+Inser` |" in tableau.group(1),
+          "le README ne dit pas les secondes touches du presse-papiers.")
+print("    g. les secondes touches du presse-papiers : OnKeyDown après la garde, aucune liaison, la fiche 24, le README")
+
 if echecs:
     for message in echecs:
         print(f"    ÉCHEC : {message}", file=sys.stderr)
     sys.exit(1)
 PY
-echo "  1. les sources : la fiche 24, la table par caractère, la liste standard, les liaisons et les menus, la sonde, le README"
+echo "  1. les sources : la fiche 24, la table par caractère, la liste standard, les liaisons et les menus, la sonde, le README, les secondes touches du presse-papiers"
 
 # ------------------------------------------------------------------------ 2. les gestes
 
@@ -227,7 +257,7 @@ jouer() {
 }
 
 interface=MyPublisher.Tests.Interface/MyPublisher.Tests.Interface.csproj
-jouer "$interface" "poste=N10" 9 "2. les raccourcis français, sur la vraie fenêtre : Ctrl+E qui centre, l'export sur Ctrl+Maj+P, les alignements, le corps aux frappes de la sonde, grouper et dissocier, supprimer, annuler et rétablir, Ctrl + « à »"
+jouer "$interface" "poste=N10" 12 "2. les raccourcis français, sur la vraie fenêtre : Ctrl+E qui centre, l'export sur Ctrl+Maj+P, les alignements, le corps aux frappes de la sonde, grouper et dissocier, supprimer, annuler et rétablir, Ctrl + « à », Ctrl+Inser, Maj+Inser et Maj+Suppr"
 jouer MyPublisher.Tests/MyPublisher.Tests.csproj "poste=N10" 19 "   la liste standard des corps, dans le noyau"
 
 # Les voisins que la règle 14 a réécrits : la touche qui dissociait, et les menus qui la montraient.
