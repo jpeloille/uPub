@@ -372,6 +372,11 @@ dock ou de la barre —, les raccourcis d'objet se taisent et leur touche revien
 `Ctrl+A`, `Ctrl+D`, `Ctrl+Maj+G`, `Ctrl+Maj+F` et `Ctrl+Maj+B`. `Ctrl+Maj+X` supprime
 l'objet, même là.
 
+Les menus s'ouvrent au clavier comme sous Windows : `Alt`, puis la lettre soulignée, que chaque
+niveau a une seule fois et qui se cherche au seul niveau ouvert — `Alt`, `D`, `O`, `P` porte au
+premier plan ; les documents récents se joignent à leur chiffre. Les menus écrivent leurs touches
+comme les bulles : `Ctrl+Maj+G`, `Suppr`.
+
 Les raccourcis du corps se lisent sur le caractère que la frappe produit, `Maj` et `AltGr`
 comptés pour rien : sur un AZERTY, `Ctrl+]` se tape `Ctrl+AltGr+)`, `Ctrl+[` se tape
 `Ctrl+AltGr+(`, `Ctrl+Maj+<` se tape `Ctrl+<` et `Ctrl+Maj+>` se tape `Ctrl+Maj+<`.

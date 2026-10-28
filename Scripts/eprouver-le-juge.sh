@@ -2687,6 +2687,29 @@ saboter "la barre de menus ouverte (N13) laisse ses lettres aux outils" \
     '        if (Menus.IsOpen && e.Key == Key.None)' \
     'N13-menus-de-publisher|MenusDePublisherTests'
 
+# Les gestes des menus (N13, repris le 29 octobre 2026) : le gestionnaire débranché, les menus
+# reviennent à « Ctrl+Shift+G ».
+saboter "les gestes des menus (N13) ne s'écrivent plus en français" \
+    MyPublisher/App.axaml.cs \
+    $'        GestesEnFrancais.Brancher();\n' \
+    '' \
+    'N13-menus-de-publisher|MenusDePublisherTests'
+
+# La lettre d'accès (N13, repris le 29 octobre 2026) cherchée sur toutes les entrées visibles, la
+# barre comprise, au lieu du seul niveau ouvert : Alt, D, O, P ne fait plus que promener le focus.
+saboter "la lettre d'accès (N13) cherchée sur toutes les lettres visibles" \
+    MyPublisher/Views/MainWindow.Menus.cs \
+    'var trouvees = EntreesDuNiveauOuvert()' \
+    'var trouvees = Avalonia.LogicalTree.LogicalExtensions.GetLogicalDescendants(Menus).OfType<MenuItem>().Where(entree => entree.IsEffectivelyVisible)' \
+    'N13-menus-de-publisher|MenusDePublisherTests'
+
+# Les documents récents (N13) : le chiffre de la rangée oublié, « _2 » attend « é » sur l'AZERTY.
+saboter "les documents récents (N13) ne se joignent plus au chiffre" \
+    MyPublisher/Views/MainWindow.Menus.cs \
+    $'        if (e.Key is >= Key.D0 and <= Key.D9) return (char)(\'0\' + (e.Key - Key.D0));\n' \
+    '' \
+    'N13-menus-de-publisher|MenusDePublisherTests'
+
 # N12 : on entre dans le texte d'un clic, le curseur au point visé. Le sabotage du plan : la
 # pression qui ouvre la saisie sélectionne encore tout le texte, comme le faisait le double-clic.
 saboter "la pression qui ouvre la saisie (N12) sélectionne encore tout" \
