@@ -787,6 +787,8 @@ public static class Rendu
             [(PhysicalKey.Minus, NiveauAzerty.AltGr)] = (Key.OemCloseBrackets, "]"),   // déduit, confirmé à l'écran
             [(PhysicalKey.Digit5, NiveauAzerty.AltGr)] = (Key.D5, "["),
             [(PhysicalKey.Digit0, NiveauAzerty.Base)] = (Key.D0, "à"),
+            // Déduit de « à » (poste N13) : la rangée des chiffres livre la touche de sa place.
+            [(PhysicalKey.Digit2, NiveauAzerty.Base)] = (Key.D2, "é"),
             [(PhysicalKey.Digit0, NiveauAzerty.Maj)] = (Key.D0, "0"),                   // déduit
             [(PhysicalKey.Digit0, NiveauAzerty.AltGr)] = (Key.D0, "@"),
         };

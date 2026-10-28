@@ -17,6 +17,10 @@ public partial class App : Application
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
+
+        // Les gestes des menus en français, « Ctrl+Maj+G », comme les bulles (poste N13) : ici,
+        // que l'application, l'hôte des tests et le banc, qui montent tous App, les voient.
+        GestesEnFrancais.Brancher();
     }
 
     public override void OnFrameworkInitializationCompleted()

@@ -847,6 +847,15 @@ public partial class MainWindow : Window
             }
         }
 
+        // La barre de menus ouverte, une lettre est une lettre d'accès, cherchée au seul niveau
+        // ouvert, comme Windows (poste N13, MainWindow.Menus.cs) : avant la garde de la saisie, que
+        // la barre ouverte depuis un champ ne laisse pas la lettre au champ.
+        if (JouerLaLettreDuMenu(e))
+        {
+            e.Handled = true;
+            return;
+        }
+
         // Pendant une saisie, les touches appartiennent au contrôle qui a le focus.
         if (PageView.IsEditingText || ConsumesTyping(FocusManager?.GetFocusedElement()))
         {

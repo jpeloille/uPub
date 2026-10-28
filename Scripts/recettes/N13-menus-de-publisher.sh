@@ -20,17 +20,19 @@
 #      d. Tab et Maj+Tab : pris par OnKeyDown après la garde de la saisie, sur la planche
 #         seule, avant la navigation du focus ; au tableau des raccourcis du README ;
 #      e. la barre de menus ouverte garde ses touches : OnKeyDown la laisse passer avant les
-#         lettres d'outil et Suppr.
-#
-#    Ce que la recette ne vérifie pas, et pourquoi : les gestes affichés en français
-#    (« Ctrl+Maj+G », « Suppr ») ne sont pas livrés. AppBuilder.With(new KeyGestureFormatInfo(…))
-#    ne tient pas sous Avalonia 11.3.9 : les options s'appliquent avant la plate-forme
-#    (AppBuilder.SetupUnsafe), et X11 comme la plate-forme sans affichage lient ensuite leur
-#    propre KeyGestureFormatInfo par-dessus — mesuré le 28 octobre 2026. Arrêt, au plan.
-#    Et « Alt, D, O, P joue Premier plan », clause du plan, n'est pas jouée : sous Avalonia
-#    11.3.9, la barre et chaque niveau ouvert se disputent une lettre (AccessKeyHandler), et P
-#    y désigne « _Page », « Re_pères de règle » et « Premier _plan ». Arrêt, au plan ; la
-#    recette joue Alt, D, O, L, dont la lettre n'a pas de rivale.
+#         lettres d'outil et Suppr ;
+#      f. la lettre d'accès se cherche au seul niveau ouvert, comme Windows (repris le 29 octobre
+#         2026, sur le choix du propriétaire) : Avalonia 11.3.9 la cherchait sur la barre et sur
+#         chaque niveau ouvert à la fois, et P, Disposition puis Ordre ouverts, désignait « _Page »,
+#         « Re_pères de règle » et « Premier _plan » sans rien jouer. MainWindow.Menus.cs descend
+#         au niveau ouvert le plus profond, compare la lettre au caractère — au chiffre pour la
+#         rangée des chiffres —, et OnKeyDown l'appelle avant la garde de la saisie ;
+#      g. les gestes des menus s'écrivent en français, « Ctrl+Maj+G », comme les bulles (repris
+#         le 29 octobre 2026) : AppBuilder.With(new KeyGestureFormatInfo(…)) ne tient pas sous
+#         Avalonia 11.3.9 — la plate-forme lie la sienne par-dessus —, et GestesEnFrancais écrit
+#         le texte en valeur locale sur PART_InputGestureText à l'application du gabarit de
+#         chaque MenuItem, branché une fois par App.Initialize, que l'application, l'hôte des
+#         tests et le banc montent tous ; le thème n'est pas recopié.
 #
 # 2. LES GESTES, joués par « MyPublisher.Tests.Interface » sur la vraie fenêtre, au clavier et
 #    au pointeur synthétisés (« MenusDePublisherTests », trait « poste=N13 ») :
@@ -39,7 +41,13 @@
 #        d'accès uniques et sans accent ; la barre porte « _Edition » ;
 #      · Alt relâché puis E ouvre Edition, Alt puis T ouvre Texte, sans armer d'outil ; Alt+E
 #        tenu aussi ;
-#      · Alt, D, O, L joue Arrière-plan en un pas, et Suppr, menus ouverts, ne supprime rien ;
+#      · Alt, D, O, P joue Premier plan en un pas — la clause du plan —, Alt, D, O, L
+#        Arrière-plan, et Suppr, menus ouverts, ne supprime rien ; Edition ouvert, A annule et
+#        n'ouvre pas Affichage ; deux entrées d'un niveau sur une lettre se passent le focus sans
+#        rien jouer, une lettre absente du niveau ne fait rien ; Alt, F puis « 2 » (« é » sur
+#        l'AZERTY) ouvre le deuxième document récent ;
+#      · les menus disent « Ctrl+Maj+G », « Ctrl+Maj+F », « Suppr », « Ctrl++ », « Ctrl+− »,
+#        et le texte suit un geste qui change ;
 #      · Disposition rangé comme Publisher, chaque entrée sur sa commande, la case du repère
 #        dans les deux sens ;
 #      · Regrouper refait le groupe en un pas, à son nom, même un bloc déplacé, et ne s'offre
@@ -178,16 +186,50 @@ tableau = re.search(r"^## Raccourcis$(.*?)^## ", readme, re.S | re.M)
 exige(tableau is not None and "| `Tab` / `Maj+Tab` |" in tableau.group(1), "README : Tab et Maj+Tab ne sont pas au tableau des raccourcis.")
 print("    d. Tab et Maj+Tab sur la planche, après la garde de la saisie, au README ; e. la barre de menus ouverte garde ses touches")
 
+# ------------------------------------------------------------ f. la lettre au seul niveau ouvert
+menus_cs = racine / "MyPublisher/Views/MainWindow.Menus.cs"
+menus_texte = menus_cs.read_text(encoding="utf-8") if menus_cs.exists() else ""
+exige(re.search(r"private bool JouerLaLettreDuMenu\(KeyEventArgs e\)", menus_texte) is not None,
+      "MainWindow.Menus.cs ne porte pas JouerLaLettreDuMenu.")
+exige(re.search(r"var trouvees = EntreesDuNiveauOuvert\(\)", menus_texte) is not None,
+      "la lettre d'accès ne se cherche pas au seul niveau ouvert.")
+exige(re.search(r"while \(niveau\.FirstOrDefault\(entree => entree\.IsSubMenuOpen\) is \{ \} ouverte\)", menus_texte) is not None,
+      "EntreesDuNiveauOuvert ne descend pas au niveau ouvert le plus profond.")
+exige(re.search(r"e\.Key is >= Key\.D0 and <= Key\.D9", menus_texte) is not None and "e.KeySymbol" in menus_texte,
+      "la lettre ne se compare ni au chiffre de la rangée ni au caractère produit.")
+if cle:
+    appel = texte.find("if (JouerLaLettreDuMenu(e))")
+    exige(0 <= appel < garde, "OnKeyDown n'appelle pas JouerLaLettreDuMenu avant la garde de la saisie.")
+    exige(texte.find("vm.JouerLeRaccourciParCaractere(e.KeySymbol)") < appel, "la table de N10 n'est plus lue en premier.")
+print("    f. la lettre d'accès cherchée au seul niveau ouvert, sur le caractère, avant la garde de la saisie")
+
+# -------------------------------------------------------------- g. les gestes en français
+gestes_cs = racine / "MyPublisher/Views/GestesEnFrancais.cs"
+gestes = gestes_cs.read_text(encoding="utf-8") if gestes_cs.exists() else ""
+exige('PartieDuGeste = "PART_InputGestureText"' in gestes and "TemplateAppliedEvent.AddClassHandler<MenuItem>" in gestes
+      and "MenuItem.InputGestureProperty.Changed.AddClassHandler<MenuItem>" in gestes,
+      "GestesEnFrancais n'écrit pas le geste à l'application du gabarit, ni ne le suit quand il change.")
+for nom, mot in (("Shift", '"Maj"'), ("Delete", '"Suppr"')):
+    exige(mot in gestes, f"GestesEnFrancais n'écrit pas {nom} en {mot}.")
+app = lire("MyPublisher/App.axaml.cs")
+initialiser = re.search(r"public override void Initialize\(\)\s*\{(.*?)\n    \}", app, re.S)
+exige(initialiser is not None and "GestesEnFrancais.Brancher();" in initialiser.group(1),
+      "App.Initialize ne branche pas les gestes en français.")
+exige(not re.search(r"KeyGestureFormatInfo\(", re.sub(r"//.*|<!--.*?-->|///.*", "", lire("MyPublisher/Program.cs"))),
+      "Program.cs monte un KeyGestureFormatInfo, que la plate-forme écraserait.")
+exige(not re.search(r"<ControlTheme[^>]*TargetType=\"MenuItem\"", axaml), "le thème du MenuItem est recopié.")
+print("    g. les gestes des menus en français, par GestesEnFrancais, branché dans App.Initialize")
+
 if echecs:
     for message in echecs:
         print(f"    ÉCHEC : {message}", file=sys.stderr)
     sys.exit(1)
 PY
-echo "  1. les sources : lettres d'accès, Disposition, Regrouper, Tab, la barre ouverte"
+echo "  1. les sources : lettres d'accès, Disposition, Regrouper, Tab, la barre ouverte, la lettre au niveau ouvert, les gestes en français"
 
 # ------------------------------------------------------------------------ 2. les tests
 
-attendus=7
+attendus=11
 if ! dotnet test MyPublisher.Tests.Interface/MyPublisher.Tests.Interface.csproj ${MYPUBLISHER_DEJA_COMPILE:+--no-build} \
         --nologo -v q --filter "poste=N13" > "$travail/tests.txt" 2>&1; then
     sed 's/^/    /' "$travail/tests.txt" >&2
@@ -200,6 +242,6 @@ if [ "${joues:-0}" -lt "$attendus" ]; then
     echo "Un filtre qui ne désigne plus rien sort en 0 : la recette ne s'en contente pas." >&2
     exit 1
 fi
-echo "  2. la fenêtre : lettres d'accès, Alt puis E et T, Alt D O L, Disposition, Regrouper, Tab sur la planche et dans le dock ($joues tests)"
+echo "  2. la fenêtre : lettres d'accès, Alt puis E et T, Alt D O P et L, Edition puis A, la lettre partagée, les récents, les gestes en français, Disposition, Regrouper, Tab sur la planche et dans le dock ($joues tests)"
 
 echo "N13 : les menus ont des lettres d'accès uniques et joignables, Disposition est rangé comme Publisher, Tab passe d'un bloc à l'autre."
