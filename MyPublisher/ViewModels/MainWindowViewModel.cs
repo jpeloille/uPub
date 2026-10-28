@@ -534,6 +534,7 @@ public partial class MainWindowViewModel : ViewModelBase
     /// </summary>
     public void SetSelection(IReadOnlyList<Frame> frames)
     {
+        ValiderLeChampEnAttente();
         _syncingSelection = true;
         try
         {
@@ -724,6 +725,7 @@ public partial class MainWindowViewModel : ViewModelBase
     /// </summary>
     private void EndPendingEdit()
     {
+        ValiderLeChampEnAttente();
         if (_editDepth == 0) return;
 
         _editDepth = 1;
@@ -880,6 +882,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public void SaveTo(string path)
     {
+        ValiderLeChampEnAttente();
         DocumentSerializer.Save(Document, path);
         FilePath = path;
         IsDirty = false;
@@ -896,6 +899,7 @@ public partial class MainWindowViewModel : ViewModelBase
         //
         // Sans la porte privée d'Avalonia, la règle de l'écran est celle d'Avalonia seul :
         // l'export suit encore l'écran de CE processus, mais l'avertissement le dit.
+        ValiderLeChampEnAttente();
         var report = PdfExporter.Export(Document, path, new Views.MetriquesAvalonia(), Contacts.Active, _horloge());
         IReadOnlyList<string> avertissements = Views.PolicesDuDocument.Indisponible is { } motif
             ? [motif, .. report.Warnings]

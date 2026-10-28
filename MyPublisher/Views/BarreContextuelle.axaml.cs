@@ -61,8 +61,7 @@ public partial class BarreContextuelle : UserControl
 
     /// <summary>
     /// <c>Échap</c> dans un champ de la barre rend la main à la planche : le champ perd le
-    /// focus, ce qu'on y a tapé est validé comme à toute sortie de champ, et la transaction
-    /// d'édition se referme avec lui en un pas d'annulation (règle 2). Les lettres seules
+    /// focus, et la transaction d'édition se referme avec lui (règle 2). Les lettres seules
     /// redeviennent alors des outils — <c>T</c> arme l'outil texte —, alors que pendant la
     /// saisie elles s'écrivent dans le champ (règle 9 ; c'est la fenêtre qui les lui laisse,
     /// <c>ConsumesTyping</c>).
@@ -71,12 +70,20 @@ public partial class BarreContextuelle : UserControl
     /// touches d'un champ qui a le focus, <c>Échap</c> compris, et la lettre suivante
     /// s'écrivait encore dans le corps. Une liste ouverte se referme d'abord : elle traite
     /// son <c>Échap</c>, qui n'arrive pas jusqu'ici, et le suivant quitte le champ.
+    ///
+    /// Depuis N14, un champ numérique — le corps, l'interligne — tient son <c>Échap</c>
+    /// lui-même (<see cref="ChampNumerique"/>) : il renonce à ce qui n'est pas validé, comme
+    /// Office, et quitte le champ ; I3 validait. Reste ici la liste des polices. Et
+    /// <c>Entrée</c>, qu'un champ numérique laisse passer quand il a pris la valeur, rend la
+    /// planche de même (N14) : au dock, le champ la garde.
     /// </summary>
     private void SurTouche(object? sender, KeyEventArgs e)
     {
-        if (e.Handled || e.Key != Key.Escape || e.KeyModifiers != KeyModifiers.None) return;
+        if (e.Handled || e.KeyModifiers != KeyModifiers.None) return;
         if (TopLevel.GetTopLevel(this)?.FocusManager is not { } focus) return;
         if (focus.GetFocusedElement() is not Control champ || !champ.GetSelfAndVisualAncestors().Contains(this)) return;
+        if (e.Key == Key.Enter && champ.FindAncestorOfType<ChampNumerique>(includeSelf: true) is null) return;
+        if (e.Key is not (Key.Escape or Key.Enter)) return;
 
         focus.ClearFocus();
         e.Handled = true;

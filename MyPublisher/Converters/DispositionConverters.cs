@@ -72,9 +72,33 @@ public sealed class Libelle : IValueConverter
 /// point : sous la locale du système, l'un des deux est le séparateur décimal, et l'autre
 /// ne peut pas y être un séparateur de milliers sans rendre « 4,2 » égal à 42. La culture
 /// reste la culture courante (règle 8) : sous <c>LC_ALL=C</c>, c'est un point qui s'écrit.
+///
+/// **Une autre unité se tape et se convertit** dans un champ de longueur (poste N14 ; fiche
+/// 23, f5) : « 2 cm » dans X donne 20,0 mm, « 12 pt » dans une marge 4,23 mm, « 1" » 25,4 mm,
+/// et « 4 mm » dans le corps 11,34 pt. Les unités lues sont celles de Publisher : mm, cm, pt,
+/// pi (le pica, douze points) et le pouce — « po », « in » ou <c>"</c>. L'affichage reste dans
+/// l'unité du champ (décision du 24 octobre 2026). La conversion se fait en décimal, sur les
+/// fractions exactes de chaque unité : 12 pt font 304,8 / 72 mm, sans détour par un double.
+/// Un angle, un pourcentage ou un multiple ne lisent que leur propre unité.
 /// </summary>
 public sealed class Unite : IValueConverter
 {
+    /// <summary>
+    /// Les unités de longueur qu'un champ de longueur lit, chacune en fraction exacte de
+    /// millimètre : le numérateur sur le dénominateur. Avant les champs ci-dessous, que leur
+    /// constructeur y cherche.
+    /// </summary>
+    private static readonly (string Suffixe, decimal Numerateur, decimal Denominateur)[] Longueurs =
+    [
+        ("mm", 1m, 1m),
+        ("cm", 10m, 1m),
+        ("pt", 25.4m, 72m),
+        ("pi", 25.4m, 6m),
+        ("po", 25.4m, 1m),
+        ("in", 25.4m, 1m),
+        ("\"", 25.4m, 1m),
+    ];
+
     /// <summary>Positions et tailles : la maquette les écrit au dixième, « 52,0 mm ».</summary>
     public static readonly Unite Millimetres = new("0.0", "mm");
 
@@ -91,16 +115,29 @@ public sealed class Unite : IValueConverter
 
     public static readonly Unite Pourcent = new("0", "%");
 
+    /// <summary>Ce que la barre d'état rappelle quand une longueur ne se lit pas.</summary>
+    public const string UnitesLues = "mm, cm, pt, pi ou po";
+
     private readonly string _format;
     private readonly string _unite;
     private readonly bool _espace;
+
+    /// <summary>L'unité du champ en fraction de millimètre ; nulle hors des longueurs.</summary>
+    private readonly (decimal Numerateur, decimal Denominateur)? _enMillimetres;
 
     private Unite(string format, string unite, bool espace = true)
     {
         _format = format;
         _unite = unite;
         _espace = espace;
+        foreach (var longueur in Longueurs)
+        {
+            if (longueur.Suffixe == unite) _enMillimetres = (longueur.Numerateur, longueur.Denominateur);
+        }
     }
+
+    /// <summary>Le champ porte une longueur, et lit les autres unités de longueur.</summary>
+    public bool EstUneLongueur => _enMillimetres is not null;
 
     // Le sens est celui du champ numérique, qui est l'inverse d'une liaison : il appelle
     // « ConvertBack » pour écrire sa valeur en texte, et « Convert » pour lire un texte.
@@ -117,7 +154,16 @@ public sealed class Unite : IValueConverter
         if (value is not string texte) return null;
 
         texte = texte.Trim();
-        if (texte.EndsWith(_unite, StringComparison.OrdinalIgnoreCase)) texte = texte[..^_unite.Length];
+        (decimal Numerateur, decimal Denominateur)? tapee = null;
+        if (_enMillimetres is not null && Suffixe(texte) is { } longueur)
+        {
+            texte = texte[..^longueur.Suffixe.Length];
+            tapee = (longueur.Numerateur, longueur.Denominateur);
+        }
+        else if (texte.EndsWith(_unite, StringComparison.OrdinalIgnoreCase))
+        {
+            texte = texte[..^_unite.Length];
+        }
         texte = texte.Replace(" ", "").Replace("\u00A0", "").Replace("\u202F", "");
 
         var separateur = culture.NumberFormat.NumberDecimalSeparator;
@@ -125,7 +171,22 @@ public sealed class Unite : IValueConverter
 
         // Un texte qui ne se lit pas lève : le champ numérique attrape l'erreur et garde la
         // valeur d'avant, au lieu d'en recevoir une nulle qui effacerait la mesure.
-        return decimal.Parse(texte, NumberStyles.Float, culture);
+        var nombre = decimal.Parse(texte, NumberStyles.Float, culture);
+        if (tapee is not { } unite || _enMillimetres is not { } champ || unite == champ) return nombre;
+
+        // Les produits d'abord, la division une fois : 12 pt font 12 × 25,4 / 72 mm.
+        return nombre * unite.Numerateur * champ.Denominateur / (unite.Denominateur * champ.Numerateur);
+    }
+
+    /// <summary>L'unité de longueur qui termine le texte, s'il y en a une.</summary>
+    private static (string Suffixe, decimal Numerateur, decimal Denominateur)? Suffixe(string texte)
+    {
+        foreach (var longueur in Longueurs)
+        {
+            if (texte.EndsWith(longueur.Suffixe, StringComparison.OrdinalIgnoreCase)) return longueur;
+        }
+
+        return null;
     }
 }
 

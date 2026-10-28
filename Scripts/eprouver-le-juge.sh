@@ -2659,6 +2659,58 @@ saboter "Maj+Inser (N10) ne colle plus les blocs" \
     '' \
     'N10-raccourcis-francais|RaccourcisFrancaisTests'
 
+# N14 : les champs. La valeur d'un champ numérique part à la validation, et une fois : rendue à
+# la frappe, taper « 210 » dans la largeur de la page l'écrit à 21 mm d'abord. Le sabotage du plan.
+saboter "la valeur d'un champ repart à chaque frappe (N14)" \
+    MyPublisher/Views/ChampNumerique.cs \
+    $'    protected override void OnTextChanged(string? oldValue, string? newValue)\n    {\n    }' \
+    $'    protected override void OnTextChanged(string? oldValue, string? newValue)\n    {\n        base.OnTextChanged(oldValue, newValue);\n    }' \
+    'N14-les-champs|ChampNumeriqueTests'
+
+# Échap renonce, comme Office (règle 13) ; qui valide, c'est le sens d'avant le poste, dans la barre.
+saboter "Échap dans un champ valide au lieu de renoncer (N14)" \
+    MyPublisher/Views/ChampNumerique.cs \
+    $'                Abandonner();\n                TopLevel.GetTopLevel(this)?.FocusManager?.ClearFocus();' \
+    $'                Valider();\n                TopLevel.GetTopLevel(this)?.FocusManager?.ClearFocus();' \
+    'N14-les-champs|ChampNumeriqueTests'
+
+# Une autre unité lue mais pas convertie : « 2 cm » donne 2 mm.
+saboter "une autre unité n'est plus convertie (N14)" \
+    MyPublisher/Converters/DispositionConverters.cs \
+    '        return nombre * unite.Numerateur * champ.Denominateur / (unite.Denominateur * champ.Numerateur);' \
+    '        return nombre;' \
+    'N14-les-champs|ChampNumeriqueTests'
+
+# Le piège du plan : la transaction du champ refermée avant sa validation. « 40 » tapé, puis
+# Fermer : le document passe pour intact, et part sans question.
+saboter "ClosePropertyEdit referme sans valider le champ qui attend (N14)" \
+    MyPublisher/Views/MainWindow.axaml.cs \
+    $'        ValiderLeChampNumerique();\n        if (!_propertyEditOpen) return;' \
+    '        if (!_propertyEditOpen) return;' \
+    'N14-les-champs|ChampNumeriqueTests'
+
+# Annuler pendant la frappe d'un champ : sans la validation d'abord, la frappe n'a pas de pas, et
+# l'annulation défait le geste d'avant.
+saboter "Annuler ne valide plus le champ qui attend (N14)" \
+    MyPublisher/ViewModels/MainWindowViewModel.cs \
+    $'        ValiderLeChampEnAttente();\n        if (_editDepth == 0) return;' \
+    '        if (_editDepth == 0) return;' \
+    'N14-les-champs|ChampNumeriqueTests|BarreContextuelleTests'
+
+# La sélection qui change sous un champ qui attend : la largeur tapée s'efface.
+saboter "la sélection change sans valider le champ qui attend (N14)" \
+    MyPublisher/ViewModels/MainWindowViewModel.cs \
+    $'        ValiderLeChampEnAttente();\n        _syncingSelection = true;' \
+    '        _syncingSelection = true;' \
+    'N14-les-champs|ChampNumeriqueTests'
+
+# Le refus en silence, comme avant le poste.
+saboter "un champ refuse sans le dire (N14)" \
+    MyPublisher/Views/ChampNumerique.cs \
+    '        if (TopLevel.GetTopLevel(this)?.DataContext is MainWindowViewModel vm) vm.Status = message;' \
+    '' \
+    'N14-les-champs|ChampNumeriqueTests'
+
 # Un motif qui ne désigne aucun sabotage ne prouve rien. « eprouver-le-juge.sh I4 » sortait
 # en 0 sur « 0 sabotages, 0 attrapés », quand les intitulés de la planche ne portaient pas
 # encore le code du poste : le filet passait pour éprouvé sans qu'on l'ait troué.
