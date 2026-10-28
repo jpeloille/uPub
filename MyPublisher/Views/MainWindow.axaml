@@ -288,6 +288,11 @@
             <Setter Property="BorderBrush" Value="{StaticResource Accent}"/>
         </Style>
 
+        <!-- Tab passe d'un champ du dock à l'autre sans s'arrêter sur les titres de section
+             (N14 ; fiche 23, f11) : un titre s'ouvre et se ferme au pointeur. -->
+        <Style Selector="ToggleButton.titreSection">
+            <Setter Property="IsTabStop" Value="False"/>
+        </Style>
         <!-- Une section du dock : le chevron suit la section, ouvert vers le bas. -->
         <Style Selector="ToggleButton.titreSection ContentControl.chevronOuvert">
             <Setter Property="IsVisible" Value="False"/>
@@ -546,7 +551,7 @@
                 <!-- Zéro va de gauche à droite, 90 de haut en bas : l'axe Y descend,
                      comme en PDF. Les quatre ombrages de Publisher — horizontal,
                      vertical, deux diagonales — sont 0, 90, 45 et 315. -->
-                <NumericUpDown Classes="champ" TextConverter="{x:Static conv:Unite.Degres}"
+                <views:ChampNumerique Classes="champ" TextConverter="{x:Static conv:Unite.Degres}"
                                Increment="15" Minimum="0" Maximum="360"
                                Value="{Binding Angle, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
             </StackPanel>
@@ -570,7 +575,7 @@
                 <TextBlock Classes="libelle" Text="Rotation" Margin="0,5,0,0"/>
                 <!-- Le quart de tour que Publisher pose sur une image de remplissage :
                      une des cinq d'ATA 21 le porte, et sans lui elle arrive couchée. -->
-                <NumericUpDown Classes="champ" TextConverter="{x:Static conv:Unite.Degres}"
+                <views:ChampNumerique Classes="champ" TextConverter="{x:Static conv:Unite.Degres}"
                                Increment="90" Minimum="0" Maximum="270"
                                Value="{Binding Rotation, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
             </StackPanel>
@@ -584,7 +589,7 @@
                 <TextBlock Classes="libelle" Text="Teinte" Margin="0,5,0,0"/>
                 <!-- Cent, c'est la couleur de base ; en dessous on va vers le blanc,
                      au-dessus vers le noir. -->
-                <NumericUpDown Classes="champ" TextConverter="{x:Static conv:Unite.Pourcent}"
+                <views:ChampNumerique Classes="champ" TextConverter="{x:Static conv:Unite.Pourcent}"
                                Increment="10" Minimum="0" Maximum="200"
                                Value="{Binding Percent, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
             </StackPanel>
@@ -1056,30 +1061,30 @@
                                                           IsVisible="{Binding #Root.((vm:MainWindowViewModel)DataContext).SectionPositionOuverte}">
                                                         <DockPanel Grid.Row="0" Grid.Column="0" IsVisible="{Binding !IsLine}">
                                                             <TextBlock Classes="libelle libelleAGauche" Text="X" Width="12" Margin="0,0,6,0"/>
-                                                            <NumericUpDown x:Name="ChampX" Classes="champ" TextConverter="{x:Static conv:Unite.Millimetres}" Increment="1"
+                                                            <views:ChampNumerique x:Name="ChampX" Classes="champ" TextConverter="{x:Static conv:Unite.Millimetres}" Increment="1"
                                                                            Value="{Binding X, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
                                                         </DockPanel>
                                                         <DockPanel Grid.Row="0" Grid.Column="2" IsVisible="{Binding !IsLine}">
                                                             <TextBlock Classes="libelle libelleAGauche" Text="Y" Width="12" Margin="0,0,6,0"/>
-                                                            <NumericUpDown x:Name="ChampY" Classes="champ" TextConverter="{x:Static conv:Unite.Millimetres}" Increment="1"
+                                                            <views:ChampNumerique x:Name="ChampY" Classes="champ" TextConverter="{x:Static conv:Unite.Millimetres}" Increment="1"
                                                                            Value="{Binding Y, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
                                                         </DockPanel>
                                                         <DockPanel Grid.Row="2" Grid.Column="0" IsVisible="{Binding !IsLine}">
                                                             <TextBlock Classes="libelle libelleAGauche" Text="L" Width="12" Margin="0,0,6,0"/>
                                                             <!-- L et H passent par le modèle de vue : la case « Conserver
                                                                  les proportions » y entraîne l'autre côté (I6). -->
-                                                            <NumericUpDown x:Name="ChampLargeur" Classes="champ" TextConverter="{x:Static conv:Unite.Millimetres}" Increment="1" Minimum="2"
+                                                            <views:ChampNumerique x:Name="ChampLargeur" Classes="champ" TextConverter="{x:Static conv:Unite.Millimetres}" Increment="1" Minimum="2"
                                                                            Value="{Binding #Root.((vm:MainWindowViewModel)DataContext).LargeurDuBloc, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
                                                         </DockPanel>
                                                         <DockPanel Grid.Row="2" Grid.Column="2" IsVisible="{Binding !IsLine}">
                                                             <TextBlock Classes="libelle libelleAGauche" Text="H" Width="12" Margin="0,0,6,0"/>
-                                                            <NumericUpDown x:Name="ChampHauteur" Classes="champ" TextConverter="{x:Static conv:Unite.Millimetres}" Increment="1" Minimum="2"
+                                                            <views:ChampNumerique x:Name="ChampHauteur" Classes="champ" TextConverter="{x:Static conv:Unite.Millimetres}" Increment="1" Minimum="2"
                                                                            Value="{Binding #Root.((vm:MainWindowViewModel)DataContext).HauteurDuBloc, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
                                                         </DockPanel>
                                                         <DockPanel Grid.Row="4" Grid.Column="0">
                                                             <ContentControl Content="{StaticResource IconeRotation}" Width="12" Margin="0,0,6,0"
                                                                             VerticalAlignment="Center" ToolTip.Tip="Rotation"/>
-                                                            <NumericUpDown x:Name="ChampAngle" Classes="champ" TextConverter="{x:Static conv:Unite.Degres}" Increment="1"
+                                                            <views:ChampNumerique x:Name="ChampAngle" Classes="champ" TextConverter="{x:Static conv:Unite.Degres}" Increment="1"
                                                                            Minimum="-360" Maximum="360"
                                                                            Value="{Binding Rotation, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
                                                         </DockPanel>
@@ -1095,22 +1100,22 @@
                                                              proportions se tait. L'angle reste, que le trait suit. -->
                                                         <DockPanel Grid.Row="0" Grid.Column="0" IsVisible="{Binding IsLine}">
                                                             <TextBlock Classes="libelle libelleAGauche" Text="X1" Width="16" Margin="0,0,4,0"/>
-                                                            <NumericUpDown x:Name="ChampDebutX" Classes="champ" TextConverter="{x:Static conv:Unite.Millimetres}" Increment="1"
+                                                            <views:ChampNumerique x:Name="ChampDebutX" Classes="champ" TextConverter="{x:Static conv:Unite.Millimetres}" Increment="1"
                                                                            Value="{Binding #Root.((vm:MainWindowViewModel)DataContext).DebutDuTraitX, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
                                                         </DockPanel>
                                                         <DockPanel Grid.Row="0" Grid.Column="2" IsVisible="{Binding IsLine}">
                                                             <TextBlock Classes="libelle libelleAGauche" Text="Y1" Width="16" Margin="0,0,4,0"/>
-                                                            <NumericUpDown x:Name="ChampDebutY" Classes="champ" TextConverter="{x:Static conv:Unite.Millimetres}" Increment="1"
+                                                            <views:ChampNumerique x:Name="ChampDebutY" Classes="champ" TextConverter="{x:Static conv:Unite.Millimetres}" Increment="1"
                                                                            Value="{Binding #Root.((vm:MainWindowViewModel)DataContext).DebutDuTraitY, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
                                                         </DockPanel>
                                                         <DockPanel Grid.Row="2" Grid.Column="0" IsVisible="{Binding IsLine}">
                                                             <TextBlock Classes="libelle libelleAGauche" Text="X2" Width="16" Margin="0,0,4,0"/>
-                                                            <NumericUpDown x:Name="ChampFinX" Classes="champ" TextConverter="{x:Static conv:Unite.Millimetres}" Increment="1"
+                                                            <views:ChampNumerique x:Name="ChampFinX" Classes="champ" TextConverter="{x:Static conv:Unite.Millimetres}" Increment="1"
                                                                            Value="{Binding #Root.((vm:MainWindowViewModel)DataContext).FinDuTraitX, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
                                                         </DockPanel>
                                                         <DockPanel Grid.Row="2" Grid.Column="2" IsVisible="{Binding IsLine}">
                                                             <TextBlock Classes="libelle libelleAGauche" Text="Y2" Width="16" Margin="0,0,4,0"/>
-                                                            <NumericUpDown x:Name="ChampFinY" Classes="champ" TextConverter="{x:Static conv:Unite.Millimetres}" Increment="1"
+                                                            <views:ChampNumerique x:Name="ChampFinY" Classes="champ" TextConverter="{x:Static conv:Unite.Millimetres}" Increment="1"
                                                                            Value="{Binding #Root.((vm:MainWindowViewModel)DataContext).FinDuTraitY, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
                                                         </DockPanel>
                                                         <DockPanel Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="3">
@@ -1148,13 +1153,13 @@
                                                              page. Minimum à un : zéro ou moins ne veut rien dire. -->
                                                         <StackPanel Grid.Row="0" Grid.Column="0">
                                                             <TextBlock Classes="libelle libelleAuDessus" Text="Colonnes"/>
-                                                            <NumericUpDown x:Name="NombreDeColonnes" Classes="champ"
+                                                            <views:ChampNumerique x:Name="NombreDeColonnes" Classes="champ"
                                                                            FormatString="0" Increment="1" Minimum="1" Maximum="20"
                                                                            Value="{Binding Columns}"/>
                                                         </StackPanel>
                                                         <StackPanel Grid.Row="0" Grid.Column="2">
                                                             <TextBlock Classes="libelle libelleAuDessus" Text="Gouttière"/>
-                                                            <NumericUpDown Classes="champ" TextConverter="{x:Static conv:Unite.MillimetresCourts}"
+                                                            <views:ChampNumerique Classes="champ" TextConverter="{x:Static conv:Unite.MillimetresCourts}"
                                                                            Increment="1" Minimum="0"
                                                                            Value="{Binding ColumnGap, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
                                                         </StackPanel>
@@ -1162,23 +1167,23 @@
                                                              le modèle en garde quatre (C6). -->
                                                         <StackPanel Grid.Row="2" Grid.Column="0">
                                                             <TextBlock Classes="libelle libelleAuDessus" Text="Marges intérieures"/>
-                                                            <NumericUpDown x:Name="MargeInterieureCommune" Classes="champ"
+                                                            <views:ChampNumerique x:Name="MargeInterieureCommune" Classes="champ"
                                                                            TextConverter="{x:Static conv:Unite.MillimetresCourts}"
                                                                            Increment="0.5" Minimum="0"
                                                                            IsVisible="{Binding #Root.((vm:MainWindowViewModel)DataContext).MargesInterieuresEgales}"
                                                                            Value="{Binding #Root.((vm:MainWindowViewModel)DataContext).MargeInterieure, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
                                                             <Grid ColumnDefinitions="*,4,*" RowDefinitions="Auto,4,Auto"
                                                                   IsVisible="{Binding #Root.((vm:MainWindowViewModel)DataContext).MargesInterieuresDistinctes}">
-                                                                <NumericUpDown Grid.Row="0" Grid.Column="0" Classes="champ marge" ToolTip.Tip="Gauche"
+                                                                <views:ChampNumerique Grid.Row="0" Grid.Column="0" Classes="champ marge" ToolTip.Tip="Gauche"
                                                                                TextConverter="{x:Static conv:Unite.MillimetresCourts}" Increment="0.5" Minimum="0"
                                                                                Value="{Binding PaddingLeft, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
-                                                                <NumericUpDown Grid.Row="0" Grid.Column="2" Classes="champ marge" ToolTip.Tip="Droite"
+                                                                <views:ChampNumerique Grid.Row="0" Grid.Column="2" Classes="champ marge" ToolTip.Tip="Droite"
                                                                                TextConverter="{x:Static conv:Unite.MillimetresCourts}" Increment="0.5" Minimum="0"
                                                                                Value="{Binding PaddingRight, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
-                                                                <NumericUpDown Grid.Row="2" Grid.Column="0" Classes="champ marge" ToolTip.Tip="Haut"
+                                                                <views:ChampNumerique Grid.Row="2" Grid.Column="0" Classes="champ marge" ToolTip.Tip="Haut"
                                                                                TextConverter="{x:Static conv:Unite.MillimetresCourts}" Increment="0.5" Minimum="0"
                                                                                Value="{Binding PaddingTop, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
-                                                                <NumericUpDown Grid.Row="2" Grid.Column="2" Classes="champ marge" ToolTip.Tip="Bas"
+                                                                <views:ChampNumerique Grid.Row="2" Grid.Column="2" Classes="champ marge" ToolTip.Tip="Bas"
                                                                                TextConverter="{x:Static conv:Unite.MillimetresCourts}" Increment="0.5" Minimum="0"
                                                                                Value="{Binding PaddingBottom, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
                                                             </Grid>
@@ -1238,13 +1243,13 @@
                                                           IsVisible="{Binding #Root.((vm:MainWindowViewModel)DataContext).SectionParagrapheOuverte}">
                                                         <StackPanel Grid.Row="0" Grid.Column="0">
                                                             <TextBlock Classes="libelle libelleAuDessus" Text="Retrait à gauche"/>
-                                                            <NumericUpDown Classes="champ" TextConverter="{x:Static conv:Unite.MillimetresCourts}"
+                                                            <views:ChampNumerique Classes="champ" TextConverter="{x:Static conv:Unite.MillimetresCourts}"
                                                                            Increment="1" Minimum="-350"
                                                                            Value="{Binding IndentLeft, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
                                                         </StackPanel>
                                                         <StackPanel Grid.Row="0" Grid.Column="2">
                                                             <TextBlock Classes="libelle libelleAuDessus" Text="Retrait à droite"/>
-                                                            <NumericUpDown Classes="champ" TextConverter="{x:Static conv:Unite.MillimetresCourts}"
+                                                            <views:ChampNumerique Classes="champ" TextConverter="{x:Static conv:Unite.MillimetresCourts}"
                                                                            Increment="1" Minimum="-350"
                                                                            Value="{Binding IndentRight, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
                                                         </StackPanel>
@@ -1254,7 +1259,7 @@
                                                              inatteignable au dock tout en marchant dans le fichier. -->
                                                         <StackPanel Grid.Row="2" Grid.Column="0">
                                                             <TextBlock Classes="libelle libelleAuDessus" Text="Première ligne"/>
-                                                            <NumericUpDown x:Name="RetraitPremiereLigne" Classes="champ"
+                                                            <views:ChampNumerique x:Name="RetraitPremiereLigne" Classes="champ"
                                                                            TextConverter="{x:Static conv:Unite.MillimetresCourts}"
                                                                            Increment="1" Minimum="-350"
                                                                            Value="{Binding IndentFirstLine, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
@@ -1263,13 +1268,13 @@
                                                                    Text="Négative, elle pend : une liste à puces."/>
                                                         <StackPanel Grid.Row="4" Grid.Column="0">
                                                             <TextBlock Classes="libelle libelleAuDessus" Text="Espace avant"/>
-                                                            <NumericUpDown Classes="champ" TextConverter="{x:Static conv:Unite.MillimetresCourts}"
+                                                            <views:ChampNumerique Classes="champ" TextConverter="{x:Static conv:Unite.MillimetresCourts}"
                                                                            Increment="1" Minimum="0"
                                                                            Value="{Binding SpaceBefore, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
                                                         </StackPanel>
                                                         <StackPanel Grid.Row="4" Grid.Column="2">
                                                             <TextBlock Classes="libelle libelleAuDessus" Text="Espace après"/>
-                                                            <NumericUpDown Classes="champ" TextConverter="{x:Static conv:Unite.MillimetresCourts}"
+                                                            <views:ChampNumerique Classes="champ" TextConverter="{x:Static conv:Unite.MillimetresCourts}"
                                                                            Increment="1" Minimum="0"
                                                                            Value="{Binding SpaceAfter, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
                                                         </StackPanel>
@@ -1381,12 +1386,12 @@
                                                         <Grid ColumnDefinitions="*,8,*">
                                                             <StackPanel Grid.Column="0">
                                                                 <TextBlock Classes="libelle libelleAuDessus" Text="Lignes"/>
-                                                                <NumericUpDown Classes="champ" FormatString="0" Increment="1"
+                                                                <views:ChampNumerique Classes="champ" FormatString="0" Increment="1"
                                                                                Minimum="1" Maximum="40" Value="{Binding RowCount}"/>
                                                             </StackPanel>
                                                             <StackPanel Grid.Column="2">
                                                                 <TextBlock Classes="libelle libelleAuDessus" Text="Colonnes"/>
-                                                                <NumericUpDown Classes="champ" FormatString="0" Increment="1"
+                                                                <views:ChampNumerique Classes="champ" FormatString="0" Increment="1"
                                                                                Minimum="1" Maximum="40" Value="{Binding ColumnCount}"/>
                                                             </StackPanel>
                                                         </Grid>
@@ -1396,7 +1401,7 @@
                                                              dans la barre contextuelle (I3). -->
                                                         <StackPanel>
                                                             <TextBlock Classes="libelle libelleAuDessus" Text="Marge intérieure des cases"/>
-                                                            <NumericUpDown Classes="champ" TextConverter="{x:Static conv:Unite.MillimetresCourts}"
+                                                            <views:ChampNumerique Classes="champ" TextConverter="{x:Static conv:Unite.MillimetresCourts}"
                                                                            Increment="0.5" Minimum="0"
                                                                            Value="{Binding CellPadding, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
                                                         </StackPanel>
@@ -1410,7 +1415,7 @@
                                                             <views:SelecteurDeCouleur Valeur="{Binding GridColor}"
                                                                    Jeu="{Binding #Root.((vm:MainWindowViewModel)DataContext).Document.ColorScheme}"/>
                                                             <TextBlock Classes="libelle" Text="Épaisseur des filets" Margin="0,5,0,0"/>
-                                                            <NumericUpDown Classes="champ" TextConverter="{x:Static conv:Unite.Points}"
+                                                            <views:ChampNumerique Classes="champ" TextConverter="{x:Static conv:Unite.Points}"
                                                                            Increment="0.5" Minimum="0"
                                                                            Value="{Binding GridThickness, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
                                                         </StackPanel>
@@ -1425,7 +1430,7 @@
                                                                 </ItemsControl.ItemsPanel>
                                                                 <ItemsControl.ItemTemplate>
                                                                     <DataTemplate DataType="models:TableColumn">
-                                                                        <NumericUpDown Classes="champ" TextConverter="{x:Static conv:Unite.Millimetres}"
+                                                                        <views:ChampNumerique Classes="champ" TextConverter="{x:Static conv:Unite.Millimetres}"
                                                                                        Increment="1" Minimum="1"
                                                                                        Value="{Binding Width, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
                                                                     </DataTemplate>
@@ -1443,7 +1448,7 @@
                                                                 </ItemsControl.ItemsPanel>
                                                                 <ItemsControl.ItemTemplate>
                                                                     <DataTemplate DataType="models:TableRow">
-                                                                        <NumericUpDown Classes="champ" TextConverter="{x:Static conv:Unite.Millimetres}"
+                                                                        <views:ChampNumerique Classes="champ" TextConverter="{x:Static conv:Unite.Millimetres}"
                                                                                        Increment="1" Minimum="1"
                                                                                        Value="{Binding Height, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
                                                                     </DataTemplate>
@@ -1587,7 +1592,7 @@
                                                                    Jeu="{Binding #Root.((vm:MainWindowViewModel)DataContext).Document.ColorScheme}"/>
                                                             <DockPanel Margin="0,5,0,0">
                                                                 <TextBlock Classes="libelle libelleAGauche" Text="Opacité" Width="52" Margin="0,0,8,0"/>
-                                                                <NumericUpDown Classes="champ" TextConverter="{x:Static conv:Unite.Pourcent}"
+                                                                <views:ChampNumerique Classes="champ" TextConverter="{x:Static conv:Unite.Pourcent}"
                                                                                Increment="5" Minimum="0" Maximum="100"
                                                                                Value="{Binding FillOpacity, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
                                                             </DockPanel>
@@ -1610,7 +1615,7 @@
                                                                     </Border.Background>
                                                                 </Border>
                                                             </Border>
-                                                            <NumericUpDown x:Name="EpaisseurDuContour" Classes="champ" Width="64" Margin="0,0,8,0"
+                                                            <views:ChampNumerique x:Name="EpaisseurDuContour" Classes="champ" Width="64" Margin="0,0,8,0"
                                                                            TextConverter="{x:Static conv:Unite.Points}"
                                                                            Increment="0.5" Minimum="0" IsEnabled="{Binding HasStroke}"
                                                                            Value="{Binding StrokeThickness, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
@@ -1629,7 +1634,7 @@
 
                                                         <DockPanel IsVisible="{Binding !IsLine}">
                                                             <TextBlock Classes="libelle libelleAGauche" Text="Arrondi" Width="52" Margin="0,0,8,0"/>
-                                                            <NumericUpDown Classes="champ" Width="64" HorizontalAlignment="Left"
+                                                            <views:ChampNumerique Classes="champ" Width="64" HorizontalAlignment="Left"
                                                                            TextConverter="{x:Static conv:Unite.Points}"
                                                                            Increment="1" Minimum="0"
                                                                            Value="{Binding CornerRadius, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
@@ -1813,14 +1818,14 @@
                                     <CheckBox Grid.Row="2" Grid.Column="0" Classes="case" Content="Paysage" IsChecked="{Binding IsLandscape}"/>
                                     <StackPanel Grid.Row="4" Grid.Column="0">
                                         <TextBlock Classes="libelle libelleAuDessus" Text="Largeur"/>
-                                        <NumericUpDown x:Name="LargeurDePage" Classes="champ"
+                                        <views:ChampNumerique x:Name="LargeurDePage" Classes="champ"
                                                        TextConverter="{x:Static conv:Unite.MillimetresCourts}"
                                                        Increment="1" Minimum="10" Maximum="2000"
                                                        Value="{Binding Document.PageWidth, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
                                     </StackPanel>
                                     <StackPanel Grid.Row="4" Grid.Column="2">
                                         <TextBlock Classes="libelle libelleAuDessus" Text="Hauteur"/>
-                                        <NumericUpDown x:Name="HauteurDePage" Classes="champ"
+                                        <views:ChampNumerique x:Name="HauteurDePage" Classes="champ"
                                                        TextConverter="{x:Static conv:Unite.MillimetresCourts}"
                                                        Increment="1" Minimum="10" Maximum="2000"
                                                        Value="{Binding Document.PageHeight, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
@@ -1840,22 +1845,22 @@
                                       IsVisible="{Binding SectionMargesOuverte}">
                                     <StackPanel Grid.Row="0" Grid.Column="0">
                                         <TextBlock Classes="libelle libelleAuDessus" Text="Gauche"/>
-                                        <NumericUpDown x:Name="MargeGauche" Classes="champ" TextConverter="{x:Static conv:Unite.MillimetresCourts}" Increment="1"
+                                        <views:ChampNumerique x:Name="MargeGauche" Classes="champ" TextConverter="{x:Static conv:Unite.MillimetresCourts}" Increment="1"
                                                        Value="{Binding Document.MarginLeft, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
                                     </StackPanel>
                                     <StackPanel Grid.Row="0" Grid.Column="2">
                                         <TextBlock Classes="libelle libelleAuDessus" Text="Droite"/>
-                                        <NumericUpDown Classes="champ" TextConverter="{x:Static conv:Unite.MillimetresCourts}" Increment="1"
+                                        <views:ChampNumerique Classes="champ" TextConverter="{x:Static conv:Unite.MillimetresCourts}" Increment="1"
                                                        Value="{Binding Document.MarginRight, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
                                     </StackPanel>
                                     <StackPanel Grid.Row="2" Grid.Column="0">
                                         <TextBlock Classes="libelle libelleAuDessus" Text="Haut"/>
-                                        <NumericUpDown Classes="champ" TextConverter="{x:Static conv:Unite.MillimetresCourts}" Increment="1"
+                                        <views:ChampNumerique Classes="champ" TextConverter="{x:Static conv:Unite.MillimetresCourts}" Increment="1"
                                                        Value="{Binding Document.MarginTop, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
                                     </StackPanel>
                                     <StackPanel Grid.Row="2" Grid.Column="2">
                                         <TextBlock Classes="libelle libelleAuDessus" Text="Bas"/>
-                                        <NumericUpDown Classes="champ" TextConverter="{x:Static conv:Unite.MillimetresCourts}" Increment="1"
+                                        <views:ChampNumerique Classes="champ" TextConverter="{x:Static conv:Unite.MillimetresCourts}" Increment="1"
                                                        Value="{Binding Document.MarginBottom, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
                                     </StackPanel>
                                 </Grid>
@@ -1881,35 +1886,35 @@
                                                Text="Les repères de composition ne s'impriment pas ; l'aimantation s'y accroche."/>
                                     <StackPanel Grid.Row="2" Grid.Column="0">
                                         <TextBlock Classes="libelle libelleAuDessus" Text="Colonnes"/>
-                                        <NumericUpDown Classes="champ" FormatString="0" Increment="1" Minimum="1" Maximum="24"
+                                        <views:ChampNumerique Classes="champ" FormatString="0" Increment="1" Minimum="1" Maximum="24"
                                                        Value="{Binding Document.ColumnCount}"/>
                                     </StackPanel>
                                     <StackPanel Grid.Row="2" Grid.Column="2">
                                         <TextBlock Classes="libelle libelleAuDessus" Text="Gouttière"/>
-                                        <NumericUpDown Classes="champ" TextConverter="{x:Static conv:Unite.MillimetresCourts}"
+                                        <views:ChampNumerique Classes="champ" TextConverter="{x:Static conv:Unite.MillimetresCourts}"
                                                        Increment="1" Minimum="0"
                                                        Value="{Binding Document.ColumnSpacing, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
                                     </StackPanel>
                                     <StackPanel Grid.Row="4" Grid.Column="0">
                                         <TextBlock Classes="libelle libelleAuDessus" Text="Lignes"/>
-                                        <NumericUpDown Classes="champ" FormatString="0" Increment="1" Minimum="1" Maximum="24"
+                                        <views:ChampNumerique Classes="champ" FormatString="0" Increment="1" Minimum="1" Maximum="24"
                                                        Value="{Binding Document.RowCount}"/>
                                     </StackPanel>
                                     <StackPanel Grid.Row="4" Grid.Column="2">
                                         <TextBlock Classes="libelle libelleAuDessus" Text="Espacement"/>
-                                        <NumericUpDown Classes="champ" TextConverter="{x:Static conv:Unite.MillimetresCourts}"
+                                        <views:ChampNumerique Classes="champ" TextConverter="{x:Static conv:Unite.MillimetresCourts}"
                                                        Increment="1" Minimum="0"
                                                        Value="{Binding Document.RowSpacing, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
                                     </StackPanel>
                                     <StackPanel Grid.Row="6" Grid.Column="0">
                                         <TextBlock Classes="libelle libelleAuDessus" Text="Ligne de base"/>
-                                        <NumericUpDown Classes="champ" TextConverter="{x:Static conv:Unite.Points}"
+                                        <views:ChampNumerique Classes="champ" TextConverter="{x:Static conv:Unite.Points}"
                                                        Increment="1" Minimum="0"
                                                        Value="{Binding Document.BaselineSpacing, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
                                     </StackPanel>
                                     <StackPanel Grid.Row="6" Grid.Column="2">
                                         <TextBlock Classes="libelle libelleAuDessus" Text="Décalage"/>
-                                        <NumericUpDown Classes="champ" TextConverter="{x:Static conv:Unite.Points}"
+                                        <views:ChampNumerique Classes="champ" TextConverter="{x:Static conv:Unite.Points}"
                                                        Increment="1" Minimum="0"
                                                        Value="{Binding Document.BaselineOffset, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
                                     </StackPanel>
@@ -1944,7 +1949,7 @@
                                                             Content="✕" ToolTip.Tip="Retirer ce repère"
                                                             Command="{Binding #Root.((vm:MainWindowViewModel)DataContext).RemoveRulerGuideCommand}"
                                                             CommandParameter="{Binding}"/>
-                                                    <NumericUpDown Classes="champ" TextConverter="{x:Static conv:Unite.MillimetresCourts}" Increment="1"
+                                                    <views:ChampNumerique Classes="champ" TextConverter="{x:Static conv:Unite.MillimetresCourts}" Increment="1"
                                                                    Value="{Binding Position, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
                                                 </DockPanel>
                                             </DataTemplate>
@@ -1959,7 +1964,7 @@
                                                             Content="✕" ToolTip.Tip="Retirer ce repère"
                                                             Command="{Binding #Root.((vm:MainWindowViewModel)DataContext).RemoveRulerGuideCommand}"
                                                             CommandParameter="{Binding}"/>
-                                                    <NumericUpDown Classes="champ" TextConverter="{x:Static conv:Unite.MillimetresCourts}" Increment="1"
+                                                    <views:ChampNumerique Classes="champ" TextConverter="{x:Static conv:Unite.MillimetresCourts}" Increment="1"
                                                                    Value="{Binding Position, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
                                                 </DockPanel>
                                             </DataTemplate>

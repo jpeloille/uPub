@@ -53,6 +53,14 @@ public partial class MainWindow : Window
     /// </summary>
     private Control? _panneauDuChamp;
 
+    /// <summary>
+    /// Le champ numérique qui a pris le focus en dernier dans un panneau (poste N14). Sa valeur
+    /// ne part plus à la frappe : ce qui y attend se valide avant que sa transaction ne se
+    /// referme, alors même qu'il garde le focus — le document qu'on ferme, la sélection que le
+    /// modèle de vue change.
+    /// </summary>
+    private ChampNumerique? _champNumerique;
+
     private MainWindowViewModel? _vm;
 
     public MainWindow()
@@ -111,6 +119,7 @@ public partial class MainWindow : Window
             _vm.FermetureDemandee -= OnFermetureDemandee;
             _vm.ExportDemande -= OnExportDemande;
             _vm.SuivreLeClavier(null);
+            _vm.SuivreLesChamps(null);
         }
 
         _vm = DataContext as MainWindowViewModel;
@@ -121,6 +130,7 @@ public partial class MainWindow : Window
             _vm.FermetureDemandee += OnFermetureDemandee;
             _vm.ExportDemande += OnExportDemande;
             _vm.SuivreLeClavier(() => ConsumesTyping(FocusManager?.GetFocusedElement()));
+            _vm.SuivreLesChamps(ValiderLeChampNumerique);
         }
 
         ConstruireLesRecents();
@@ -400,6 +410,7 @@ public partial class MainWindow : Window
 
         _propertyEditOpen = true;
         _panneauDuChamp = sender as Control;
+        _champNumerique = (e.Source as Visual)?.FindAncestorOfType<ChampNumerique>(includeSelf: true);
         Vm?.BeginEdit();
     }
 
@@ -425,11 +436,23 @@ public partial class MainWindow : Window
 
     private void ClosePropertyEdit()
     {
+        // Ce qui attend dans le champ part d'abord, dans la transaction qu'il avait ouverte
+        // (N14) : « 40 » tapé dans Y, puis Fermer, marque le document, et la question se pose.
+        ValiderLeChampNumerique();
         if (!_propertyEditOpen) return;
 
         _propertyEditOpen = false;
         Vm?.CommitEdit();
     }
+
+    /// <summary>
+    /// Valide ce qui attend dans le dernier champ numérique pris (N14) : avant que sa
+    /// transaction ne se referme, et quand le modèle de vue referme les transactions ouvertes
+    /// — Annuler, Rétablir, un raccourci qui fait son propre pas —, change la sélection,
+    /// enregistre ou exporte : la valeur tapée y était au document quand elle partait à la
+    /// frappe.
+    /// </summary>
+    private void ValiderLeChampNumerique() => _champNumerique?.Valider();
 
     // ------------------------------------------------------- ordre des blocs à la souris
 

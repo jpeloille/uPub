@@ -459,16 +459,20 @@ public class BarreContextuelleTests
         vm.SelectOnly(bloc);
         Rendu.Battre();
 
+        // Réécrit par N14 (règle 14) : Entrée, dans la barre, valide et rend la planche — le
+        // corps n'aurait plus le clavier quand Ctrl+U arrive. Le corps est donc tapé sans être
+        // validé, la saisie en cours : Ctrl+U le fait partir dans son pas à lui, avant le sien,
+        // comme quand la valeur partait à la frappe.
         var saisie = Trouver<NumericUpDown>(Barre(fenetre), "CorpsDuBloc").GetVisualDescendants().OfType<TextBox>().First();
         saisie.Focus();
         Rendu.Battre();
         saisie.SelectAll();
         fenetre.KeyTextInput("14");
-        fenetre.KeyPressQwerty(PhysicalKey.Enter, RawInputModifiers.None);
         Rendu.Battre();
         fenetre.KeyPressQwerty(PhysicalKey.U, RawInputModifiers.Control);
         Rendu.Battre();
         Assert.True(saisie.IsFocused);
+        Assert.Equal(14, bloc.FontSize);
         Assert.True(bloc.Underline.Actif);
         Quitter(fenetre);
 
@@ -777,9 +781,28 @@ public class BarreContextuelleTests
         Rendu.Battre();
         Assert.Equal(EditorTool.Text, vm.ActiveTool);
 
-        // Ce qu'on avait tapé est validé, en un pas.
-        Assert.Equal(12, bloc.FontSize);
-        Assert.IsType<TextFrame>(Rendu.UnSeulPas(vm, avant, "corps quitté par Échap"));
+        // Réécrit par N14 (règle 14 ; règle 13 de la phase N) : Échap renonce à ce qu'on avait
+        // tapé, comme Office, au lieu de le valider. Le corps reste, et rien n'est empilé.
+        Assert.Equal(10.5, bloc.FontSize);
+        Assert.Equal(EnPoints(10.5), Trouver<NumericUpDown>(Barre(fenetre), "CorpsDuBloc").Text);
+        Assert.Equal(avant, DocumentSerializer.ToJson(vm.Document));
+        Assert.False(vm.CanUndo, "Échap a laissé un pas d'annulation");
+
+        // La liste des polices, qui n'est pas un champ numérique, quitte de même la barre par
+        // Échap, liste fermée : c'est la barre qui rend la planche (SurTouche), et le seul geste
+        // qui lui reste depuis que le corps et l'interligne tiennent leur Échap eux-mêmes.
+        Rendu.Touche(fenetre, PhysicalKey.Escape);
+        Assert.Equal(EditorTool.Select, vm.ActiveTool);
+        var police = Trouver<ComboBox>(Barre(fenetre), "PoliceDuBloc");
+        police.Focus();
+        Rendu.Battre();
+        Assert.True(police.IsKeyboardFocusWithin, "la police n'a pas pris le focus");
+        Rendu.Touche(fenetre, PhysicalKey.T);
+        Assert.Equal(EditorTool.Select, vm.ActiveTool);
+        Rendu.Touche(fenetre, PhysicalKey.Escape);
+        Assert.False(police.IsKeyboardFocusWithin, "Échap n'a pas quitté la liste des polices");
+        Rendu.Touche(fenetre, PhysicalKey.T);
+        Assert.Equal(EditorTool.Text, vm.ActiveTool);
     }
 
     [AvaloniaFact]
@@ -795,12 +818,13 @@ public class BarreContextuelleTests
         vm.SelectOnly(bloc);
         Rendu.Battre();
 
+        // Réécrit par N14 (règle 14) : Entrée, dans la barre, valide et rend la planche — le
+        // corps n'aurait plus le focus que le volet lui rend. Le corps est tapé sans être
+        // validé : le clic sur la vignette le fait partir, en quittant le champ.
         var corps = Trouver<NumericUpDown>(Barre(fenetre), "CorpsDuBloc").GetVisualDescendants().OfType<TextBox>().First();
         Rendu.Cliquer(corps);
         corps.SelectAll();
         Rendu.Taper(fenetre, "14");
-        Rendu.Touche(fenetre, PhysicalKey.Enter);
-        Assert.Equal(14, bloc.FontSize);
         Assert.True(corps.IsFocused, "le corps n'a pas le focus");
 
         Rendu.Cliquer(Trouver<Button>(Barre(fenetre), "CouleurDuTexte"));
@@ -809,6 +833,7 @@ public class BarreContextuelleTests
         Assert.False(Assert.IsType<Flyout>(Trouver<Button>(Barre(fenetre), "CouleurDuTexte").Flyout).IsOpen,
             "Échap n'a pas refermé le sélecteur");
         Assert.Equal("scheme:accent2", bloc.Foreground);
+        Assert.Equal(14, bloc.FontSize);
         Assert.False(Barre(fenetre).IsKeyboardFocusWithin, "le sélecteur refermé a rendu le focus au corps");
 
         Rendu.Touche(fenetre, PhysicalKey.T);

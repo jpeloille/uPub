@@ -86,6 +86,7 @@ dont tout le reste dépend, et le passé qu'on s'est engagé à relire.
 
 Au démarrage et sur `Ctrl+N`, MyPublisher propose un catalogue : bulletin trois
 colonnes, dépliant trois volets, carte de visite, affiche A3 — ou la page blanche.
+`Entrée` crée le document choisi, `Échap` renonce.
 
 Un modèle n'est rien d'autre qu'un document : les fichiers vivent dans `Templates/`,
 à côté du binaire, et s'ouvrent, se retouchent et se réenregistrent comme n'importe
@@ -141,13 +142,21 @@ seuls » —, les quatre alignements, l'interligne en multiple et la couleur du 
 sa vignette ouvre. Un tableau y a la même mise en forme, sans l'alignement, qui est celui
 de chaque case. Un groupe s'y dissocie, plusieurs blocs s'y alignent et s'y répartissent.
 Ce que la barre porte, le dock ne le porte plus. Chaque clic y est un pas d'annulation ;
-`Échap` quitte un de ses champs et rend les lettres seules aux outils.
+`Entrée` y valide un champ, `Échap` y renonce, et l'un comme l'autre le quittent et rendent
+les lettres seules aux outils.
 
 L'onglet *Propriétés* montre le bloc sélectionné en sections repliables : Position et
 taille, puis ce qui est propre au type — pour un bloc de texte, Cadre de texte,
 Paragraphe et Contenu —, puis Fond et contour. Une section fermée le reste d'un bloc à
 l'autre, le temps de la session. Les longueurs portent leur unité dans le champ
-(« 52,0 mm ») ; on les saisit avec ou sans elle, à la virgule comme au point. Chaque champ,
+(« 52,0 mm ») ; on les saisit avec ou sans elle, à la virgule comme au point, ou dans une
+autre unité, convertie : `mm`, `cm`, `pt`, `pi` (le pica) et le pouce (`po`, `in` ou `"`) —
+« 2 cm » donne 20,0 mm, « 12 pt » 4,23 mm. L'affichage reste en millimètres. Un champ
+numérique, du dock comme de la barre, ne prend ce qu'on y tape qu'à la validation —
+`Entrée`, `Tab`, la sortie du champ, `↑` et `↓`, la molette — ; une saisie illisible ou hors
+des bornes est refusée, la valeur d'avant revient et la barre d'état dit pourquoi, bornes
+comprises ; `Échap` renonce à ce qui n'est pas validé et rend la main à la planche. `Tab`
+passe d'un champ à l'autre sans s'arrêter sur les titres de section. Chaque champ,
 quel que soit son onglet — et chaque champ de la barre contextuelle —, est **un pas
 d'annulation**. La case **Conserver les
 proportions**, réglage de la session et non du document, fait garder au bloc son rapport
@@ -385,7 +394,8 @@ comptés pour rien : sur un AZERTY, `Ctrl+]` se tape `Ctrl+AltGr+)`, `Ctrl+[` se
 | `Ctrl+X` / `Ctrl+C` / `Ctrl+V` | Couper / Copier / Coller les blocs sélectionnés, à leur place ou 12 pt plus loin si l'original y est encore ; un texte venu d'ailleurs devient un bloc. En saisie et dans un champ, le texte |
 | `Maj+Suppr` / `Ctrl+Inser` / `Maj+Inser` | Couper / Copier / Coller, comme `Ctrl+X`, `Ctrl+C` et `Ctrl+V` — les secondes touches de Publisher en français ; `Maj+Suppr` coupe, et ne supprime pas |
 | `Ctrl+A` | Sélectionner tous les blocs de la page ; dans la saisie d'un bloc ou dans un champ, tout le texte du champ |
-| `Échap` | Désarme l'outil, sinon désélectionne ; dans un champ de la barre contextuelle, le quitte |
+| `Échap` | Désarme l'outil, sinon désélectionne ; dans un champ, du dock ou de la barre contextuelle, renonce à ce qui est tapé et le quitte |
+| Dans un champ numérique : `Entrée`, `Tab`, `↑` / `↓` | Valide ce qui est tapé — dans la barre contextuelle, `Entrée` rend aussi la planche — ; passe au champ suivant ; un pas de plus ou de moins |
 
 ### Objets
 

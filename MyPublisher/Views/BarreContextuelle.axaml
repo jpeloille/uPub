@@ -147,7 +147,7 @@
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
                             <!-- Le corps : « 10,5 pt ». -->
-                            <NumericUpDown x:Name="CorpsDuBloc" Classes="champ" Width="58" ToolTip.Tip="Corps"
+                            <views:ChampNumerique x:Name="CorpsDuBloc" Classes="champ" Width="58" ToolTip.Tip="Corps"
                                            TextConverter="{x:Static conv:Unite.Points}" Increment="0.5" Minimum="1"
                                            Value="{Binding FontSize, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
                             <views:BoutonDEtat Classes="ib" Content="G" FontWeight="Bold" FontSize="14" Focusable="False"
@@ -216,7 +216,7 @@
                                  points comme la maquette : le modèle ne change pas pour
                                  l'affichage (décision du 24 octobre 2026). -->
                             <TextBlock Classes="libelle" Text="Interligne"/>
-                            <NumericUpDown x:Name="InterligneDuBloc" Classes="champ" Width="58" ToolTip.Tip="Interligne"
+                            <views:ChampNumerique x:Name="InterligneDuBloc" Classes="champ" Width="58" ToolTip.Tip="Interligne"
                                            TextConverter="{x:Static conv:Unite.Multiple}" Increment="0.05" Minimum="0.5"
                                            Value="{Binding LineHeight, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
                             <TextBlock Classes="libelle apresUnChamp" Text="Couleur"/>
@@ -264,7 +264,7 @@
                                     </DataTemplate>
                                 </ComboBox.ItemTemplate>
                             </ComboBox>
-                            <NumericUpDown Classes="champ" Width="58" ToolTip.Tip="Corps"
+                            <views:ChampNumerique Classes="champ" Width="58" ToolTip.Tip="Corps"
                                            TextConverter="{x:Static conv:Unite.Points}" Increment="0.5" Minimum="1"
                                            Value="{Binding FontSize, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
                             <views:BoutonDEtat Classes="ib" Content="G" FontWeight="Bold" FontSize="14" Focusable="False"
@@ -275,7 +275,7 @@
                                                Command="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).BasculerItaliqueCommand}"/>
                             <Border Classes="separateur"/>
                             <TextBlock Classes="libelle" Text="Interligne"/>
-                            <NumericUpDown Classes="champ" Width="58" ToolTip.Tip="Interligne"
+                            <views:ChampNumerique Classes="champ" Width="58" ToolTip.Tip="Interligne"
                                            TextConverter="{x:Static conv:Unite.Multiple}" Increment="0.05" Minimum="0.5"
                                            Value="{Binding LineHeight, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
                             <TextBlock Classes="libelle apresUnChamp" Text="Couleur"/>

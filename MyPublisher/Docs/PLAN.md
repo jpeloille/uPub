@@ -117,7 +117,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **N11** | Ne rien perdre en fermant, retrouver ses documents | **100 %** | Nouveau, Ouvrir, Fermer, Quitter et la fermeture de la fenêtre passent par `LaisserPartirLeDocument` (`MainWindow.Fermer.cs`) : la saisie ouverte et le champ du dock ou de la barre sont refermés d'abord, pour que leur frappe compte, puis, sur un document modifié, un dialogue neuf (`QuestionAvantDePerdre.axaml`, aux couleurs de l'apparence) demande « Enregistrer les modifications apportées à « nom » ? » : Enregistrer, le bouton par défaut, écrit — par « Enregistrer sous » sans chemin — et ne laisse poursuivre que si l'écriture a eu lieu ; Ne pas enregistrer poursuit ; Annuler, le bouton d'annulation, ou le dialogue refermé, laisse tout tel quel. La fenêtre suspend sa fermeture (`OnClosing`) le temps de la question. La question n'est branchée que par `App.axaml.cs` (`MainWindow.AvantDePerdre`) : une fenêtre de test ne demande rien. Fermer (`Ctrl+W`, `Ctrl+F4`, menu Fichier) ferme le document et rend le catalogue des modèles ; le catalogue et Ouvrir demandent une fois le modèle ou le fichier choisi. Les six derniers documents ouverts ou enregistrés sont au menu Fichier, numérotés, gardés dans `MyPublisher.Core/Services/Preferences.cs`, le magasin des réglages de l'utilisateur (`~/.config/MyPublisher/preferences.json`, ou le dossier de `MYPUBLISHER_PREFERENCES`), qui réécrit telles quelles les clés qu'il ne connaît pas, pour A11 et N25 ; seul `App.axaml.cs` le charge, un modèle de vue construit ailleurs en prend un en mémoire qui n'écrit nulle part. GNOME ne prend ni `Ctrl+W` ni `Ctrl+F4`. Trente-six tests, sept purs et vingt-neuf sur la fenêtre ; deux sabotages au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **N12** | Entrer dans le texte d'un clic, le curseur au point visé | **100 %** | Un clic dans le texte d'un bloc de texte le prend seul, ouvre la saisie et y pose le curseur sur le caractère visé, lu sur la composition qui était à l'écran (`IndexSous` de N3, par la transformation du contrôle même), sans rien sélectionner ; un glissé dans le texte sélectionne depuis cette ancre, passé le seuil de 3 px (Q21), sur la mise en page du champ ; une bande de bord de 5 px d'écran, au plus un quart du côté, étendue jusqu'au cadre d'un bloc sélectionné, prend et déplace le bloc comme avant ; le curseur est le I sur le texte, les quatre flèches sur le bord ; `Ctrl`+clic et `Maj`+clic ajoutent ou retirent sans saisie ; le double-clic n'ouvre plus rien, le champ y prend un mot. La mécanique vit dans `PageCanvas.Saisie.cs`. Un bloc neuf, de l'outil Texte ou Titre, est vide, le curseur dedans ; *Insertion ▸ Bloc de texte* (et *Titre*) ouvre la saisie comme l'outil, par une demande du modèle de vue (`SaisieDemandee`). La pression qui ouvre la saisie rend la main en 48 à 81 ms de médiane sur ATA 21 : elle en prenait jusqu'à 115, la saisie qui s'ouvre faisant recomposer le bloc par la vignette, le marqueur de débordement et le compte de I9, qui l'ignorent désormais. Seize tests sous `poste=N12` ; règle 14 : vingt-quatre tests réécrits dans huit classes, deux renommés, l'entrée en saisie du banc à un clic ; recettes Q14, Q21-Q22 et Q23 reprises ; deux sabotages au juge, deux cibles reprises. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **N13** | Les menus de Publisher | **100 %** | **Arrêt sur deux points**, qui reviennent au propriétaire. Les gestes des menus restent écrits « Ctrl+Shift+G » : `AppBuilder.With(new KeyGestureFormatInfo(…))` ne tient pas sous Avalonia 11.3.9, les options s'appliquant avant la plate-forme, qui lie la sienne par-dessus — mesuré sous X11 et sans affichage. Et les lettres d'accès d'Avalonia 11.3.9 ne sont pas rangées par niveau : la barre et chaque niveau ouvert se disputent la même lettre, si bien qu'Alt, D, O, P promène le focus de « _Page » à « Re_pères de règle » puis à « Premier _plan » sans rien jouer. Livré : à chaque niveau de chaque menu une lettre d'accès par entrée, unique, sans accent — « _Edition », « T_itre », « I_mage… », « _Aligner le texte à gauche » — ; Disposition rangé comme Publisher 2007, « Re_pères de règle ▸ », Grouper, Dissocier, « _Regrouper », « _Ordre ▸ » et ses quatre ordres, « _Aligner ou répartir ▸ » et ses six alignements, deux répartitions et leur repère, Ajuster aux marges ; « Regrouper » refait le dernier groupe dissous, en un pas, à son nom, sans resélection, tant que ses blocs sont tous sur la page (`MainWindowViewModel.Menus.cs`) ; Tab et Maj+Tab, la planche ayant le focus, passent au bloc suivant ou précédent dans l'ordre de la page, les masqués sautés, en boucle, sans pas d'annulation, et Tab dans le dock va toujours au champ suivant ; la barre de menus ouverte garde ses touches — Alt puis E armait l'ellipse, Suppr y supprimait le bloc. Alt, D, O, L joue Arrière-plan. Sept tests ; quatre tests voisins et la recette N8 relisent les libellés neufs (règle 14) ; trois sabotages au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
-| **N14** | Les champs | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 4 |
+| **N14** | Les champs | **100 %** | Les champs numériques du dock et de la barre contextuelle sont des `ChampNumerique` (`Views/ChampNumerique.cs`), dérivés de `NumericUpDown` sous son apparence : la valeur ne part plus à chaque frappe lisible — taper « 210 » dans la largeur de la page l'écrivait à 2, 21 puis 210 mm —, mais à `Entrée`, `Tab`, la sortie du champ, `↑` et `↓`, la molette, une fois ; `↑` et `↓` partent de ce qui est tapé, même tout pris après un refus. `Unite` lit mm, cm, pt, pi et le pouce (« po », « in », `"`), à la virgule comme au point, en fractions exactes de millimètre : « 2 cm » dans X donne 20,0 mm, « 12 pt » dans une marge 4,23 mm, « 1" » 25,4 mm ; l'affichage reste en millimètres. Une saisie illisible ou hors des bornes n'est pas ramenée à la borne : la valeur d'avant revient, et la barre d'état le dit, bornes comprises, par `Status`, le canal du zoom tapé de N4. `Échap` renonce et rend la planche, au dock comme dans la barre (règle 13) ; `Entrée` dans la barre valide et rend la planche, au dock garde le champ. Ce qui attend dans un champ part avant que la fenêtre referme sa transaction (`ClosePropertyEdit`, le piège du plan : fermer le document pose alors la question), et avant que le modèle de vue referme les siennes, change la sélection, enregistre ou exporte (`MainWindowViewModel.Champs.cs`). Le catalogue et le dialogue des coordonnées se ferment par `Échap` (`IsCancel`) ; `Tab` ne s'arrête plus sur les titres de section du dock. Douze tests sur la fenêtre ; trois tests de la barre réécrits (règle 14) ; sept sabotages au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **N15** | L'application connaît la sélection du texte | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 5 |
 | **N16** | Tabulation et saut de ligne forcé | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 5, après N15 dans la même copie |
 | **N17** | Les modificateurs du glisser, et le rectangle de sélection | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 5 |
@@ -7725,6 +7725,97 @@ Fichiers : `Views/ChampNumerique.cs` (neuf), `MainWindow.axaml` (les champs du d
 `BarreContextuelle.axaml` et son code, `MainWindow.axaml.cs` (`ClosePropertyEdit`),
 `Converters/UnitConverters.cs`, les deux dialogues. Dépend de N9, pour le dock Document. Effort :
 moyen.
+
+*Livré le 28 octobre 2026*, dans la salve Saisie 4 ; la relecture adversariale vient après la
+fusion. **`ChampNumerique`** dérive de `NumericUpDown` et garde son apparence
+(`StyleKeyOverride`) : les styles « NumericUpDown.champ » le prennent pour l'un d'eux, et les
+tests le trouvent comme tel. Les quarante-sept champs numériques de la fenêtre et les quatre de la
+barre le sont devenus. Sa frappe ne pousse rien (`OnTextChanged` vide, lu décompilé : c'est lui qui
+lisait le texte à chaque frappe) ; `Valider` lit le texte par le convertisseur du champ, refuse ce
+qui ne se lit pas ou sort des bornes — le champ remontre sa valeur, la barre d'état dit pourquoi :
+« « trente » ne se lit pas (mm, cm, pt, pi ou po) : la valeur reste 21.2 mm. », « « 5000 » est
+refusé, de 10 mm à 2000 mm : la valeur reste 210 mm. », sous `LC_ALL=C` —, et ne fait rien partir quand la valeur
+lue est celle du champ : la mémoire de Q14 n'a pas à jouer. `Entrée` valide ; refusée, elle garde
+le champ, tout pris ; prise, elle continue jusqu'à la barre, qui rend la planche
+(`BarreContextuelle.SurTouche`), le dock gardant le champ. `Échap` abandonne et rend la planche.
+La sortie du champ valide ; `↑`, `↓` et la molette valident avant leur pas, et un refus arrête le
+geste. **`Unite`** lit les longueurs en fractions exactes de millimètre, en décimal, les produits
+d'abord : 12 pt font 304,8 / 72 mm ; un angle, un pourcentage ou un multiple ne lisent que leur
+unité. La cible du juge `texte = separateur == ","…` reste, une fois. Le refus passe par `Status`,
+que la barre d'état affiche déjà et où le zoom tapé de N4 dit les siens : aucun canal ajouté. Les
+deux dialogues ont `IsCancel` sur Annuler ; un style de la fenêtre ôte les titres de section des
+arrêts de `Tab`. Le README le dit (le dock, la barre, le catalogue, le sous-tableau « Édition ») ;
+`ChampNumerique.cs` entre dans `vues_de_la_phase` de I1.
+
+*Recette jouée* : `Scripts/recettes/N14-les-champs.sh`. Les sources d'abord : aucun
+`NumericUpDown` d'Avalonia dans la fenêtre ni la barre, `OnTextChanged` vide, `Échap` qui renonce
+avant de rendre la planche ; les sept unités à leur fraction, l'affichage dans l'unité du champ, la
+cible du juge ; le champ qui attend validé par `ClosePropertyEdit`, `EndPendingEdit`,
+`SetSelection`, `SaveTo` et `ExportPdf`, le partiel ; le refus par `Status` ; `IsCancel`, `Tab`,
+`Entrée` dans la barre ; le README et I1. Puis douze tests sous `poste=N14`
+(`ChampNumeriqueTests`), au clavier sur la vraie fenêtre : les unités (« 2 cm », « 1" », « 2,5 cm »,
+« 6 pi », « 2 po », « 1in », « 4 mm » dans le corps, « 12 pt » dans une marge) ; « 210 » tapé
+chiffre à chiffre, la largeur intacte jusqu'à `Entrée`, écrite une fois, en un pas ; `Tab` qui
+valide et mène de X à Y, `↑` et `↓` depuis ce qui est tapé, la molette, deux pas défaits un à un ;
+« trente » refusé et dit, puis `↑` qui fait son pas, 5 000 mm refusé, bornes dites, « 2 m » refusé
+à la sortie, sans pas ; `Échap` qui renonce dans le corps et dans X, « T » qui arme l'outil texte
+ensuite et la flèche qui pousse le bloc ; `Entrée` dans la barre et au dock ; « 40 » tapé dans Y
+avant `Ctrl+Z` et avant l'enregistrement ; fermer le document pendant qu'un champ attend ; la
+sélection qui change sous X, L et le corps ; le texte affiché retapé et six `Tab` qui ne réécrivent
+rien d'un bloc à 107,15039999999999 pt tourné de 12,3456789° ; l'ordre de `Tab` au dock et
+`Maj+Tab` ; `Échap` au catalogue et au dialogue des coordonnées. Puis les voisins : les trois tests
+réécrits de la barre et le changement d'onglet de `DispositionTests`. Sept sabotages au juge, chacun
+attendu par la recette ou par `ChampNumeriqueTests` : la valeur poussée à chaque frappe — le
+sabotage du plan —, `Échap` qui valide, l'unité lue mais pas convertie, `ClosePropertyEdit` qui ne
+valide plus, `EndPendingEdit` non plus, `SetSelection` non plus, le refus en silence.
+
+*Ce que l'implémentation a appris.*
+- **`Unite` n'est pas dans `Converters/UnitConverters.cs`**, comme la section le disait, mais dans
+  `Converters/DispositionConverters.cs`, où I2 l'avait posé. `UnitConverters.cs` — les
+  convertisseurs de Q14 et leur mémoire — n'est pas touché.
+- **Le piège du plan ne se voyait pas où il le disait.** `DispositionTests` garde « 40 » au
+  changement d'onglet même sans la validation de `ClosePropertyEdit` — mesuré, ce sabotage joué à
+  la main : le champ perd le focus quand son onglet s'en va, et sa sortie valide. Elle sert ailleurs
+  : `LaisserPartirLeDocument` (N11) referme le champ avant de lire `IsDirty`, et sans elle « 40 »
+  tapé puis Fermer laissait partir un document intact, la frappe perdue. Le test
+  `Fermer_le_document_pendant_qu_un_champ_attend_pose_la_question` le tient.
+- **Une valeur qui ne part plus à la frappe manque à tout ce qui lisait le document pendant qu'on
+  tape.** Annuler et Rétablir refermaient la transaction du champ, où la valeur était ; un raccourci
+  qui fait son pas (`UnGesteUnPas`) aussi ; l'enregistrement l'écrivait. Et une sélection qui change
+  sans que le champ perde le focus perdait la frappe : la largeur et la hauteur, liées au modèle de
+  vue, y relisaient celles du bloc d'après par-dessus — mesuré, 44 mm tapés dans L laissaient le
+  premier bloc à 300 pt. La fenêtre prête donc au modèle de vue de quoi valider le champ qui attend
+  (`SuivreLesChamps`, au précédent de `SuivreLeClavier` de N6), et il la demande dans
+  `EndPendingEdit`, `SetSelection`, `SaveTo` et `ExportPdf`. `Ctrl_U_pendant_une_saisie_de_la_barre`
+  le joue désormais sans `Entrée`.
+- **La zone de texte prend `↑` et `↓` pour son curseur dès qu'il peut bouger** (`TextBox.OnKeyDown`,
+  lu décompilé) : tout le texte pris, après un refus, `↑` le ramenait au début et ne faisait pas son
+  pas. Le champ les prend au passage descendant, comme le champ du zoom de N4.
+- **Trois tests de la barre réécrits (règle 14)** : `T_dans_le_corps_s_ecrit_et_T_apres_Echap_arme_l_outil_texte`
+  attend désormais que `Échap` renonce, sans pas ; `Ctrl_U_pendant_une_saisie_de_la_barre_fait_son_propre_pas`
+  et `Le_selecteur_de_couleur_referme_rend_les_lettres_aux_outils` tapent le corps sans `Entrée`, qui
+  rend désormais la planche. Le corps et l'interligne tenant leur `Échap` eux-mêmes, la cible du juge
+  de I3 « garde le champ sous Échap » perdait sa prise : le premier test la lui rend, `Échap` joué
+  dans la liste des polices.
+
+*Choisi sans certitude* :
+- `Entrée` au dock valide et garde le champ, comme avant le poste : la section ne le dit que pour
+  la barre. Une `Entrée` refusée garde le champ partout, son texte tout pris ;
+- `↑` sur une saisie refusée ne fait pas de pas : le refus arrête le geste et le dit ;
+- un refus dit la saisie telle qu'elle est tapée, et non sa conversion ; pour une longueur, il
+  rappelle les unités lues ;
+- les unités lues sont celles que la section nomme ; ni « ″ », ni « pouce », ni « m » ;
+- l'enregistrement et l'export valident le champ qui attend, ce que la section ne demandait pas :
+  la valeur y était quand elle partait à la frappe ;
+- les cases à cocher du dock restent des arrêts de `Tab` (la fiche les comptait avec les titres ;
+  la section ne nomme que les titres) ;
+- `Échap` dans les champs de texte du dock, Nom et Contenu, ne change pas : il n'y fait rien. Leur
+  valeur part à la frappe, et y renoncer demanderait de défaire la transaction ; la section ne parle
+  que des champs numériques.
+
+*Relevé, non corrigé.* Un champ sans convertisseur — les colonnes, les lignes de la grille, au
+format « 0 » — lit un nombre décimal comme avant le poste ; « 2,5 » colonnes n'est pas refusé par le
+champ, et ce qu'en fait la liaison vers un entier n'a pas été mesuré.
 
 #### N15 — L'application connaît la sélection du texte *(fiche 23, b1, b4)*
 
