@@ -133,7 +133,8 @@ print("    b. la fenêtre, la planche et la barre écoutent l'avis, et s'en dés
 # ------------------------------------------- c. la saisie suit le focus de sa zone (Q25)
 
 planche = (VUES / "PageCanvas.axaml.cs").read_text(encoding="utf-8")
-debut = corps(planche, "private void BeginTextEdit(TextFrame frame)")
+# Depuis N12, la saisie s'ouvre le curseur à une position : BeginTextEdit la reçoit.
+debut = corps(planche, "private void BeginTextEdit(TextFrame frame, int curseur)")
 fin = corps(planche, "public void EndTextEdit()")
 exige(debut is not None and fin is not None, "BeginTextEdit ou EndTextEdit est introuvable dans PageCanvas.axaml.cs.")
 if debut is not None and fin is not None:

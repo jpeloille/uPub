@@ -189,7 +189,9 @@ public class DispositionTests
 
         foreach (var (bloc, nature) in new (Frame, string)[] { (texte, "Bloc de texte"), (forme, "Rectangle") })
         {
-            var point = Rendu.SurLaPage(fenetre, bloc.X + 20, bloc.Y + 20);
+            // Par la bande de bord : une pression dans le texte y entrerait, et Échap n'en
+            // sortirait qu'à moitié (N12, règle 14).
+            var point = Rendu.Bord(fenetre, bloc);
             fenetre.MouseDown(point, MouseButton.Left);
             Rendu.Battre();
             Assert.Same(bloc, vm.SingleSelected);

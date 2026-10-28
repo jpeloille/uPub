@@ -93,8 +93,13 @@ public partial class MainWindowViewModel
         CompterLesLignesEnExcedent();
     }
 
-    private void SurBlocCompteRetouche(object? sender, PropertyChangedEventArgs e) =>
+    private void SurBlocCompteRetouche(object? sender, PropertyChangedEventArgs e)
+    {
+        // La saisie qui s'ouvre ou se ferme ne change pas le compte (poste N12) : il se refaisait
+        // à chaque entrée dans un texte, dans la pression même.
+        if (e.PropertyName == nameof(TextFrame.IsEditing)) return;
         CompterLesLignesEnExcedent();
+    }
 
     private void SurBlocCompteRetouche(object? sender, NotifyCollectionChangedEventArgs e) =>
         CompterLesLignesEnExcedent();

@@ -394,6 +394,46 @@ public static class Rendu
         SurLaPage(fenetre, bloc.X + fx * bloc.Width, bloc.Y + fy * bloc.Height);
 
     /// <summary>
+    /// Un point de la bande de bord d'un bloc, dans la fenêtre : à deux pixels d'écran en deçà
+    /// du côté que désignent <paramref name="fx"/> et <paramref name="fy"/> — l'un des deux vaut
+    /// 0 ou 1, comme pour <see cref="Coin"/>, l'autre dit où le long de ce côté —, dans le
+    /// repère du bloc, rotation comprise. Depuis le poste N12, une pression dans le texte d'un
+    /// bloc y entre, le curseur au point visé ; sur sa bande de bord, cinq pixels d'écran, elle
+    /// prend le bloc et le déplace, comme une pression n'importe où le faisait avant.
+    /// </summary>
+    public static Point Bord(Window fenetre, Frame bloc, double fx = 0, double fy = 0.5)
+    {
+        Assert.True(fx is 0 or 1 || fy is 0 or 1, "un point de la bande de bord est le long de l'un des quatre côtés");
+        var dedans = 2 / Vm(fenetre).RenderScale;
+        double Le(double f, double cote) => f == 0 ? dedans : f == 1 ? cote - dedans : f * cote;
+        var (x, y) = bloc.ToPage(Le(fx, bloc.Width), Le(fy, bloc.Height));
+        return SurLaPage(fenetre, x, y);
+    }
+
+    /// <summary>
+    /// Un point de la bande de bord du bloc où c'est lui qu'une pression atteint, dans la
+    /// fenêtre (voir <see cref="Bord"/>) : au milieu de son côté gauche, sinon du droit, du haut
+    /// ou du bas — ou rien, si d'autres blocs de la page les couvrent tous. Pour prendre un bloc
+    /// de texte sans entrer dans son texte, sur un document qu'on n'a pas posé soi-même.
+    /// </summary>
+    public static Point? BordAtteint(Window fenetre, Frame bloc)
+    {
+        var page = Vm(fenetre).CurrentPage ?? throw new InvalidOperationException("aucune page courante");
+        var dedans = 2 / Vm(fenetre).RenderScale;
+        foreach (var (fx, fy) in new[] { (0.0, 0.5), (1.0, 0.5), (0.5, 0.0), (0.5, 1.0) })
+        {
+            var (x, y) = bloc.ToPage(fx == 0 ? dedans : fx == 1 ? bloc.Width - dedans : fx * bloc.Width,
+                                     fy == 0 ? dedans : fy == 1 ? bloc.Height - dedans : fy * bloc.Height);
+            if (ReferenceEquals(bloc, page.Frames.LastOrDefault(f => f.Visible && f.HitTest(x, y))))
+            {
+                return Bord(fenetre, bloc, fx, fy);
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
     /// Où saisir une poignée de redimensionnement d'un bloc droit, dans la fenêtre :
     /// <paramref name="fx"/> et <paramref name="fy"/> valent 0, ½ ou 1, comme pour
     /// <see cref="Coin"/>. Les poignées sont posées sur le cadre de sélection, 3,25 px
@@ -579,20 +619,25 @@ public static class Rendu
     }
 
     /// <summary>
-    /// Deux pressions au même point, sans rien entre elles, puis ce que la fenêtre a à
+    /// Deux clics au même point, l'image du premier entre eux, puis ce que la fenêtre a à
     /// faire. Avalonia reconnaît un double-clic à l'horloge et à la distance : deux
     /// pressions à moins de 500 ms, dans un carré de 4 px centré sur la première
     /// (<c>MouseDevice</c>, <c>DefaultPlatformSettings</c>) — le banc date chaque pression
     /// du moment où il la livre, c'est un vrai chronomètre.
+    ///
+    /// L'image entre les deux est celle que l'écran rend pendant qu'une main relâche et
+    /// presse de nouveau (poste N12) : le premier clic dans un texte ouvre la saisie, et la
+    /// seconde pression doit trouver le champ sous le pointeur, qu'Avalonia cherche dans la
+    /// dernière image rendue (voir <see cref="Cliquer(Control)"/>). Sans elle, la seconde
+    /// pression retombait sur la planche, comme si le champ n'avait jamais paru.
     /// </summary>
     public static void DoubleCliquer(TopLevel racine, Point point)
     {
-        for (var clic = 0; clic < 2; clic++)
-        {
-            racine.MouseDown(point, MouseButton.Left);
-            racine.MouseUp(point, MouseButton.Left);
-        }
-
+        racine.MouseDown(point, MouseButton.Left);
+        racine.MouseUp(point, MouseButton.Left);
+        UneImage();
+        racine.MouseDown(point, MouseButton.Left);
+        racine.MouseUp(point, MouseButton.Left);
         Battre(8);
     }
 
@@ -815,19 +860,20 @@ public static class Rendu
             .SingleOrDefault(zone => ReferenceEquals(zone.DataContext, bloc) && zone.IsVisible);
 
     /// <summary>
-    /// Entre en saisie dans un bloc comme l'utilisateur : le bloc pris, puis un
-    /// double-clic à (<paramref name="dx"/>, <paramref name="dy"/>) de son coin. C'est le
-    /// seul endroit que N12 changera, quand on entrera dans le texte d'un clic. Rend la
-    /// zone de saisie, et échoue si la saisie ne s'est pas ouverte ou si la zone n'a pas le
-    /// focus (Q25 : la transaction de la saisie le suit).
+    /// Entre en saisie dans un bloc comme l'utilisateur : un clic dans son texte, à
+    /// (<paramref name="dx"/>, <paramref name="dy"/>) de son coin, dans son repère — rotation
+    /// comprise. C'est le seul endroit que N12 a changé : on y entrait au double-clic, le bloc
+    /// pris d'abord ; on y entre d'un clic, qui prend le bloc et pose le curseur au point visé.
+    /// Le point doit tomber dans le texte, hors de la bande de bord, où le clic prendrait le
+    /// bloc sans l'ouvrir. Rend la zone de saisie, et échoue si la saisie ne s'est pas ouverte
+    /// ou si la zone n'a pas le focus (Q25 : la transaction de la saisie le suit).
     /// </summary>
     public static TextBox EntrerEnSaisie(Window fenetre, MainWindowViewModel vm, TextFrame bloc, double dx = 40, double dy = 8)
     {
-        vm.SelectOnly(bloc);
-        Battre();
-
-        DoubleCliquer(fenetre, SurLaPage(fenetre, bloc.X + dx, bloc.Y + dy));
-        Assert.True(bloc.IsEditing, "le double-clic n'a pas ouvert la saisie sur la page");
+        var (x, y) = bloc.ToPage(dx, dy);
+        Cliquer(fenetre, SurLaPage(fenetre, x, y));
+        Assert.True(bloc.IsEditing, "le clic dans le texte n'a pas ouvert la saisie sur la page");
+        Assert.Same(bloc, vm.SingleSelected);
 
         var zone = ZoneDeSaisie(fenetre, bloc) ?? throw new InvalidOperationException("la saisie est ouverte, mais aucune zone ne se voit");
         Assert.True(zone.IsFocused, "la zone de saisie n'a pas le focus");

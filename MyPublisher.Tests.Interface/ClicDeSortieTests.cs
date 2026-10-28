@@ -130,7 +130,8 @@ public class ClicDeSortieTests
         TaperDans(fenetre, vm, bloc);
         etats.Add(("abc", Etat(vm)));
 
-        var depart = Rendu.Centre(fenetre, voisin);
+        // Par la bande de bord du voisin : une pression dans son texte y entrerait (N12, règle 14).
+        var depart = Rendu.Bord(fenetre, voisin);
         Rendu.Glisser(fenetre, depart, depart + new Vector(37, 23), RawInputModifiers.Alt);
 
         Assert.False(bloc.IsEditing);

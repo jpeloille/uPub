@@ -193,6 +193,8 @@ public class RaccourcisFrancaisTests
 
             bloc = Le<TextFrame>(vm, "Bloc");
             var zone = Rendu.EntrerEnSaisie(fenetre, vm, bloc);
+            // L'entrée pose le curseur au point visé (N12) ; elle sélectionnait tout le texte, que la frappe remplaçait.
+            zone.SelectAll();
             Rendu.Taper(fenetre, "abc");
             Rendu.ToucheAzerty(fenetre, touche, RawInputModifiers.Control);
             Assert.Equal(alignement, bloc.Align);
@@ -243,6 +245,8 @@ public class RaccourcisFrancaisTests
 
             bloc = Le<TextFrame>(vm, "Bloc");
             var zone = Rendu.EntrerEnSaisie(fenetre, vm, bloc);
+            // L'entrée pose le curseur au point visé (N12) ; elle sélectionnait tout le texte, que la frappe remplaçait.
+            zone.SelectAll();
             Rendu.Taper(fenetre, "abc");
             frapper(fenetre);
             Assert.Equal(corps, bloc.FontSize);
@@ -353,7 +357,8 @@ public class RaccourcisFrancaisTests
         Rendu.UnSeulPas(vm, avant, "Ctrl+Maj+X");
 
         bloc = Le<TextFrame>(vm, "Bloc");
-        Rendu.EntrerEnSaisie(fenetre, vm, bloc);
+        // L'entrée pose le curseur au point visé (N12) ; elle sélectionnait tout le texte, que la frappe remplaçait.
+        Rendu.EntrerEnSaisie(fenetre, vm, bloc).SelectAll();
         Rendu.Taper(fenetre, "abc");
         Rendu.ToucheAzerty(fenetre, PhysicalKey.X, RawInputModifiers.Control | RawInputModifiers.Shift);
         Assert.Equal(new[] { "Forme" }, vm.CurrentPage!.Frames.Select(b => b.Name));
@@ -397,7 +402,8 @@ public class RaccourcisFrancaisTests
 
         // En saisie, l'annulation garde la saisie ouverte, et le texte du même bloc (Q24).
         bloc = Le<TextFrame>(vm, "Bloc");
-        Rendu.EntrerEnSaisie(fenetre, vm, bloc);
+        // L'entrée pose le curseur au point visé (N12) ; elle sélectionnait tout le texte, que la frappe remplaçait.
+        Rendu.EntrerEnSaisie(fenetre, vm, bloc).SelectAll();
         Rendu.Taper(fenetre, "abc");
         Rendu.Touche(fenetre, PhysicalKey.Backspace, RawInputModifiers.Alt);
         Assert.Equal("Texte", Le<TextFrame>(vm, "Bloc").Text);

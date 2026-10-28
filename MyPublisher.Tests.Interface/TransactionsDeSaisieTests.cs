@@ -103,6 +103,8 @@ public class TransactionsDeSaisieTests
         var titre = Trouver<TextBlock>(fenetre, "TitreDuDocument");
 
         var zone = Rendu.EntrerEnSaisie(fenetre, vm, bloc);
+        // L'entrée pose le curseur au point visé (N12) ; elle sélectionnait tout le texte, que la frappe remplaçait.
+        zone.SelectAll();
         Assert.False(vm.CanUndo);
         Rendu.Touche(fenetre, PhysicalKey.Z, RawInputModifiers.Control);
         Assert.True(bloc.IsEditing, "Ctrl+Z sans rien à annuler a refermé la saisie");
@@ -144,6 +146,8 @@ public class TransactionsDeSaisieTests
         var etats = new List<(string, string)> { ("l'ouverture", Etat(vm)) };
 
         var zone = Rendu.EntrerEnSaisie(fenetre, vm, bloc);
+        // L'entrée pose le curseur au point visé (N12) ; elle sélectionnait tout le texte, que la frappe remplaçait.
+        zone.SelectAll();
         fenetre.KeyTextInput("abc");
         Rendu.Battre();
         Rendu.Touche(fenetre, PhysicalKey.Y, RawInputModifiers.Control);
@@ -299,7 +303,8 @@ public class TransactionsDeSaisieTests
         Assert.True(vm.CanRedo);
 
         var x = relu.X;
-        var prise = Rendu.SurLaPage(fenetre, relu.X + 20, relu.Y + 20);
+        // Par la bande de bord : une pression dans le texte y entre, et son glissé sélectionne (N12, règle 14).
+        var prise = Rendu.Bord(fenetre, relu);
         Rendu.GlisserEtRamener(fenetre, prise, prise + new Point(1, 0), RawInputModifiers.Alt);
         Assert.Equal(x + 1, relu.X, precision: 6);
 
@@ -321,7 +326,8 @@ public class TransactionsDeSaisieTests
         Rendu.Battre();
         var avant = Etat(vm);
 
-        var prise = Rendu.SurLaPage(fenetre, bloc.X + 20, bloc.Y + 20);
+        // Par la bande de bord : une pression dans le texte y entre, et son glissé sélectionne (N12, règle 14).
+        var prise = Rendu.Bord(fenetre, bloc);
         var arrivee = prise + new Point(30, 0);
         fenetre.MouseDown(prise, MouseButton.Left, RawInputModifiers.Alt);
         Rendu.Battre();
@@ -412,6 +418,8 @@ public class TransactionsDeSaisieTests
         var etats = new List<(string, string)> { ("l'ouverture", Etat(vm)) };
 
         var zone = Rendu.EntrerEnSaisie(fenetre, vm, bloc);
+        // L'entrée pose le curseur au point visé (N12) ; elle sélectionnait tout le texte, que la frappe remplaçait.
+        zone.SelectAll();
         fenetre.KeyTextInput("abc");
         Rendu.Battre();
         etats.Add(("abc", Etat(vm)));
@@ -448,6 +456,8 @@ public class TransactionsDeSaisieTests
         var etats = new List<(string, string)> { ("l'ouverture", Etat(vm)) };
 
         var zone = Rendu.EntrerEnSaisie(fenetre, vm, bloc);
+        // L'entrée pose le curseur au point visé (N12) ; elle sélectionnait tout le texte, que la frappe remplaçait.
+        zone.SelectAll();
         fenetre.KeyTextInput("abc");
         Rendu.Battre();
         etats.Add(("abc", Etat(vm)));
@@ -488,6 +498,8 @@ public class TransactionsDeSaisieTests
         var etats = new List<(string, string)> { ("l'ouverture", Etat(vm)) };
 
         var zone = Rendu.EntrerEnSaisie(fenetre, vm, bloc);
+        // L'entrée pose le curseur au point visé (N12) ; elle sélectionnait tout le texte, que la frappe remplaçait.
+        zone.SelectAll();
         fenetre.KeyTextInput("abc");
         Rendu.Battre();
         etats.Add(("abc", Etat(vm)));
@@ -530,6 +542,8 @@ public class TransactionsDeSaisieTests
         var etats = new List<(string, string)> { ("l'ouverture", Etat(vm)) };
 
         var zone = Rendu.EntrerEnSaisie(fenetre, vm, bloc);
+        // L'entrée pose le curseur au point visé (N12) ; elle sélectionnait tout le texte, que la frappe remplaçait.
+        zone.SelectAll();
         fenetre.KeyTextInput("abc");
         Rendu.Battre();
         etats.Add(("abc", Etat(vm)));

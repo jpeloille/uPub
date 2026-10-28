@@ -38,9 +38,11 @@ public partial class PageCanvas : UserControl
     /// <summary>
     /// Le geste en cours. <see cref="Pan"/> est celui de la main (poste I6) : il fait
     /// défiler la planche et ne touche à rien d'autre. <see cref="Extremite"/> tire un bout
-    /// de trait (poste A10, PageCanvas.Trait.cs).
+    /// de trait (poste A10, PageCanvas.Trait.cs). <see cref="Texte"/> est la pression qui a
+    /// ouvert la saisie dans le texte d'un bloc : son glissé sélectionne du texte (poste N12,
+    /// PageCanvas.Saisie.cs).
     /// </summary>
-    private enum DragMode { None, Move, Resize, Rotate, Create, Guide, Pan, Extremite }
+    private enum DragMode { None, Move, Resize, Rotate, Create, Guide, Pan, Extremite, Texte }
 
     /// <summary>
     /// Côté d'une poignée carrée, en pixels écran : les 7 px de blanc de la maquette dans
@@ -235,7 +237,8 @@ public partial class PageCanvas : UserControl
         InputLayer.PointerPressed += OnPointerPressed;
         InputLayer.PointerMoved += OnPointerMoved;
         InputLayer.PointerReleased += OnPointerReleased;
-        InputLayer.DoubleTapped += OnDoubleTapped;
+        // Le double-clic n'ouvre plus la saisie : le premier clic l'a ouverte, et le second
+        // atteint le champ, qui prend le mot (poste N12).
         // Pendant la saisie, la couche laisse le texte à son champ, et à lui seul (poste N5).
         InputLayer.Laisse = LaisseAuTexteEnSaisie;
         // Au passage descendant : la zone qui défile consommerait la molette avant nous
@@ -275,6 +278,7 @@ public partial class PageCanvas : UserControl
             _vm.Selection.CollectionChanged -= OnSelectionChanged;
             _vm.PageEntiereDemandee -= OnPageEntiereDemandee;
             _vm.TransactionsRefermees -= OnTransactionsRefermees;
+            _vm.SaisieDemandee -= OnSaisieDemandee;
         }
 
         _vm = DataContext as MainWindowViewModel;
@@ -292,6 +296,9 @@ public partial class PageCanvas : UserControl
 
             // Annuler et Rétablir referment la saisie et le glissé avec le reste (Q24).
             _vm.TransactionsRefermees += OnTransactionsRefermees;
+
+            // Insertion ▸ Bloc de texte ouvre la saisie du bloc posé, comme l'outil (N12).
+            _vm.SaisieDemandee += OnSaisieDemandee;
         }
 
         TrackFrames();
@@ -578,11 +585,9 @@ public partial class PageCanvas : UserControl
 
         Focus();
 
-        // La main et la loupe passent avant tout : elles ne touchent à aucun bloc (I6). Leur
-        // pression est retenue : elle ne fait pas la première moitié d'un double-clic.
-        _pressionPrecedenteNaviguait = _pressionNaviguait;
-        _pressionNaviguait = PrendreLaNavigation(e);
-        if (_pressionNaviguait) return;
+        // La main et la loupe passent avant tout : elles ne touchent à aucun bloc (I6), et
+        // n'ouvrent la saisie d'aucun texte.
+        if (PrendreLaNavigation(e)) return;
 
         var surfacePoint = e.GetPosition(Surface);
         var page = ToPageCoordinates(surfacePoint);
@@ -641,6 +646,8 @@ public partial class PageCanvas : UserControl
         // d'un bloc qui déborde. Un bloc masqué n'est pas candidat (poste I8) : un clic à
         // sa place prend le bloc d'en dessous.
         var hit = DansLaPage(page) ? _vm.CurrentPage.Frames.LastOrDefault(f => f.Visible && f.HitTest(page.X, page.Y)) : null;
+        // La bande de bord d'un bloc sélectionné s'étend jusqu'à son cadre (poste N12).
+        hit = BlocVise(page, hit);
         var additive = e.KeyModifiers.HasFlag(KeyModifiers.Control) ||
                        e.KeyModifiers.HasFlag(KeyModifiers.Shift);
 
@@ -649,6 +656,15 @@ public partial class PageCanvas : UserControl
             // Cliquer à côté libère la sélection — sauf si l'on est en train de
             // l'étendre, geste où un clic manqué ne doit pas tout défaire.
             if (!additive) _vm.SetSelection([]);
+            e.Handled = true;
+            return;
+        }
+
+        // Dans le texte d'un bloc, sans Ctrl ni Maj, la pression entre dans le texte, le
+        // curseur au point visé ; sur sa bande de bord, elle prend le bloc comme ci-dessous
+        // (poste N12, PageCanvas.Saisie.cs). Ctrl et Maj ajoutent ou retirent, sans saisie.
+        if (!additive && EntrerDansLeTexte(hit, page, e))
+        {
             e.Handled = true;
             return;
         }
@@ -736,6 +752,13 @@ public partial class PageCanvas : UserControl
         // mouvement sur une poignée décalait un bloc tourné, et Maj ramenait à 0° un bloc à 7°.
         if (!AGlisse(surfacePoint)) return;
 
+        // Le glissé dans le texte sélectionne du texte, une fois le seuil franchi (N12).
+        if (_mode == DragMode.Texte)
+        {
+            EtendreLaSelectionDuTexte(e);
+            return;
+        }
+
         if (_mode == DragMode.Move)
         {
             ApplyMove(page, e.KeyModifiers);
@@ -796,6 +819,13 @@ public partial class PageCanvas : UserControl
         if (mode == DragMode.Pan)
         {
             LacherLaPlanche();
+            return;
+        }
+
+        // La pression dans le texte non plus : la saisie tient sa transaction au focus (Q25).
+        if (mode == DragMode.Texte)
+        {
+            FinirLeGlisseDansLeTexte(e);
             return;
         }
 
@@ -862,8 +892,8 @@ public partial class PageCanvas : UserControl
 
         InputLayer.Cursor = ArrowCursor;
 
-        // Un bloc de texte fraîchement tracé attend qu'on le remplisse.
-        if (frame is TextFrame text) BeginTextEdit(text);
+        // Un bloc de texte fraîchement tracé est vide, le curseur dedans (N12).
+        if (frame is TextFrame text) BeginTextEdit(text, 0);
     }
 
     private void UpdateCursor(Point surfacePoint, Point page)
@@ -899,7 +929,8 @@ public partial class PageCanvas : UserControl
         }
 
         var over = DansLaPage(page) ? _vm?.CurrentPage?.Frames.LastOrDefault(f => f.Visible && f.HitTest(page.X, page.Y)) : null;
-        InputLayer.Cursor = over is null ? ArrowCursor : MoveCursor;
+        // Le I sur le texte, les quatre flèches sur le bord, cadre d'un bloc pris compris (N12).
+        InputLayer.Cursor = CurseurSur(BlocVise(page, over), page);
     }
 
     // ---------------------------------------------------------------- repères libres
@@ -1184,15 +1215,22 @@ public partial class PageCanvas : UserControl
 
     // ---------------------------------------------------------------- saisie de texte
 
-    private void OnDoubleTapped(object? sender, TappedEventArgs e)
+    /// <summary>
+    /// Le modèle de vue a posé un bloc de texte par le menu Insertion : on y entre, vide, le
+    /// curseur dedans, comme dans un bloc tracé à l'outil (poste N12).
+    /// </summary>
+    private void OnSaisieDemandee(object? sender, TextFrame bloc)
     {
-        // Deux clics de la loupe zooment deux fois ; deux prises de la main ne saisissent rien.
-        if (MainArmee || LoupeArmee || _pressionPrecedenteNaviguait) return;
-
-        if (_vm?.SingleSelected is TextFrame text) BeginTextEdit(text);
+        EndTextEdit();
+        BeginTextEdit(bloc, bloc.Text?.Length ?? 0);
     }
 
-    private void BeginTextEdit(TextFrame frame)
+    /// <summary>
+    /// Ouvre la saisie du bloc, le curseur à la position <paramref name="curseur"/> : celle que
+    /// la pression a visée, ou le début d'un bloc neuf. Rien n'est sélectionné (poste N12) ;
+    /// avant, la saisie s'ouvrait au double-clic et sélectionnait tout le texte.
+    /// </summary>
+    private void BeginTextEdit(TextFrame frame, int curseur)
     {
         if (_editing is not null) return;
 
@@ -1218,12 +1256,17 @@ public partial class PageCanvas : UserControl
         // Le TextBox n'existe qu'après le passage de mise en page suivant.
         Dispatcher.UIThread.Post(() =>
         {
+            if (!ReferenceEquals(_editing, frame)) return;
+
             var box = Scaler.GetVisualDescendants()
                 .OfType<TextBox>()
                 .FirstOrDefault(t => ReferenceEquals(t.DataContext, frame));
-            if (ReferenceEquals(_editing, frame)) _zoneDeSaisie = box;
-            box?.Focus();
-            box?.SelectAll();
+            _zoneDeSaisie = box;
+            if (box is null) return;
+
+            box.Focus();
+            var position = Math.Clamp(curseur, 0, box.Text?.Length ?? 0);
+            PoserLaSelection(box, position, position);
         }, DispatcherPriority.Background);
     }
 
@@ -1264,7 +1307,7 @@ public partial class PageCanvas : UserControl
     /// <summary>
     /// La saisie tient sa transaction d'édition (poste Q25). Elle suit le focus de sa zone sur
     /// la page — ouverte quand la zone le prend, refermée quand elle le perd, et à la fin de la
-    /// saisie —, et non plus la saisie elle-même, du double-clic à Échap.
+    /// saisie —, et non plus la saisie elle-même, du clic qui l'ouvre à Échap.
     ///
     /// Ouverte de bout en bout, elle avalait celle d'un champ de la barre ou du dock qui prenait
     /// le focus pendant la frappe : celle-ci s'y emboîtait, et le corps changé entre deux mots

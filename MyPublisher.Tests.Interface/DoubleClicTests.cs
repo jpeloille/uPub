@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Avalonia;
@@ -13,7 +14,9 @@ using Xunit;
 namespace MyPublisher.Tests.Interface;
 
 /// <summary>
-/// Un double-clic ne déplace pas le bloc — le poste Q14.
+/// Un double-clic ne déplace pas le bloc — le poste Q14. Depuis le poste N12, on entre dans le
+/// texte d'un clic : c'est ce clic, et celui qui prend le bloc par son bord, qui ne doivent
+/// rien réécrire.
 ///
 /// Le défaut a été trouvé par Q1, sur ATA 21 importé, et c'est sur ce document-là qu'on
 /// l'éprouve : un bloc posé à des coordonnées rondes, loin des repères, ne montre ni
@@ -31,8 +34,7 @@ public class DoubleClicTests
 
     /// <summary>
     /// Les blocs de texte de la première page qu'un clic en leur centre désigne
-    /// eux-mêmes — ceux qu'un autre bloc recouvre en leur milieu ne se double-cliquent
-    /// pas là.
+    /// eux-mêmes — ceux qu'un autre bloc recouvre en leur milieu ne s'ouvrent pas là.
     /// </summary>
     private static List<TextFrame> BlocsAtteints(Page page) =>
         page.Frames.OfType<TextFrame>()
@@ -44,7 +46,7 @@ public class DoubleClicTests
     private static TextFrame BlocDeQ1(IEnumerable<TextFrame> blocs) =>
         blocs.First(bloc => bloc.Y.ToString("R") == "107.15039999999999");
 
-    // Le geste entier : le premier clic prend le bloc, le second ouvre la saisie.
+    // Le geste entier, sans sélection préalable : le premier clic prend le bloc.
     //
     // Avalonia reconnaît un double-clic à l'horloge — deux pressions à moins de 500 ms —, et
     // le banc sans tête date chaque pression du moment où il la livre. Une pression sur un
@@ -52,52 +54,70 @@ public class DoubleClicTests
     // mesurés le 12 octobre 2026, et le test du bloc tourné tombait une fois sur deux. Les
     // deux tests sélectionnaient donc le bloc par le modèle de vue avant le geste. Le poste
     // Q23 a ôté la cause — les réglages du bloc sont construits une fois et gardés
-    // (GabaritsGardes) — et rendu aux tests leur premier clic ; sa recette les joue vingt
-    // fois de suite, chacun dans un processus neuf, où la première pression est la plus
-    // lente.
+    // (GabaritsGardes) — et rendu aux tests leur premier clic.
+    //
+    // Repris par le poste N12 (règle 14) : on entre dans le texte d'un clic, et le double-clic
+    // n'y ouvre plus rien, il prend un mot. Le premier clic ouvre donc déjà la saisie ; ce que
+    // Q14 voulait savoir — un clic qui ne bouge pas ne réécrit rien — se joue sur ce clic-là, et
+    // sur le clic qui prend le bloc par sa bande de bord, celui qui arme le déplacement et
+    // passait par l'aimantation. Le double-clic sur un mot, à l'horloge, est éprouvé par
+    // ClicDansLeTexteTests, vingt fois par la recette N12.
     //
     // Le relevé d'avant est pris avant le premier clic : un panneau qui réécrirait le bloc
-    // en l'affichant serait vu, et le geste passe par la pression, le mouvement nul et le
+    // en l'affichant serait vu, et chaque clic passe par la pression, le mouvement nul et le
     // relâchement, où l'aimantation mordait.
 
     [AvaloniaFact]
     [Trait("poste", "Q14")]
-    public void Un_double_clic_ouvre_la_saisie_sans_rien_reecrire()
+    public void Un_clic_ouvre_la_saisie_sans_rien_reecrire()
     {
         var document = Rendu.Ata21();
         var (fenetre, vm) = Rendu.Ouvrir(document);
-        var blocs = BlocsAtteints(vm.CurrentPage!);
+        var page = vm.CurrentPage!;
+        var blocs = BlocsAtteints(page);
 
         // Le bloc de Q1 doit en être, et les autres aussi : c'est en eux que
         // l'aimantation mordait. Moins de blocs, et le test pourrait passer sur
         // ceux qui ne montrent rien.
         BlocDeQ1(blocs);
         Assert.True(blocs.Count >= 5, $"{blocs.Count} blocs atteints seulement");
+        var parLeBord = 0;
 
         foreach (var bloc in blocs)
         {
-            // Rien n'est sélectionné au relevé. Le premier clic prend le bloc et arme le
-            // déplacement, le second ouvre la saisie.
+            // Rien n'est sélectionné au relevé.
             vm.SetSelection([]);
             Rendu.Battre();
             Assert.False(vm.CanUndo);
             Assert.False(vm.IsDirty);
-
             var avant = DocumentSerializer.ToJson(vm.Document);
-            var centre = Rendu.SurLaPage(fenetre, bloc.X + bloc.Width / 2, bloc.Y + bloc.Height / 2);
 
+            // Par la bande de bord, le clic prend le bloc et arme le déplacement, sans saisie.
+            if (Rendu.BordAtteint(fenetre, bloc) is { } bord)
+            {
+                Rendu.Cliquer(fenetre, bord, mouvementNul: true);
+                Assert.Same(bloc, vm.SingleSelected);
+                Assert.False(bloc.IsEditing, $"le bord de « {bloc.Name} » a ouvert la saisie");
+                Assert.Equal(avant, DocumentSerializer.ToJson(vm.Document));
+                Assert.False(vm.CanUndo, $"un clic sur le bord de « {bloc.Name} » a empilé un pas d'annulation");
+                Assert.False(vm.IsDirty, $"un clic sur le bord de « {bloc.Name} » a marqué le document modifié");
+                parLeBord++;
+
+                vm.SetSelection([]);
+                Rendu.Battre();
+            }
+
+            // Dans son texte, le premier clic prend le bloc et ouvre la saisie.
+            var centre = Rendu.SurLaPage(fenetre, bloc.X + bloc.Width / 2, bloc.Y + bloc.Height / 2);
             Rendu.Cliquer(fenetre, centre, mouvementNul: true);
             Assert.Same(bloc, vm.SingleSelected);
-            Rendu.Cliquer(fenetre, centre, mouvementNul: true);
-            Rendu.Battre(8);
-
-            Assert.True(bloc.IsEditing, $"le double-clic n'a pas ouvert la saisie de « {bloc.Name} »");
+            Assert.True(bloc.IsEditing, $"le clic n'a pas ouvert la saisie de « {bloc.Name} »");
 
             // Au caractère près : c'est le dernier chiffre de l'ordonnée que le défaut
             // réécrivait, et une comparaison à un milliardième l'aurait laissé passer.
             Assert.Equal(avant, DocumentSerializer.ToJson(vm.Document));
-            Assert.False(vm.CanUndo, $"un double-clic sur « {bloc.Name} » a empilé un pas d'annulation");
-            Assert.False(vm.IsDirty, $"un double-clic sur « {bloc.Name} » a marqué le document modifié");
+            Assert.False(vm.CanUndo, $"un clic sur « {bloc.Name} » a empilé un pas d'annulation");
+            Assert.False(vm.IsDirty, $"un clic sur « {bloc.Name} » a marqué le document modifié");
 
             // Refermer la saisie sans avoir rien tapé n'empile rien non plus.
             fenetre.KeyPressQwerty(PhysicalKey.Escape, RawInputModifiers.None);
@@ -106,11 +126,13 @@ public class DoubleClicTests
             Assert.Equal(avant, DocumentSerializer.ToJson(vm.Document));
             Assert.False(vm.CanUndo);
         }
+
+        Assert.True(parLeBord >= 5, $"{parLeBord} blocs pris par leur bord seulement");
     }
 
     [AvaloniaFact]
     [Trait("poste", "Q14")]
-    public void Un_double_clic_garde_langle_dun_bloc_tourne_a_la_main()
+    public void Un_clic_garde_langle_dun_bloc_tourne_a_la_main()
     {
         // ATA 21 ne porte que des quarts de tour, que l'arrondi à quatre décimales du
         // champ de rotation rend intacts. Un angle posé à la poignée n'est jamais rond :
@@ -129,14 +151,24 @@ public class DoubleClicTests
         var centre = Rendu.SurLaPage(fenetre, bloc.X + bloc.Width / 2, bloc.Y + bloc.Height / 2);
         Rendu.Cliquer(fenetre, centre, mouvementNul: true);
         Assert.Same(bloc, vm.SingleSelected);
-        Rendu.Cliquer(fenetre, centre, mouvementNul: true);
+        Assert.True(bloc.IsEditing, "le clic n'a pas ouvert la saisie");
         Rendu.Battre(8);
 
-        Assert.True(bloc.IsEditing, "le double-clic n'a pas ouvert la saisie");
         Assert.Equal(12.3456789, bloc.Rotation);
         Assert.Equal(avant, DocumentSerializer.ToJson(vm.Document));
         Assert.False(vm.CanUndo);
         Assert.False(vm.IsDirty);
+
+        // Par la bande de bord, le bloc pris sans saisie garde son angle de même.
+        fenetre.KeyPressQwerty(PhysicalKey.Escape, RawInputModifiers.None);
+        vm.SetSelection([]);
+        Rendu.Battre();
+        Rendu.Cliquer(fenetre, Rendu.Bord(fenetre, bloc), mouvementNul: true);
+        Assert.Same(bloc, vm.SingleSelected);
+        Assert.False(bloc.IsEditing);
+        Assert.Equal(12.3456789, bloc.Rotation);
+        Assert.Equal(avant, DocumentSerializer.ToJson(vm.Document));
+        Assert.False(vm.CanUndo);
     }
 
     [AvaloniaFact]
@@ -151,17 +183,21 @@ public class DoubleClicTests
         // Réécrit par le poste Q21 (règle 14) : un pointeur qui ne s'écarte que d'un pixel
         // de sa prise n'a pas glissé, il a tremblé, et le bloc ne bouge plus. Le glissé
         // d'un point se fait comme une main le fait, mené au-delà du seuil puis ramené.
+        //
+        // Réécrit par le poste N12 (règle 14) : le glissé prend le bloc par sa bande de bord.
+        // Parti de son centre, il entrerait dans le texte et y sélectionnerait.
         var document = Rendu.Ata21();
         var (fenetre, vm) = Rendu.Ouvrir(document);
         var bloc = BlocDeQ1(BlocsAtteints(vm.CurrentPage!));
         var depart = bloc.Y;
 
         var avant = DocumentSerializer.ToJson(vm.Document);
-        var centre = Rendu.SurLaPage(fenetre, bloc.X + bloc.Width / 2, bloc.Y + bloc.Height / 2);
-        var arrivee = new Point(centre.X, centre.Y + 1);
+        var prise = Rendu.BordAtteint(fenetre, bloc) ?? throw new InvalidOperationException("le bord du bloc de Q1 est couvert");
+        var arrivee = new Point(prise.X, prise.Y + 1);
 
-        Rendu.GlisserEtRamener(fenetre, centre, arrivee, RawInputModifiers.Alt);
+        Rendu.GlisserEtRamener(fenetre, prise, arrivee, RawInputModifiers.Alt);
 
+        Assert.False(bloc.IsEditing, "le glissé par le bord a ouvert la saisie");
         Assert.Equal(depart + 1, bloc.Y);
         Assert.True(vm.CanUndo, "un glissé d'un point n'a pas empilé de pas d'annulation");
         Assert.True(vm.IsDirty);

@@ -287,7 +287,7 @@ Fenêtre masque aussi l'un ou l'autre.
   effacent de l'écran — et *Limites et repères* efface aussi les marges en pointillé, la
   grille et le marqueur de débordement, qui ne s'impriment pas davantage ; *Repères de
   lignes de base* (`Ctrl+F7`) n'efface que les lignes de base.
-- Édition du texte directement sur la page (double-clic).
+- Édition du texte directement sur la page : un clic dans le texte d'un bloc y pose le curseur, au caractère visé, et un glissé y sélectionne ; le bloc se prend et se déplace par son bord. Un bloc de texte neuf — tracé à l'outil, ou posé par *Insertion ▸ Bloc de texte* — est vide, le curseur dedans.
 - **Importer un texte** — *Texte ▸ Importer un texte…*, ou le bouton du même nom à la
   section Contenu d'un bloc de texte : un fichier texte remplit le bloc sélectionné, au style du
   bloc. Il se lit en UTF-8, avec ou sans BOM, en UTF-16 s'il porte sa marque (FF FE ou
@@ -432,8 +432,11 @@ comptés pour rien : sur un AZERTY, `Ctrl+]` se tape `Ctrl+AltGr+)`, `Ctrl+[` se
 
 | Raccourci | Action |
 |---|---|
-| Double-clic | Éditer le texte d'un bloc |
-| `Ctrl` ou `Maj` + clic | Ajoute un bloc à la sélection, ou l'en retire |
+| Clic | Dans le texte d'un bloc, y entre, le curseur au caractère visé ; sur son bord, le prend |
+| Glisser | Dans le texte, sélectionne du texte ; par le bord, déplace le bloc |
+| Double-clic | Dans le texte, sélectionne un mot |
+| `Maj` + clic dans le texte en saisie | Étend la sélection du texte |
+| `Ctrl` ou `Maj` + clic | Ajoute un bloc à la sélection, ou l'en retire, sans entrer dans son texte |
 | `Alt` pendant le déplacement | Désactive l'aimantation |
 | `Maj` sur une poignée d'angle | Conserve les proportions — ou les libère, quand « Conserver les proportions » est cochée |
 | `Maj` sur la poignée de rotation | Tourne par pas de 15° |

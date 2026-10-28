@@ -49,6 +49,13 @@ sélectionne tout le texte à l'entrée, et un bloc neuf porte un texte d'attent
 Publisher est vide (p. 33). Le propriétaire a retenu le clic simple le 25 octobre 2026 : c'est le
 poste N12 du plan.
 
+*Livré par N12 le 28 octobre 2026.* Un clic dans le texte d'un bloc y pose le curseur, sur le
+caractère visé de la composition à l'écran, sans rien sélectionner ; un glissé y sélectionne ; le
+bloc se prend et se déplace par une bande de bord de 5 px d'écran, où le curseur montre les
+quatre flèches, et le I sur le texte ; le double-clic prend un mot. Un bloc neuf est vide, le
+curseur dedans, qu'il vienne de l'outil ou d'*Insertion ▸ Bloc de texte*, qui ouvre désormais la
+saisie. Ce qu'on voit pendant la saisie reste le champ en texte brut, jusqu'à R7 (N21).
+
 ## Écart / ce qu'il faudrait
 
 Un seul manque, mais c'est le geste le plus attendu : **la poignée de rotation**.

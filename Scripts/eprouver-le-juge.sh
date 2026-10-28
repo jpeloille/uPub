@@ -249,10 +249,14 @@ saboter "le coin tiré (I6) ignore la case des proportions" \
     'I6-navigation|NavigationTests'
 
 # Le défaut que la relecture a refermé : une prise de la main faisait la moitié d'un double-clic.
-saboter "une prise de la main (I6) fait la moitié d'un double-clic" \
+# Repris par N12 (règle 14) : le double-clic n'ouvre plus la saisie, un clic dans le texte
+# l'ouvre. La garde qui empêchait une prise de la main de faire la moitié d'un double-clic n'a
+# plus d'objet ; ce que la main ne doit toujours pas faire, c'est passer sa pression aux blocs —
+# elle ouvrirait la saisie du texte qu'elle prend.
+saboter "une prise de la main (I6) ouvre la saisie du texte qu'elle prend" \
     MyPublisher/Views/PageCanvas.axaml.cs \
-    'if (MainArmee || LoupeArmee || _pressionPrecedenteNaviguait) return;' \
-    'if (MainArmee || LoupeArmee) return;' \
+    'if (PrendreLaNavigation(e)) return;' \
+    'PrendreLaNavigation(e);' \
     'I6-navigation|NavigationTests'
 
 # Q12 n'a pas de sabotage ici : sa recette, « verifier-dependances.sh », demande le
@@ -2281,10 +2285,12 @@ saboter "le glissé du banc (N1) ne dit plus le bouton tenu" \
     'racine.MouseMove(ici, touches);' \
     'N1-banc-des-gestes|BancTests'
 
-saboter "l'entrée en saisie du banc (N1) ne clique qu'une fois" \
+# Repris par N12 : l'entrée en saisie du banc fait un seul clic, dans le texte. Le même clic
+# sur la bande de bord prend le bloc sans l'ouvrir, et l'aide le dit.
+saboter "l'entrée en saisie du banc (N1) clique sur le bord du bloc" \
     MyPublisher.Tests.Interface/Rendu.cs \
-    'DoubleCliquer(fenetre, SurLaPage(fenetre, bloc.X + dx, bloc.Y + dy));' \
-    'Cliquer(fenetre, SurLaPage(fenetre, bloc.X + dx, bloc.Y + dy));' \
+    'var (x, y) = bloc.ToPage(dx, dy);' \
+    'var (x, y) = bloc.ToPage(1, dy);' \
     'N1-banc-des-gestes|BancTests'
 
 saboter "une classe de tests (N1) synthétise de nouveau sa touche hors du banc" \
@@ -2680,6 +2686,22 @@ saboter "la barre de menus ouverte (N13) laisse ses lettres aux outils" \
     '        if (Menus.IsOpen)' \
     '        if (Menus.IsOpen && e.Key == Key.None)' \
     'N13-menus-de-publisher|MenusDePublisherTests'
+
+# N12 : on entre dans le texte d'un clic, le curseur au point visé. Le sabotage du plan : la
+# pression qui ouvre la saisie sélectionne encore tout le texte, comme le faisait le double-clic.
+saboter "la pression qui ouvre la saisie (N12) sélectionne encore tout" \
+    MyPublisher/Views/PageCanvas.axaml.cs \
+    'PoserLaSelection(box, position, position);' \
+    'box.SelectAll();' \
+    'N12-clic-dans-le-texte|ClicDansLeTexteTests'
+
+# N12 : sans bande de bord, tout l'intérieur d'un bloc de texte est texte, et le bloc ne se
+# prend plus, ni ne se déplace, qu'en entrant dans sa saisie.
+saboter "le bloc de texte (N12) n'a plus de bande de bord" \
+    MyPublisher/Views/PageCanvas.Saisie.cs \
+    'var bandeX = Math.Min(BandeDeBord / Scale, texte.Width / 4);' \
+    'var bandeX = 0.0;' \
+    'N12-clic-dans-le-texte|ClicDansLeTexteTests'
 
 # Un motif qui ne désigne aucun sabotage ne prouve rien. « eprouver-le-juge.sh I4 » sortait
 # en 0 sur « 0 sabotages, 0 attrapés », quand les intitulés de la planche ne portaient pas

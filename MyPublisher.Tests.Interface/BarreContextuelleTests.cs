@@ -273,7 +273,9 @@ public class BarreContextuelleTests
         Rendu.Cliquer(SelecteurOuvert(fenetre).GetVisualDescendants().OfType<Button>().Single(x => x.Tag is EmplacementDeCouleur.Accent2));
         Assert.Equal("scheme:accent2", a.Foreground);
 
-        var surB = Origine(fenetre) + new Point(b.X + 20, b.Y + 20);
+        // Par la bande de bord de B : le clic le prend, sans entrer dans son texte, où il
+        // ouvrirait la saisie (N12, règle 14).
+        var surB = Rendu.Bord(fenetre, b);
         fenetre.MouseDown(surB, MouseButton.Left);
         fenetre.MouseUp(surB, MouseButton.Left);
         Rendu.Battre();
