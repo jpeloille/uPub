@@ -115,7 +115,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **N9** | La langue du texte | **100 %** | `Document.Langue`, une étiquette BCP 47, toujours là — `fr-FR` pour un document vierge ou écrit avant N9, jamais la langue de la machine ; celle du modèle pour un document qui en part — ; `TextFrame.Langue` et `StyleSpan.Langue`, nulles pour « comme le bloc », puis « comme le document » (`Langues.DuCaractere`, pour N25). Clés additives, `FormatVersion` à 5, Samples et Templates réenregistrés par `--resave`. L'import lit `fo:language`, `fo:script` et `fo:country`, les clés que `pub2raw` écrit sur chaque fragment : ATA 21 en déclare 73 en `fr-FR`, les Fiches 298 en `en-US` et 31 en `fr-FR` ; les 50, 294 et 17 qui portent un caractère gardent leur langue caractère par caractère, comparés au relevé lui-même, seize titres français que les Fiches écrivent dans des cases de tableau compris. La langue la plus écrite va au bloc, puis au document — ATA 21 en `fr-FR`, les Fiches en `en-US` — ; un fragment qui ne diffère de son bloc que par elle reste, et ne dit qu'elle. Le dock Document la règle en un pas, section « Langue » ; une langue inconnue s'y montre telle quelle et ne se perd pas. Elle n'entre pas dans `StyleEffectif` : rien de ce qui se dessine n'en dépend — l'empreinte des 18 documents du corpus est identique avant et après le poste, et chaque document se rend au bit près dans une autre langue. La mise en forme d'une plage la garde, `Ctrl+Espace` aussi. Trente-deux tests, vingt-six purs et six sur la fenêtre ; quatre sabotages au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **N10** | Les raccourcis de Publisher en français | **100 %** | La fiche 24 : l'aide de Microsoft en français, *Raccourcis clavier dans Publisher*, relue mot pour mot sur support.microsoft.com le 27 octobre 2026, 102 lignes hors du ruban, chacune avec la page du livre de 2007 qui la montre et le sort de la règle 12 — 31 liées, 2 gardées, 2 remplacées, 5 à un autre poste, 27 réservées, 35 écartées. `Ctrl+E` centre et n'exporte plus, même sans bloc de texte ; `Ctrl+L`, `R`, `J` alignent, sur le bloc ; l'export devient une commande du modèle de vue (`ExporterEnPdf`), qui lève une demande à la fenêtre, sur `Ctrl+Maj+P`, même en saisie, au menu Fichier et au bouton. Le corps : `Ctrl+]` et `Ctrl+[` d'un point, `Ctrl+Maj+>` et `Ctrl+Maj+<` dans la liste standard d'Office, 8 à 72 pt, que le noyau définit (`CorpsStandard`) ; ils se lisent sur le caractère produit, `Maj` et AltGr comptés pour rien, par une table unique, `RaccourcisParCaractere`, avant la garde de la saisie. `Ctrl+Maj+G` groupe et dissocie, `Ctrl+Maj+H` est libéré ; `Ctrl+Maj+X` supprime l'objet, même en saisie, la frappe gardant son pas ; `Alt+Retour arrière` et `F4` annulent et rétablissent. Une sonde (`MYPUBLISHER_SONDE_CLAVIER`), jouée par le propriétaire sur son AZERTY, a relevé ce que les touches livrent, et `Rendu.ToucheAzerty` le rejoue ; `Ctrl+0` se tape sans `Maj`. Les menus et les infobulles disent les touches ; la recette de A4, étendue, confronte liaisons, table, `OnKeyDown`, menus, README et touches réservées. Le 28 octobre 2026, à la demande du propriétaire, `Ctrl+Inser`, `Maj+Inser` et `Maj+Suppr` copient, collent et coupent, les blocs hors saisie, le texte en saisie et dans un champ ; `Ctrl+AltGr` + « ) » vérifié à l'écran. Douze tests sur la fenêtre, cinq du noyau (dix-neuf cas) ; trois tests voisins réécrits (règle 14) ; six sabotages au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **N11** | Ne rien perdre en fermant, retrouver ses documents | **100 %** | Nouveau, Ouvrir, Fermer, Quitter et la fermeture de la fenêtre passent par `LaisserPartirLeDocument` (`MainWindow.Fermer.cs`) : la saisie ouverte et le champ du dock ou de la barre sont refermés d'abord, pour que leur frappe compte, puis, sur un document modifié, un dialogue neuf (`QuestionAvantDePerdre.axaml`, aux couleurs de l'apparence) demande « Enregistrer les modifications apportées à « nom » ? » : Enregistrer, le bouton par défaut, écrit — par « Enregistrer sous » sans chemin — et ne laisse poursuivre que si l'écriture a eu lieu ; Ne pas enregistrer poursuit ; Annuler, le bouton d'annulation, ou le dialogue refermé, laisse tout tel quel. La fenêtre suspend sa fermeture (`OnClosing`) le temps de la question. La question n'est branchée que par `App.axaml.cs` (`MainWindow.AvantDePerdre`) : une fenêtre de test ne demande rien. Fermer (`Ctrl+W`, `Ctrl+F4`, menu Fichier) ferme le document et rend le catalogue des modèles ; le catalogue et Ouvrir demandent une fois le modèle ou le fichier choisi. Les six derniers documents ouverts ou enregistrés sont au menu Fichier, numérotés, gardés dans `MyPublisher.Core/Services/Preferences.cs`, le magasin des réglages de l'utilisateur (`~/.config/MyPublisher/preferences.json`, ou le dossier de `MYPUBLISHER_PREFERENCES`), qui réécrit telles quelles les clés qu'il ne connaît pas, pour A11 et N25 ; seul `App.axaml.cs` le charge, un modèle de vue construit ailleurs en prend un en mémoire qui n'écrit nulle part. GNOME ne prend ni `Ctrl+W` ni `Ctrl+F4`. Trente-six tests, sept purs et vingt-neuf sur la fenêtre ; deux sabotages au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
-| **N12** | Entrer dans le texte d'un clic, le curseur au point visé | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 4 |
+| **N12** | Entrer dans le texte d'un clic, le curseur au point visé | **100 %** | Un clic dans le texte d'un bloc de texte le prend seul, ouvre la saisie et y pose le curseur sur le caractère visé, lu sur la composition qui était à l'écran (`IndexSous` de N3, par la transformation du contrôle même), sans rien sélectionner ; un glissé dans le texte sélectionne depuis cette ancre, passé le seuil de 3 px (Q21), sur la mise en page du champ ; une bande de bord de 5 px d'écran, au plus un quart du côté, étendue jusqu'au cadre d'un bloc sélectionné, prend et déplace le bloc comme avant ; le curseur est le I sur le texte, les quatre flèches sur le bord ; `Ctrl`+clic et `Maj`+clic ajoutent ou retirent sans saisie ; le double-clic n'ouvre plus rien, le champ y prend un mot. La mécanique vit dans `PageCanvas.Saisie.cs`. Un bloc neuf, de l'outil Texte ou Titre, est vide, le curseur dedans ; *Insertion ▸ Bloc de texte* (et *Titre*) ouvre la saisie comme l'outil, par une demande du modèle de vue (`SaisieDemandee`). La pression qui ouvre la saisie rend la main en 48 à 81 ms de médiane sur ATA 21 : elle en prenait jusqu'à 115, la saisie qui s'ouvre faisant recomposer le bloc par la vignette, le marqueur de débordement et le compte de I9, qui l'ignorent désormais. Seize tests sous `poste=N12` ; règle 14 : vingt-quatre tests réécrits dans huit classes, deux renommés, l'entrée en saisie du banc à un clic ; recettes Q14, Q21-Q22 et Q23 reprises ; deux sabotages au juge, deux cibles reprises. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **N13** | Les menus de Publisher | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 4 |
 | **N14** | Les champs | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 4 |
 | **N15** | L'application connaît la sélection du texte | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 5 |
@@ -7437,6 +7437,122 @@ mesure : moins de 100 ms en médiane sur ATA 21.
 Fichiers : `PageCanvas.axaml.cs`, `PageCanvas.Saisie.cs` (neuf), `MainWindowViewModel.cs`
 (`BuildFrame`, le texte d'attente), les tests ci-dessus, les recettes Q14 et Q23, README (Souris).
 Dépend de N1, N3, N5 et Q21. Effort : moyen.
+
+*Livré le 28 octobre 2026*, dans la salve Saisie 4 ; la relecture adversariale vient après la
+fusion. **La mécanique**, dans `PageCanvas.Saisie.cs`. `OnPointerPressed` garde son ordre — la
+saisie refermée d'abord (N5), la main et la loupe, l'outil armé, les poignées, les repères — puis
+trouve le bloc atteint par la même ligne, une seule fois ; `BlocVise` lui substitue le bloc
+sélectionné dont le point tombe entre le bloc et son cadre de sélection — la bande de bord s'y
+étend, et le cadre, dessiné par-dessus tout, prend ce qu'il borde, un trait excepté. Hors de
+`Ctrl` et `Maj`, `EntrerDansLeTexte` : si le point est dans le texte d'un bloc de texte visible et
+sans champ — son intérieur moins `BandeDeBord`, 5 px d'écran, au plus un quart du côté, lu par
+`ToLocal`, rotation comprise —, la position visée est lue par `GeometrieDuTexte.IndexSous` sur le
+point du pointeur pris dans le repère du `TexteCompose` qui le dessinait, puis le bloc est pris
+seul et la saisie ouverte (`BeginTextEdit(bloc, curseur)`) : le champ prend le focus et la
+sélection vide au curseur, et rien n'est plus sélectionné en entier. La pression garde le geste
+(`DragMode.Texte`, la capture à la couche) : passé la garde du seuil de Q21, posée une seule fois,
+la sélection du champ suit le pointeur depuis l'ancre, la position lue dans la mise en page du
+champ (`TextLayout.HitTestPoint`, comme `TextBox.OnPointerMoved`) — c'est lui que l'écran montre
+pendant la saisie ; le relâché ne ferme aucune transaction, celle de la saisie suivant le focus
+(Q25). Le double-clic n'est plus écouté (`OnDoubleTapped` est retiré, et avec lui les pressions
+retenues de la main, qui n'avaient plus d'objet) : sa seconde pression atteint le champ, que la
+couche laisse au pointeur depuis N5, et le champ prend le mot ; `Maj`+clic dans le texte en
+saisie y étend la sélection de même. Le curseur (`CurseurSur`) : le I sur le texte, les quatre
+flèches sur le bord et le cadre. Dans le modèle de vue, `BuildFrame` donne un texte vide aux outils
+Texte et Titre, et `InsertWithTool` demande la saisie du bloc de texte qu'il pose
+(`MainWindowViewModel.Saisie.cs`, `SaisieDemandee`), que la planche ouvre le curseur au bout —
+au début, puisqu'il est vide. Le README le dit, au sous-tableau « Souris » et à la liste de ce que
+l'application sait faire ; la fiche 10 aussi.
+
+**Mesuré.** La pression qui ouvre la saisie, chronométrée comme celle de Q23 — la pression, puis
+l'image qui montre le champ au focus —, médiane de trois passes, sur les sept blocs de texte d'ATA
+21 qu'une pression atteint en leur centre : d'abord 33 à 116 ms, « Air is cooled » au-dessus du
+seuil à chaque exécution. La cause, mesurée en défaisant le geste : `IsEditing` est une propriété
+du bloc, et trois abonnés la prenaient pour une retouche — la vignette de la page (I5), le
+marqueur de débordement, qui redessinait (`ControleDeBloc`), et le compte des lignes en excédent
+(I9) —, chacun recomposant le bloc, 12 ms pour celui-là ; un changement du seul nom du bloc en
+coûte autant. Ils ignorent désormais `IsEditing`, qui ne change rien à ce qu'ils montrent. Après :
+**48 à 81 ms** à la recette, charge de la machine 3 à 5 (« Air is cooled » 81, « Air Production »
+76, « Overheat Protection » 73) — la marge est plus mince que celle de Q23. Ce qui reste : la
+sélection (20 à 30 ms), la géométrie du bloc, que la pression compose une fois (jusqu'à 13 ms),
+la mise en page du champ, et sa prise du focus, qui ouvre la transaction de la saisie (Q25).
+
+**Les tests.** `ClicDansLeTexteTests`, quinze sous `poste=N12`, et le chronomètre neuf de
+`PressionTests` : le 5ᵉ caractère d'un bloc non sélectionné, un autre bloc lâché ; le 5ᵉ et le
+12ᵉ d'un bloc tourné de 30° ; un caractère repéré par N3 sur chacun des sept blocs de texte d'ATA
+21, le document intact ; le glissé du 3ᵉ au 7ᵉ caractère, [2, 7), et à rebours ; un tremblement
+de 2,5 px qui ne sélectionne rien, puis le même glissé au-delà du seuil ; le glissé d'un point par
+chacun des quatre bords, `Alt` tenu, en un pas ; le cadre d'un bloc sélectionné ; les curseurs ;
+`Ctrl`+clic et `Maj`+clic ; `Maj`+clic en saisie ; le double-clic sur « monde » ; entrer et sortir
+sans pas, taper en un ; les outils Texte et Titre ; *Insertion ▸ Bloc de texte*, l'entrée cherchée
+par sa commande et non par son libellé, que N13 reprend ; un bloc à champ, tout en bord. Au banc,
+`Rendu.Bord` et `Rendu.BordAtteint` visent la bande de bord ; `EntrerEnSaisie` fait un seul clic,
+au point (dx, dy) du repère du bloc ; `DoubleCliquer` rend une image entre ses deux clics — la
+seconde pression doit trouver le champ, qu'Avalonia cherche dans la dernière image rendue.
+
+**Règle 14.** Vingt-quatre tests jouaient l'ancien sens du geste, et sont réécrits en le disant :
+dans `DoubleClicTests`, les deux tests du double-clic deviennent `Un_clic_ouvre_la_saisie_sans_rien_reecrire`
+— chaque bloc d'ATA 21 cliqué sur sa bande de bord avec un mouvement nul, puis dans son texte — et
+`Un_clic_garde_langle_dun_bloc_tourne_a_la_main`, et le glissé d'un point prend le bloc par son
+bord ; dans `PressionTests`, le chronomètre de Q23 presse le bord, et les réglages gardés se
+prennent par le bord, comme le champ masqué ; dans `BarreContextuelleTests`, le clic qui suit le
+sélecteur de couleur prend B par son bord ; `NavigationTests` clique sous la main au lieu de
+double-cliquer, reprend le bloc par son bord après Espace, et
+`Une_prise_de_la_main_n_ouvre_pas_la_saisie_et_le_clic_qui_suit_y_pose_le_curseur` remplace le test
+de la relecture de I6 ; deux glissés de `TransactionsDeSaisieTests`, un de `ClicDeSortieTests` et
+la pression de `DispositionTests` passent par le bord ; six tests de `TransactionsDeSaisieTests` et
+quatre de `RaccourcisFrancaisTests`, qui tapaient par-dessus le texte que l'entrée sélectionnait,
+le sélectionnent eux-mêmes. Leurs assertions ne changent pas. Les recettes : Q14 dit le clic ;
+Q21-Q22 lit le glissé de Q14 sur sa prise ; Q23 lit les tests renommés, et laisse ses vingt
+passages du double-clic à la recette N12, qui les joue sur le mot et dont Q23 vérifie qu'elle le
+fait. `PageCanvas.Saisie.cs` entre dans `vues_de_la_phase` de I1.
+
+**Le juge.** Deux sabotages : celui du plan — la pression qui ouvre la saisie sélectionne encore
+tout — et le bloc de texte sans bande de bord sur les côtés. Les deux cibles du piège : « un
+mouvement nul du pointeur aimante le bloc cliqué » et « les réglages du bloc (Q23) se
+reconstruisent » restent présentes une fois, et ont été éprouvées à la main : la première est
+prise par `SeuilDuPointeurTests`, comme depuis Q21 — le mouvement nul d'un clic, au bord comme au
+texte, s'arrête au seuil avant `ApplyMove` —, la seconde par `PressionTests` et
+`BarreContextuelleTests`, par le bord. Deux cibles perdaient leur texte et sont reprises : la
+garde de I6 (« une prise de la main fait la moitié d'un double-clic ») vise désormais
+`if (PrendreLaNavigation(e)) return;` — une main qui passerait sa pression aux blocs ouvrirait la
+saisie du texte qu'elle prend —, et l'entrée en saisie du banc (N1) clique sur le bord du bloc au
+lieu de ne cliquer qu'une fois.
+
+*Ce que l'implémentation a appris.*
+- La saisie qui s'ouvre était une retouche aux yeux de trois abonnés du bloc, et coûtait trois
+  compositions dans la pression même ; le double-clic d'avant payait la même chose, sans
+  chronomètre.
+- Sans image entre ses deux clics, la seconde pression d'un double-clic retombe sur la couche :
+  le champ que le premier clic a fait paraître n'est pas encore dans l'image où Avalonia cherche
+  ce qui est sous le pointeur. Une vraie main laisse passer plusieurs images entre ses deux clics.
+- Sur un texte simple, la mise en page du champ et la composition coïncident à l'abscisse près
+  (mesuré sur « Bonjour le monde », 14 pt) : le glissé lu sur le champ tombe sur les caractères
+  que la pression a visés sur la composition. Sur un texte composé autrement — taquets,
+  justification, fragments —, il suit le champ, ce que montre l'écran pendant la saisie.
+
+*Choisi sans certitude.*
+- La position visée est lue dans le repère du contrôle qui dessinait le texte, mise en page et
+  rotation comprises, et non par `Frame.ToLocal` sur le modèle, que la spécification nommait : sur
+  un bloc tourné d'ATA 21, le modèle s'en écarte d'un demi-point (relevé de N3). `ToLocal` décide
+  seulement du texte et du bord.
+- Le milieu exact d'un caractère est à égale distance de deux positions ; le test du glissé
+  « du centre du 3ᵉ au centre du 7ᵉ » vise juste avant le premier milieu et juste après le
+  second, pour lever l'égalité dans le sens que donne [2, 7).
+- La bande s'étend jusqu'au cadre pour tout bloc sélectionné, pas seulement le texte, un trait
+  excepté ; elle passe alors avant un bloc posé par-dessus, comme les poignées.
+- *Insertion ▸ Titre* ouvre la saisie comme *Bloc de texte* : un titre neuf est vide aussi.
+- Un clic dans le texte d'un bloc d'une sélection de plusieurs le prend seul, et entre.
+
+*Relevé, non corrigé.*
+- Un bloc de texte neuf laissé vide ne se voit plus sur la page une fois désélectionné : la
+  planche ne dessine pas les limites d'un bloc de texte, comme Publisher le fait. Il reste dans
+  « Blocs de la page ».
+- Le champ garde d'une saisie à l'autre sa mémoire du double-clic (`TextBox._wordSelectionStart`,
+  interne à Avalonia) : un `Maj`+clic après un double-clic étend par mots. C'est le champ natif.
+- La pression qui ouvre la saisie prend 81 ms de médiane sur « Air is cooled », pour un seuil
+  de 100 : sous une charge plus forte que celle de la recette, le chronomètre tombera avant la
+  cause, comme celui de Q23 ; aucun sabotage ne le prend pour garde.
 
 #### N13 — Les menus de Publisher *(fiche 23, d3, d23, e4, e7, e10, e21)*
 

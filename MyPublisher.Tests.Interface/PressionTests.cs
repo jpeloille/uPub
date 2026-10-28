@@ -77,6 +77,10 @@ public class PressionTests(ITestOutputHelper sortie)
     /// l'application ne fait pas ; et un seuil qui ne prétend pas mesurer mieux que la
     /// charge le permet. Le retour de la cause, lui, ne dépend pas de la charge : les tests
     /// qui suivent le voient en comptant.
+    ///
+    /// Repris par le poste N12 (règle 14) : une pression dans le texte d'un bloc y entre, et
+    /// ouvre la saisie — le test qui suit la chronomètre. Celui-ci presse la bande de bord de
+    /// chaque bloc, qui le prend sans saisie : la pression qu'il mesurait.
     /// </summary>
     [AvaloniaFact]
     [Trait("poste", "Q23")]
@@ -87,6 +91,8 @@ public class PressionTests(ITestOutputHelper sortie)
         Assert.True(blocs.Count >= 8, $"{blocs.Count} blocs atteints seulement");
         Assert.Contains(blocs, bloc => bloc is TextFrame);
         Assert.Contains(blocs, bloc => bloc is not TextFrame);
+        var prises = blocs.ToDictionary(bloc => bloc, bloc => Rendu.BordAtteint(fenetre, bloc)
+            ?? throw new InvalidOperationException($"le bord de « {bloc.Name} » est couvert"));
 
         var mesures = blocs.ToDictionary(bloc => bloc, _ => new List<double>());
         for (var passe = 0; passe < 3; passe++)
@@ -102,17 +108,18 @@ public class PressionTests(ITestOutputHelper sortie)
 
                 // Deux pressions de suite ne tombent jamais au même endroit : un bloc n'est
                 // pressé de nouveau qu'après les sept autres, et Avalonia n'y voit pas un
-                // double-clic, qui ouvrirait la saisie.
-                var centre = Rendu.Centre(fenetre, bloc);
+                // double-clic.
+                var prise = prises[bloc];
                 var chrono = Stopwatch.StartNew();
-                fenetre.MouseDown(centre, MouseButton.Left);
+                fenetre.MouseDown(prise, MouseButton.Left);
                 Rendu.UneImage();
                 chrono.Stop();
 
                 Assert.Same(bloc, vm.SingleSelected);
+                Assert.False(bloc is TextFrame { IsEditing: true }, $"le bord de « {bloc.Name} » a ouvert la saisie");
                 mesures[bloc].Add(chrono.Elapsed.TotalMilliseconds);
 
-                fenetre.MouseUp(centre, MouseButton.Left);
+                fenetre.MouseUp(prise, MouseButton.Left);
                 Rendu.Battre();
                 Assert.False(vm.CanUndo, $"une pression sur « {bloc.Name} » a empilé un pas d'annulation");
             }
@@ -128,6 +135,66 @@ public class PressionTests(ITestOutputHelper sortie)
         var lents = medianes.Where(m => m.Mediane >= Seuil).ToList();
         Assert.True(lents.Count == 0,
             "une pression sur un bloc non sélectionné rend la main en 100 ms ou plus : " +
+            string.Join(" ; ", lents.Select(m => $"« {m.Bloc.Name} » {Ms(m.Mediane)} ms ({string.Join(" / ", m.Passes.Select(Ms))})")));
+    }
+
+    /// <summary>
+    /// Le poste N12 : la pression qui ouvre la saisie, chronométrée comme la précédente. Sur
+    /// ATA 21, chaque bloc de texte qu'une pression atteint en son centre, rien de sélectionné,
+    /// pressé en son centre — dans son texte : la pression prend le bloc, ouvre la saisie le
+    /// curseur au point visé, et l'image qui suit montre le champ, qui a le focus. Trois passes,
+    /// la médiane des trois sous 100 ms. Ce que la pression ajoute à celle de Q23 : la
+    /// position visée, lue sur la composition, et la mise en page du champ, dont le gabarit
+    /// s'applique à la première saisie de chaque bloc.
+    /// </summary>
+    [AvaloniaFact]
+    [Trait("poste", "N12")]
+    public void Une_pression_qui_ouvre_la_saisie_rend_la_main_en_moins_de_100_ms()
+    {
+        var (fenetre, vm) = Rendu.Ouvrir(Rendu.Ata21());
+        var blocs = BlocsAtteints(vm.CurrentPage!).OfType<TextFrame>().ToList();
+        Assert.True(blocs.Count >= 7, $"{blocs.Count} blocs de texte atteints seulement");
+
+        var mesures = blocs.ToDictionary(bloc => bloc, _ => new List<double>());
+        for (var passe = 0; passe < 3; passe++)
+        {
+            foreach (var bloc in blocs)
+            {
+                vm.SetSelection([]);
+                Rendu.UneImage();
+                Assert.False(bloc.IsEditing);
+
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                GC.Collect();
+
+                var centre = Rendu.Centre(fenetre, bloc);
+                var chrono = Stopwatch.StartNew();
+                fenetre.MouseDown(centre, MouseButton.Left);
+                Rendu.UneImage();
+                chrono.Stop();
+
+                Assert.Same(bloc, vm.SingleSelected);
+                Assert.True(bloc.IsEditing, $"une pression au centre de « {bloc.Name} » n'a pas ouvert la saisie");
+                Assert.True(Rendu.ZoneDeSaisie(fenetre, bloc)?.IsFocused == true, $"la zone de « {bloc.Name} » n'a pas le focus");
+                mesures[bloc].Add(chrono.Elapsed.TotalMilliseconds);
+
+                fenetre.MouseUp(centre, MouseButton.Left);
+                Rendu.Battre();
+                Assert.False(vm.CanUndo, $"entrer dans « {bloc.Name} » a empilé un pas d'annulation");
+            }
+        }
+
+        string Ms(double valeur) => valeur.ToString("0", CultureInfo.InvariantCulture);
+        var medianes = mesures.Select(m => (Bloc: m.Key, Mediane: m.Value.OrderBy(x => x).ElementAt(1), Passes: m.Value)).ToList();
+        foreach (var (bloc, mediane, passes) in medianes)
+        {
+            sortie.WriteLine($"saisie     {bloc.Name,-30} médiane {Ms(mediane),4} ms   ({string.Join(" / ", passes.Select(Ms))})");
+        }
+
+        var lents = medianes.Where(m => m.Mediane >= Seuil).ToList();
+        Assert.True(lents.Count == 0,
+            "une pression qui ouvre la saisie rend la main en 100 ms ou plus : " +
             string.Join(" ; ", lents.Select(m => $"« {m.Bloc.Name} » {Ms(m.Mediane)} ms ({string.Join(" / ", m.Passes.Select(Ms))})")));
     }
 
@@ -158,7 +225,9 @@ public class PressionTests(ITestOutputHelper sortie)
             Trouver<ComboBox>(fenetre, "SorteDeFond"), Trouver<ComboBox>(fenetre, "PoliceDuBloc"),
         ];
 
-        Rendu.Cliquer(fenetre, Rendu.Centre(fenetre, a));
+        // Les blocs de texte se prennent par leur bande de bord : une pression dans leur texte
+        // ouvrirait la saisie, et son champ ajouterait ses visuels à ceux de la pression (N12).
+        Rendu.Cliquer(fenetre, Rendu.Bord(fenetre, a));
         Assert.Same(a, vm.SingleSelected);
         var premiers = Champs();
         Assert.All(premiers, champ => Assert.True(champ.IsEffectivelyVisible));
@@ -182,8 +251,9 @@ public class PressionTests(ITestOutputHelper sortie)
         // pression n'a rien construit.
         Rendu.Cliquer(fenetre, vide);
         var visuels = fenetre.GetVisualDescendants().Count();
-        Rendu.Cliquer(fenetre, Rendu.Centre(fenetre, b));
+        Rendu.Cliquer(fenetre, Rendu.Bord(fenetre, b));
         Assert.Same(b, vm.SingleSelected);
+        Assert.False(b.IsEditing);
         var crees = fenetre.GetVisualDescendants().Count() - visuels;
         sortie.WriteLine($"visuels de la fenêtre : {visuels} avant la pression, {visuels + crees} après");
 
@@ -212,7 +282,8 @@ public class PressionTests(ITestOutputHelper sortie)
     {
         var a = new TextFrame { Name = "A", X = 60, Y = 60, Width = 200, Height = 80, Text = "Un bloc." };
         var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(a));
-        Rendu.Cliquer(fenetre, Rendu.Centre(fenetre, a));
+        // Par la bande de bord : le bloc pris, sans saisie (N12).
+        Rendu.Cliquer(fenetre, Rendu.Bord(fenetre, a));
 
         var nom = Trouver<TextBox>(fenetre, "ChampNom");
         nom.Focus();

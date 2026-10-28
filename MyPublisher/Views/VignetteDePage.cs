@@ -178,6 +178,9 @@ public sealed class VignetteDePage : TemplatePreview
     /// </summary>
     private void SurBloc(object? sender, PropertyChangedEventArgs e)
     {
+        // La saisie qui s'ouvre ou se ferme ne change rien à la page (poste N12) : elle se
+        // recomposait à chaque entrée dans un texte, dans la pression même.
+        if (e.PropertyName == nameof(TextFrame.IsEditing)) return;
         if (e.PropertyName == nameof(Frame.Visible)) Oublier();
         else if (sender is TableFrame || sender is null || !_blocDeLaPage.TryGetValue(sender, out var deLaPage)) Oublier();
         else Oublier(deLaPage);

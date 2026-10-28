@@ -123,7 +123,8 @@ print("    d. les cibles du juge de Q14 restent, une fois chacune")
 # e. règle 14.
 double_clic = lire("MyPublisher.Tests.Interface/DoubleClicTests.cs")
 glisse = re.search(r"public void Un_glisse_dun_point_empile_toujours_son_pas\(\)(.*?)\n    }\n", double_clic, re.S)
-exige(glisse is not None and "Rendu.GlisserEtRamener(fenetre, centre, arrivee, RawInputModifiers.Alt);" in glisse.group(1),
+# Depuis N12, il prend le bloc par sa bande de bord : son centre est du texte.
+exige(glisse is not None and "Rendu.GlisserEtRamener(fenetre, prise, arrivee, RawInputModifiers.Alt);" in glisse.group(1),
       "le glissé d'un point de Q14 n'est pas mené au-delà du seuil puis ramené.")
 transactions = lire("MyPublisher.Tests.Interface/TransactionsDeSaisieTests.cs")
 exige("Rendu.GlisserEtRamener(fenetre, prise, prise + new Point(1, 0), RawInputModifiers.Alt);" in transactions,

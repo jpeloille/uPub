@@ -129,8 +129,14 @@ public abstract class ControleDeBloc : Control
         bloc.Paragraphs.CollectionChanged -= SurCollection;
     }
 
-    private void SurChangement(object? _, System.ComponentModel.PropertyChangedEventArgs __) =>
+    private void SurChangement(object? _, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        // La saisie qui s'ouvre ou se ferme ne change pas ce que le contrôle dessine : le texte
+        // composé se masque, le marqueur de débordement reste (poste N12). Redessinés, ils
+        // recomposaient le bloc à chaque entrée dans un texte, dans la pression même.
+        if (e.PropertyName == nameof(TextFrame.IsEditing)) return;
         InvalidateVisual();
+    }
 
     private void SurCollection(object? _, NotifyCollectionChangedEventArgs __) =>
         InvalidateVisual();

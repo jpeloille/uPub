@@ -17,19 +17,25 @@
 #   · le déplacement : un mouvement nul du pointeur passait par l'aimantation, qui
 #     attirait vers un repère voisin un bloc qu'on n'avait fait que cliquer.
 #
+# Repris par le poste N12 (règle 14) : on entre dans le texte d'un clic, le curseur au
+# point visé, et le double-clic n'y ouvre plus rien — il prend un mot. Le premier clic
+# ouvre donc la saisie ; c'est lui, et le clic qui prend le bloc par sa bande de bord,
+# qui ne doivent rien réécrire.
+#
 # Ce que les tests d'interface éprouvent, joués dans la vraie fenêtre au pointeur
 # synthétisé :
 #
-#   1. sur chaque bloc de texte qu'un clic atteint en son centre, un double-clic
-#      ouvre la saisie ; le document est le même au caractère près, aucun pas
-#      d'annulation n'est empilé, le document n'est pas marqué modifié, et refermer
-#      la saisie n'y change rien. Chaque clic porte un mouvement nul entre la
-#      pression et le relâchement, comme une plate-forme peut en livrer ;
-#   2. le même double-clic sur un bloc tourné d'un angle quelconque, comme la poignée
-#      en pose, garde cet angle : le champ de rotation arrondissait à quatre décimales,
-#      et l'arrondi remontait dans le modèle ;
-#   3. un glissé d'un point, lui, déplace le bloc d'un point et empile son pas, que
-#      l'annulation défait jusqu'au document d'ouverture.
+#   1. sur chaque bloc de texte qu'un clic atteint en son centre, rien de sélectionné,
+#      un clic sur sa bande de bord le prend sans saisie, et un clic dans son texte ouvre
+#      la saisie ; le document est le même au caractère près, aucun pas d'annulation
+#      n'est empilé, le document n'est pas marqué modifié, et refermer la saisie n'y
+#      change rien. Chaque clic porte un mouvement nul entre la pression et le
+#      relâchement, comme une plate-forme peut en livrer ;
+#   2. le même clic sur un bloc tourné d'un angle quelconque, comme la poignée en pose,
+#      garde cet angle, dans le texte comme sur le bord : le champ de rotation arrondissait
+#      à quatre décimales, et l'arrondi remontait dans le modèle ;
+#   3. un glissé d'un point, par la bande de bord, déplace le bloc d'un point et empile
+#      son pas, que l'annulation défait jusqu'au document d'ouverture.
 #   4. un geste qui part et revient exactement au point de prise rend le bloc à son
 #      départ : la garde ne fait pas que s'abstenir, elle remet le bloc en place.
 #   5. une valeur tapée dans le champ de rotation d'un bloc arrive telle quelle au
@@ -68,7 +74,7 @@ attendus=5
 if ! dotnet test MyPublisher.Tests.Interface/MyPublisher.Tests.Interface.csproj ${MYPUBLISHER_DEJA_COMPILE:+--no-build} \
         --nologo -v q --filter "poste=Q14" > "$travail/tests.txt" 2>&1; then
     sed 's/^/    /' "$travail/tests.txt" >&2
-    echo "ÉCHEC : un double-clic réécrit encore le document, un glissé ne rend pas le bloc où il le mène, ou une frappe est prise pour un affichage." >&2
+    echo "ÉCHEC : un clic réécrit encore le document, un glissé ne rend pas le bloc où il le mène, ou une frappe est prise pour un affichage." >&2
     exit 1
 fi
 
@@ -79,5 +85,5 @@ if [ "${joues:-0}" -lt "$attendus" ]; then
     exit 1
 fi
 
-echo "  Double-clic et glissé d'un point joués sur ATA 21 importé : $joues tests"
-echo "Q14 : un double-clic ouvre la saisie sans rien réécrire ; un glissé d'un point compte toujours."
+echo "  Clic dans le texte, clic sur le bord et glissé d'un point joués sur ATA 21 importé : $joues tests"
+echo "Q14 : un clic ouvre la saisie, ou prend le bloc par son bord, sans rien réécrire ; un glissé d'un point compte toujours."

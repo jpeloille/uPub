@@ -71,7 +71,7 @@ public class NavigationTests
                 (depart.X - Rendu.SurLaPage(fenetre, 0, 0).X) / vm.RenderScale,
                 (depart.Y - Rendu.SurLaPage(fenetre, 0, 0).Y) / vm.RenderScale)));
 
-            // Le glissé part du bloc : sans la main, il le déplacerait.
+            // Le glissé part du texte du bloc : sans la main, il y sélectionnerait du texte.
             fenetre.KeyPressQwerty(PhysicalKey.Space, RawInputModifiers.None);
             Rendu.Battre();
             Rendu.Glisser(fenetre, depart, depart + new Vector(-100, -60));
@@ -85,10 +85,11 @@ public class NavigationTests
             Assert.False(vm.IsDirty, "la main a rendu le document « modifié »");
             Assert.Empty(vm.Selection);
 
-            // Espace relâché, un glissé reprend le bloc. Ailleurs qu'au point de départ :
-            // deux pressions au même point, sans que l'horloge du banc avance, font un
-            // double-clic, qui ouvrirait la saisie du bloc.
-            var prise = MilieuDeLaZone(fenetre) + new Vector(30, 30);
+            // Espace relâché, un glissé reprend le bloc, par sa bande de bord — celle de droite,
+            // à la hauteur du milieu de la zone : dans son texte, il y sélectionnerait du texte
+            // (N12, règle 14).
+            var milieu = Rendu.SousLaFenetre(fenetre, MilieuDeLaZone(fenetre));
+            var prise = Rendu.Bord(fenetre, bloc, 1, (milieu.Y - bloc.Y) / bloc.Height);
             Rendu.Glisser(fenetre, prise, prise + new Vector(-20, 0));
             Assert.Equal(250, zone.Offset.X, precision: 6);
             Assert.Same(bloc, vm.SingleSelected);
@@ -134,32 +135,32 @@ public class NavigationTests
             Assert.False(vm.CanUndo);
             Assert.Empty(vm.Selection);
 
-            // Un double-clic sous la main n'ouvre pas la saisie du bloc.
+            // Un clic dans le texte sous la main n'ouvre pas la saisie du bloc. C'était un
+            // double-clic jusqu'au poste N12, qui ouvre la saisie d'un clic (règle 14).
             vm.SelectOnly(vm.CurrentPage!.Frames[0]);
             Rendu.Battre();
             var point = MilieuDeLaZone(fenetre);
-            void DoubleClic()
+            void Clic()
             {
                 // Ailleurs à chaque fois : l'horloge du banc n'avance pas, et deux pressions au
-                // même point se comptent toujours ensemble. Au point des prises de la main, le
-                // double-clic de contrôle se compterait avec la dernière d'entre elles, et une
-                // prise de la main ne fait pas la moitié d'un double-clic (relecture de I6).
+                // même point se comptent toujours ensemble — une prise de la main ne fait pas la
+                // moitié d'un double-clic (relecture de I6).
                 point += new Vector(30, 30);
-                Rendu.DoubleCliquer(fenetre, point);
+                Rendu.Cliquer(fenetre, point);
             }
 
-            DoubleClic();
+            Clic();
             var planche = Trouver<PageCanvas>(fenetre, "PageView");
             Assert.False(planche.IsEditingText, "la main a ouvert la saisie");
 
             // Échap la désarme, comme un outil de tracé, sans libérer la sélection ; et le
-            // même double-clic, alors, ouvre bien la saisie.
+            // même clic, alors, ouvre bien la saisie.
             fenetre.KeyPressQwerty(PhysicalKey.Escape, RawInputModifiers.None);
             Rendu.Battre();
             Assert.Equal(EditorTool.Select, vm.ActiveTool);
             Assert.NotNull(vm.SingleSelected);
-            DoubleClic();
-            Assert.True(planche.IsEditingText, "le double-clic de contrôle n'a pas ouvert la saisie");
+            Clic();
+            Assert.True(planche.IsEditingText, "le clic de contrôle n'a pas ouvert la saisie");
         }
         finally
         {
@@ -216,13 +217,18 @@ public class NavigationTests
     }
 
     [AvaloniaFact]
-    public void Une_prise_de_la_main_puis_un_clic_au_meme_point_n_ouvrent_pas_la_saisie()
+    public void Une_prise_de_la_main_n_ouvre_pas_la_saisie_et_le_clic_qui_suit_y_pose_le_curseur()
     {
         // Relevé à la livraison, refermé par la relecture du 26 octobre 2026 : Espace tenu, une
         // prise de la main sur le bloc de texte sélectionné ; Espace relâché, un clic au même
         // point dans le délai du double-clic. Les deux pressions faisaient un double-clic, qui
         // ouvrait la saisie du bloc — la main avait touché au bloc. L'horloge du banc n'avance
         // pas : les deux pressions tombent toujours dans le délai.
+        //
+        // Repris par le poste N12 (règle 14) : un clic dans le texte ouvre désormais la saisie à
+        // lui seul, le curseur au point visé, et le double-clic y prend un mot. Ce que la main ne
+        // fait toujours pas : sa prise n'ouvre rien, ne prend rien, et ne fait pas la moitié d'un
+        // double-clic — le clic qui la suit au même point pose le curseur, sans prendre de mot.
         var bloc = Texte(60, 60, 200, 80);
         var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(bloc));
         try
@@ -240,6 +246,8 @@ public class NavigationTests
             fenetre.MouseDown(point, MouseButton.Left);
             fenetre.MouseUp(point, MouseButton.Left);
             Rendu.Battre();
+            Assert.False(planche.IsEditingText, "la prise de la main a ouvert la saisie");
+            Assert.Same(bloc, vm.SingleSelected);
             fenetre.KeyReleaseQwerty(PhysicalKey.Space, RawInputModifiers.None);
             Rendu.Battre();
 
@@ -247,21 +255,12 @@ public class NavigationTests
             fenetre.MouseUp(point, MouseButton.Left);
             Rendu.Battre(8);
 
-            Assert.False(planche.IsEditingText, "une prise de la main et un clic ont ouvert la saisie");
+            Assert.True(planche.IsEditingText, "le clic qui suit la main n'a pas ouvert la saisie");
+            var zone = Rendu.ZoneDeSaisie(fenetre, bloc)!;
+            Assert.True(zone.SelectionStart == zone.SelectionEnd,
+                $"la prise de la main a fait la moitié d'un double-clic : « {zone.SelectedText} » est pris");
             Assert.Same(bloc, vm.SingleSelected);
             Assert.False(vm.CanUndo);
-
-            // Deux clics ordinaires, ensuite, ouvrent bien la saisie : la garde ne vaut que
-            // pour une paire dont la première pression naviguait.
-            var ailleurs = Rendu.SurLaPage(fenetre, 150, 110);
-            for (var clic = 0; clic < 2; clic++)
-            {
-                fenetre.MouseDown(ailleurs, MouseButton.Left);
-                fenetre.MouseUp(ailleurs, MouseButton.Left);
-            }
-
-            Rendu.Battre(8);
-            Assert.True(planche.IsEditingText, "le double-clic de contrôle n'a pas ouvert la saisie");
         }
         finally
         {

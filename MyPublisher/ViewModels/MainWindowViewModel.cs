@@ -915,7 +915,10 @@ public partial class MainWindowViewModel : ViewModelBase
 
     /// <summary>
     /// Gabarit d'un outil : apparence du bloc, et taille utilisée quand on pose
-    /// l'outil d'un simple clic au lieu de tracer un cadre.
+    /// l'outil d'un simple clic au lieu de tracer un cadre. Un bloc de texte neuf est vide :
+    /// on y tape aussitôt, le curseur dedans, comme dans Publisher (p. 33, poste N12) — il
+    /// portait « Saisissez votre texte. » ou « Titre », tout sélectionné, qu'une sortie sans
+    /// frappe laissait dans le document.
     /// </summary>
     private Frame BuildFrame(EditorTool tool) => tool switch
     {
@@ -927,14 +930,14 @@ public partial class MainWindowViewModel : ViewModelBase
         // « JeuxPredefinis ») : un document neuf ne change donc pas d'allure.
         EditorTool.Text => new TextFrame
         {
-            Name = "Texte", Width = 260, Height = 90, Text = "Saisissez votre texte.",
+            Name = "Texte", Width = 260, Height = 90, Text = "",
             FontFamily = ReferenceDuJeu.Police(EmplacementDePolice.Body),
             Foreground = ReferenceDuJeu.Couleur(EmplacementDeCouleur.Main),
         },
         EditorTool.Heading => new TextFrame
         {
             Name = "Titre", Width = Document.MarginBoxWidth, Height = 60,
-            Text = "Titre", FontSize = 28, Bold = true,
+            Text = "", FontSize = 28, Bold = true,
             FontFamily = ReferenceDuJeu.Police(EmplacementDePolice.Heading),
             Foreground = ReferenceDuJeu.Couleur(EmplacementDeCouleur.Main),
         },
@@ -1004,12 +1007,16 @@ public partial class MainWindowViewModel : ViewModelBase
     [RelayCommand]
     private void AddTable() => InsertWithTool(EditorTool.Table);
 
-    /// <summary>Insertion par le menu : le bloc est posé dans la zone de composition.</summary>
+    /// <summary>
+    /// Insertion par le menu : le bloc est posé dans la zone de composition. Un bloc de texte
+    /// s'ouvre en saisie, comme celui que trace l'outil (poste N12).
+    /// </summary>
     private void InsertWithTool(EditorTool tool)
     {
         var frame = BuildFrame(tool);
         (frame.X, frame.Y) = NextInsertPoint(frame.Width, frame.Height);
         Insert(frame);
+        if (frame is TextFrame texte) DemanderLaSaisie(texte);
     }
 
     /// <summary>

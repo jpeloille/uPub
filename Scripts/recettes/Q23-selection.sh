@@ -13,11 +13,13 @@
 # Quatre temps :
 #
 #   1. LES SOURCES : aucun réglage du bloc n'est plus un ContentControl lié au bloc seul —
-#      les trois sections du dock et la barre sont des GabaritsGardes —, et les tests du
-#      double-clic ne sélectionnent plus le bloc par le modèle de vue avant le geste ;
+#      les trois sections du dock et la barre sont des GabaritsGardes —, et les tests de Q14
+#      ne sélectionnent plus le bloc par le modèle de vue avant le geste : leur premier clic
+#      le prend — et, depuis N12, ouvre sa saisie ;
 #   2. LES TESTS, par leur trait « poste=Q23 » (PressionTests) : au pointeur synthétisé,
-#      sur ATA 21, la pression sur chaque bloc non sélectionné rend la main en moins de
-#      100 ms, médiane de trois passes ; les champs du dock et de la barre sont les mêmes
+#      sur ATA 21, la pression sur chaque bloc non sélectionné — sur sa bande de bord depuis
+#      N12, qui le prend sans entrer dans son texte — rend la main en moins de 100 ms,
+#      médiane de trois passes ; les champs du dock et de la barre sont les mêmes
 #      d'une sélection à l'autre, et une pression n'ajoute presque rien à la fenêtre ; un
 #      champ masqué rend le focus ; la liste des blocs ne défile que pour montrer le bloc ;
 #   3. LE SÉLECTEUR DE COULEUR REFERMÉ, par les deux tests de la barre qui le voient
@@ -25,9 +27,11 @@
 #      gardé — ni au corps de la barre, ni à la position X du dock (repris le 26 octobre
 #      2026, sur la décision du propriétaire) — ; « T » arme alors l'outil texte et une
 #      flèche pousse le bloc. Seule la zone de saisie de la page le reprend (Q25) ;
-#   4. LE DOUBLE-CLIC AU GESTE ENTIER, le premier clic prenant le bloc : les deux tests de
-#      Q14 qui le jouent, vingt fois de suite, chacun dans un processus neuf — c'est la
-#      première pression d'un processus qui est la plus lente, et c'est là qu'ils tombaient.
+#   4. LE DOUBLE-CLIC AU GESTE ENTIER, le premier clic prenant le bloc. Repris par N12 : on
+#      entre dans le texte d'un clic, et le double-clic y prend un mot ; ce double-clic-là,
+#      dont la seconde pression doit tomber à moins de 500 ms de la première, est joué vingt
+#      fois de suite, chacune dans un processus neuf, par la recette N12. Celle-ci vérifie
+#      seulement que la recette N12 le joue.
 #
 set -euo pipefail
 export LC_ALL=C
@@ -88,7 +92,8 @@ for nom, attendus in (("MainWindow.axaml", 3), ("BarreContextuelle.axaml", 1)):
 print("    a. les trois sections du dock et la barre : des réglages gardés, aucun contenu lié au bloc seul")
 
 double_clic = (racine / "MyPublisher.Tests.Interface/DoubleClicTests.cs").read_text(encoding="utf-8")
-for test in ("Un_double_clic_ouvre_la_saisie_sans_rien_reecrire", "Un_double_clic_garde_langle_dun_bloc_tourne_a_la_main"):
+# Depuis N12, le premier clic ouvre la saisie : les deux tests de Q14 s'appellent « Un_clic… ».
+for test in ("Un_clic_ouvre_la_saisie_sans_rien_reecrire", "Un_clic_garde_langle_dun_bloc_tourne_a_la_main"):
     corps = re.search(r"public void " + test + r"\(\)\s*\{(.*?)\n    \}", double_clic, re.S)
     exige(corps is not None, f"le test « {test} » n'est plus dans DoubleClicTests.")
     if corps:
@@ -96,9 +101,14 @@ for test in ("Un_double_clic_ouvre_la_saisie_sans_rien_reecrire", "Un_double_cli
               f"« {test} » sélectionne encore le bloc par le modèle de vue avant le geste.")
         # Le clic du banc (Rendu.Cliquer, poste N1), avec le mouvement nul de Q14.
         clic = r"Rendu\.Cliquer\(fenetre, centre, mouvementNul: true\);"
-        exige(re.search(clic + r"\s*Assert\.Same\(bloc, vm\.SingleSelected\);\s*" + clic, corps.group(1)) is not None,
-              f"« {test} » ne prend plus le bloc par son premier clic.")
-print("    b. les deux tests du double-clic : le premier clic prend le bloc")
+        exige(re.search(clic + r"\s*Assert\.Same\(bloc, vm\.SingleSelected\);\s*Assert\.True\(bloc\.IsEditing", corps.group(1)) is not None,
+              f"« {test} » ne prend plus le bloc, en ouvrant sa saisie, par son premier clic.")
+print("    b. les deux tests de Q14 : le premier clic prend le bloc et ouvre sa saisie")
+
+n12 = racine / "Scripts/recettes/N12-clic-dans-le-texte.sh"
+exige(n12.exists() and re.search(r"seq 1 20.*?Un_double_clic_sur_un_mot", n12.read_text(encoding="utf-8"), re.S) is not None,
+      "la recette N12 ne joue plus vingt fois le double-clic sur un mot, que la quatrième clause lui a laissé.")
+print("    c. le double-clic au geste entier est joué vingt fois par la recette N12")
 
 if echecs:
     for message in echecs:
@@ -143,19 +153,8 @@ echo "  3. le sélecteur de couleur refermé : aucun champ de la barre ni du doc
 
 # ------------------------------------------------------------------------ 4. le double-clic
 
-for passage in $(seq 1 20); do
-    if ! dotnet test MyPublisher.Tests.Interface/MyPublisher.Tests.Interface.csproj ${MYPUBLISHER_DEJA_COMPILE:+--no-build} \
-            --nologo -v q --filter "FullyQualifiedName~DoubleClicTests.Un_double_clic" > "$travail/double-clic.txt" 2>&1; then
-        sed 's/^/    /' "$travail/double-clic.txt" >&2
-        echo "ÉCHEC : le double-clic au geste entier tombe au passage $passage sur 20." >&2
-        exit 1
-    fi
-    joues="$(sed -n 's/.*Passed: *\([0-9][0-9]*\).*/\1/p' "$travail/double-clic.txt" | head -1)"
-    if [ "${joues:-0}" -lt 2 ]; then
-        echo "ÉCHEC : 2 tests du double-clic attendus, ${joues:-0} joués au passage $passage." >&2
-        exit 1
-    fi
-done
-echo "  4. le double-clic au geste entier : 20 passages sur 20, chacun dans un processus neuf"
+# Repris par N12 : le double-clic au geste entier prend un mot, et la recette N12 le joue vingt
+# fois, chacune dans un processus neuf ; le temps 1 vérifie qu'elle le fait.
+echo "  4. le double-clic au geste entier : joué vingt fois par la recette N12 (le mot), vérifié au temps 1"
 
 echo "Q23 : une pression sur un bloc non sélectionné rend la main en moins de 100 ms ; les réglages du bloc sont construits une fois et gardés ; le sélecteur de couleur refermé ne rend le focus à aucun d'eux."
