@@ -831,6 +831,16 @@ public partial class MainWindow : Window
             return;
         }
 
+        // La barre de menus ouverte — Alt relâché, ou un menu déroulé — a les touches, elle aussi :
+        // ses lettres d'accès se lisent après cette méthode (AccessKeyHandler, à la fenêtre), et
+        // « E », « T » ou « R » y armaient un outil au lieu d'ouvrir Edition, Texte ou Rectangle ;
+        // Suppr y supprimait le bloc sous le menu (poste N13).
+        if (Menus.IsOpen)
+        {
+            base.OnKeyDown(e);
+            return;
+        }
+
         // Le presse-papiers des blocs (poste N8) : ici, après la garde de la saisie, et jamais
         // en KeyBinding. Une liaison passerait avant le champ qui a le focus et lui volerait la
         // touche ; le TextBox, lui, marque toujours Ctrl+X, C et V comme traitées, si bien qu'en
@@ -899,6 +909,15 @@ public partial class MainWindow : Window
             case Key.Right: vm.NudgeSelection(1, 0, fine); e.Handled = true; return;
             case Key.Up: vm.NudgeSelection(0, -1, fine); e.Handled = true; return;
             case Key.Down: vm.NudgeSelection(0, 1, fine); e.Handled = true; return;
+            // Tab et Maj+Tab, la planche ayant le focus : le bloc suivant ou le précédent dans
+            // l'ordre de la page, les masqués sautés, comme Publisher (poste N13). Ici, avant la
+            // navigation du focus d'Avalonia, qui est un gestionnaire d'instance de la fenêtre et
+            // ne voit pas une touche traitée. Ailleurs — le dock, la liste des blocs, la barre —,
+            // Tab continue d'aller au champ suivant ; en saisie, la garde plus haut l'a rendu.
+            case Key.Tab when (e.KeyModifiers & ~KeyModifiers.Shift) == KeyModifiers.None && LaPlancheALeFocus():
+                vm.SelectionnerLeBlocVoisin(enArriere: fine);
+                e.Handled = true;
+                return;
             case Key.Escape:
                 // Échap désarme l'outil s'il y en a un — la main et la loupe comprises —, et ne
                 // libère la sélection qu'ensuite.
@@ -910,6 +929,14 @@ public partial class MainWindow : Window
 
         base.OnKeyDown(e);
     }
+
+    /// <summary>
+    /// La planche a le focus : la planche elle-même, ou ce qu'elle porte. C'est elle que le clic
+    /// sur la page ou sur une règle rend au clavier (<c>PageCanvas.Focus()</c>).
+    /// </summary>
+    private bool LaPlancheALeFocus() =>
+        FocusManager?.GetFocusedElement() is Visual focus &&
+        (ReferenceEquals(focus, PageView) || PageView.IsVisualAncestorOf(focus));
 
     /// <summary>
     /// <c>Alt</c>+flèche pendant la saisie d'un bloc, la zone de saisie ayant le focus : le bloc

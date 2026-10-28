@@ -171,7 +171,7 @@ public class RaccourcisFrancaisTests
     {
         var touches = new (PhysicalKey Touche, TextAlign Alignement, string Libelle)[]
         {
-            (PhysicalKey.L, TextAlign.Left, "Aligner le texte à _gauche"),
+            (PhysicalKey.L, TextAlign.Left, "_Aligner le texte à gauche"),
             (PhysicalKey.E, TextAlign.Center, "_Centrer le texte"),
             (PhysicalKey.R, TextAlign.Right, "Aligner le texte à _droite"),
             (PhysicalKey.J, TextAlign.Justify, "_Justifier"),

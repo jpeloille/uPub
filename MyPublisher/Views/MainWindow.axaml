@@ -637,7 +637,13 @@
                         <MenuItem x:Name="MenuQuitter" Header="_Quitter" InputGesture="Alt+F4" Click="OnQuit"/>
                     </MenuItem>
 
-                    <MenuItem Header="_Édition">
+                    <!-- « _Edition », sans accent, comme les menus d'Office 2003 et 2007 en français : la
+                         lettre d'accès se compare au nom de la touche (Key.ToString()), et aucune
+                         touche ne s'appelle « É » (poste N13). Chaque niveau de chaque menu a ses
+                         lettres d'accès à lui, uniques et sans accent : une lettre en double fait
+                         tourner le focus d'une entrée à l'autre sans rien déclencher. La recette
+                         N13 le vérifie. -->
+                    <MenuItem Header="_Edition">
                         <MenuItem Header="_Annuler" InputGesture="Ctrl+Z" Command="{Binding UndoCommand}"/>
                         <MenuItem Header="_Rétablir" InputGesture="Ctrl+Y" Command="{Binding RedoCommand}"/>
                         <Separator/>
@@ -657,9 +663,9 @@
                     </MenuItem>
 
                     <MenuItem Header="_Insertion">
-                        <MenuItem Header="_Titre" Command="{Binding AddHeadingCommand}"/>
+                        <MenuItem Header="T_itre" Command="{Binding AddHeadingCommand}"/>
                         <MenuItem Header="Bloc de _texte" Command="{Binding AddTextCommand}"/>
-                        <MenuItem Header="_Image…" Click="OnInsertImage"/>
+                        <MenuItem Header="I_mage…" Click="OnInsertImage"/>
                         <MenuItem Header="Ta_bleau" Command="{Binding AddTableCommand}"/>
                         <Separator/>
                         <MenuItem Header="_Rectangle" Command="{Binding AddRectangleCommand}"/>
@@ -667,44 +673,55 @@
                         <MenuItem Header="Tr_ait" Command="{Binding AddLineCommand}"/>
                     </MenuItem>
 
+                    <!-- Le menu Disposition, rangé comme celui de Publisher 2007 (le livre, p. 16 et
+                         p. 43 : Arrange ▸ Ruler Guides, Group, Ungroup, Regroup, Order ▸, Align or
+                         Distribute ▸ ; poste N13) : les quatre ordres de superposition sous
+                         « Ordre », l'alignement, la répartition et leur repère sous « Aligner ou
+                         répartir ». « Regrouper » refait le dernier groupe dissous, en un pas. -->
                     <MenuItem Header="_Disposition">
-                        <MenuItem Header="_Grouper" InputGesture="Ctrl+Shift+G"
-                                  Command="{Binding GroupSelectedCommand}"/>
-                        <MenuItem Header="_Dissocier" InputGesture="Ctrl+Shift+G"
-                                  Command="{Binding UngroupSelectedCommand}"/>
-                        <Separator/>
-                        <MenuItem Header="Premier _plan" InputGesture="Ctrl+Shift+F"
-                                  Command="{Binding BringToFrontCommand}"/>
-                        <MenuItem Header="_Avancer" Command="{Binding BringForwardCommand}"/>
-                        <MenuItem Header="_Reculer" Command="{Binding SendBackwardCommand}"/>
-                        <MenuItem Header="Arrière-p_lan" InputGesture="Ctrl+Shift+B"
-                                  Command="{Binding SendToBackCommand}"/>
-                        <Separator/>
-                        <MenuItem Header="Aligner à _gauche" Command="{Binding AlignLeftCommand}"/>
-                        <MenuItem Header="Centrer _horizontalement" Command="{Binding AlignCentreHorizontallyCommand}"/>
-                        <MenuItem Header="Aligner à _droite" Command="{Binding AlignRightCommand}"/>
-                        <MenuItem Header="Aligner en _haut" Command="{Binding AlignTopCommand}"/>
-                        <MenuItem Header="Centrer _verticalement" Command="{Binding AlignCentreVerticallyCommand}"/>
-                        <MenuItem Header="Aligner en _bas" Command="{Binding AlignBottomCommand}"/>
-                        <Separator/>
-                        <MenuItem Header="Répartir hori_zontalement" Command="{Binding DistributeHorizontallyCommand}"/>
-                        <MenuItem Header="Répartir vertica_lement" Command="{Binding DistributeVerticallyCommand}"/>
-                        <Separator/>
-                        <!-- Le repère de l'alignement, posé une fois pour toutes les commandes
-                             ci-dessus et pour celles de la barre principale : la zone de
-                             composition, ou la page — et, page décochée, les blocs entre eux
-                             dès qu'ils sont plusieurs. -->
-                        <MenuItem Header="Par rapport aux mar_ges" ToggleType="CheckBox"
-                                  IsChecked="{Binding AlignToMargins, Mode=TwoWay}"/>
-                        <Separator/>
-                        <MenuItem Header="Ajuster aux _marges" Command="{Binding FitToMarginsCommand}"/>
-                        <Separator/>
-                        <MenuItem Header="Repères de rè_gle">
+                        <MenuItem Header="Re_pères de règle">
                             <MenuItem Header="Ajouter un repère _horizontal" Command="{Binding AddHorizontalRulerGuideCommand}"/>
                             <MenuItem Header="Ajouter un repère _vertical" Command="{Binding AddVerticalRulerGuideCommand}"/>
                             <Separator/>
                             <MenuItem Header="_Effacer tous les repères" Command="{Binding ClearRulerGuidesCommand}"/>
                         </MenuItem>
+                        <Separator/>
+                        <MenuItem Header="_Grouper" InputGesture="Ctrl+Shift+G"
+                                  Command="{Binding GroupSelectedCommand}"/>
+                        <MenuItem Header="_Dissocier" InputGesture="Ctrl+Shift+G"
+                                  Command="{Binding UngroupSelectedCommand}"/>
+                        <MenuItem x:Name="MenuRegrouper" Header="_Regrouper" Command="{Binding RegrouperCommand}"/>
+                        <Separator/>
+                        <MenuItem x:Name="MenuOrdre" Header="_Ordre">
+                            <MenuItem Header="Premier _plan" InputGesture="Ctrl+Shift+F"
+                                      Command="{Binding BringToFrontCommand}"/>
+                            <MenuItem Header="Arrière-p_lan" InputGesture="Ctrl+Shift+B"
+                                      Command="{Binding SendToBackCommand}"/>
+                            <MenuItem Header="_Avancer" Command="{Binding BringForwardCommand}"/>
+                            <MenuItem Header="_Reculer" Command="{Binding SendBackwardCommand}"/>
+                        </MenuItem>
+                        <MenuItem x:Name="MenuAlignerOuRepartir" Header="_Aligner ou répartir">
+                            <MenuItem Header="Aligner à _gauche" Command="{Binding AlignLeftCommand}"/>
+                            <MenuItem Header="_Centrer horizontalement" Command="{Binding AlignCentreHorizontallyCommand}"/>
+                            <MenuItem Header="Aligner à _droite" Command="{Binding AlignRightCommand}"/>
+                            <Separator/>
+                            <MenuItem Header="Aligner en _haut" Command="{Binding AlignTopCommand}"/>
+                            <MenuItem Header="Centrer _verticalement" Command="{Binding AlignCentreVerticallyCommand}"/>
+                            <MenuItem Header="Aligner en _bas" Command="{Binding AlignBottomCommand}"/>
+                            <Separator/>
+                            <MenuItem Header="Répartir hori_zontalement" Command="{Binding DistributeHorizontallyCommand}"/>
+                            <MenuItem Header="Répartir vertica_lement" Command="{Binding DistributeVerticallyCommand}"/>
+                            <Separator/>
+                            <!-- Le repère de l'alignement, posé une fois pour toutes les commandes
+                                 ci-dessus et pour celles de la barre principale : la zone de
+                                 composition, ou la page — et, page décochée, les blocs entre eux
+                                 dès qu'ils sont plusieurs. Publisher le range ici : « Relative to
+                                 Margin Guides ». -->
+                            <MenuItem Header="Par rapport aux _marges" ToggleType="CheckBox"
+                                      IsChecked="{Binding AlignToMargins, Mode=TwoWay}"/>
+                        </MenuItem>
+                        <Separator/>
+                        <MenuItem Header="Ajuster aux _marges" Command="{Binding FitToMarginsCommand}"/>
                     </MenuItem>
 
                     <!-- Le menu Texte : la mise en forme du bloc entier, faute d'une sélection
@@ -715,7 +732,7 @@
                         <MenuItem Header="_Italique" InputGesture="Ctrl+I" Command="{Binding BasculerItaliqueCommand}"/>
                         <MenuItem Header="_Souligné" InputGesture="Ctrl+U" Command="{Binding SoulignerCommand}"/>
                         <Separator/>
-                        <MenuItem Header="Aligner le texte à _gauche" InputGesture="Ctrl+L" Command="{Binding AlignerLeTexteCommand}"
+                        <MenuItem Header="_Aligner le texte à gauche" InputGesture="Ctrl+L" Command="{Binding AlignerLeTexteCommand}"
                                   CommandParameter="{x:Static models:TextAlign.Left}"/>
                         <MenuItem Header="_Centrer le texte" InputGesture="Ctrl+E" Command="{Binding AlignerLeTexteCommand}"
                                   CommandParameter="{x:Static models:TextAlign.Center}"/>

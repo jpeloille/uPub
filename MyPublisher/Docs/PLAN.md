@@ -116,7 +116,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **N10** | Les raccourcis de Publisher en français | **100 %** | La fiche 24 : l'aide de Microsoft en français, *Raccourcis clavier dans Publisher*, relue mot pour mot sur support.microsoft.com le 27 octobre 2026, 102 lignes hors du ruban, chacune avec la page du livre de 2007 qui la montre et le sort de la règle 12 — 31 liées, 2 gardées, 2 remplacées, 5 à un autre poste, 27 réservées, 35 écartées. `Ctrl+E` centre et n'exporte plus, même sans bloc de texte ; `Ctrl+L`, `R`, `J` alignent, sur le bloc ; l'export devient une commande du modèle de vue (`ExporterEnPdf`), qui lève une demande à la fenêtre, sur `Ctrl+Maj+P`, même en saisie, au menu Fichier et au bouton. Le corps : `Ctrl+]` et `Ctrl+[` d'un point, `Ctrl+Maj+>` et `Ctrl+Maj+<` dans la liste standard d'Office, 8 à 72 pt, que le noyau définit (`CorpsStandard`) ; ils se lisent sur le caractère produit, `Maj` et AltGr comptés pour rien, par une table unique, `RaccourcisParCaractere`, avant la garde de la saisie. `Ctrl+Maj+G` groupe et dissocie, `Ctrl+Maj+H` est libéré ; `Ctrl+Maj+X` supprime l'objet, même en saisie, la frappe gardant son pas ; `Alt+Retour arrière` et `F4` annulent et rétablissent. Une sonde (`MYPUBLISHER_SONDE_CLAVIER`), jouée par le propriétaire sur son AZERTY, a relevé ce que les touches livrent, et `Rendu.ToucheAzerty` le rejoue ; `Ctrl+0` se tape sans `Maj`. Les menus et les infobulles disent les touches ; la recette de A4, étendue, confronte liaisons, table, `OnKeyDown`, menus, README et touches réservées. Le 28 octobre 2026, à la demande du propriétaire, `Ctrl+Inser`, `Maj+Inser` et `Maj+Suppr` copient, collent et coupent, les blocs hors saisie, le texte en saisie et dans un champ ; `Ctrl+AltGr` + « ) » vérifié à l'écran. Douze tests sur la fenêtre, cinq du noyau (dix-neuf cas) ; trois tests voisins réécrits (règle 14) ; six sabotages au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **N11** | Ne rien perdre en fermant, retrouver ses documents | **100 %** | Nouveau, Ouvrir, Fermer, Quitter et la fermeture de la fenêtre passent par `LaisserPartirLeDocument` (`MainWindow.Fermer.cs`) : la saisie ouverte et le champ du dock ou de la barre sont refermés d'abord, pour que leur frappe compte, puis, sur un document modifié, un dialogue neuf (`QuestionAvantDePerdre.axaml`, aux couleurs de l'apparence) demande « Enregistrer les modifications apportées à « nom » ? » : Enregistrer, le bouton par défaut, écrit — par « Enregistrer sous » sans chemin — et ne laisse poursuivre que si l'écriture a eu lieu ; Ne pas enregistrer poursuit ; Annuler, le bouton d'annulation, ou le dialogue refermé, laisse tout tel quel. La fenêtre suspend sa fermeture (`OnClosing`) le temps de la question. La question n'est branchée que par `App.axaml.cs` (`MainWindow.AvantDePerdre`) : une fenêtre de test ne demande rien. Fermer (`Ctrl+W`, `Ctrl+F4`, menu Fichier) ferme le document et rend le catalogue des modèles ; le catalogue et Ouvrir demandent une fois le modèle ou le fichier choisi. Les six derniers documents ouverts ou enregistrés sont au menu Fichier, numérotés, gardés dans `MyPublisher.Core/Services/Preferences.cs`, le magasin des réglages de l'utilisateur (`~/.config/MyPublisher/preferences.json`, ou le dossier de `MYPUBLISHER_PREFERENCES`), qui réécrit telles quelles les clés qu'il ne connaît pas, pour A11 et N25 ; seul `App.axaml.cs` le charge, un modèle de vue construit ailleurs en prend un en mémoire qui n'écrit nulle part. GNOME ne prend ni `Ctrl+W` ni `Ctrl+F4`. Trente-six tests, sept purs et vingt-neuf sur la fenêtre ; deux sabotages au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **N12** | Entrer dans le texte d'un clic, le curseur au point visé | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 4 |
-| **N13** | Les menus de Publisher | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 4 |
+| **N13** | Les menus de Publisher | **100 %** | **Arrêt sur deux points**, qui reviennent au propriétaire. Les gestes des menus restent écrits « Ctrl+Shift+G » : `AppBuilder.With(new KeyGestureFormatInfo(…))` ne tient pas sous Avalonia 11.3.9, les options s'appliquant avant la plate-forme, qui lie la sienne par-dessus — mesuré sous X11 et sans affichage. Et les lettres d'accès d'Avalonia 11.3.9 ne sont pas rangées par niveau : la barre et chaque niveau ouvert se disputent la même lettre, si bien qu'Alt, D, O, P promène le focus de « _Page » à « Re_pères de règle » puis à « Premier _plan » sans rien jouer. Livré : à chaque niveau de chaque menu une lettre d'accès par entrée, unique, sans accent — « _Edition », « T_itre », « I_mage… », « _Aligner le texte à gauche » — ; Disposition rangé comme Publisher 2007, « Re_pères de règle ▸ », Grouper, Dissocier, « _Regrouper », « _Ordre ▸ » et ses quatre ordres, « _Aligner ou répartir ▸ » et ses six alignements, deux répartitions et leur repère, Ajuster aux marges ; « Regrouper » refait le dernier groupe dissous, en un pas, à son nom, sans resélection, tant que ses blocs sont tous sur la page (`MainWindowViewModel.Menus.cs`) ; Tab et Maj+Tab, la planche ayant le focus, passent au bloc suivant ou précédent dans l'ordre de la page, les masqués sautés, en boucle, sans pas d'annulation, et Tab dans le dock va toujours au champ suivant ; la barre de menus ouverte garde ses touches — Alt puis E armait l'ellipse, Suppr y supprimait le bloc. Alt, D, O, L joue Arrière-plan. Sept tests ; quatre tests voisins et la recette N8 relisent les libellés neufs (règle 14) ; trois sabotages au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **N14** | Les champs | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 4 |
 | **N15** | L'application connaît la sélection du texte | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 5 |
 | **N16** | Tabulation et saut de ligne forcé | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 5, après N15 dans la même copie |
@@ -7473,6 +7473,106 @@ la fenêtre ; `OnKeyDown` passe avant elle.
 Fichiers : `MainWindow.axaml` (menus), `MainWindow.axaml.cs` (Tab), `MainWindowViewModel.cs` (une
 ligne, le groupe retenu), `Program.cs`, les deux `Banc.cs`, README (Objets), les recettes I2 et
 I3, `DispositionTests`. Dépend de N10. Effort : moyen.
+
+*Livré le 28 octobre 2026*, dans la salve Saisie 4 ; la relecture adversariale vient après la
+fusion. **Arrêt sur deux points**, dits plus bas ; le reste du poste est livré.
+
+**Les lettres d'accès.** À chaque niveau — la barre, chaque menu, chaque sous-menu — une lettre
+par entrée, unique, aucune accentuée. La barre : « _Edition » ; Insertion : « T_itre » et
+« I_mage… », « Bloc de _texte » gardant le T (N12 touche sa ligne) ; Texte : « _Aligner le texte
+à gauche », « _Gras » gardant le G ; Disposition, refait (plus bas). Affichage n'avait plus de
+doublon depuis N4. **« _Edition » est choisi sans preuve** : ni les fiches 00 à 24, ni le livre —
+le cours de 2007 est en anglais, sa capture p. 16 montre « File Edit View Insert Format Tools
+Table Arrange Window Help », E souligné —, ni `Publisher_2013.pdf` (ruban, en anglais) ne disent
+comment Office 2003 ou 2007 en français écrit ce menu ni quelle lettre il souligne. **La barre
+ouverte garde ses touches** : Alt relâché, la barre prend la main, mais `OnKeyDown`, classe de la
+fenêtre, passe avant le gestionnaire des lettres d'accès, instance de la fenêtre ; « E », « T »,
+« R », « L », « B » y armaient un outil, et Suppr supprimait le bloc sous le menu. `OnKeyDown`
+rend la main, barre ouverte, juste après la garde de la saisie — hors du texte que les recettes
+N8 et N10 lisent. Alt, puis E ouvre Edition ; Alt, puis T ouvre Texte.
+
+**Disposition**, rangé comme Publisher 2007 (le livre, p. 16 : *Arrange ▸ Ruler Guides, Group,
+Ungroup, Regroup, Order ▸, Align or Distribute ▸* ; p. 43 pour l'ordre des quatre ordres) :
+« Re_pères de règle ▸ », Grouper, Dissocier, « _Regrouper », « _Ordre ▸ » (Premier plan,
+Arrière-plan, Avancer, Reculer), « _Aligner ou répartir ▸ » (les six alignements, les deux
+répartitions, « Par rapport aux _marges »), puis « Ajuster aux _marges », cible du juge, intacte.
+**« Regrouper »** (`MainWindowViewModel.Menus.cs`) refait le dernier groupe dissous en un pas :
+`UngroupSelected` retient d'une ligne le groupe et ses blocs ; la commande s'offre tant qu'ils
+sont tous à la racine de la page courante, les regroupe comme Grouper — empreinte de
+l'ensemble, rang du plus avancé —, rend au groupe son nom, sans qu'on les resélectionne, même
+déplacés ; comme l'œil de I8, elle referme d'abord la transaction qu'un champ tiendrait ouverte.
+Sa disponibilité suit la sélection (`NotifySelection`, une ligne). **Tab et Maj+Tab**, dans
+`OnKeyDown` après la garde de la saisie, quand la planche ou ce qu'elle porte a le focus
+(`LaPlancheALeFocus`) : le bloc suivant ou le précédent dans l'ordre de la page, les masqués
+sautés, en boucle ; sans sélection, le premier ou le dernier ; aucun pas. La navigation du focus
+d'Avalonia ne voit pas une touche traitée ; dans le dock, Tab va au champ suivant.
+
+*Recette jouée* : `Scripts/recettes/N13-menus-de-publisher.sh`. Les sources : douze niveaux de
+menu, une lettre par entrée, unique au niveau, sans accent, « _Edition » ; Disposition et ses deux
+sous-menus, chaque entrée sur sa commande ; « Ajuster aux _marges » et « Tr_ait » intacts ; le
+groupe retenu dans `UngroupSelected`, la commande au partiel ; Tab après la garde, sur la planche
+seule, au README ; la barre ouverte avant les lettres d'outil. Puis sept tests sous `poste=N13`
+(`MenusDePublisherTests`) : les lettres de chaque niveau, documents récents compris ; Alt puis E
+et Alt puis T, sans outil armé, et Alt+E tenu ; Alt, D, O, L qui porte le bloc à l'arrière-plan en
+un pas, Suppr ne supprimant rien menus ouverts ; Disposition rangé, la case du repère dans les deux
+sens ; Regrouper au pointeur, en un pas, à son nom, et plus offert quand un bloc a quitté la page ;
+Tab et Maj+Tab qui sautent le masqué, repartent de l'autre bout et gardent le focus à la planche ;
+Tab dans le dock. La règle 14 : `PressePapiersTests` (deux lignes) et `ToucheAuChampTests` cherchent
+« _Edition », `DispositionTests` et `RaccourcisFrancaisTests` « _Aligner le texte à gauche » ; la
+recette N8 lit « _Edition ». Trois sabotages au juge : une lettre en double à Disposition
+(« Or_dre », le sabotage du plan), Tab qui prend le bloc masqué, la barre ouverte qui rend ses
+lettres aux outils.
+
+*Arrêt — les gestes en français.* `AppBuilder.With(new KeyGestureFormatInfo(…))` existe et
+compile, mais ne tient pas : `AppBuilder.SetupUnsafe` applique les options avant la plate-forme
+(`_optionsInitializers`, puis `WindowingSubsystemInitializer`), et la plate-forme lie ensuite sa
+propre `KeyGestureFormatInfo` par-dessus. Mesuré le 28 octobre 2026 : sous X11, sur la machine du
+propriétaire, `.With(… shift: "Maj")` laisse `Shift=Shift Meta=Super`, celle de X11 ; sans
+affichage, `Shift=Shift Meta=Cmd`. `AvaloniaLocator.CurrentMutable`, qui permettrait de la relier
+après coup (`AfterPlatformServicesSetup`), n'est pas public. Les menus disent donc toujours
+« Ctrl+Shift+G », les bulles « Ctrl+Maj+G ». Les voies, au choix du propriétaire : écrire le texte
+du geste en valeur locale sur `PART_InputGestureText` à l'application du gabarit de chaque
+`MenuItem` (un gestionnaire de classe ; la valeur locale bat la liaison du gabarit, qu'un style ne
+bat pas) ; recopier le thème du `MenuItem` de Fluent avec un convertisseur à nous ; passer par la
+réflexion, hors de l'API publique ; attendre Avalonia 12. `Program.cs` et les deux `Banc.cs`
+restent tels quels.
+
+*Arrêt — Alt, D, O, P.* Les lettres d'accès d'Avalonia 11.3.9 ne sont pas rangées par niveau
+(`AccessKeyHandler.ProcessKey`) : toute `AccessText` visible et active compte — la barre, qui
+reste à l'écran, et chaque niveau ouvert. Deux cibles, et la touche ne fait que promener le focus.
+Disposition puis Ordre ouverts, P désigne « _Page » (la barre), « Re_pères de règle »
+(Disposition) et « Premier _plan » (Ordre) : trois P successifs mènent le focus de l'un à l'autre,
+et le bloc ne bouge pas — relevé sur la fenêtre. La spécification — des lettres uniques à
+chaque niveau — ne suffit donc pas ; la clause « `Alt`, `D`, `O`, `P` joue Premier plan » n'est pas
+tenue, et la recette joue Alt, D, O, L (Arrière-plan), dont la lettre n'a pas de rivale. De même — déduit du
+même code, non joué —, Edition ouvert, A désigne « _Annuler » et « _Affichage ». Les voies : des lettres uniques sur la
+barre et toute la chaîne ouverte — loin de celles d'Office, et intenables à mesure que les menus
+grandissent — ; ou, la barre ouverte, résoudre la lettre dans `OnKeyDown` parmi les seules
+entrées du niveau le plus profond ouvert, et l'ouvrir ou la jouer — le comportement de Windows,
+une quarantaine de lignes.
+
+*Choisi sans certitude* :
+- « _Edition », plus haut ; les lettres neuves — « T_itre », « I_mage… », « _Aligner le texte à
+  gauche », « Re_pères de règle », « _Centrer horizontalement », « Par rapport aux _marges » ;
+- l'ordre de Disposition : les repères de règle en tête, comme *Ruler Guides* chez Publisher,
+  « Ajuster aux marges », qui n'est pas de Publisher, à la fin ;
+- Regrouper retient des références : une annulation ou un rétablissement, qui relisent le document
+  entier, le rendent indisponible ; d'une dissociation de plusieurs groupes à la fois, il ne
+  refait que le dernier dans l'ordre de la page ; il rend au groupe son nom, ni sa rotation — le
+  groupe refait est droit, ses blocs tournés, rien ne bouge à l'écran — ni son masque ; il n'a pas
+  de touche, comme chez Publisher ;
+- « la planche a le focus » : la planche ou ce qu'elle porte ; sans élément qui ait le focus, Tab
+  reste à Avalonia. Le départ est l'ancre de la sélection, même masquée ; au bout, on repart de
+  l'autre bout.
+
+*Relevé, non corrigé* :
+- sans élément qui ait le focus — la fenêtre tout juste ouverte, avant un clic —, Alt ne fait
+  rien : Avalonia ne lit les lettres d'accès que le focus dans la fenêtre
+  (`AccessKeyHandler.IsFocusWithinOwner`) ;
+- les documents récents, « _1 » à « _6 » (N11), ne se joignent pas au clavier : la lettre est
+  comparée à `Key.ToString()`, « D1 » pour la touche « 1 » ;
+- une entrée de menu ne relit la disponibilité de sa commande que menu ouvert : son
+  `IsEffectivelyEnabled`, menu fermé, peut dater.
 
 #### N14 — Les champs *(fiche 23, f2, f5, f7, f8, f10, f11)*
 
