@@ -75,7 +75,7 @@ public class PressePapiersTests
     /// <summary>L'entrée du menu Édition, menu ouvert, comme une main la vise.</summary>
     private static void ParLeMenu(Window fenetre, string nom)
     {
-        var edition = Trouver<Menu>(fenetre, "Menus").Items.OfType<MenuItem>().Single(m => Equals(m.Header, "_Édition"));
+        var edition = Trouver<Menu>(fenetre, "Menus").Items.OfType<MenuItem>().Single(m => Equals(m.Header, "_Edition"));
         Rendu.Cliquer(edition);
         Rendu.Cliquer(edition.Items.OfType<MenuItem>().Single(m => m.Name == nom));
         Rendu.Battre();
@@ -499,7 +499,7 @@ public class PressePapiersTests
         var (fenetre, vm) = Rendu.Ouvrir(DeuxPages(bloc));
         try
         {
-            var edition = Trouver<Menu>(fenetre, "Menus").Items.OfType<MenuItem>().Single(m => Equals(m.Header, "_Édition"));
+            var edition = Trouver<Menu>(fenetre, "Menus").Items.OfType<MenuItem>().Single(m => Equals(m.Header, "_Edition"));
             var entrees = edition.Items.OfType<MenuItem>().ToList();
             foreach (var (nom, geste) in new[] { ("MenuCouper", "Ctrl+X"), ("MenuCopier", "Ctrl+C"), ("MenuColler", "Ctrl+V") })
             {

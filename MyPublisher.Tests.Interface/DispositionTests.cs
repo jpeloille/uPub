@@ -622,7 +622,7 @@ public class DispositionTests
         var entrees = menu.Items.OfType<MenuItem>().ToList();
         Assert.Equal(new[]
         {
-            "_Gras", "_Italique", "_Souligné", "Aligner le texte à _gauche", "_Centrer le texte", "Aligner le texte à _droite",
+            "_Gras", "_Italique", "_Souligné", "_Aligner le texte à gauche", "_Centrer le texte", "Aligner le texte à _droite",
             "_Justifier", "Importer un te_xte…",
         }, entrees.Select(e => e.Header as string));
         Assert.Equal("MenuImporterTexte", entrees[^1].Name);

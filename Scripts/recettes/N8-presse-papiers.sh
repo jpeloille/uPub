@@ -112,7 +112,7 @@ for geste, *_ in gestes.values():
 print("    a. Ctrl+X, C et V pris par OnKeyDown après la garde de la saisie, sur OnCouper, OnCopier, OnColler ; aucun en KeyBinding")
 
 # b. le menu Édition et le README.
-edition = [e for e in fenetre.iter(A + "MenuItem") if e.get("Header") == "_Édition"]
+edition = [e for e in fenetre.iter(A + "MenuItem") if e.get("Header") == "_Edition"]
 exige(len(edition) == 1, "le menu Édition n'est pas dans la fenêtre, une seule fois.")
 if edition:
     for geste, gestionnaire, entete, nom in gestes.values():

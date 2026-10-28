@@ -293,7 +293,7 @@ public class ToucheAuChampTests
         Assert.False(vm.ToucheToutSelectionnerCommand.CanExecute(null), "Ctrl+A prendrait la touche à la saisie");
         Assert.True(vm.SelectAllCommand.CanExecute(null), "Tout sélectionner, au menu, lit le focus");
 
-        Rendu.Cliquer(Menu(fenetre, "_Édition"));
+        Rendu.Cliquer(Menu(fenetre, "_Edition"));
         var tout = Menu(fenetre, "_Tout sélectionner");
         Assert.False(zone.IsFocused, "le menu ouvert a laissé le focus à la zone de saisie");
         Assert.True(bloc.IsEditing);

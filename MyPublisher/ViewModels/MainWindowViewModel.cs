@@ -668,6 +668,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
         GroupSelectedCommand.NotifyCanExecuteChanged();
         UngroupSelectedCommand.NotifyCanExecuteChanged();
+        RegrouperCommand.NotifyCanExecuteChanged();
 
         OnPropertyChanged(nameof(CanDistribute));
         OnPropertyChanged(nameof(CanGroup));
@@ -1444,6 +1445,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
             var children = group.Children.ToList();
             group.Children.Clear();
+            RetenirLeGroupeDissous(group, children);   // pour « Regrouper » (poste N13)
 
             for (var i = 0; i < children.Count; i++)
             {

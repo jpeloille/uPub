@@ -2659,6 +2659,28 @@ saboter "Maj+Inser (N10) ne colle plus les blocs" \
     '' \
     'N10-raccourcis-francais|RaccourcisFrancaisTests'
 
+# Une lettre d'accès en double (N13) : « Or_dre » rejoint « _Dissocier » sur D, au même niveau de
+# Disposition ; Alt, D, O ne mène plus à Ordre, et la touche ne fait que promener le focus.
+saboter "une lettre d'accès en double au menu Disposition (N13)" \
+    MyPublisher/Views/MainWindow.axaml \
+    '<MenuItem x:Name="MenuOrdre" Header="_Ordre">' \
+    '<MenuItem x:Name="MenuOrdre" Header="Or_dre">' \
+    'N13-menus-de-publisher|MenusDePublisherTests'
+
+# Tab (N13) prend le bloc masqué, que la planche ne montre pas.
+saboter "Tab sur la planche (N13) ne saute plus le bloc masqué" \
+    MyPublisher/ViewModels/MainWindowViewModel.Menus.cs \
+    $'            if (!blocs[rang].Visible) continue;\n' \
+    '' \
+    'N13-menus-de-publisher|MenusDePublisherTests'
+
+# La barre de menus ouverte (N13) rend ses lettres aux outils : Alt, puis E, arme l'ellipse.
+saboter "la barre de menus ouverte (N13) laisse ses lettres aux outils" \
+    MyPublisher/Views/MainWindow.axaml.cs \
+    '        if (Menus.IsOpen)' \
+    '        if (Menus.IsOpen && e.Key == Key.None)' \
+    'N13-menus-de-publisher|MenusDePublisherTests'
+
 # Un motif qui ne désigne aucun sabotage ne prouve rien. « eprouver-le-juge.sh I4 » sortait
 # en 0 sur « 0 sabotages, 0 attrapés », quand les intitulés de la planche ne portaient pas
 # encore le code du poste : le filet passait pour éprouvé sans qu'on l'ait troué.

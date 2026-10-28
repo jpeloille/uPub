@@ -264,7 +264,9 @@ Fenêtre masque aussi l'un ou l'autre.
   d'aplomb un bloc qui ne l'est pas.
 - Groupes : plusieurs blocs réunis se déplacent, se tournent et se redimensionnent
   d'une pièce — le redimensionnement met les blocs du groupe à la même échelle. Un
-  bloc d'un groupe ne se sélectionne pas directement : on dissocie pour le retoucher.
+  bloc d'un groupe ne se sélectionne pas directement : on dissocie pour le retoucher, puis
+  *Disposition ▸ Regrouper* refait le dernier groupe dissous, en un pas, sans avoir à
+  resélectionner ses blocs.
 - Sélection d'un bloc ou de plusieurs (`Ctrl` + clic), déplacement d'ensemble,
   redimensionnement par huit poignées, rotation par une neuvième. Les poignées ne
   paraissent que sur un bloc seul : pour tourner ou redimensionner plusieurs blocs, on
@@ -300,10 +302,12 @@ Fenêtre masque aussi l'un ou l'autre.
   valide — un texte court en capitales, « CAFÉ » suivi d'une espace insécable — se lit
   en UTF-8 ; un seul « é » suivi d'une lettre ailleurs dans le fichier suffit à le
   faire lire en Latin-1.
-- Ordre de superposition ; alignement (gauche, centre, droite, haut, milieu, bas) et
-  répartition d'une sélection ; ajustement aux marges. L'alignement se fait par
-  rapport à la zone de composition, ou — case *Disposition ▸ Par rapport aux marges*
-  décochée — par rapport à la page pour un bloc seul et aux blocs entre eux dès
+- Ordre de superposition (*Disposition ▸ Ordre*) ; alignement (gauche, centre, droite,
+  haut, milieu, bas) et répartition d'une sélection (*Disposition ▸ Aligner ou
+  répartir*) ; ajustement aux marges. Le menu Disposition est rangé comme celui de
+  Publisher 2007. L'alignement se fait par
+  rapport à la zone de composition, ou — case *Disposition ▸ Aligner ou répartir ▸ Par
+  rapport aux marges* décochée — par rapport à la page pour un bloc seul et aux blocs entre eux dès
   qu'ils sont plusieurs.
 - Annulation / rétablissement sur 60 pas, couvrant aussi bien les gestes à la
   souris que les champs du dock, quel que soit leur onglet, et ceux de la barre
@@ -393,6 +397,7 @@ comptés pour rien : sur un AZERTY, `Ctrl+]` se tape `Ctrl+AltGr+)`, `Ctrl+[` se
 | `Ctrl+Maj+X` | Supprimer la sélection, même en saisie : la saisie se referme, la frappe garde son pas |
 | Flèches | Déplacer de 3 pt (`Maj` : 0,5 pt) |
 | `Alt` + flèches, dans la saisie d'un bloc | Déplacer le bloc de 3 pt (`Maj` : 0,5 pt), sans quitter la saisie |
+| `Tab` / `Maj+Tab` | Sélectionner le bloc suivant / précédent dans l'ordre de la page, les blocs masqués sautés, quand la planche a le focus ; dans le dock, `Tab` va au champ suivant |
 
 ### Texte
 
