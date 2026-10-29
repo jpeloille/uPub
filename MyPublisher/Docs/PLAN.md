@@ -122,7 +122,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **N16** | Tabulation et saut de ligne forcé | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 5, après N15 dans la même copie |
 | **N17** | Les modificateurs du glisser, et le rectangle de sélection | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 5 |
 | **N18** | Les menus vers le dock, et les pages, avec A8 et A9 | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 5 |
-| **N19** | Le corps et la police : une liste, et une frappe | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 5 |
+| **N19** | Le corps et la police : une liste, et une frappe | **100 %** | La police de la barre se tape, au texte et au tableau : `ListeDesPolices` (`Views/ListeDesPolices.cs`), une `ComboBox` éditable sous son apparence, dont la frappe ne passe plus par la recherche d'Avalonia 11.3.9 — qui prenait, à chaque lettre, l'entrée de même texte : « DejaVu Sans Mono » tapé posait DejaVu Sans au onzième caractère. La liste s'ouvre sur les familles dont le libellé commence par la frappe, sans la casse, la première marquée — « Geo » propose Georgia —, `↑` et `↓` promènent la marque, `Entrée` la pose en un pas et rend la planche, `Tab` la pose et passe au corps, `Échap` renonce ; une police que rien ne commence est refusée, et la barre d'état le dit (`Status`, N14) ; la zone montre le libellé, « Corps du jeu — DejaVu Sans », « Georgia (absente) » ; Q20 et la règle 1 tiennent. Le corps garde son champ (N14 : « 10,5 » tapé donne 10,5 pt) et reçoit « Tailles du corps », un menu volant des dix-sept tailles du noyau (`CorpsStandard`, N10), la taille du bloc cochée, en un pas (`PoserLeCorps`, `MainWindowViewModel.CorpsEtPolice.cs`). Seize tests sur la fenêtre ; deux tests voisins réécrits (règle 14) ; deux sabotages au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **N20** | Rechercher et remplacer | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 6 |
 | **N21** | La saisie montre le texte composé | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 6 ; attend la décision de voie |
 | **N22** | Les caractères spéciaux | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 7 |
@@ -7993,6 +7993,112 @@ pas ; « 10,5 » tapé donne 10,5 pt ; une police absente du document reste prop
 au juge : la frappe qui pose la police à chaque lettre.
 
 Fichiers : `BarreContextuelle.axaml` et son code. Dépend de N10. Effort : moyen.
+
+*Livré le 29 octobre 2026*, dans la salve Saisie 5 ; la relecture adversariale vient après la
+fusion. **L'édition de la `ComboBox` d'abord, comme le piège le voulait.** Avalonia 11.3.9 la
+tape : `IsEditable` montre la zone `PART_EditableTextBox` du thème Fluent, où la frappe arrive
+— une sonde au banc l'a vu, la police de la barre rendue éditable. Mais sa recherche
+(`ComboBox.TextChanged`, lu décompilé) prend à chaque lettre l'entrée dont le texte est
+exactement celui qui est tapé, et n'en prend aucune sinon : « DejaVu Sans Mono » tapé posait
+DejaVu Sans au onzième caractère, puis rien — `JamaisNul` retenant le null de Q20 —, puis
+DejaVu Sans Mono ; elle ne filtre ni ne propose, et sa zone écrivait la référence
+`scheme:body`. **La police reste donc une `ComboBox`**, dérivée et sous son apparence :
+`ListeDesPolices` (`Views/ListeDesPolices.cs`, `StyleKeyOverride`), qui ne passe pas son texte
+à la recherche de la liste — rien d'autre, dans la chaîne des `OnPropertyChanged` jusqu'à
+`AvaloniaObject`, ne le regarde, lu décompilé. La frappe ouvre la liste sur les entrées dont le
+libellé commence par ce qui est tapé, sans la casse, les autres masquées, la première marquée,
+l'entrée exacte passant devant ; `↑` et `↓` promènent la marque ; `Entrée` et `Tab` posent
+l'entrée marquée, une fois, puis `Entrée` rend la planche (`BarreContextuelle.SurTouche`) et
+`Tab` passe au corps ; `Échap` renonce et rend la planche (règle 13) ; quitter la liste
+autrement renonce. Ce qui ne commence aucune entrée est refusé, la police du bloc revient, et la
+barre d'état le dit par `Status`, comme N14 : « « Police Imaginaire » n'est pas une police de
+cette machine : la police reste DejaVu Sans. ». La zone montre le libellé de la liste
+(`LibelleDePolice`) — « Corps du jeu — DejaVu Sans », « Georgia (absente) » —, et la sélection
+reste la valeur que la liaison écrit au bloc, sous `JamaisNul`. Les entrées ne prennent pas le
+focus, que la liste ouverte volait à la zone (`ComboBox.TryFocusSelectedItem`) ; elles se
+rangent dans une pile simple, où les entrées masquées ne trompent pas la virtualisation. **Le
+corps garde son `ChampNumerique`**, tout N14 avec lui — la validation, les unités, le refus,
+`Échap`, la mémoire de Q14 —, et reçoit le chevron qui le suit, « Tailles du corps », un menu
+volant comme les sortes du souligné : les dix-sept tailles de `CorpsStandard.Tailles` (N10), la
+taille du bloc cochée, qui jouent `PoserLeCorps` (`MainWindowViewModel.CorpsEtPolice.cs`,
+règle 10) par `ChangerLeCorps` de N10 : un pas, où que soit le focus, et aucun pour la taille
+que le bloc a déjà. Le corps tapé et non validé part d'abord, son pas à lui : la liste qui
+s'ouvre fait quitter le champ, comme le sélecteur de couleur. Le texte et le tableau ont l'un
+et l'autre. Le README le dit ; `ListeDesPolices.cs` entre dans `vues_de_la_phase` de I1.
+
+*Recette jouée* : `Scripts/recettes/N19-corps-et-police.sh`. Les sources d'abord : la
+`ListeDesPolices` dérivée de la `ComboBox`, éditable, sa frappe hors de la recherche de la
+liste ; deux listes, texte et tableau, sous `JamaisNul` et liées à `FontFamilies` ; le refus
+par `Status` ; les quatre `ChampNumerique` de N14, les deux chevrons, leurs entrées tirées du
+noyau, la commande au partiel ; `Entrée` qui rend la planche, la garde de N14 intacte ; le
+README et I1. Puis seize tests sous `poste=N19` (`CorpsEtPoliceTests`), sur la vraie fenêtre :
+« Geo » qui propose Georgia et qu'`Entrée` pose en un pas, en rendant la planche ; « dejavu se »
+qui propose DejaVu Serif, et une entrée du jeu tapée par son libellé ; « DejaVu Sans Mono »
+tapé lettre à lettre sans que rien ne parte, l'entrée exacte posée ; les flèches ; « Police
+Imaginaire » refusée et dite, puis retapée ; `Échap` ; quitter la liste au pointeur ; `Tab` ; une
+police absente du document gardée, montrée « (absente) » et retapée sur un autre bloc ; le choix
+au pointeur dans la liste ouverte, le filtre levé ensuite ; le tableau ; 14 pt de la liste, en
+un pas, la taille du bloc cochée et la même taille sans pas ; 24 pt au tableau ; « 10,5 » tapé
+qui donne 10,5 pt, et `↑` son pas de 0,5 ; un corps tapé puis une taille de la liste, deux pas ;
+un corps de 10,123456789 pt que la liste ouverte et refermée, puis le champ traversé, laissent
+au chiffre près. Puis les voisins : Q20, et trois tests de la barre (I3, règle 1 et règle 2) et
+un de N14. Deux sabotages au juge, attendus par la recette ou par `CorpsEtPoliceTests` : la
+frappe qui pose la police à chaque lettre — le sabotage du plan —, et une taille de la liste
+posée hors de toute transaction.
+
+*Ce que l'implémentation a appris.*
+- **La machine du banc n'a pas Georgia.** « Geo » ne propose rien parmi ses polices ; le test
+  donne Georgia à un autre bloc du document, et la liste la propose « (absente) », comme Q20 le
+  veut. Sur une machine qui l'a, c'est la police de la machine qui vient.
+- **« au pas de 0,5 » ne peut pas vouloir dire qu'un corps tapé s'arrondit au demi-point** : N14
+  exige qu'« 4 mm » dans le corps donne 11,338… pt, au chiffre près. Le pas est celui de `↑` et
+  `↓`, `Increment="0.5"`, qui était déjà là ; une valeur décimale tapée est prise telle quelle.
+- **Des entrées ajoutées à l'ouverture d'un menu volant ne s'y montrent pas** : le volet fait sa
+  liste avant d'annoncer son ouverture (`PopupFlyoutBase.ShowAtCore`, lu décompilé), et il en
+  montrait d'autres, sans parent, à leur place. Les tailles sont posées quand le chevron entre
+  dans l'arbre ; l'ouverture ne fait que cocher.
+- **La liste d'Avalonia, en se refermant, se redonne le focus, et sa zone prend alors tout son
+  texte** (`ComboBox.PopupClosed`, `OnGotFocus`) : la frappe qui ne propose plus rien refermait
+  la liste, et la lettre suivante remplaçait tout ce qui était tapé. La liste remet le curseur
+  où il était.
+- **Un clic hors de la liste ouverte ne fait que la refermer** (le voile du volant), et la liste
+  reprend le focus : il en faut un second pour la quitter, et c'est lui qui renonce. Le test le
+  joue ainsi.
+- **Règle 14** : deux tests lisaient la police affichée dans le gabarit de l'entrée choisie, qui
+  ne se dessine plus sous la zone de saisie — `PolicesAbsentesTests`, « (absente) », et
+  `JeuxTests.La_liste_des_polices_propose_le_titre_et_le_corps_du_jeu`, « Titre du jeu —
+  Liberation Serif ». Ils lisent la zone ; leur sens ne change pas.
+
+*Choisi sans certitude* :
+- le corps n'est pas une `ComboBox` éditable, mais le champ de N14 suivi de sa liste : une
+  `ComboBox` aurait perdu la validation, les unités, le refus dit et la mémoire de Q14, que N14
+  vient de poser ;
+- une police que le document emploie et que la machine n'a pas, tapée, est posée : c'est une
+  entrée de la liste depuis Q20, et l'on pouvait déjà y revenir au pointeur. Le refus ne vise que
+  ce qui ne commence aucune entrée. La section dit « une police tapée que le système n'a pas est
+  refusée » : la décision revient au propriétaire, s'il la veut refusée aussi ;
+- la proposition lit le libellé, sans la casse : « Titre du jeu », « Corps du jeu » se tapent, la
+  référence `scheme:` non ; un nom de la machine se tape tel qu'il s'écrit ;
+- `Tab` pose, comme `Entrée` ; quitter la liste autrement — un clic ailleurs — renonce, à
+  l'inverse d'un champ numérique, dont la sortie valide : on ne pose pas une police à moitié
+  tapée ;
+- `↑` et `↓`, la liste fermée, l'ouvrent et marquent, sans rien poser : avant le poste, `↓`
+  posait la police suivante sur-le-champ ; la molette, elle, le fait toujours, comme avant ;
+- une police choisie au pointeur garde le focus à la liste, comme avant le poste ; son pas se
+  fait quand la barre le perd ;
+- la liste des tailles est un menu volant à coches, comme les sortes du souligné, et non la
+  liste déroulante d'une `ComboBox`.
+
+*Relevé, non corrigé* :
+- une police tapée et non validée, la sélection changée sans que la liste perde le focus — par
+  `Ctrl+A` ou une annulation —, est abandonnée : la validation que la fenêtre prête au modèle de
+  vue (`SuivreLesChamps`, N14) ne vise que les champs numériques, et elle vit dans
+  `MainWindow.axaml.cs`, hors du poste ;
+- `F4` dans la liste des polices l'ouvre ou la ferme, au lieu de rétablir (N10) : c'est la
+  `ComboBox` d'Avalonia, qui le faisait déjà avant le poste ;
+- le banc pose les listes déroulantes et les menus volants sur la fenêtre ; sous X11, ce sont des
+  fenêtres à part. Que la frappe continue dans la zone pendant que la liste est ouverte, et qu'un
+  clic dans la liste n'y prenne pas le focus, n'est mesuré qu'au banc.
 
 ### Lot 3 — Le clic droit, la recherche, et le texte tel qu'il s'imprime
 

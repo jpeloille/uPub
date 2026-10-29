@@ -374,9 +374,10 @@ public class JeuxTests
         Rendu.Battre();
 
         Assert.Equal("scheme:heading", texte.FontFamily);
-        // La liste dit quelle police la référence désigne aujourd'hui.
-        Assert.Contains(liste.GetVisualDescendants().OfType<TextBlock>(),
-            t => t.Text == "Titre du jeu — Liberation Serif");
+        // La liste dit quelle police la référence désigne aujourd'hui. Réécrit par N19 (règle 14) :
+        // la liste se tape, et c'est sa zone de saisie qui le dit, non plus le gabarit de l'entrée.
+        Assert.Equal("Titre du jeu — Liberation Serif",
+            liste.GetVisualDescendants().OfType<TextBox>().Single(t => t.Name == "PART_EditableTextBox").Text);
     }
 
     [AvaloniaFact]
