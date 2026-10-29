@@ -208,6 +208,62 @@ public partial class PageCanvas
         _focusDesZonesEcoute = true;
         AddHandler(GotFocusEvent, (_, args) => SuivreLaZoneDeSaisie(args.Source as TextBox),
             RoutingStrategies.Bubble, handledEventsToo: true);
+        AddHandler(KeyDownEvent, ToucheDeLaSaisie, RoutingStrategies.Tunnel);
+    }
+
+    /// <summary>
+    /// Ce que la planche prend au champ de la saisie, avant lui (poste N16 ; fiche 23, a15 et
+    /// a16). Le champ met lui-même la tabulation au curseur (<c>AcceptsTab</c>), et Entrée y
+    /// écrit le saut de paragraphe ; il écrivait aussi le saut de paragraphe sous <c>Maj</c> et
+    /// <c>Ctrl</c>.
+    ///
+    ///   - <c>Maj+Entrée</c> pose le saut de ligne forcé, <see cref="Compositeur.SautDeLigne"/>,
+    ///     à la place de la sélection, le curseur après lui (<see cref="PoserLeSautForce"/>) ;
+    ///   - <c>Maj+Tab</c> ne fait rien. Sans <c>AcceptsTab</c>, la navigation emmenait le focus
+    ///     au contrôle précédent et laissait la saisie ouverte, orpheline ; avec lui, le champ
+    ///     écrit une tabulation sous <c>Maj</c> comme sans lui (mesuré). Ni l'un ni l'autre :
+    ///     <c>Maj+Tab</c> reste dans le bloc, sans rien écrire.
+    ///
+    /// <c>Ctrl+Entrée</c> reste au champ, qui y écrit un saut de paragraphe. Dans le dock, Tab
+    /// reste la navigation entre champs : seul le champ de la page est ici.
+    /// </summary>
+    private void ToucheDeLaSaisie(object? sender, KeyEventArgs e)
+    {
+        if (_editing is null || e.Source is not TextBox zone || !ReferenceEquals(zone.DataContext, _editing) ||
+            !this.IsVisualAncestorOf(zone))
+        {
+            return;
+        }
+
+        if (e.KeyModifiers != KeyModifiers.Shift) return;
+
+        switch (e.Key)
+        {
+            case Key.Enter:
+                PoserLeSautForce(zone);
+                e.Handled = true;
+                break;
+            case Key.Tab:
+                e.Handled = true;
+                break;
+        }
+    }
+
+    /// <summary>
+    /// Le saut de ligne forcé, posé dans le champ comme le champ y pose une frappe : à la place
+    /// de la sélection, le curseur après lui. Le texte passe par la liaison du champ, donc par la
+    /// saisie du bloc, qui recale fragments et écarts comme pour toute frappe (Q1) : il y est un
+    /// caractère du paragraphe. Écrit, et non rejoué en frappe synthétisée : la planche ne
+    /// fabrique aucun événement (recette N5).
+    /// </summary>
+    private static void PoserLeSautForce(TextBox zone)
+    {
+        var texte = zone.Text ?? "";
+        var debut = Math.Clamp(Math.Min(zone.SelectionStart, zone.SelectionEnd), 0, texte.Length);
+        var fin = Math.Clamp(Math.Max(zone.SelectionStart, zone.SelectionEnd), debut, texte.Length);
+
+        zone.SetCurrentValue(TextBox.TextProperty, texte[..debut] + Compositeur.SautDeLigne + texte[fin..]);
+        PoserLaSelection(zone, debut + 1, debut + 1);
     }
 
     /// <summary>

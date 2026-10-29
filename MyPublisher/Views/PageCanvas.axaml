@@ -276,6 +276,10 @@
                          gras d'un bloc importé sans que rien ne le dise. -->
                     <!-- Police et couleur passent par la charte héritée de la page : un texte
                          pris dans le jeu se saisit dans la police du jeu (poste C5b). -->
+                    <!-- Tab y met une tabulation, et non le focus au contrôle suivant ; Entrée y
+                         écrit « \n », et non Environment.NewLine, « \r\n » sous Windows ; Maj+Entrée,
+                         le saut de ligne forcé, est posé par la planche (poste N16,
+                         PageCanvas.Saisie.cs). -->
                     <TextBox IsVisible="{Binding IsEditing}"
                              Text="{Binding Saisie, Mode=TwoWay}"
                              FontSize="{Binding FontSize}"
@@ -283,7 +287,7 @@
                              FontStyle="{Binding Italic, Converter={x:Static conv:Conv.Slant}}"
                              TextAlignment="{Binding Align, Converter={x:Static conv:Conv.Align}}"
                              Padding="{Binding Padding, Converter={x:Static conv:Conv.Pad}}"
-                             AcceptsReturn="True" TextWrapping="Wrap"
+                             AcceptsReturn="True" AcceptsTab="True" NewLine="&#10;" TextWrapping="Wrap"
                              Classes="frameEditor"
                              Background="Transparent" BorderThickness="0"
                              VerticalContentAlignment="Top">

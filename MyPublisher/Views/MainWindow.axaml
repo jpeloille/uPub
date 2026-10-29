@@ -1305,7 +1305,7 @@
                                                         </ComboBox>
                                                         <!-- Le texte saisi reste là sous le champ, et se retrouve
                                                              intact quand on repasse à « Aucun ». -->
-                                                        <TextBox x:Name="SaisieDuTexte" Classes="champ" Text="{Binding Saisie}" AcceptsReturn="True" TextWrapping="Wrap"
+                                                        <TextBox x:Name="SaisieDuTexte" Classes="champ" Text="{Binding Saisie}" AcceptsReturn="True" NewLine="&#10;" TextWrapping="Wrap"
                                                                  Height="110" VerticalContentAlignment="Top" Padding="8,6"
                                                                  IsEnabled="{Binding !HasField}"/>
                                                         <TextBlock Classes="aide" IsVisible="{Binding HasField}"

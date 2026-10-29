@@ -304,6 +304,15 @@ public static class Compositeur
                 continue;
             }
 
+            // Le saut de ligne forcé (poste N16) coupe la ligne de même, sans fermer le
+            // paragraphe : la ligne d'après n'est plus sa première — ni retrait de première
+            // ligne, ni espace avant —, et l'espace après attend la fin du paragraphe.
+            if (mot.SautForce)
+            {
+                Fermer(finDeParagraphe: false, fin: mot.Debut, suivante: mot.Debut + mot.Longueur);
+                continue;
+            }
+
             // Une tabulation n'a pas de largeur propre : elle vaut la distance qui
             // reste jusqu'au prochain taquet, et dépend donc d'où on en est sur la
             // ligne. On la calcule ici, où cette position est connue.
@@ -425,7 +434,8 @@ public static class Compositeur
     /// une fin de ligne ; sa place dans le texte d'origine, et sa longueur — celle du saut
     /// pour une fin de ligne, un ou deux caractères (poste N3).
     /// </summary>
-    private readonly record struct Unite(string Texte, StyleEffectif Style, bool FinDeLigne, int Debut, int Longueur);
+    private readonly record struct Unite(string Texte, StyleEffectif Style, bool FinDeLigne, int Debut, int Longueur,
+                                         bool SautForce = false);
 
     /// <summary>
     /// Le texte réduit à une suite d'unités : des mots avec les espaces qui les
@@ -454,7 +464,7 @@ public static class Compositeur
 
             for (var i = debutDuMorceau; i < finDuMorceau; i++)
             {
-                if (texte[i] is not ('\n' or '\r')) continue;
+                if (texte[i] is not ('\n' or '\r' or SautDeLigne)) continue;
 
                 foreach (var (mot, debut) in Mots(texte, segment, i))
                 {
@@ -462,6 +472,12 @@ public static class Compositeur
                 }
 
                 segment = i + 1;
+
+                if (texte[i] == SautDeLigne)
+                {
+                    unites.Add(new Unite(string.Empty, style, FinDeLigne: false, i, 1, SautForce: true));
+                    continue;
+                }
 
                 // Le « \r » d'un « \r\n » ne ferme rien, même au bout d'un fragment : c'est
                 // le « \n » qui ferme, et le saut couvre les deux.
@@ -494,6 +510,18 @@ public static class Compositeur
     /// espaces désalignerait les colonnes de consignes ; les perdre les collerait.
     /// </summary>
     public const double IntervalleTaquet = 36;
+
+    /// <summary>
+    /// Le saut de ligne forcé, U+2028 (LINE SEPARATOR), que <c>Maj+Entrée</c> pose (poste N16 ;
+    /// fiche 23, a15) : Publisher distingue la fin de paragraphe, Entrée, du saut de ligne forcé.
+    /// La composition coupe la ligne à ce caractère sans fermer le paragraphe, et
+    /// <see cref="Recalage"/> ne le compte pas comme un saut : le compte des paragraphes, les
+    /// écarts qui s'y rapportent et le retrait de première ligne ne le voient pas. C'est un
+    /// caractère, et non une clé du format (règle 15) : un document qui n'en porte pas se compose
+    /// comme avant. La ligne qu'il coupe finit avant lui, la suivante commence après — comme pour
+    /// un saut de paragraphe, il n'est dans aucune ligne.
+    /// </summary>
+    public const char SautDeLigne = '\u2028';
 
     /// <summary>La prochaine position de taquet strictement après <paramref name="x"/>.</summary>
     public static double ProchainTaquet(double x)
