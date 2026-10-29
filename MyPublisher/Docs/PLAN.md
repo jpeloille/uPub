@@ -118,7 +118,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **N12** | Entrer dans le texte d'un clic, le curseur au point visé | **100 %** | Un clic dans le texte d'un bloc de texte le prend seul, ouvre la saisie et y pose le curseur sur le caractère visé, lu sur la composition qui était à l'écran (`IndexSous` de N3, par la transformation du contrôle même), sans rien sélectionner ; un glissé dans le texte sélectionne depuis cette ancre, passé le seuil de 3 px (Q21), sur la mise en page du champ ; une bande de bord de 5 px d'écran, au plus un quart du côté, étendue jusqu'au cadre d'un bloc sélectionné, prend et déplace le bloc comme avant ; le curseur est le I sur le texte, les quatre flèches sur le bord ; `Ctrl`+clic et `Maj`+clic ajoutent ou retirent sans saisie ; le double-clic n'ouvre plus rien, le champ y prend un mot. La mécanique vit dans `PageCanvas.Saisie.cs`. Un bloc neuf, de l'outil Texte ou Titre, est vide, le curseur dedans ; *Insertion ▸ Bloc de texte* (et *Titre*) ouvre la saisie comme l'outil, par une demande du modèle de vue (`SaisieDemandee`). La pression qui ouvre la saisie rend la main en 48 à 81 ms de médiane sur ATA 21 : elle en prenait jusqu'à 115, la saisie qui s'ouvre faisant recomposer le bloc par la vignette, le marqueur de débordement et le compte de I9, qui l'ignorent désormais. Seize tests sous `poste=N12` ; règle 14 : vingt-quatre tests réécrits dans huit classes, deux renommés, l'entrée en saisie du banc à un clic ; recettes Q14, Q21-Q22 et Q23 reprises ; deux sabotages au juge, deux cibles reprises. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **N13** | Les menus de Publisher | **100 %** | À chaque niveau de chaque menu une lettre d'accès par entrée, unique, sans accent — « _Edition », « T_itre », « I_mage… », « _Aligner le texte à gauche » — ; la barre ouverte, la lettre se cherche au seul niveau ouvert, comme Windows (`MainWindow.Menus.cs`), sur le caractère ou le chiffre de la rangée : Alt, D, O, P joue Premier plan, Edition puis A annule, Alt, F, « 2 » rouvre le deuxième document récent, une lettre partagée au niveau promène le focus sans rien jouer — Avalonia 11.3.9 la cherchait sur la barre et sur chaque niveau ouvert à la fois. Les menus écrivent les gestes en français, « Ctrl+Maj+G », « Suppr », « Ctrl++ », comme les bulles : `GestesEnFrancais`, branché par `App.Initialize`, écrit le texte en valeur locale sur `PART_InputGestureText` à l'application du gabarit et le suit quand le geste change — `AppBuilder.With(new KeyGestureFormatInfo(…))` ne tient pas sous Avalonia 11.3.9, la plate-forme liant la sienne par-dessus. Disposition rangé comme Publisher 2007, « Re_pères de règle ▸ », Grouper, Dissocier, « _Regrouper », « _Ordre ▸ » et ses quatre ordres, « _Aligner ou répartir ▸ » et ses six alignements, deux répartitions et leur repère, Ajuster aux marges ; « Regrouper » refait le dernier groupe dissous, en un pas, à son nom, sans resélection, tant que ses blocs sont tous sur la page (`MainWindowViewModel.Menus.cs`) ; Tab et Maj+Tab, la planche ayant le focus, passent au bloc suivant ou précédent dans l'ordre de la page, les masqués sautés, en boucle, sans pas d'annulation, et Tab dans le dock va toujours au champ suivant ; la barre de menus ouverte garde ses touches — Alt puis E armait l'ellipse, Suppr y supprimait le bloc. Onze tests ; quatre tests voisins et la recette N8 relisent les libellés neufs (règle 14) ; six sabotages au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **N14** | Les champs | **100 %** | Les champs numériques du dock et de la barre contextuelle sont des `ChampNumerique` (`Views/ChampNumerique.cs`), dérivés de `NumericUpDown` sous son apparence : la valeur ne part plus à chaque frappe lisible — taper « 210 » dans la largeur de la page l'écrivait à 2, 21 puis 210 mm —, mais à `Entrée`, `Tab`, la sortie du champ, `↑` et `↓`, la molette, une fois ; `↑` et `↓` partent de ce qui est tapé, même tout pris après un refus. `Unite` lit mm, cm, pt, pi et le pouce (« po », « in », `"`), à la virgule comme au point, en fractions exactes de millimètre : « 2 cm » dans X donne 20,0 mm, « 12 pt » dans une marge 4,23 mm, « 1" » 25,4 mm ; l'affichage reste en millimètres. Une saisie illisible ou hors des bornes n'est pas ramenée à la borne : la valeur d'avant revient, et la barre d'état le dit, bornes comprises, par `Status`, le canal du zoom tapé de N4. `Échap` renonce et rend la planche, au dock comme dans la barre (règle 13) ; `Entrée` dans la barre valide et rend la planche, au dock garde le champ. Ce qui attend dans un champ part avant que la fenêtre referme sa transaction (`ClosePropertyEdit`, le piège du plan : fermer le document pose alors la question), et avant que le modèle de vue referme les siennes, change la sélection, enregistre ou exporte (`MainWindowViewModel.Champs.cs`). Le catalogue et le dialogue des coordonnées se ferment par `Échap` (`IsCancel`) ; `Tab` ne s'arrête plus sur les titres de section du dock. Douze tests sur la fenêtre ; trois tests de la barre réécrits (règle 14) ; sept sabotages au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
-| **N15** | L'application connaît la sélection du texte | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 5 |
+| **N15** | L'application connaît la sélection du texte | **100 %** | Le modèle de vue connaît la sélection du texte en saisie : `SelectionDuTexte` — le bloc ou la case, le début, la fin, le curseur, et l'ancre qui s'en déduit —, rangée début avant fin, le curseur au bout que le geste déplace (`SelectionEnd` du champ : son `CaretIndex` ne suit pas `Maj+→`), et `ParagraphesDeLaSelection`, par `MiseEnForme.Paragraphes`, donc `Recalage.ParagrapheDe` — l'une et l'autre nulles hors saisie, les paragraphes aussi pour une case. La planche la tient depuis `PageCanvas.Saisie.cs` sans toucher son fichier principal (règle 16) : elle suit le champ de la saisie dès qu'il prend le focus, à chaque pression, glissé, flèche et frappe, ne dit plus rien d'un champ sans focus — le champ réduit sa sélection à un curseur en perdant le focus, et la barre la ferait oublier —, ramène la sélection gardée dans ses bornes quand le texte change au dock, et la vide quand le champ se cache, à la sortie de la saisie. Un glissé sur les caractères 4 à 7 donne (4, 7), `Maj+→` (4, 8), une frappe (5, 5) ; le corps pris à la barre ne change rien ; Échap vide. Huit tests sous `poste=N15` ; un sabotage au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **N16** | Tabulation et saut de ligne forcé | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 5, après N15 dans la même copie |
 | **N17** | Les modificateurs du glisser, et le rectangle de sélection | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 5 |
 | **N18** | Les menus vers le dock, et les pages, avec A8 et A9 | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 5 |
@@ -7872,6 +7872,59 @@ la sélection oubliée quand la barre prend le focus.
 
 Fichiers : `PageCanvas.Saisie.cs`, `MainWindowViewModel.Saisie.cs` (neuf). Dépend de N12 et N2.
 Effort : faible.
+
+*Livré le 29 octobre 2026*, dans la salve Saisie 5 ; la relecture adversariale vient après la
+fusion. **Le modèle de vue** (`MainWindowViewModel.Saisie.cs`, qui existait depuis N12) porte le
+type `SelectionDuTexte(Frame Bloc, TableCell? Case, int Debut, int Fin, int Curseur)` — avec
+`Ancre`, `EstVide`, `Plage` et `Texte` —, la propriété `SelectionDuTexte`, nulle hors saisie,
+`ParagraphesDeLaSelection`, nulle hors saisie et pour une case, et `SuivreLaSelectionDuTexte`, par
+où la planche la dit, sans notification quand rien ne change. `SelectionDuTexte.De(bloc, case,
+ancre, curseur, longueur)` range la sélection d'un champ : début avant fin, dans les bornes du
+texte. **La planche** (`PageCanvas.Saisie.cs`) pose, au premier attachement, une écoute du focus
+(`OnAttachedToVisualTree`), et non dans son constructeur, que N17 retouche : quand le champ du bloc
+en saisie prend le focus, elle le suit (`PropertyChanged`), dit sa sélection à chaque changement de
+`SelectionStart`, `SelectionEnd` ou `Text` tant qu'il a le focus, ramène la sélection gardée dans
+ses bornes quand le texte change sans lui — le champ Contenu du dock est lié au même bloc —, et la
+vide quand le champ se cache, c'est-à-dire à la sortie de la saisie, quelle qu'en soit la cause.
+`PageCanvas.axaml.cs` n'est pas touché.
+
+*Recette jouée* : `Scripts/recettes/N15-selection-du-texte.sh`. Les sources d'abord — le type et
+ses paragraphes au modèle de vue, par `MiseEnForme.Paragraphes`, qui compte par
+`Recalage.ParagrapheDe` ; la planche qui la dit depuis son partiel, au focus, jamais sans lui, et
+la vide quand le champ se cache —, puis huit tests sous `poste=N15` (`SelectionDuTexteTests`) : le
+glissé sur les caractères 4 à 7, (4, 7), puis `Maj+→`, (4, 8), puis une frappe, (5, 5) ; le glissé à
+rebours, la même plage le curseur au début, et `Maj+←` qui l'étend de ce côté ; le clic d'entrée et
+les flèches, le curseur seul, et un clic dans un autre bloc ; le champ Corps qui prend le focus —
+le champ de la saisie a réduit sa sélection, le modèle de vue garde (4, 8) et son paragraphe —, puis
+Échap dans le corps ; Échap, un clic dehors et une autre sélection des blocs, qui la vident ; le
+texte raccourci au dock ; les paragraphes de trois paragraphes, le curseur, une sélection qui finit
+sur un saut et une qui le passe ; la forme rangée, et une case sans paragraphes. Au juge, le
+sabotage du plan : la sélection oubliée quand la barre prend le focus — la garde du focus retirée.
+
+*Ce que l'implémentation a appris.*
+- **Le champ oublie sa sélection en perdant le focus**, et la réduit à son `CaretIndex` : après
+  un glissé de 4 à 7 et `Maj+→`, le champ montre un curseur seul à 4 une fois le corps pris. C'est
+  pourquoi la planche ne suit le champ que tant qu'il a le focus, et pourquoi le sabotage se voit.
+- **`CaretIndex` ne suit pas `Maj+→`** : après `Maj+Fin` et `Maj+→` depuis 4, il vaut encore 4
+  quand la sélection est (4, 8). Le bout qui bouge est `SelectionEnd`, qui passe avant
+  `SelectionStart` dans un glissé à rebours ; c'est lui le curseur.
+- **La spécification nommait `MainWindowViewModel.Saisie.cs` neuf** : N12 l'avait créé pour
+  `SaisieDemandee`. Le poste y ajoute, sans fichier de plus.
+
+*Choisi sans certitude* :
+- la planche ne rend pas au champ, quand il reprend le focus, la sélection que le modèle de vue a
+  gardée : un clic qui le lui rend pose son propre curseur, et le menu Edition de N13 rend la sienne
+  (`RendreAuChamp`) ; un retour au clavier depuis la barre, `Entrée` ou `Échap`, rend la planche
+  et non le champ (N14). R7 dira s'il faut la rendre ;
+- la case d'un tableau est dans le type, que N20 et N27 rempliront ; rien ne la produit encore,
+  la page n'ayant pas de saisie de case ;
+- le modèle de vue est notifié de chaque état intermédiaire du champ — poser une sélection en
+  change trois propriétés —, et non une fois par geste : rien ne lit encore la sélection, et un
+  envoi différé aurait demandé une image de plus aux tests.
+
+*Relevé, non corrigé.* `MainWindow.RendreAuChamp` (N13) retient encore lui-même la sélection du
+champ sous le menu ; il pourrait lire `SelectionDuTexte` pour la zone de saisie. `MainWindow.axaml.cs`
+est à N18 dans cette salve.
 
 #### N16 — Tabulation et saut de ligne forcé *(fiche 23, a15, a16)*
 

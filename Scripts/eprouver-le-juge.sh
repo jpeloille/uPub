@@ -2778,6 +2778,15 @@ saboter "un champ refuse sans le dire (N14)" \
     '' \
     'N14-les-champs|ChampNumeriqueTests'
 
+# N15 : l'application connaît la sélection du texte. Le sabotage du plan : la sélection oubliée
+# quand la barre prend le focus — le champ de la saisie réduit la sienne à un curseur en perdant
+# le focus, et la planche qui le suivrait encore le dirait au modèle de vue.
+saboter "la sélection du texte (N15) oubliée quand la barre prend le focus" \
+    MyPublisher/Views/PageCanvas.Saisie.cs \
+    $'        if (!zone.IsFocused)\n        {' \
+    $'        if (false)\n        {' \
+    'N15-selection-du-texte|SelectionDuTexteTests'
+
 # Un motif qui ne désigne aucun sabotage ne prouve rien. « eprouver-le-juge.sh I4 » sortait
 # en 0 sur « 0 sabotages, 0 attrapés », quand les intitulés de la planche ne portaient pas
 # encore le code du poste : le filet passait pour éprouvé sans qu'on l'ait troué.
