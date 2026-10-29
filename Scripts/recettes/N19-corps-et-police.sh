@@ -36,6 +36,10 @@
 #        renonce et rend la planche ; quitter la liste au pointeur renonce ; Tab pose et passe
 #        au corps ; la police choisie au pointeur fait un pas ; le tableau a la même liste ;
 #      · une police absente du document reste proposée « (absente) » (Q20), et se retape ;
+#      · repris le 30 octobre 2026 : un clic sur le nom ouvre la liste entière, la police du bloc
+#        marquée, le nom tout pris, et la lettre suivante le remplace et filtre ; un second clic,
+#        rien de tapé, la referme sans rien poser ; un clic pendant la frappe garde la frappe et
+#        la liste ; la flèche ouvre et referme toujours ; aucun pas d'annulation ;
 #      · la liste des tailles pose 14 pt en un pas, au texte et au tableau, et coche la taille
 #        du bloc ; la même taille ne fait pas de pas ; « 10,5 » tapé donne 10,5 pt, ↑ fait un pas
 #        de 0,5 ; un corps tapé part avant la taille de la liste, chacun son pas ; ouvrir et
@@ -117,6 +121,18 @@ exige("vm.Status = $\"« {saisie} » n'est pas une police de cette machine : la 
       "le refus d'une police que la machine n'a pas n'est pas dit dans la barre d'état.")
 print("    b. une police que la machine n'a pas est refusée, et la barre d'état le dit")
 
+# ------------------------------------------- b'. un clic sur le nom ouvre la liste (repris)
+
+exige("AddHandler(PointerPressedEvent, SurPression, RoutingStrategies.Tunnel, handledEventsToo: true);" in liste
+      and "AddHandler(PointerReleasedEvent, SurRelache, RoutingStrategies.Bubble, handledEventsToo: true);" in liste,
+      "la liste n'écoute pas le clic que la zone éditable marque traité.")
+relache = corps(liste, "private void SurRelache(object? sender, PointerReleasedEventArgs e)") or ""
+exige(re.search(r"_marquee = SelectedIndex;\s*Filtrer\(null\);\s*Ouvrir\(true\);", relache),
+      "un clic sur le nom n'ouvre pas la liste entière, la police du bloc marquée.")
+exige("volet.OverlayInputPassThroughElement = this;" in liste,
+      "le voile de la liste ouverte arrête le clic dans la zone.")
+print("    b'. un clic sur le nom ouvre la liste entière, à travers la zone et le voile")
+
 # ---------------------------------------------------- c. le corps et sa liste
 
 exige(barre_axaml.count("<views:ChampNumerique ") == 4, "la barre n'a plus ses quatre champs numériques (N14).")
@@ -171,7 +187,7 @@ jouer() {
     echo "  $quoi ($joues tests)"
 }
 
-jouer "poste=N19" 16 "2. le corps et la police, sur la vraie fenêtre : « Geo » propose Georgia, la frappe ne pose rien, le refus dit, Échap, la liste des tailles, « 10,5 »"
+jouer "poste=N19" 20 "2. le corps et la police, sur la vraie fenêtre : « Geo » propose Georgia, la frappe ne pose rien, le refus dit, Échap, la liste des tailles, « 10,5 »"
 
 # Les voisins : la police absente (Q20), la barre et ses .Single() (I3, règle 1), les champs (N14).
 voisins="poste=Q20"

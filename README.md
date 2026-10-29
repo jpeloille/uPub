@@ -145,7 +145,9 @@ bascule le trait simple, le chevron qui le suit propose le double, l'épais et �
 seuls » —, les quatre alignements, l'interligne en multiple et la couleur du texte, que
 sa vignette ouvre. Un tableau y a la même mise en forme, sans l'alignement, qui est celui
 de chaque case. Le corps se tape — « 10,5 » donne 10,5 pt — ou se choisit dans la liste
-des tailles standard, de 8 à 72 pt, que le chevron qui le suit ouvre. La police se tape :
+des tailles standard, de 8 à 72 pt, que le chevron qui le suit ouvre. Un clic sur le nom
+de la police ouvre la liste entière, la police du bloc marquée et le nom tout pris ; un
+second clic la referme. La police se tape :
 la liste s'ouvre sur les familles qui commencent par ce qu'on a tapé — « DejaVu Se »
 propose DejaVu Serif, sans regarder la casse —, `Entrée` ou `Tab` pose la première, `↑`
 et `↓` en marquent une autre ; rien ne part avant. Une police que la machine n'a pas, et

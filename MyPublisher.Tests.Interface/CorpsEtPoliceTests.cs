@@ -101,6 +101,131 @@ public class CorpsEtPoliceTests
 
     // ------------------------------------------------------------------ la police tapée
 
+    // Repris le 30 octobre 2026, à la demande du propriétaire : un clic sur le nom de la police
+    // ouvre la liste, comme avant que la police ne se tape. La zone éditable prenait le clic pour
+    // son curseur, et seule la flèche ouvrait la liste.
+
+    [AvaloniaFact]
+    public void Un_clic_sur_le_nom_ouvre_la_liste_entiere_la_police_du_bloc_marquee_et_le_nom_tout_pris()
+    {
+        var bloc = Texte();
+        var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(bloc));
+        vm.SelectOnly(bloc);
+        Rendu.Battre();
+        var avant = Etat(vm);
+        var liste = Police(fenetre);
+        var zone = ZoneDe(liste);
+        Assert.False(liste.IsDropDownOpen);
+
+        Rendu.Cliquer(zone);
+        Assert.True(liste.IsDropDownOpen, "le clic sur le nom n'a pas ouvert la liste");
+        Assert.Equal(vm.FontFamilies.Count, Montrees(liste).Count);
+        Assert.Equal("DejaVu Sans", Marquee(liste));
+        Assert.True(zone.IsFocused, "la zone n'a pas le focus");
+        Assert.Equal("DejaVu Sans", zone.Text);
+        Assert.Equal(0, Math.Min(zone.SelectionStart, zone.SelectionEnd));
+        Assert.Equal(zone.Text!.Length, Math.Max(zone.SelectionStart, zone.SelectionEnd));
+        Assert.Equal("DejaVu Sans", bloc.FontFamily);
+        Assert.Equal(avant, Etat(vm));
+
+        // La première lettre remplace tout le nom, et filtre.
+        Rendu.Taper(fenetre, "L");
+        Assert.Equal("L", zone.Text);
+        var montrees = Montrees(liste);
+        Assert.NotEmpty(montrees);
+        Assert.All(montrees, f => Assert.StartsWith("L", f, StringComparison.CurrentCultureIgnoreCase));
+        Assert.Equal("DejaVu Sans", bloc.FontFamily);
+
+        Rendu.Touche(fenetre, PhysicalKey.Escape);
+        Assert.Equal(avant, Etat(vm));
+        Assert.False(vm.CanUndo, "ouvrir la liste au clic a laissé un pas");
+    }
+
+    [AvaloniaFact]
+    public void Un_second_clic_sans_rien_taper_referme_la_liste_sans_rien_poser()
+    {
+        var bloc = Texte();
+        var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(bloc));
+        vm.SelectOnly(bloc);
+        Rendu.Battre();
+        var avant = Etat(vm);
+        var liste = Police(fenetre);
+        var zone = ZoneDe(liste);
+
+        Rendu.Cliquer(zone);
+        Assert.True(liste.IsDropDownOpen);
+        // ↓ marque une autre entrée : le clic qui referme ne la pose pas.
+        Rendu.Touche(fenetre, PhysicalKey.ArrowDown);
+        Rendu.Cliquer(zone);
+        Assert.False(liste.IsDropDownOpen, "le second clic n'a pas refermé la liste");
+        Assert.Equal("DejaVu Sans", bloc.FontFamily);
+        Assert.Equal("DejaVu Sans", zone.Text);
+
+        // Et un troisième la rouvre : le clic est une bascule.
+        Rendu.Cliquer(zone);
+        Assert.True(liste.IsDropDownOpen, "le troisième clic n'a pas rouvert la liste");
+        Rendu.Cliquer(zone);
+        Assert.False(liste.IsDropDownOpen);
+
+        fenetre.FocusManager!.ClearFocus();
+        Rendu.Battre();
+        Assert.Equal(avant, Etat(vm));
+        Assert.False(vm.CanUndo, "ouvrir et refermer la liste a laissé un pas");
+    }
+
+    [AvaloniaFact]
+    public void La_fleche_ouvre_et_referme_la_liste_comme_avant()
+    {
+        var bloc = Texte();
+        var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(bloc));
+        vm.SelectOnly(bloc);
+        Rendu.Battre();
+        var avant = Etat(vm);
+        var liste = Police(fenetre);
+        // La flèche du thème ne se vise pas : c'est le fond de la liste qui prend le clic, à sa place.
+        var fleche = Rendu.Centre(liste.GetVisualDescendants().OfType<Control>().Single(c => c.Name == "DropDownGlyph"));
+
+        Rendu.Cliquer(fenetre, fleche);
+        Assert.True(liste.IsDropDownOpen, "la flèche n'ouvre plus la liste");
+        Assert.Equal(vm.FontFamilies.Count, Montrees(liste).Count);
+        Rendu.Cliquer(fenetre, fleche);
+        Assert.False(liste.IsDropDownOpen, "la flèche ne referme plus la liste");
+        Assert.Equal("DejaVu Sans", bloc.FontFamily);
+        fenetre.FocusManager!.ClearFocus();
+        Rendu.Battre();
+        Assert.Equal(avant, Etat(vm));
+        Assert.False(vm.CanUndo);
+    }
+
+    [AvaloniaFact]
+    public void Un_clic_pendant_la_frappe_garde_la_frappe_et_la_liste()
+    {
+        var bloc = Texte(police: "Liberation Serif");
+        var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(bloc));
+        vm.SelectOnly(bloc);
+        Rendu.Battre();
+        var avant = Etat(vm);
+        var liste = Police(fenetre);
+        var zone = ZoneDe(liste);
+
+        Rendu.Cliquer(zone);
+        Rendu.Taper(fenetre, "DejaVu");
+        var proposees = Montrees(liste);
+        Assert.True(proposees.Count >= 2, "la machine n'a pas les DejaVu");
+
+        Rendu.Cliquer(zone);
+        Assert.Equal("DejaVu", zone.Text);
+        Assert.True(liste.IsDropDownOpen, "le clic pendant la frappe a refermé la liste");
+        Assert.Equal(proposees, Montrees(liste));
+        Assert.Equal(proposees[0], Marquee(liste));
+        Assert.Equal("Liberation Serif", bloc.FontFamily);
+        Assert.Equal(avant, Etat(vm));
+
+        Rendu.Touche(fenetre, PhysicalKey.Enter);
+        Assert.Equal(proposees[0], bloc.FontFamily);
+        Rendu.UnSeulPas(vm, avant, "la police tapée après un clic");
+    }
+
     [AvaloniaFact]
     public void Taper_le_debut_dune_police_la_propose_et_Entree_la_pose_en_un_pas()
     {

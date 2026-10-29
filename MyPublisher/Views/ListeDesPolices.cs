@@ -8,6 +8,8 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Controls.Templates;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Threading;
+using Avalonia.VisualTree;
 using MyPublisher.Converters;
 using MyPublisher.Models;
 using MyPublisher.ViewModels;
@@ -87,6 +89,11 @@ public class ListeDesPolices : ComboBox
         ContainerPrepared += (_, e) => Preparer(e.Container, e.Index);
         // Au passage descendant, avant la zone de texte, qui prend ↑ et ↓ pour son curseur.
         AddHandler(KeyDownEvent, SurTouche, RoutingStrategies.Tunnel);
+        // La zone prend le clic et le marque traité (TextBox.OnPointerPressed) : on l'écoute quand
+        // même, à la pression pour savoir où en était la liste, au relâché pour agir — après la
+        // zone, qui a posé son curseur.
+        AddHandler(PointerPressedEvent, SurPression, RoutingStrategies.Tunnel, handledEventsToo: true);
+        AddHandler(PointerReleasedEvent, SurRelache, RoutingStrategies.Bubble, handledEventsToo: true);
         DataContextChanged += (_, _) => Abandonner();
     }
 
@@ -100,6 +107,11 @@ public class ListeDesPolices : ComboBox
     {
         base.OnApplyTemplate(e);
         _zone = e.NameScope.Find<TextBox>("PART_EditableTextBox");
+        // La liste ouverte pose sur la fenêtre un voile qui la referme au premier clic, et le clic
+        // s'y arrête (LightDismissOverlayLayer) : un clic dans la zone pendant la frappe aurait
+        // refermé la liste au lieu de poser le curseur. La liste elle-même laisse passer le clic,
+        // et décide (SurRelache) ; la flèche le reçoit aussi, et referme comme avant.
+        if (e.NameScope.Find<Popup>("PART_Popup") is { } volet) volet.OverlayInputPassThroughElement = this;
     }
 
     // ------------------------------------------------------------ la frappe
@@ -115,16 +127,22 @@ public class ListeDesPolices : ComboBox
             return;
         }
 
-        var aEcrire = change.Property == SelectedItemProperty || change.Property == IsEditableProperty
+        // La sélection change par plusieurs propriétés emboîtées — SelectedValue, qui mène à
+        // SelectedItem, qui mène au texte — : la garde se rend telle qu'elle était, pour qu'un
+        // changement emboîté ne la lève pas sous celui qui l'englobe. Levée trop tôt, le texte que la
+        // liste écrivait passait pour une frappe vide, en attente (repris le 30 octobre 2026).
+        var aEcrire = change.Property == SelectedItemProperty || change.Property == SelectedValueProperty
+                      || change.Property == SelectedIndexProperty || change.Property == IsEditableProperty
                       || change.Property == ItemsSourceProperty;
-        _ecrit |= aEcrire;
+        var ecrivait = _ecrit;
+        _ecrit = ecrivait || aEcrire;
         try
         {
             base.OnPropertyChanged(change);
         }
         finally
         {
-            if (aEcrire) _ecrit = false;
+            _ecrit = ecrivait;
         }
 
         if (change.Property == SelectedItemProperty)
@@ -216,6 +234,52 @@ public class ListeDesPolices : ComboBox
         }
     }
 
+    // ------------------------------------------------------------ le clic dans la zone
+
+    /// <summary>
+    /// Ce qu'était la liste quand le bouton s'est enfoncé dans la zone : ouverte ou fermée ;
+    /// <c>null</c> hors d'un clic dans la zone. Une pression que le voile de la liste ouverte a
+    /// prise pour la refermer n'arrive pas jusqu'ici : son relâché ne rouvre rien.
+    /// </summary>
+    private bool? _ouverteALaPression;
+
+    private bool DansLaZone(object? source) =>
+        _zone is not null && source is Visual visuel && (ReferenceEquals(visuel, _zone) || visuel.GetVisualAncestors().Contains(_zone));
+
+    private void SurPression(object? sender, PointerPressedEventArgs e)
+    {
+        _ouverteALaPression = e.GetCurrentPoint(this).Properties.IsLeftButtonPressed && DansLaZone(e.Source)
+            ? IsDropDownOpen
+            : null;
+    }
+
+    /// <summary>
+    /// Un clic dans la zone ouvre la liste, comme avant que la police ne se tape (N19, repris) :
+    /// la liste fermée s'ouvre sur toutes ses entrées, la police du bloc marquée et en vue, et le
+    /// nom tout pris — la première lettre tapée le remplace et filtre, comme Word prend tout le nom
+    /// au clic. La liste ouverte, rien de tapé, le clic la referme, comme la bascule d'une liste
+    /// simple. Pendant une frappe, le clic ne fait que poser le curseur. Il ne pose jamais rien.
+    /// </summary>
+    private void SurRelache(object? sender, PointerReleasedEventArgs e)
+    {
+        var ouverte = _ouverteALaPression;
+        _ouverteALaPression = null;
+        if (ouverte is null || e.InitialPressMouseButton != MouseButton.Left || !DansLaZone(e.Source) || EnAttente) return;
+
+        if (ouverte.Value)
+        {
+            Ouvrir(false);
+            return;
+        }
+
+        _marquee = SelectedIndex;
+        Filtrer(null);
+        Ouvrir(true);
+        Marquer();
+        // Après l'ouverture : la zone garde le focus, et tout son texte pris.
+        ToutPrendre();
+    }
+
     private void Promener(int sens)
     {
         if (!IsDropDownOpen)
@@ -304,6 +368,7 @@ public class ListeDesPolices : ComboBox
 
     private void Remontrer()
     {
+        var ecrivait = _ecrit;
         _ecrit = true;
         try
         {
@@ -311,7 +376,7 @@ public class ListeDesPolices : ComboBox
         }
         finally
         {
-            _ecrit = false;
+            _ecrit = ecrivait;
         }
     }
 
@@ -374,5 +439,7 @@ public class ListeDesPolices : ComboBox
         entree.Focusable = false;
         entree.IsVisible = _gardees?.Contains(indice) ?? true;
         entree.Classes.Set("proposee", indice == _marquee);
+        // L'entrée marquée à l'ouverture — la police du bloc — vient en vue, une fois rangée.
+        if (indice == _marquee) Dispatcher.UIThread.Post(() => entree.BringIntoView(), DispatcherPriority.Loaded);
     }
 }
