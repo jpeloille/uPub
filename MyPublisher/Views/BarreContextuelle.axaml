@@ -26,6 +26,12 @@
     de la barre, par la fenêtre, comme dans chaque onglet du dock (règle 2). Les boutons ne
     prennent pas le focus : ils jouent la commande du menu Texte, qui fait son propre pas
     d'annulation où que soit le focus (BoutonDEtat.cs).
+
+    Le poste N19 y fait du corps et de la police ce que Publisher en fait (fiche 23, b6) : le
+    corps garde son champ, où l'on tape (N14), et le chevron qui le suit ouvre la liste des
+    tailles standard du noyau (CorpsStandard, N10) ; la police se tape, et sa liste propose les
+    familles qui commencent par la frappe (ListeDesPolices.cs), Entrée posant la première. Pour
+    le texte comme pour le tableau.
 -->
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -71,6 +77,12 @@
         <Style Selector="Button.ib.sortes">
             <Setter Property="Width" Value="14"/>
             <Setter Property="Margin" Value="-6,0,0,0"/>
+        </Style>
+
+        <!-- La police tapée (N19) : l'entrée que la frappe propose, celle qu'Entrée pose, sur le
+             gris du survol. -->
+        <Style Selector="ComboBoxItem.proposee /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{StaticResource Survol}"/>
         </Style>
 
         <!-- La couleur du texte : un champ de 34 × 26 (« .fld » de la maquette) qui montre la
@@ -128,11 +140,13 @@
                                  renvoie jamais null ; les deux premières entrées sont le titre et
                                  le corps du jeu de polices, et le libellé dit la police qu'elles
                                  désignent aujourd'hui. -->
-                            <ComboBox x:Name="PoliceDuBloc" Classes="champ" Width="150" MaxDropDownHeight="320"
+                            <views:ListeDesPolices x:Name="PoliceDuBloc" Classes="champ" Width="150" MaxDropDownHeight="320"
                                       ToolTip.Tip="Police"
                                       ItemsSource="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).FontFamilies}"
+                                      Jeu="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).Document.FontScheme}"
+                                      Machine="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).PolicesDeLaMachine}"
                                       SelectedItem="{Binding FontFamily, Converter={x:Static conv:JamaisNul.Instance}}">
-                                <ComboBox.ItemTemplate>
+                                <views:ListeDesPolices.ItemTemplate>
                                     <DataTemplate DataType="x:String">
                                         <TextBlock>
                                             <TextBlock.Text>
@@ -144,12 +158,19 @@
                                             </TextBlock.Text>
                                         </TextBlock>
                                     </DataTemplate>
-                                </ComboBox.ItemTemplate>
-                            </ComboBox>
-                            <!-- Le corps : « 10,5 pt ». -->
+                                </views:ListeDesPolices.ItemTemplate>
+                            </views:ListeDesPolices>
+                            <!-- Le corps : « 10,5 pt », un champ où l'on tape (N14), et le chevron qui
+                                 le suit, la liste des tailles standard (N19). -->
                             <views:ChampNumerique x:Name="CorpsDuBloc" Classes="champ" Width="58" ToolTip.Tip="Corps"
                                            TextConverter="{x:Static conv:Unite.Points}" Increment="0.5" Minimum="1"
                                            Value="{Binding FontSize, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
+                            <Button x:Name="TaillesDuCorps" Classes="ib sortes" Focusable="False" AttachedToVisualTree="SurTaillesAttachees"
+                                    ToolTip.Tip="Tailles du corps" Content="{StaticResource IconeSectionOuverte}">
+                                <Button.Flyout>
+                                    <MenuFlyout Placement="BottomEdgeAlignedLeft" Opening="SurTaillesQuiSOuvrent" Closed="SurTaillesFermees"/>
+                                </Button.Flyout>
+                            </Button>
                             <views:BoutonDEtat Classes="ib" Content="G" FontWeight="Bold" FontSize="14" Focusable="False"
                                                ToolTip.Tip="Gras (Ctrl+G)" IsChecked="{Binding Bold, Mode=OneWay}"
                                                Command="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).BasculerGrasCommand}"/>
@@ -245,12 +266,14 @@
                          l'alignement est celui de chaque case, au dock. -->
                     <DataTemplate DataType="models:TableFrame">
                         <StackPanel Orientation="Horizontal" Spacing="6">
-                            <ComboBox Classes="champ" Width="150" MaxDropDownHeight="320" ToolTip.Tip="Police"
+                            <views:ListeDesPolices Classes="champ" Width="150" MaxDropDownHeight="320" ToolTip.Tip="Police"
                                       ItemsSource="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).FontFamilies}"
+                                      Jeu="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).Document.FontScheme}"
+                                      Machine="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).PolicesDeLaMachine}"
                                       SelectedItem="{Binding FontFamily, Converter={x:Static conv:JamaisNul.Instance}}">
                                 <!-- La même liste que celle d'un bloc de texte, et la même
                                      garde : la police de la bande ne se perd pas (Q20). -->
-                                <ComboBox.ItemTemplate>
+                                <views:ListeDesPolices.ItemTemplate>
                                     <DataTemplate DataType="x:String">
                                         <TextBlock>
                                             <TextBlock.Text>
@@ -262,11 +285,17 @@
                                             </TextBlock.Text>
                                         </TextBlock>
                                     </DataTemplate>
-                                </ComboBox.ItemTemplate>
-                            </ComboBox>
+                                </views:ListeDesPolices.ItemTemplate>
+                            </views:ListeDesPolices>
                             <views:ChampNumerique Classes="champ" Width="58" ToolTip.Tip="Corps"
                                            TextConverter="{x:Static conv:Unite.Points}" Increment="0.5" Minimum="1"
                                            Value="{Binding FontSize, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
+                            <Button Classes="ib sortes" Focusable="False" AttachedToVisualTree="SurTaillesAttachees"
+                                    ToolTip.Tip="Tailles du corps" Content="{StaticResource IconeSectionOuverte}">
+                                <Button.Flyout>
+                                    <MenuFlyout Placement="BottomEdgeAlignedLeft" Opening="SurTaillesQuiSOuvrent" Closed="SurTaillesFermees"/>
+                                </Button.Flyout>
+                            </Button>
                             <views:BoutonDEtat Classes="ib" Content="G" FontWeight="Bold" FontSize="14" Focusable="False"
                                                ToolTip.Tip="Gras (Ctrl+G)" IsChecked="{Binding Bold, Mode=OneWay}"
                                                Command="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).BasculerGrasCommand}"/>

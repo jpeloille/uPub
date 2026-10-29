@@ -46,10 +46,13 @@ public class PolicesAbsentesTests
         Assert.Equal(presente, t2.FontFamily);
         Assert.False(vm.CanUndo, "la sélection a écrit dans le document");
 
-        // La liste montre la police du bloc, et dit qu'elle manque.
+        // La liste montre la police du bloc, et dit qu'elle manque. Réécrit par N19 (règle 14) : la
+        // liste se tape, et c'est sa zone de saisie qui montre la police, non plus le gabarit de
+        // l'entrée choisie.
         var liste = ListeDesPolices(fenetre, vm, t);
         Assert.Equal(absente, liste.SelectedItem);
-        Assert.Contains(liste.GetVisualDescendants().OfType<TextBlock>(), b => b.Text == $"{absente} (absente)");
+        Assert.Equal($"{absente} (absente)",
+            liste.GetVisualDescendants().OfType<TextBox>().Single(b => b.Name == "PART_EditableTextBox").Text);
 
         // Et la page se compose encore : c'est là que le null finissait par lever.
         Rendu.Encre(fenetre);

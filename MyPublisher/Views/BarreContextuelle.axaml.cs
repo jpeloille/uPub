@@ -1,6 +1,8 @@
 using System;
 using System.ComponentModel;
+using System.Globalization;
 using System.Linq;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
@@ -76,12 +78,25 @@ public partial class BarreContextuelle : UserControl
     /// Office, et quitte le champ ; I3 validait. Reste ici la liste des polices. Et
     /// <c>Entrée</c>, qu'un champ numérique laisse passer quand il a pris la valeur, rend la
     /// planche de même (N14) : au dock, le champ la garde.
+    ///
+    /// Depuis N19, la liste des polices se tape (<see cref="ListeDesPolices"/>) : elle tient
+    /// l'<c>Échap</c> d'une frappe en attente, qu'elle abandonne, et laisse passer ici celui d'une
+    /// liste où rien n'est tapé ; <c>Entrée</c>, qu'elle laisse passer quand la police est posée,
+    /// rend la planche comme après un champ numérique.
     /// </summary>
     private void SurTouche(object? sender, KeyEventArgs e)
     {
         if (e.Handled || e.KeyModifiers != KeyModifiers.None) return;
         if (TopLevel.GetTopLevel(this)?.FocusManager is not { } focus) return;
         if (focus.GetFocusedElement() is not Control champ || !champ.GetSelfAndVisualAncestors().Contains(this)) return;
+        var dansLaListeDesPolices = champ.FindAncestorOfType<ListeDesPolices>(includeSelf: true) is not null;
+        if (e.Key == Key.Enter && dansLaListeDesPolices)
+        {
+            focus.ClearFocus();
+            e.Handled = true;
+            return;
+        }
+
         if (e.Key == Key.Enter && champ.FindAncestorOfType<ChampNumerique>(includeSelf: true) is null) return;
         if (e.Key is not (Key.Escape or Key.Enter)) return;
 
@@ -105,6 +120,73 @@ public partial class BarreContextuelle : UserControl
         if (e.Source is not Button bouton || !bouton.Classes.Contains("menu")) return;
 
         TopLevel.GetTopLevel(this)?.FocusManager?.ClearFocus();
+    }
+
+    // ------------------------------------------------------------ la liste des tailles
+
+    /// <summary>
+    /// La liste des tailles du corps (N19 ; fiche 23, b6) : celles du noyau, de 8 à 72 pt
+    /// (<see cref="CorpsStandard.Tailles"/>, posées par N10), la taille du bloc cochée. Une
+    /// taille choisie fait son pas, où que soit le focus (<c>PoserLeCorps</c>, règle 2).
+    ///
+    /// Le corps tapé et non validé part d'abord, comme à l'ouverture du sélecteur de couleur : la
+    /// liste qui s'ouvre fait quitter le champ, dont la sortie valide (N14), et sa saisie fait
+    /// son pas à elle au lieu de se fondre dans celui de la taille. La zone de saisie de la page,
+    /// elle, garde le focus : la frappe continue après le choix (Q25).
+    /// </summary>
+    private void SurTaillesQuiSOuvrent(object? sender, EventArgs e)
+    {
+        if (sender is not MenuFlyout liste || DataContext is not MainWindowViewModel vm) return;
+
+        RendreLeFocusDeLaBarre();
+        var corps = vm.SingleSelected switch
+        {
+            TextFrame texte => texte.FontSize,
+            TableFrame tableau => tableau.FontSize,
+            _ => double.NaN,
+        };
+
+        foreach (var entree in liste.Items.OfType<MenuItem>())
+        {
+            entree.IsChecked = entree.CommandParameter is double taille && Math.Abs(taille - corps) < 1e-9;
+        }
+    }
+
+    /// <summary>
+    /// Les entrées de la liste, posées une fois, quand le chevron entre dans l'arbre : posées à
+    /// l'ouverture, après que le volet a fait sa liste, elles ne s'y montraient pas — le volet
+    /// en montrait d'autres, à leur place.
+    /// </summary>
+    private void SurTaillesAttachees(object? sender, VisualTreeAttachmentEventArgs e)
+    {
+        if (sender is not Button { Flyout: MenuFlyout liste } || liste.Items.Count > 0 || DataContext is not MainWindowViewModel vm) return;
+
+        foreach (var taille in CorpsStandard.Tailles)
+        {
+            liste.Items.Add(new MenuItem
+            {
+                Header = taille.ToString("0.##", CultureInfo.CurrentCulture),
+                ToggleType = MenuItemToggleType.Radio,
+                Command = vm.PoserLeCorpsCommand,
+                CommandParameter = taille,
+            });
+        }
+    }
+
+    /// <summary>
+    /// La liste refermée rend le focus au dernier champ qui l'avait ; un champ de la barre le
+    /// rend aussitôt, comme après le sélecteur de couleur : les lettres seules redeviennent des
+    /// outils.
+    /// </summary>
+    private void SurTaillesFermees(object? sender, EventArgs e) => RendreLeFocusDeLaBarre();
+
+    private void RendreLeFocusDeLaBarre()
+    {
+        if (TopLevel.GetTopLevel(this)?.FocusManager is { } focus &&
+            focus.GetFocusedElement() is Control champ && champ.GetSelfAndVisualAncestors().Contains(this))
+        {
+            focus.ClearFocus();
+        }
     }
 
     // ------------------------------------------------------------ la couleur du texte

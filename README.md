@@ -140,8 +140,14 @@ un bloc de texte : la police, le corps, le gras, l'italique, le souligné — le
 bascule le trait simple, le chevron qui le suit propose le double, l'épais et « mots
 seuls » —, les quatre alignements, l'interligne en multiple et la couleur du texte, que
 sa vignette ouvre. Un tableau y a la même mise en forme, sans l'alignement, qui est celui
-de chaque case. Un groupe s'y dissocie, plusieurs blocs s'y alignent et s'y répartissent.
-Ce que la barre porte, le dock ne le porte plus. Chaque clic y est un pas d'annulation ;
+de chaque case. Le corps se tape — « 10,5 » donne 10,5 pt — ou se choisit dans la liste
+des tailles standard, de 8 à 72 pt, que le chevron qui le suit ouvre. La police se tape :
+la liste s'ouvre sur les familles qui commencent par ce qu'on a tapé — « DejaVu Se »
+propose DejaVu Serif, sans regarder la casse —, `Entrée` ou `Tab` pose la première, `↑`
+et `↓` en marquent une autre ; rien ne part avant. Une police que la machine n'a pas, et
+que le document n'emploie pas, est refusée, et la barre d'état le dit. Un groupe s'y
+dissocie, plusieurs blocs s'y alignent et s'y répartissent. Ce que la barre porte, le dock
+ne le porte plus. Chaque clic y est un pas d'annulation ;
 `Entrée` y valide un champ, `Échap` y renonce, et l'un comme l'autre le quittent et rendent
 les lettres seules aux outils.
 
@@ -422,6 +428,7 @@ comptés pour rien : sur un AZERTY, `Ctrl+]` se tape `Ctrl+AltGr+)`, `Ctrl+[` se
 | `Ctrl+L` / `Ctrl+E` / `Ctrl+R` / `Ctrl+J` | Aligner le texte à gauche / Centrer / Aligner à droite / Justifier, sur le bloc entier |
 | `Ctrl+]` / `Ctrl+[` | Le corps d'un point de plus / de moins, sur le bloc de texte ou le tableau |
 | `Ctrl+Maj+>` / `Ctrl+Maj+<` | La taille suivante / précédente de la liste standard : 8, 9, 10, 10,5, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72 ; au-delà, de dix en dix ; en deçà, d'un point |
+| Dans la liste des polices de la barre : `Entrée` ou `Tab`, `↑` / `↓`, `Échap` | Pose la police proposée — la première de celles qui commencent par la frappe — et rend la planche, ou passe au champ suivant ; marque la proposition précédente / suivante ; renonce à ce qui est tapé et rend la planche |
 
 ### Affichage
 

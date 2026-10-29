@@ -2778,6 +2778,23 @@ saboter "un champ refuse sans le dire (N14)" \
     '' \
     'N14-les-champs|ChampNumeriqueTests'
 
+# N19 : la police se tape, et ne part qu'à Entrée. La frappe qui pose la proposition à chaque
+# lettre — le sabotage du plan — : c'était, en plus franc, ce que la liste éditable d'Avalonia
+# faisait à l'entrée de même texte.
+saboter "la frappe pose la police à chaque lettre (N19)" \
+    MyPublisher/Views/ListeDesPolices.cs \
+    '        Ouvrir(_propositions.Count > 0);' \
+    $'        Ouvrir(_propositions.Count > 0);\n        if (_marquee >= 0) SetCurrentValue(SelectedIndexProperty, _marquee);' \
+    'N19-corps-et-police|CorpsEtPoliceTests'
+
+# Une taille de la liste du corps posée hors de toute transaction : le bloc la prend, mais
+# Annuler ne la défait pas.
+saboter "une taille de la liste du corps ne fait pas son pas (N19)" \
+    MyPublisher/ViewModels/MainWindowViewModel.CorpsEtPolice.cs \
+    '    private void PoserLeCorps(double taille) => ChangerLeCorps(_ => taille);' \
+    $'    private void PoserLeCorps(double taille)\n    {\n        if (SingleSelected is Models.TextFrame texte) texte.FontSize = taille;\n        else if (SingleSelected is Models.TableFrame tableau) tableau.FontSize = taille;\n    }' \
+    'N19-corps-et-police|CorpsEtPoliceTests'
+
 # Un motif qui ne désigne aucun sabotage ne prouve rien. « eprouver-le-juge.sh I4 » sortait
 # en 0 sur « 0 sabotages, 0 attrapés », quand les intitulés de la planche ne portaient pas
 # encore le code du poste : le filet passait pour éprouvé sans qu'on l'ait troué.
