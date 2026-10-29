@@ -407,7 +407,11 @@ public static class Recalage
 
     /// <summary>
     /// Le caractère <paramref name="i"/> clôt-il un paragraphe ? Un « \r » suivi d'un
-    /// « \n » ne le clôt pas : c'est le « \n » qui le fera.
+    /// « \n » ne le clôt pas : c'est le « \n » qui le fera. Le saut de ligne forcé,
+    /// <see cref="Compositeur.SautDeLigne"/> (U+2028, poste N16), non plus : il coupe la ligne
+    /// dans le paragraphe, que la composition ne ferme pas. Le compter ici donnerait aux écarts
+    /// un paragraphe que la composition n'a pas, et chaque écart d'après glisserait d'un cran.
+    /// Tapé, il est un caractère du paragraphe : il prend le style de ce qui le précède.
     /// </summary>
     private static bool EstSaut(string texte, int i) =>
         texte[i] == '\n' || (texte[i] == '\r' && (i + 1 >= texte.Length || texte[i + 1] != '\n'));

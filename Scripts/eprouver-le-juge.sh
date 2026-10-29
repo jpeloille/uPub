@@ -2825,6 +2825,39 @@ saboter "Échap pendant un glissé laisse le bloc où il est (N17)" \
     '' \
     'N17-modificateurs-du-glisser|ModificateursDuGlisserTests'
 
+# N15 : l'application connaît la sélection du texte. Le sabotage du plan : la sélection oubliée
+# quand la barre prend le focus — le champ de la saisie réduit la sienne à un curseur en perdant
+# le focus, et la planche qui le suivrait encore le dirait au modèle de vue.
+saboter "la sélection du texte (N15) oubliée quand la barre prend le focus" \
+    MyPublisher/Views/PageCanvas.Saisie.cs \
+    $'        if (!zone.IsFocused)\n        {' \
+    $'        if (false)\n        {' \
+    'N15-selection-du-texte|SelectionDuTexteTests'
+
+# N16 : tabulation et saut de ligne forcé. Le sabotage du plan : U+2028 compté comme un saut de
+# paragraphe par le recalage — le compte des paragraphes change à Maj+Entrée, et l'écart du
+# paragraphe suivant glisse d'un cran.
+saboter "le saut forcé (N16) compté comme un saut de paragraphe" \
+    MyPublisher.Core/Models/Recalage.cs \
+    "texte[i] == '\\n' || (texte[i] == '\\r' && (i + 1 >= texte.Length || texte[i + 1] != '\\n'));" \
+    "texte[i] is '\\n' or Compositeur.SautDeLigne || (texte[i] == '\\r' && (i + 1 >= texte.Length || texte[i + 1] != '\\n'));" \
+    'N16-tabulation-et-saut-force|SautDeLigneForceTests|TabulationEtSautForceTests'
+
+# La composition qui ferme le paragraphe au saut forcé : la ligne d'après reprend le retrait de
+# première ligne, et les écarts se décalent.
+saboter "le saut forcé (N16) ferme le paragraphe dans la composition" \
+    MyPublisher.Core/Models/Compositeur.cs \
+    'unites.Add(new Unite(string.Empty, style, FinDeLigne: false, i, 1, SautForce: true));' \
+    'unites.Add(new Unite(string.Empty, style, FinDeLigne: true, i, 1));' \
+    'N16-tabulation-et-saut-force|SautDeLigneForceTests|TabulationEtSautForceTests'
+
+# Maj+Tab laissé au champ, qui accepte la tabulation : il en écrit une, comme Tab.
+saboter "Maj+Tab (N16) écrit une tabulation en saisie" \
+    MyPublisher/Views/PageCanvas.Saisie.cs \
+    $'            case Key.Tab:\n                e.Handled = true;\n                break;\n' \
+    '' \
+    'N16-tabulation-et-saut-force|TabulationEtSautForceTests'
+
 # Un motif qui ne désigne aucun sabotage ne prouve rien. « eprouver-le-juge.sh I4 » sortait
 # en 0 sur « 0 sabotages, 0 attrapés », quand les intitulés de la planche ne portaient pas
 # encore le code du poste : le filet passait pour éprouvé sans qu'on l'ait troué.

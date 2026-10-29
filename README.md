@@ -228,6 +228,10 @@ Fenêtre masque aussi l'un ou l'autre.
   du caractère qui le suit — un mot tapé devant un titre en gras est en gras. Une
   sélection retapée garde le style de son premier caractère. C'est la règle de
   Publisher et de Word.
+  `Maj+Entrée` coupe la ligne sans finir le paragraphe — le saut de ligne forcé, un
+  caractère (U+2028) que la composition coupe et qui ne compte pas comme un paragraphe —,
+  et `Tab` met une tabulation, au taquet suivant. L'import d'un `.pub` rend encore le saut
+  forcé de Publisher par un paragraphe.
   L'interligne s'exprime en multiple de la hauteur **naturelle** de la police — « 1,25 »
   veut dire une fois et quart ce que la police demande, jamais une fois et quart le
   corps.
@@ -434,6 +438,7 @@ comptés pour rien : sur un AZERTY, `Ctrl+]` se tape `Ctrl+AltGr+)`, `Ctrl+[` se
 | `Ctrl+]` / `Ctrl+[` | Le corps d'un point de plus / de moins, sur le bloc de texte ou le tableau |
 | `Ctrl+Maj+>` / `Ctrl+Maj+<` | La taille suivante / précédente de la liste standard : 8, 9, 10, 10,5, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72 ; au-delà, de dix en dix ; en deçà, d'un point |
 | Dans la liste des polices de la barre : `Entrée` ou `Tab`, `↑` / `↓`, `Échap` | Pose la police proposée — la première de celles qui commencent par la frappe — et rend la planche, ou passe au champ suivant ; marque la proposition précédente / suivante ; renonce à ce qui est tapé et rend la planche |
+| Dans la saisie d'un bloc : `Entrée` / `Maj+Entrée` / `Tab` | Un nouveau paragraphe / Un saut de ligne forcé, qui coupe la ligne sans changer de paragraphe — ni retrait de première ligne, ni espace de paragraphe après lui / Une tabulation, au taquet suivant, tous les 36 pt ; `Maj+Tab` ne quitte pas le bloc. Dans le dock, `Tab` reste le passage au champ suivant |
 
 ### Affichage
 

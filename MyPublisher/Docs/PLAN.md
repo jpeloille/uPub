@@ -118,8 +118,8 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **N12** | Entrer dans le texte d'un clic, le curseur au point visé | **100 %** | Un clic dans le texte d'un bloc de texte le prend seul, ouvre la saisie et y pose le curseur sur le caractère visé, lu sur la composition qui était à l'écran (`IndexSous` de N3, par la transformation du contrôle même), sans rien sélectionner ; un glissé dans le texte sélectionne depuis cette ancre, passé le seuil de 3 px (Q21), sur la mise en page du champ ; une bande de bord de 5 px d'écran, au plus un quart du côté, étendue jusqu'au cadre d'un bloc sélectionné, prend et déplace le bloc comme avant ; le curseur est le I sur le texte, les quatre flèches sur le bord ; `Ctrl`+clic et `Maj`+clic ajoutent ou retirent sans saisie ; le double-clic n'ouvre plus rien, le champ y prend un mot. La mécanique vit dans `PageCanvas.Saisie.cs`. Un bloc neuf, de l'outil Texte ou Titre, est vide, le curseur dedans ; *Insertion ▸ Bloc de texte* (et *Titre*) ouvre la saisie comme l'outil, par une demande du modèle de vue (`SaisieDemandee`). La pression qui ouvre la saisie rend la main en 48 à 81 ms de médiane sur ATA 21 : elle en prenait jusqu'à 115, la saisie qui s'ouvre faisant recomposer le bloc par la vignette, le marqueur de débordement et le compte de I9, qui l'ignorent désormais. Seize tests sous `poste=N12` ; règle 14 : vingt-quatre tests réécrits dans huit classes, deux renommés, l'entrée en saisie du banc à un clic ; recettes Q14, Q21-Q22 et Q23 reprises ; deux sabotages au juge, deux cibles reprises. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **N13** | Les menus de Publisher | **100 %** | À chaque niveau de chaque menu une lettre d'accès par entrée, unique, sans accent — « _Edition », « T_itre », « I_mage… », « _Aligner le texte à gauche » — ; la barre ouverte, la lettre se cherche au seul niveau ouvert, comme Windows (`MainWindow.Menus.cs`), sur le caractère ou le chiffre de la rangée : Alt, D, O, P joue Premier plan, Edition puis A annule, Alt, F, « 2 » rouvre le deuxième document récent, une lettre partagée au niveau promène le focus sans rien jouer — Avalonia 11.3.9 la cherchait sur la barre et sur chaque niveau ouvert à la fois. Les menus écrivent les gestes en français, « Ctrl+Maj+G », « Suppr », « Ctrl++ », comme les bulles : `GestesEnFrancais`, branché par `App.Initialize`, écrit le texte en valeur locale sur `PART_InputGestureText` à l'application du gabarit et le suit quand le geste change — `AppBuilder.With(new KeyGestureFormatInfo(…))` ne tient pas sous Avalonia 11.3.9, la plate-forme liant la sienne par-dessus. Disposition rangé comme Publisher 2007, « Re_pères de règle ▸ », Grouper, Dissocier, « _Regrouper », « _Ordre ▸ » et ses quatre ordres, « _Aligner ou répartir ▸ » et ses six alignements, deux répartitions et leur repère, Ajuster aux marges ; « Regrouper » refait le dernier groupe dissous, en un pas, à son nom, sans resélection, tant que ses blocs sont tous sur la page (`MainWindowViewModel.Menus.cs`) ; Tab et Maj+Tab, la planche ayant le focus, passent au bloc suivant ou précédent dans l'ordre de la page, les masqués sautés, en boucle, sans pas d'annulation, et Tab dans le dock va toujours au champ suivant ; la barre de menus ouverte garde ses touches — Alt puis E armait l'ellipse, Suppr y supprimait le bloc. Onze tests ; quatre tests voisins et la recette N8 relisent les libellés neufs (règle 14) ; six sabotages au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **N14** | Les champs | **100 %** | Les champs numériques du dock et de la barre contextuelle sont des `ChampNumerique` (`Views/ChampNumerique.cs`), dérivés de `NumericUpDown` sous son apparence : la valeur ne part plus à chaque frappe lisible — taper « 210 » dans la largeur de la page l'écrivait à 2, 21 puis 210 mm —, mais à `Entrée`, `Tab`, la sortie du champ, `↑` et `↓`, la molette, une fois ; `↑` et `↓` partent de ce qui est tapé, même tout pris après un refus. `Unite` lit mm, cm, pt, pi et le pouce (« po », « in », `"`), à la virgule comme au point, en fractions exactes de millimètre : « 2 cm » dans X donne 20,0 mm, « 12 pt » dans une marge 4,23 mm, « 1" » 25,4 mm ; l'affichage reste en millimètres. Une saisie illisible ou hors des bornes n'est pas ramenée à la borne : la valeur d'avant revient, et la barre d'état le dit, bornes comprises, par `Status`, le canal du zoom tapé de N4. `Échap` renonce et rend la planche, au dock comme dans la barre (règle 13) ; `Entrée` dans la barre valide et rend la planche, au dock garde le champ. Ce qui attend dans un champ part avant que la fenêtre referme sa transaction (`ClosePropertyEdit`, le piège du plan : fermer le document pose alors la question), et avant que le modèle de vue referme les siennes, change la sélection, enregistre ou exporte (`MainWindowViewModel.Champs.cs`). Le catalogue et le dialogue des coordonnées se ferment par `Échap` (`IsCancel`) ; `Tab` ne s'arrête plus sur les titres de section du dock. Douze tests sur la fenêtre ; trois tests de la barre réécrits (règle 14) ; sept sabotages au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
-| **N15** | L'application connaît la sélection du texte | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 5 |
-| **N16** | Tabulation et saut de ligne forcé | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 5, après N15 dans la même copie |
+| **N15** | L'application connaît la sélection du texte | **100 %** | Le modèle de vue connaît la sélection du texte en saisie : `SelectionDuTexte` — le bloc ou la case, le début, la fin, le curseur, et l'ancre qui s'en déduit —, rangée début avant fin, le curseur au bout que le geste déplace (`SelectionEnd` du champ : son `CaretIndex` ne suit pas `Maj+→`), et `ParagraphesDeLaSelection`, par `MiseEnForme.Paragraphes`, donc `Recalage.ParagrapheDe` — l'une et l'autre nulles hors saisie, les paragraphes aussi pour une case. La planche la tient depuis `PageCanvas.Saisie.cs` sans toucher son fichier principal (règle 16) : elle suit le champ de la saisie dès qu'il prend le focus, à chaque pression, glissé, flèche et frappe, ne dit plus rien d'un champ sans focus — le champ réduit sa sélection à un curseur en perdant le focus, et la barre la ferait oublier —, ramène la sélection gardée dans ses bornes quand le texte change au dock, et la vide quand le champ se cache, à la sortie de la saisie. Un glissé sur les caractères 4 à 7 donne (4, 7), `Maj+→` (4, 8), une frappe (5, 5) ; le corps pris à la barre ne change rien ; Échap vide. Huit tests sous `poste=N15` ; un sabotage au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
+| **N16** | Tabulation et saut de ligne forcé | **100 %** | `Tab`, dans la saisie d'un bloc, met « \t » au curseur (`AcceptsTab` sur le champ de la page) : le mot suivant tombe au taquet de 36 pt, à l'écran comme au PDF à 0,05 pt près, et la saisie et le focus restent dans le champ ; `Maj+Tab` ne sort plus du bloc et n'écrit rien ; dans le dock, `Tab` reste la navigation. `Maj+Entrée` pose U+2028 (`Compositeur.SautDeLigne`), le saut de ligne forcé, que la planche écrit à la place de la sélection (`PageCanvas.Saisie.cs`) : `Decouper` coupe la ligne sans fermer le paragraphe — ni retrait de première ligne ni espace avant après lui, l'espace après au bout du paragraphe —, et `Recalage` ne le compte pas comme un saut : le compte des paragraphes et les écarts ne bougent pas. Les champs de la page et du dock écrivent « \n » (`NewLine`), et non `Environment.NewLine`. La composition des documents existants ne change pas : l'empreinte de N3 sur les 19 documents du corpus est identique avant et après. Huit tests du noyau et six sur la fenêtre sous `poste=N16` ; README (Texte) ; trois sabotages au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **N17** | Les modificateurs du glisser, et le rectangle de sélection | **100 %** | Sur un bloc, `Ctrl` et `Maj` ne basculent plus la sélection à la pression mais au relâché ; passé le seuil de Q21, le bloc s'ajoute et le geste devient un déplacement : sous `Ctrl`, des copies posées à la place des originaux, qui restent, en un pas ; sous `Maj`, tenu sur l'axe dominant, que l'aimantation ne fait pas bouger. Au tracé, `Maj` donne un carré ou un cercle, `Ctrl` trace depuis le centre, à l'aperçu comme au bloc ; `Ctrl` sur une poignée redimensionne depuis le centre, bloc tourné compris. Un rectangle tiré dans le vide ou depuis le gris prend, au relâché, les blocs visibles dont l'emprise est tout entière dedans, `Maj` ou `Ctrl` les ajoutant ; il se dessine dans l'`Overlay`, à l'accent et à la projection de l'apparence lus par le code. `Échap` annule le glissé en cours — déplacement, copie, poignée, rotation, extrémité, repère, rectangle — sans pas. Le curseur de rotation est le tracé de `IconeRotation`, dessiné comme la main et la loupe. La mécanique vit dans `PageCanvas.Gestes.cs` ; les trois cibles du piège restent, une fois chacune, et restent attrapées. Dix-sept tests sous `poste=N17`, aucun test réécrit ; deux aides au banc, `Tenir` et `Lacher` ; quatre sabotages au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **N18** | Les menus vers le dock, et les pages, avec A8 et A9 | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 5 |
 | **N19** | Le corps et la police : une liste, et une frappe | **100 %** | La police de la barre se tape, au texte et au tableau : `ListeDesPolices` (`Views/ListeDesPolices.cs`), une `ComboBox` éditable sous son apparence, dont la frappe ne passe plus par la recherche d'Avalonia 11.3.9 — qui prenait, à chaque lettre, l'entrée de même texte : « DejaVu Sans Mono » tapé posait DejaVu Sans au onzième caractère. La liste s'ouvre sur les familles dont le libellé commence par la frappe, sans la casse, la première marquée — « Geo » propose Georgia —, `↑` et `↓` promènent la marque, `Entrée` la pose en un pas et rend la planche, `Tab` la pose et passe au corps, `Échap` renonce ; une police que rien ne commence est refusée, et la barre d'état le dit (`Status`, N14) ; la zone montre le libellé, « Corps du jeu — DejaVu Sans », « Georgia (absente) » ; Q20 et la règle 1 tiennent. Le corps garde son champ (N14 : « 10,5 » tapé donne 10,5 pt) et reçoit « Tailles du corps », un menu volant des dix-sept tailles du noyau (`CorpsStandard`, N10), la taille du bloc cochée, en un pas (`PoserLeCorps`, `MainWindowViewModel.CorpsEtPolice.cs`). Seize tests sur la fenêtre ; deux tests voisins réécrits (règle 14) ; deux sabotages au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
@@ -7873,6 +7873,59 @@ la sélection oubliée quand la barre prend le focus.
 Fichiers : `PageCanvas.Saisie.cs`, `MainWindowViewModel.Saisie.cs` (neuf). Dépend de N12 et N2.
 Effort : faible.
 
+*Livré le 29 octobre 2026*, dans la salve Saisie 5 ; la relecture adversariale vient après la
+fusion. **Le modèle de vue** (`MainWindowViewModel.Saisie.cs`, qui existait depuis N12) porte le
+type `SelectionDuTexte(Frame Bloc, TableCell? Case, int Debut, int Fin, int Curseur)` — avec
+`Ancre`, `EstVide`, `Plage` et `Texte` —, la propriété `SelectionDuTexte`, nulle hors saisie,
+`ParagraphesDeLaSelection`, nulle hors saisie et pour une case, et `SuivreLaSelectionDuTexte`, par
+où la planche la dit, sans notification quand rien ne change. `SelectionDuTexte.De(bloc, case,
+ancre, curseur, longueur)` range la sélection d'un champ : début avant fin, dans les bornes du
+texte. **La planche** (`PageCanvas.Saisie.cs`) pose, au premier attachement, une écoute du focus
+(`OnAttachedToVisualTree`), et non dans son constructeur, que N17 retouche : quand le champ du bloc
+en saisie prend le focus, elle le suit (`PropertyChanged`), dit sa sélection à chaque changement de
+`SelectionStart`, `SelectionEnd` ou `Text` tant qu'il a le focus, ramène la sélection gardée dans
+ses bornes quand le texte change sans lui — le champ Contenu du dock est lié au même bloc —, et la
+vide quand le champ se cache, c'est-à-dire à la sortie de la saisie, quelle qu'en soit la cause.
+`PageCanvas.axaml.cs` n'est pas touché.
+
+*Recette jouée* : `Scripts/recettes/N15-selection-du-texte.sh`. Les sources d'abord — le type et
+ses paragraphes au modèle de vue, par `MiseEnForme.Paragraphes`, qui compte par
+`Recalage.ParagrapheDe` ; la planche qui la dit depuis son partiel, au focus, jamais sans lui, et
+la vide quand le champ se cache —, puis huit tests sous `poste=N15` (`SelectionDuTexteTests`) : le
+glissé sur les caractères 4 à 7, (4, 7), puis `Maj+→`, (4, 8), puis une frappe, (5, 5) ; le glissé à
+rebours, la même plage le curseur au début, et `Maj+←` qui l'étend de ce côté ; le clic d'entrée et
+les flèches, le curseur seul, et un clic dans un autre bloc ; le champ Corps qui prend le focus —
+le champ de la saisie a réduit sa sélection, le modèle de vue garde (4, 8) et son paragraphe —, puis
+Échap dans le corps ; Échap, un clic dehors et une autre sélection des blocs, qui la vident ; le
+texte raccourci au dock ; les paragraphes de trois paragraphes, le curseur, une sélection qui finit
+sur un saut et une qui le passe ; la forme rangée, et une case sans paragraphes. Au juge, le
+sabotage du plan : la sélection oubliée quand la barre prend le focus — la garde du focus retirée.
+
+*Ce que l'implémentation a appris.*
+- **Le champ oublie sa sélection en perdant le focus**, et la réduit à son `CaretIndex` : après
+  un glissé de 4 à 7 et `Maj+→`, le champ montre un curseur seul à 4 une fois le corps pris. C'est
+  pourquoi la planche ne suit le champ que tant qu'il a le focus, et pourquoi le sabotage se voit.
+- **`CaretIndex` ne suit pas `Maj+→`** : après `Maj+Fin` et `Maj+→` depuis 4, il vaut encore 4
+  quand la sélection est (4, 8). Le bout qui bouge est `SelectionEnd`, qui passe avant
+  `SelectionStart` dans un glissé à rebours ; c'est lui le curseur.
+- **La spécification nommait `MainWindowViewModel.Saisie.cs` neuf** : N12 l'avait créé pour
+  `SaisieDemandee`. Le poste y ajoute, sans fichier de plus.
+
+*Choisi sans certitude* :
+- la planche ne rend pas au champ, quand il reprend le focus, la sélection que le modèle de vue a
+  gardée : un clic qui le lui rend pose son propre curseur, et le menu Edition de N13 rend la sienne
+  (`RendreAuChamp`) ; un retour au clavier depuis la barre, `Entrée` ou `Échap`, rend la planche
+  et non le champ (N14). R7 dira s'il faut la rendre ;
+- la case d'un tableau est dans le type, que N20 et N27 rempliront ; rien ne la produit encore,
+  la page n'ayant pas de saisie de case ;
+- le modèle de vue est notifié de chaque état intermédiaire du champ — poser une sélection en
+  change trois propriétés —, et non une fois par geste : rien ne lit encore la sélection, et un
+  envoi différé aurait demandé une image de plus aux tests.
+
+*Relevé, non corrigé.* `MainWindow.RendreAuChamp` (N13) retient encore lui-même la sélection du
+champ sous le menu ; il pourrait lire `SelectionDuTexte` pour la zone de saisie. `MainWindow.axaml.cs`
+est à N18 dans cette salve.
+
 #### N16 — Tabulation et saut de ligne forcé *(fiche 23, a15, a16)*
 
 *Spécifié le 25 octobre 2026.* Tab n'est pas inséré — `AcceptsTab` n'est pas posé — : il emmène le
@@ -7902,6 +7955,72 @@ la tabulation d'Avalonia et non le taquet de 36 pt.
 Fichiers : `PageCanvas.axaml`, `MainWindow.axaml` (champ Contenu), `PageCanvas.Saisie.cs`,
 `Compositeur.cs`, `Recalage.cs`. Dépend de N15, dans la même copie, et de N3. Effort : faible à
 moyen.
+
+*Livré le 29 octobre 2026*, dans la salve Saisie 5, après N15 dans la même copie ; la relecture
+adversariale vient après la fusion. **Le noyau.** `Compositeur.SautDeLigne` vaut U+2028. `Decouper`
+coupe le texte à ce caractère comme à un saut, et le rend en unité de saut forcé (`Unite.SautForce`),
+que la composition ferme par `Fermer(finDeParagraphe: false, …)` : la ligne finit avant lui, la
+suivante commence après, dans le même paragraphe, qui n'en est plus à sa première ligne. Le compte
+des paragraphes, qui sort des seules fins de paragraphe de la découpe, ne le voit pas. `Recalage`
+ne le comptait déjà pas (`EstSaut` ne lit que « \n » et « \r ») : son code ne change pas, sa
+documentation le dit — tapé, U+2028 est un caractère du paragraphe et prend le style de ce qui le
+précède. **La vue.** Le champ de la page porte `AcceptsTab="True"` et `NewLine="&#10;"` ; le champ
+Contenu du dock `NewLine="&#10;"` seulement. La planche écoute les touches du champ de la saisie
+avant lui (`ToucheDeLaSaisie`, en tunnel, posée avec l'écoute du focus de N15) : `Maj+Entrée` lui
+pose U+2028 à la place de la sélection, le curseur après lui (`PoserLeSautForce`, par
+`SetCurrentValue` : la planche ne fabrique aucun événement, ce que la recette N5 garde), et le texte
+passe par la liaison, la saisie et son recalage ; `Maj+Tab` est pris et ne fait rien. `Ctrl+Entrée` reste au champ, un paragraphe. Le
+README le dit (Texte, et ce que l'application sait faire).
+
+*Recette jouée* : `Scripts/recettes/N16-tabulation-et-saut-force.sh`. Les sources — les deux champs,
+la cible du juge `Text="{Binding Saisie, Mode=TwoWay}"` gardée une fois, U+2028 dans `Decouper` et
+hors de `EstSaut`, les touches prises depuis `PageCanvas.Saisie.cs`, le README —, puis huit tests du
+noyau (`SautDeLigneForceTests`) : la ligne coupée dans le paragraphe, sa plage, le compte de
+`Recalage` ; ni retrait de première ligne, ni espace avant après le saut forcé, l'espace après au
+bout, quand « \n » les donne à chaque paragraphe ; l'écart du deuxième paragraphe resté au deuxième ;
+les blancs rognés, deux sauts de suite, un saut au bout du texte ; le curseur à droite de la ligne
+avant le saut ; U+2028 tapé, qui ne décale aucun écart et allonge le fragment d'avant. Puis six tests
+sur la fenêtre (`TabulationEtSautForceTests`) : `Tab` dans le 2ᵉ paragraphe, « \t » au curseur, le
+mot « mot » à `bloc.X + PaddingLeft + 36` sur la composition de la planche et dans le PDF
+(`pdftotext -bbox`), à 0,05 pt, la saisie et le focus gardés, un pas ; `Maj+Tab` ; `Tab` au dock ;
+`Maj+Entrée` sur un bloc en retrait de 20 pt dont le deuxième paragraphe est centré — trois lignes,
+deux paragraphes, la deuxième ligne au bord, l'écart à sa place, un pas ; `Maj+Entrée` sur une
+sélection, qu'il remplace ; `Entrée`, et `NewLine` des deux champs. Trois sabotages au juge : celui du plan, U+2028 compté comme un saut de paragraphe par
+`Recalage` ; la composition qui ferme le paragraphe au saut forcé ; `Maj+Tab` laissé au champ.
+
+**Mesuré.** L'empreinte de la composition (`Scripts/empreinte-composition.sh`, l'outil de N3),
+relevée au commit de N15 puis après N16, sur les 19 documents du corpus — `Samples/`, les modèles,
+ATA 21 et les Fiches : 2 506 lignes composées, 30 pages, les PDF et leurs mots — : **identique**.
+Aucun `.mypub` du dépôt ne porte de U+2028.
+
+*Ce que l'implémentation a appris.*
+- **`Recalage` n'avait rien à apprendre** : il ne comptait déjà que « \n » et « \r ». Le poste ne
+  change que sa documentation, et la recette vérifie qu'il ne nomme pas U+2028.
+- **Avec `AcceptsTab`, le champ écrit aussi une tabulation sous `Maj+Tab`** (mesuré, la garde de la
+  planche retirée) : c'est ce que la garde lui prend, et ce que le sabotage du juge rejoue. Sans
+  `AcceptsTab`, `Maj+Tab` allait à la navigation, comme `Tab`.
+- **La recette N5 interdit à la planche de fabriquer un événement** (`RaiseEvent`) : U+2028 envoyé en
+  texte tapé l'y faisait tomber. Il est écrit dans le texte du champ, à la place de la sélection.
+- **Le champ montre U+2028 comme une coupure de ligne** : mesuré, « Un\u2028trois » y fait deux lignes. Avant N21, le champ montre donc le saut forcé à
+  sa façon, comme il montre la tabulation à son pas et non au taquet de 36 pt (piège du plan).
+- Un U+2028 écrit tel quel dans une source C# y est une fin de ligne : les tests l'écrivent `\u2028`.
+
+*Choisi sans certitude* :
+- une ligne coupée par un saut forcé dans un paragraphe justifié est justifiée, comme dans Word :
+  elle ne ferme pas son paragraphe, et c'est la seule information que les deux rendus lisent
+  (`FinDeParagraphe`). Publisher n'a pas été relu sur ce point ;
+- `Maj+Tab` ne fait rien en saisie ; Publisher le prend, dans une liste, pour diminuer le retrait,
+  que N23 et R6 n'ont pas encore ;
+- `Ctrl+Entrée` écrit toujours un paragraphe : la section ne le change pas, et la fonction de
+  Publisher qui le prendrait n'existe pas ;
+- le curseur à droite d'une ligne coupée par un saut forcé se pose avant lui, à la fin de la ligne,
+  et la position qui le suit est le début de la ligne suivante — la plage de la ligne exclut le
+  saut, comme pour un saut de paragraphe.
+
+*Relevé, non corrigé.* L'import rend toujours le saut forcé de Publisher par un paragraphe
+(`PubImporter`, `insertLineBreak`) : T1 de l'étude de 98 l'en corrigera, comme la section le dit. Un
+texte collé d'ailleurs garde ses sauts de paragraphe, et le texte copié garde U+2028, qu'une autre
+application lira à sa façon.
 
 #### N17 — Les modificateurs du glisser, et le rectangle de sélection *(fiche 23, c8, c10 à c14)*
 

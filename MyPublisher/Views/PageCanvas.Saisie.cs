@@ -4,8 +4,10 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Presenters;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.VisualTree;
 using MyPublisher.Models;
+using MyPublisher.ViewModels;
 
 namespace MyPublisher.Views;
 
@@ -34,6 +36,10 @@ namespace MyPublisher.Views;
 /// Ce qu'on voit après l'entrée dépend de la voie de R7 (N21) : jusque-là, le champ en texte brut.
 /// Le curseur, lui, tombe au bon caractère dès ce poste ; le glissé suit le champ, qui est ce
 /// que l'écran montre pendant la saisie.
+///
+/// La planche dit aussi au modèle de vue ce qui est sélectionné dans le texte en saisie (poste
+/// N15 ; fiche 23, b1 et b4) : <see cref="MainWindowViewModel.SelectionDuTexte"/>, que R6, R7,
+/// N20 et N21 liront. Voir <see cref="SuivreLaZoneDeSaisie"/>.
 /// </summary>
 public partial class PageCanvas
 {
@@ -175,5 +181,180 @@ public partial class PageCanvas
         zone.CaretIndex = fin;
         zone.SelectionEnd = fin;
         zone.SelectionStart = ancre;
+    }
+
+    // ------------------------------------------------------- la sélection du texte (N15)
+
+    /// <summary>
+    /// Le champ de la saisie dont la planche suit la sélection : celui qui a pris le focus en
+    /// dernier pour le bloc en saisie. Nul hors saisie.
+    /// </summary>
+    private TextBox? _zoneSuivie;
+
+    /// <summary>L'écoute du focus est posée : elle ne l'est qu'une fois, au premier attachement.</summary>
+    private bool _focusDesZonesEcoute;
+
+    /// <summary>
+    /// La planche écoute le focus que prennent ses champs, pour suivre la sélection du texte en
+    /// saisie. L'écoute est posée ici, et non dans le constructeur, qu'un seul poste d'une salve
+    /// retouche (règle 16 de la phase N) ; une fois, car la planche peut être détachée puis
+    /// rattachée.
+    /// </summary>
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        if (_focusDesZonesEcoute) return;
+
+        _focusDesZonesEcoute = true;
+        AddHandler(GotFocusEvent, (_, args) => SuivreLaZoneDeSaisie(args.Source as TextBox),
+            RoutingStrategies.Bubble, handledEventsToo: true);
+        AddHandler(KeyDownEvent, ToucheDeLaSaisie, RoutingStrategies.Tunnel);
+    }
+
+    /// <summary>
+    /// Ce que la planche prend au champ de la saisie, avant lui (poste N16 ; fiche 23, a15 et
+    /// a16). Le champ met lui-même la tabulation au curseur (<c>AcceptsTab</c>), et Entrée y
+    /// écrit le saut de paragraphe ; il écrivait aussi le saut de paragraphe sous <c>Maj</c> et
+    /// <c>Ctrl</c>.
+    ///
+    ///   - <c>Maj+Entrée</c> pose le saut de ligne forcé, <see cref="Compositeur.SautDeLigne"/>,
+    ///     à la place de la sélection, le curseur après lui (<see cref="PoserLeSautForce"/>) ;
+    ///   - <c>Maj+Tab</c> ne fait rien. Sans <c>AcceptsTab</c>, la navigation emmenait le focus
+    ///     au contrôle précédent et laissait la saisie ouverte, orpheline ; avec lui, le champ
+    ///     écrit une tabulation sous <c>Maj</c> comme sans lui (mesuré). Ni l'un ni l'autre :
+    ///     <c>Maj+Tab</c> reste dans le bloc, sans rien écrire.
+    ///
+    /// <c>Ctrl+Entrée</c> reste au champ, qui y écrit un saut de paragraphe. Dans le dock, Tab
+    /// reste la navigation entre champs : seul le champ de la page est ici.
+    /// </summary>
+    private void ToucheDeLaSaisie(object? sender, KeyEventArgs e)
+    {
+        if (_editing is null || e.Source is not TextBox zone || !ReferenceEquals(zone.DataContext, _editing) ||
+            !this.IsVisualAncestorOf(zone))
+        {
+            return;
+        }
+
+        if (e.KeyModifiers != KeyModifiers.Shift) return;
+
+        switch (e.Key)
+        {
+            case Key.Enter:
+                PoserLeSautForce(zone);
+                e.Handled = true;
+                break;
+            case Key.Tab:
+                e.Handled = true;
+                break;
+        }
+    }
+
+    /// <summary>
+    /// Le saut de ligne forcé, posé dans le champ comme le champ y pose une frappe : à la place
+    /// de la sélection, le curseur après lui. Le texte passe par la liaison du champ, donc par la
+    /// saisie du bloc, qui recale fragments et écarts comme pour toute frappe (Q1) : il y est un
+    /// caractère du paragraphe. Écrit, et non rejoué en frappe synthétisée : la planche ne
+    /// fabrique aucun événement (recette N5).
+    /// </summary>
+    private static void PoserLeSautForce(TextBox zone)
+    {
+        var texte = zone.Text ?? "";
+        var debut = Math.Clamp(Math.Min(zone.SelectionStart, zone.SelectionEnd), 0, texte.Length);
+        var fin = Math.Clamp(Math.Max(zone.SelectionStart, zone.SelectionEnd), debut, texte.Length);
+
+        zone.SetCurrentValue(TextBox.TextProperty, texte[..debut] + Compositeur.SautDeLigne + texte[fin..]);
+        PoserLaSelection(zone, debut + 1, debut + 1);
+    }
+
+    /// <summary>
+    /// Le champ du bloc en saisie prend le focus : la planche suit sa sélection, et la dit au
+    /// modèle de vue (poste N15). Elle la suit tant que le champ a le focus — chaque pression,
+    /// glissé, flèche ou frappe —, et la vide quand le champ disparaît, à la sortie de la saisie.
+    ///
+    /// Quand le focus va à la barre ou au dock, le champ oublie sa sélection : il la réduit à son
+    /// curseur en perdant le focus (<c>TextBox.OnLostFocus</c>, <c>ClearSelection</c>). La
+    /// planche ne le suit pas là : un champ sans focus ne dit plus rien, et la sélection que le
+    /// modèle de vue garde est celle que l'utilisateur a faite, où le réglage de la barre doit
+    /// s'appliquer (R7). Seul le texte changé ailleurs — au champ Contenu du dock, lié au même
+    /// bloc — la ramène dans ses bornes.
+    /// </summary>
+    private void SuivreLaZoneDeSaisie(TextBox? zone)
+    {
+        if (zone is null || _editing is null || !ReferenceEquals(zone.DataContext, _editing) ||
+            !this.IsVisualAncestorOf(zone))
+        {
+            return;
+        }
+
+        if (!ReferenceEquals(_zoneSuivie, zone))
+        {
+            if (_zoneSuivie is not null) _zoneSuivie.PropertyChanged -= OnZoneSuivieChangee;
+            _zoneSuivie = zone;
+            zone.PropertyChanged += OnZoneSuivieChangee;
+        }
+
+        DireLaSelectionDuTexte(zone);
+    }
+
+    private void OnZoneSuivieChangee(object? sender, AvaloniaPropertyChangedEventArgs e)
+    {
+        if (sender is not TextBox zone) return;
+
+        // Le champ se cache : la saisie est refermée — Échap, un clic qui en sort, une autre
+        // sélection, Annuler. La sélection du texte n'est plus.
+        if (e.Property == IsVisibleProperty && !zone.IsVisible)
+        {
+            OublierLaSelectionDuTexte(zone);
+            return;
+        }
+
+        if (e.Property != TextBox.SelectionStartProperty && e.Property != TextBox.SelectionEndProperty &&
+            e.Property != TextBox.TextProperty)
+        {
+            return;
+        }
+
+        if (!zone.IsFocused)
+        {
+            if (e.Property == TextBox.TextProperty) BornerLaSelectionDuTexte(zone.Text?.Length ?? 0);
+            return;
+        }
+
+        DireLaSelectionDuTexte(zone);
+    }
+
+    /// <summary>La sélection du champ, dite au modèle de vue pour le bloc en saisie.</summary>
+    private void DireLaSelectionDuTexte(TextBox zone)
+    {
+        if (_vm is null || _editing is null || !ReferenceEquals(zone.DataContext, _editing) || !zone.IsVisible) return;
+
+        _vm.SuivreLaSelectionDuTexte(SelectionDuTexte.De(_editing, null, zone.SelectionStart, zone.SelectionEnd,
+            zone.Text?.Length ?? 0));
+    }
+
+    /// <summary>
+    /// Le texte a changé hors du champ, qui n'a pas le focus : la sélection gardée revient dans
+    /// les bornes du texte, sans rien dire de plus.
+    /// </summary>
+    private void BornerLaSelectionDuTexte(int longueur)
+    {
+        if (_vm?.SelectionDuTexte is not { } selection) return;
+
+        _vm.SuivreLaSelectionDuTexte(SelectionDuTexte.De(selection.Bloc, selection.Case, selection.Ancre,
+            selection.Curseur, longueur));
+    }
+
+    /// <summary>
+    /// La saisie du bloc de <paramref name="zone"/> est refermée : la planche ne suit plus son
+    /// champ, et la sélection du texte, si c'était la sienne, est vide.
+    /// </summary>
+    private void OublierLaSelectionDuTexte(TextBox zone)
+    {
+        zone.PropertyChanged -= OnZoneSuivieChangee;
+        if (ReferenceEquals(_zoneSuivie, zone)) _zoneSuivie = null;
+        if (_vm?.SelectionDuTexte is { } selection && ReferenceEquals(selection.Bloc, zone.DataContext))
+        {
+            _vm.SuivreLaSelectionDuTexte(null);
+        }
     }
 }
