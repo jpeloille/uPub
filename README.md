@@ -290,6 +290,11 @@ Fenêtre masque aussi l'un ou l'autre.
   sa hauteur — les mêmes que la barre d'état. Un clic sur le gris de la planche libère
   la sélection, même là où passe la part rognée d'un bloc qui déborde, et une poignée
   qui sort de la page s'y saisit encore ; un outil armé n'y trace rien et reste armé.
+- **Les touches du glisser, comme Publisher** : `Ctrl` + glisser copie la sélection, les
+  originaux restant à leur place, en un pas ; `Maj` + glisser tient l'axe ; `Maj` au tracé
+  donne un carré ou un cercle, `Ctrl` trace depuis le centre et, sur une poignée,
+  redimensionne depuis le centre. Un rectangle tiré dans le vide ou depuis le gris prend
+  les blocs tout entiers dedans. `Échap` annule le glissé en cours, sans pas.
 - Grille de composition : colonnes et lignes avec leur gouttière, grille de ligne de
   base réglée en points. L'aimantation s'y accroche comme aux marges, aux bords et à
   l'axe médian de la page.
@@ -458,10 +463,17 @@ comptés pour rien : sur un AZERTY, `Ctrl+]` se tape `Ctrl+AltGr+)`, `Ctrl+[` se
 | Glisser | Dans le texte, sélectionne du texte ; par le bord, déplace le bloc |
 | Double-clic | Dans le texte, sélectionne un mot |
 | `Maj` + clic dans le texte en saisie | Étend la sélection du texte |
-| `Ctrl` ou `Maj` + clic | Ajoute un bloc à la sélection, ou l'en retire, sans entrer dans son texte |
+| `Ctrl` ou `Maj` + clic | Ajoute un bloc à la sélection, ou l'en retire, au relâché, sans entrer dans son texte |
+| `Ctrl` + glisser un bloc | Copie la sélection, le bloc compris : les copies suivent le pointeur, les originaux restent ; un seul pas |
+| `Maj` + glisser un bloc | Déplace la sélection, le bloc compris, sur l'axe dominant du chemin, horizontal ou vertical |
+| Glisser dans le vide ou depuis le gris | Rectangle de sélection : prend les blocs visibles tout entiers dedans ; `Maj` ou `Ctrl` les ajoute à la sélection |
+| `Échap` pendant un glissé | L'annule : le bloc revient à sa place, la copie s'en va, sans pas d'annulation |
 | `Alt` pendant le déplacement | Désactive l'aimantation |
+| `Maj` en traçant un bloc | Un carré, un cercle |
+| `Ctrl` en traçant un bloc | Trace depuis le centre ; avec `Maj`, un carré centré |
 | `Maj` sur une poignée d'angle | Conserve les proportions — ou les libère, quand « Conserver les proportions » est cochée |
-| `Maj` sur la poignée de rotation | Tourne par pas de 15° |
+| `Ctrl` sur une poignée | Redimensionne depuis le centre |
+| `Maj` sur la poignée de rotation | Tourne par pas de 15° ; le curseur y est la flèche circulaire de l'icône de rotation |
 | `Maj` en traçant un trait, ou sur l'une de ses extrémités | Tient le trait à 0, 45 ou 90° |
 
 ## Choix techniques

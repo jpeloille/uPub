@@ -716,6 +716,35 @@ public static class Rendu
         UneImage();
     }
 
+    /// <summary>
+    /// La première moitié d'un glissé : saisit en <paramref name="depart"/> et mène en
+    /// <paramref name="arrivee"/> en <paramref name="pas"/> mouvements égaux, bouton dit tenu, sans
+    /// lâcher. Le geste reste en cours, pour ce qu'on y fait avant le relâché — la touche Échap,
+    /// qui l'annule (poste N17) — ou pour lire ce que la pression seule a fait. <see cref="Lacher"/>
+    /// le finit. L'arrivée peut être le départ : la pression, puis un mouvement nul.
+    /// </summary>
+    public static void Tenir(TopLevel racine, Point depart, Point arrivee,
+                             RawInputModifiers touches = RawInputModifiers.None, int pas = 2)
+    {
+        Assert.True(pas >= 1, "un glissé tenu fait au moins un mouvement");
+        var tenu = touches | Tenu(MouseButton.Left);
+        racine.MouseDown(depart, MouseButton.Left, touches);
+        Battre();
+        for (var i = 1; i <= pas; i++)
+        {
+            racine.MouseMove(i == pas ? arrivee : depart + (arrivee - depart) * i / pas, tenu);
+        }
+
+        UneImage();
+    }
+
+    /// <summary>Lâche en <paramref name="point"/> le bouton qu'un <see cref="Tenir"/> a laissé pressé, puis l'image.</summary>
+    public static void Lacher(TopLevel racine, Point point, RawInputModifiers touches = RawInputModifiers.None)
+    {
+        racine.MouseUp(point, MouseButton.Left, touches);
+        UneImage();
+    }
+
     // ------------------------------------------------------------------ le clavier
 
     /// <summary>

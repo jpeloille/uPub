@@ -2795,6 +2795,36 @@ saboter "une taille de la liste du corps ne fait pas son pas (N19)" \
     $'    private void PoserLeCorps(double taille)\n    {\n        if (SingleSelected is Models.TextFrame texte) texte.FontSize = taille;\n        else if (SingleSelected is Models.TableFrame tableau) tableau.FontSize = taille;\n    }' \
     'N19-corps-et-police|CorpsEtPoliceTests'
 
+# Celui du plan : Ctrl+glisser qui déplace l'original, comme avant le poste — la copie n'est pas
+# posée, et c'est l'original qui suit le pointeur.
+saboter "Ctrl+glisser déplace l'original au lieu de le copier (N17)" \
+    MyPublisher/Views/PageCanvas.Gestes.cs \
+    '        _copieAuGlisse = e.KeyModifiers.HasFlag(KeyModifiers.Control);' \
+    '        _copieAuGlisse = false;' \
+    'N17-modificateurs-du-glisser|ModificateursDuGlisserTests'
+
+# Maj+glisser qui laisse filer l'axe : ApplyMove ne lit plus que Alt.
+saboter "Maj+glisser ne tient plus l'axe (N17)" \
+    MyPublisher/Views/PageCanvas.axaml.cs \
+    '        if (axeTenu) (dx, dy) = TenirLAxe(dx, dy);' \
+    '' \
+    'N17-modificateurs-du-glisser|ModificateursDuGlisserTests'
+
+# Le rectangle qui prend ce qu'il touche, et non ce qu'il contient : le bloc à moitié dedans entre.
+saboter "le rectangle de sélection prend un bloc à moitié dedans (N17)" \
+    MyPublisher/Views/PageCanvas.Gestes.cs \
+    '        emprise.Left >= cadre.Left && emprise.Right <= cadre.Right &&' \
+    '        emprise.Right >= cadre.Left && emprise.Left <= cadre.Right &&' \
+    'N17-modificateurs-du-glisser|ModificateursDuGlisserTests'
+
+# Échap qui referme le glissé sans rendre les blocs : ils restent où le pointeur les a menés, et
+# la transaction refermée empile un pas.
+saboter "Échap pendant un glissé laisse le bloc où il est (N17)" \
+    MyPublisher/Views/PageCanvas.Gestes.cs \
+    $'                    bloc.X = x;\n                    bloc.Y = y;\n' \
+    '' \
+    'N17-modificateurs-du-glisser|ModificateursDuGlisserTests'
+
 # Un motif qui ne désigne aucun sabotage ne prouve rien. « eprouver-le-juge.sh I4 » sortait
 # en 0 sur « 0 sabotages, 0 attrapés », quand les intitulés de la planche ne portaient pas
 # encore le code du poste : le filet passait pour éprouvé sans qu'on l'ait troué.

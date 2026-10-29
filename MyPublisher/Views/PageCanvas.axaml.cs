@@ -40,9 +40,10 @@ public partial class PageCanvas : UserControl
     /// défiler la planche et ne touche à rien d'autre. <see cref="Extremite"/> tire un bout
     /// de trait (poste A10, PageCanvas.Trait.cs). <see cref="Texte"/> est la pression qui a
     /// ouvert la saisie dans le texte d'un bloc : son glissé sélectionne du texte (poste N12,
-    /// PageCanvas.Saisie.cs).
+    /// PageCanvas.Saisie.cs). <see cref="Rectangle"/> est le rectangle de sélection, tiré dans
+    /// le vide ou depuis le gris (poste N17, PageCanvas.Gestes.cs).
     /// </summary>
-    private enum DragMode { None, Move, Resize, Rotate, Create, Guide, Pan, Extremite, Texte }
+    private enum DragMode { None, Move, Resize, Rotate, Create, Guide, Pan, Extremite, Texte, Rectangle }
 
     /// <summary>
     /// Côté d'une poignée carrée, en pixels écran : les 7 px de blanc de la maquette dans
@@ -107,14 +108,6 @@ public partial class PageCanvas : UserControl
 
     private static readonly Cursor MoveCursor = new(StandardCursorType.SizeAll);
     private static readonly Cursor ArrowCursor = new(StandardCursorType.Arrow);
-
-    /// <summary>
-    /// Le jeu standard d'Avalonia n'a pas de curseur de rotation, et en dessiner un
-    /// demanderait une image à embarquer pour un seul geste. La main dit « saisir »,
-    /// ce qui est exactement ce qu'on fait de cette poignée, et ne se confond avec
-    /// aucune des huit flèches de redimensionnement.
-    /// </summary>
-    private static readonly Cursor RotateCursor = new(StandardCursorType.Hand);
 
     private static readonly Cursor DrawCursor = new(StandardCursorType.Cross);
     private static readonly Cursor VerticalGuideCursor = new(StandardCursorType.SizeWestEast);
@@ -654,8 +647,10 @@ public partial class PageCanvas : UserControl
         if (hit is null)
         {
             // Cliquer à côté libère la sélection — sauf si l'on est en train de
-            // l'étendre, geste où un clic manqué ne doit pas tout défaire.
+            // l'étendre, geste où un clic manqué ne doit pas tout défaire. La pression tire
+            // aussi un rectangle de sélection, que Ctrl et Maj font ajouter (poste N17).
             if (!additive) _vm.SetSelection([]);
+            CommencerLeRectangle(page, additive, e);
             e.Handled = true;
             return;
         }
@@ -669,8 +664,17 @@ public partial class PageCanvas : UserControl
             return;
         }
 
-        if (additive) _vm.ToggleSelection(hit);
-        else if (!_vm.Selection.Contains(hit)) _vm.SelectOnly(hit);
+        // Ctrl et Maj ne basculent plus le bloc à la pression : ils attendent le relâché, et
+        // le glissé, s'il vient, copie sous Ctrl ou tient l'axe sous Maj (poste N17,
+        // PageCanvas.Gestes.cs).
+        if (additive)
+        {
+            PrendreSousUnModificateur(hit, page, e);
+            e.Handled = true;
+            return;
+        }
+
+        if (!_vm.Selection.Contains(hit)) _vm.SelectOnly(hit);
 
         // Un bloc déjà pris garde la sélection entière : c'est ce qui permet de saisir
         // un ensemble par n'importe lequel de ses blocs.
@@ -735,7 +739,12 @@ public partial class PageCanvas : UserControl
 
         if (_mode == DragMode.Create)
         {
-            if (!MontrerLeTraitEnCours(_startPointer, page, e.KeyModifiers)) UpdatePreview(_startPointer, page);
+            // Maj trace un carré ou un cercle, Ctrl depuis le centre (poste N17).
+            if (!MontrerLeTraitEnCours(_startPointer, page, e.KeyModifiers))
+            {
+                var (coin, oppose) = CoinsDuTrace(_startPointer, page, e.KeyModifiers);
+                UpdatePreview(coin, oppose);
+            }
             return;
         }
 
@@ -759,8 +768,18 @@ public partial class PageCanvas : UserControl
             return;
         }
 
+        // Le rectangle de sélection ne paraît qu'au-delà du seuil : en deçà, c'est un clic (N17).
+        if (_mode == DragMode.Rectangle)
+        {
+            TirerLeRectangle(page);
+            return;
+        }
+
         if (_mode == DragMode.Move)
         {
+            // Sous Ctrl ou Maj, le glissé décide au seuil de ce que la pression prenait : le
+            // bloc s'ajoute, et Ctrl le copie avec le reste de la sélection (N17).
+            PrendreLeGlisseSousUnModificateur();
             ApplyMove(page, e.KeyModifiers);
             return;
         }
@@ -772,6 +791,8 @@ public partial class PageCanvas : UserControl
         // redimensionnement, Maj fait l'inverse de la case « Conserver les proportions »
         // du dock (poste I6) : cochée, le coin garde le rapport, et Maj le libère.
         var maj = e.KeyModifiers.HasFlag(KeyModifiers.Shift);
+        // Ctrl sur une poignée redimensionne depuis le centre, comme Publisher (poste N17).
+        _depuisLeCentre = e.KeyModifiers.HasFlag(KeyModifiers.Control);
 
         if (_mode == DragMode.Rotate) ApplyRotate(frame, page, maj);
         else if (_mode == DragMode.Extremite && frame is ShapeFrame trait) TirerUneExtremite(trait, page, e.KeyModifiers);
@@ -829,7 +850,17 @@ public partial class PageCanvas : UserControl
             return;
         }
 
+        // Le rectangle de sélection ne change que la sélection (poste N17).
+        if (mode == DragMode.Rectangle)
+        {
+            FinirLeRectangle(ToPageCoordinates(e.GetPosition(Surface)));
+            return;
+        }
+
         _vm?.CommitEdit();
+
+        // Un Ctrl+clic ou un Maj+clic qui n'a pas glissé bascule le bloc au relâché (N17).
+        BasculerAuRelache();
 
         // Le geste fini, la bulle se retire ; la projection, elle, reste sur la sélection.
         RefreshOverlay();
@@ -884,11 +915,13 @@ public partial class PageCanvas : UserControl
             InputLayer.Cursor = ArrowCursor;
             return;
         }
+        // Maj pose un carré ou un cercle, Ctrl un cadre centré sur la pression (poste N17).
+        var (coin, oppose) = CoinsDuTrace(_startPointer, end, modifiers);
         var frame = _vm.DrawWithActiveTool(
-            Math.Min(_startPointer.X, end.X),
-            Math.Min(_startPointer.Y, end.Y),
-            Math.Abs(end.X - _startPointer.X),
-            Math.Abs(end.Y - _startPointer.Y));
+            Math.Min(coin.X, oppose.X),
+            Math.Min(coin.Y, oppose.Y),
+            Math.Abs(oppose.X - coin.X),
+            Math.Abs(oppose.Y - coin.Y));
 
         InputLayer.Cursor = ArrowCursor;
 
@@ -911,7 +944,7 @@ public partial class PageCanvas : UserControl
             // redimensionnement parfaitement valide, donc parfaitement trompeur.
             if (anchor == Anchor.Rotate)
             {
-                InputLayer.Cursor = RotateCursor;
+                InputLayer.Cursor = CurseurDeRotation;
                 return;
             }
 
@@ -979,6 +1012,7 @@ public partial class PageCanvas : UserControl
         var guide = new RulerGuide(vertical ? page.X : page.Y);
 
         BeginGuideDrag(guide, vertical);
+        _repereNeuf = true;
         (vertical ? _vm.Document.VerticalRulerGuides : _vm.Document.HorizontalRulerGuides).Add(guide);
 
         // Poser un repère n'a d'intérêt que si on les voit ; le geste les rallume.
@@ -994,6 +1028,9 @@ public partial class PageCanvas : UserControl
         _draggedGuide = guide;
         _draggedGuideIsVertical = vertical;
         _cibleDuRepere = guide.Position;
+        // Ce qu'Échap rend : la place du repère, ou rien s'il vient d'une règle (poste N17).
+        _departDuRepere = guide.Position;
+        _repereNeuf = false;
         _vm?.BeginEdit();
     }
 
@@ -1079,6 +1116,11 @@ public partial class PageCanvas : UserControl
             return;
         }
 
+        // Maj tient l'axe dominant du chemin : l'autre ne bouge pas, et l'aimantation ne l'y
+        // fait pas bouger non plus (poste N17).
+        var axeTenu = modifiers.HasFlag(KeyModifiers.Shift);
+        if (axeTenu) (dx, dy) = TenirLAxe(dx, dy);
+
         // Alt désactive l'aimantation ; un bloc tourné la désactive aussi, faute de
         // bords parallèles aux repères. On aimante l'empreinte de l'ensemble, puis on
         // reporte le même écart sur chaque bloc : la sélection garde sa forme.
@@ -1089,11 +1131,17 @@ public partial class PageCanvas : UserControl
 
             // Les repères sont ceux du document : bords, marges, milieu, et la grille de
             // composition quand il y en a une. Le tableau s'allonge, le geste ne change pas.
-            dx = SnapEdge(_moveExtent.Left + dx, _moveExtent.Width, tolerance,
-                document.VerticalGuides) - _moveExtent.Left;
+            if (!axeTenu || dx != 0)
+            {
+                dx = SnapEdge(_moveExtent.Left + dx, _moveExtent.Width, tolerance,
+                    document.VerticalGuides) - _moveExtent.Left;
+            }
 
-            dy = SnapEdge(_moveExtent.Top + dy, _moveExtent.Height, tolerance,
-                document.HorizontalGuides) - _moveExtent.Top;
+            if (!axeTenu || dy != 0)
+            {
+                dy = SnapEdge(_moveExtent.Top + dy, _moveExtent.Height, tolerance,
+                    document.HorizontalGuides) - _moveExtent.Top;
+            }
         }
 
         foreach (var (frame, startX, startY) in _moveStart)
@@ -1137,10 +1185,19 @@ public partial class PageCanvas : UserControl
         var movesBottom = _anchor is Anchor.SouthWest or Anchor.South or Anchor.SouthEast;
 
         double left = 0, top = 0, right = _startWidth, bottom = _startHeight;
-        if (movesLeft) left = Math.Min(localX, right - MinFrameSize);
-        if (movesRight) right = Math.Max(_startWidth + localX, left + MinFrameSize);
-        if (movesTop) top = Math.Min(localY, bottom - MinFrameSize);
-        if (movesBottom) bottom = Math.Max(_startHeight + localY, top + MinFrameSize);
+        if (_depuisLeCentre)
+        {
+            // Sous Ctrl, le bord opposé suit en miroir : le centre ne bouge pas (poste N17).
+            (left, right) = DepuisLeCentre(localX, _startWidth, movesLeft, movesRight);
+            (top, bottom) = DepuisLeCentre(localY, _startHeight, movesTop, movesBottom);
+        }
+        else
+        {
+            if (movesLeft) left = Math.Min(localX, right - MinFrameSize);
+            if (movesRight) right = Math.Max(_startWidth + localX, left + MinFrameSize);
+            if (movesTop) top = Math.Min(localY, bottom - MinFrameSize);
+            if (movesBottom) bottom = Math.Max(_startHeight + localY, top + MinFrameSize);
+        }
 
         var width = right - left;
         var height = bottom - top;
@@ -1154,8 +1211,18 @@ public partial class PageCanvas : UserControl
             if (width / height > ratio) width = height * ratio;
             else height = width / ratio;
 
-            if (movesLeft) left = right - width; else right = left + width;
-            if (movesTop) top = bottom - height; else bottom = top + height;
+            if (_depuisLeCentre)
+            {
+                left = (_startWidth - width) / 2;
+                right = left + width;
+                top = (_startHeight - height) / 2;
+                bottom = top + height;
+            }
+            else
+            {
+                if (movesLeft) left = right - width; else right = left + width;
+                if (movesTop) top = bottom - height; else bottom = top + height;
+            }
         }
 
         // Le coin local (left, top) doit rester au même endroit sur la page ;
@@ -1377,6 +1444,13 @@ public partial class PageCanvas : UserControl
 
     protected override void OnKeyDown(KeyEventArgs e)
     {
+        // Échap pendant un glissé l'annule : le bloc revient à sa place, sans pas (poste N17).
+        if (e.Key == Key.Escape && AnnulerLeGlisse())
+        {
+            e.Handled = true;
+            return;
+        }
+
         if (e.Key == Key.Escape && _editing is not null)
         {
             EndTextEdit();
