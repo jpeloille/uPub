@@ -118,6 +118,9 @@ public partial class MainWindow : Window
             _vm.TransactionsRefermees -= OnTransactionsRefermees;
             _vm.FermetureDemandee -= OnFermetureDemandee;
             _vm.ExportDemande -= OnExportDemande;
+            _vm.DockDemandee -= OnDockDemandee;
+            _vm.InsertionDePagesDemandee -= OnInsertionDePagesDemandee;
+            _vm.ChampDeLaPageDemande -= OnChampDeLaPageDemande;
             _vm.SuivreLeClavier(null);
             _vm.SuivreLesChamps(null);
         }
@@ -129,6 +132,9 @@ public partial class MainWindow : Window
             _vm.TransactionsRefermees += OnTransactionsRefermees;
             _vm.FermetureDemandee += OnFermetureDemandee;
             _vm.ExportDemande += OnExportDemande;
+            _vm.DockDemandee += OnDockDemandee;
+            _vm.InsertionDePagesDemandee += OnInsertionDePagesDemandee;
+            _vm.ChampDeLaPageDemande += OnChampDeLaPageDemande;
             _vm.SuivreLeClavier(() => ConsumesTyping(FocusManager?.GetFocusedElement()));
             _vm.SuivreLesChamps(ValiderLeChampNumerique);
         }
@@ -398,6 +404,94 @@ public partial class MainWindow : Window
             vm.Status = $"Coordonnées non enregistrées : {ex.Message}";
         }
     }
+
+    // ------------------------------------------------------ vers le dock (poste N18)
+
+    /// <summary>
+    /// Une entrée « … » des menus demande un réglage (<see cref="DockDemande"/>) : le modèle de vue
+    /// a montré le dock et ouvert la section ; la fenêtre choisit l'onglet, puis, la mise en page
+    /// faite — les gabarits gardés ne montrent la section d'une sorte de bloc qu'au passage
+    /// suivant —, met le focus dans le champ visé, ou dans le premier champ de la section. Le
+    /// focus ouvre la transaction du panneau, comme un clic ; rien n'ayant changé, aucun pas.
+    /// </summary>
+    private void OnDockDemandee(object? sender, DockDemande demande)
+    {
+        switch (demande.Destination)
+        {
+            case DestinationDuReglage.Proprietes:
+                OngletsDuDock.SelectedItem = OngletProprietes;
+                break;
+            case DestinationDuReglage.Document:
+                OngletsDuDock.SelectedItem = OngletDocument;
+                break;
+        }
+
+        Control racine = demande.Destination == DestinationDuReglage.BarreContextuelle ? BarreContextuelle : Dock;
+        MettreLeFocusAuReglage(racine, demande, essais: 3);
+    }
+
+    private void MettreLeFocusAuReglage(Control racine, DockDemande demande, int essais)
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (ChampDuReglage(racine, demande) is { } champ)
+            {
+                champ.BringIntoView();
+                champ.Focus(NavigationMethod.Tab);
+            }
+            else if (essais > 1)
+            {
+                MettreLeFocusAuReglage(racine, demande, essais - 1);
+            }
+        }, DispatcherPriority.Background);
+    }
+
+    /// <summary>
+    /// Le champ que vise la demande, s'il est à l'écran : nommé, ou le premier champ de la
+    /// section — une zone de texte, un champ numérique, une liste, une case —, sinon le premier
+    /// contrôle qui prend le focus, un bouton du dock.
+    /// </summary>
+    private static Control? ChampDuReglage(Control racine, DockDemande demande)
+    {
+        var dans = racine;
+        if (demande.Section is { } section)
+        {
+            dans = racine.GetVisualDescendants().OfType<Control>()
+                .FirstOrDefault(c => c.Name == section && c.IsEffectivelyVisible);
+            if (dans is null) return null;
+        }
+
+        if (demande.Champ is { } nom)
+        {
+            var nomme = dans.GetVisualDescendants().OfType<Control>()
+                .FirstOrDefault(c => c.Name == nom && c.IsEffectivelyVisible);
+            // Un champ numérique prend la frappe par sa zone de texte.
+            return nomme is NumericUpDown numerique
+                ? numerique.GetVisualDescendants().OfType<TextBox>().FirstOrDefault() ?? nomme
+                : nomme;
+        }
+
+        var prenables = dans.GetVisualDescendants().OfType<Control>()
+            .Where(c => c.IsEffectivelyVisible && c.IsEffectivelyEnabled && c.Focusable).ToList();
+        return prenables.FirstOrDefault(c => c is TextBox or ComboBox or CheckBox) ?? prenables.FirstOrDefault();
+    }
+
+    /// <summary>
+    /// <i>Page ▸ Insérer des pages…</i>, <c>Ctrl+Maj+N</c> : le dialogue de A8, puis l'insertion, en
+    /// un pas, par le modèle de vue. Annuler n'insère rien.
+    /// </summary>
+    private async void OnInsertionDePagesDemandee(object? sender, EventArgs e)
+    {
+        if (Vm is not { } vm) return;
+
+        if (await InsererDesPages.Demander(this, vm.Document.Pages.Count, vm.CurrentPageNumber) is { } demande)
+        {
+            vm.InsererDesPages(demande);
+        }
+    }
+
+    /// <summary><c>F5</c>, <c>Ctrl+B</c>, <i>Page ▸ Atteindre la page…</i> : le numéro de page de la barre d'état.</summary>
+    private void OnChampDeLaPageDemande(object? sender, EventArgs e) => PageSurPages.Prendre();
 
     // ---------------------------------------------------------------- propriétés
 
@@ -841,7 +935,9 @@ public partial class MainWindow : Window
         {
             switch (e.Key)
             {
-                case Key.N: OnNew(this, e); e.Handled = true; return;
+                // Sans Maj : Ctrl+Maj+N insère des pages, par sa liaison (poste N18). Il proposait
+                // le catalogue, Maj comptée pour rien.
+                case Key.N when !e.KeyModifiers.HasFlag(KeyModifiers.Shift): OnNew(this, e); e.Handled = true; return;
                 case Key.O: OnOpen(this, e); e.Handled = true; return;
                 case Key.S: OnSave(this, e); e.Handled = true; return;
             }

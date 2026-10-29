@@ -677,6 +677,8 @@ public partial class MainWindowViewModel : ViewModelBase
 
         // La pastille, le menu Texte, le fond et la marge du dock (poste I2).
         NotifierLaDisposition();
+        // Les entrées « … » et le quart de tour (poste N18).
+        NotifierLesEntreesVersLeDock();
     }
 
     // ---------------------------------------------------------------- historique

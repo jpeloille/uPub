@@ -339,7 +339,8 @@ public class MenusDePublisherTests
     /// Disposition est rangé comme Publisher 2007 (le livre, p. 16) : les repères de règle, les
     /// trois commandes de groupe, « Ordre ▸ » et ses quatre ordres, « Aligner ou répartir ▸ » —
     /// les six alignements, les deux répartitions et leur repère —, puis « Ajuster aux marges ».
-    /// Chaque entrée garde sa commande.
+    /// Chaque entrée garde sa commande. N18 y a ajouté les repères de mise en page et le quart de
+    /// tour, aux places de Publisher.
     /// </summary>
     [AvaloniaFact]
     public void Le_menu_Disposition_est_range_comme_Publisher()
@@ -348,7 +349,13 @@ public class MenusDePublisherTests
 
         static string[] Libelles(MenuItem menu) => menu.Items.OfType<MenuItem>().Select(e => $"{e.Header}").ToArray();
 
-        Assert.Equal(new[] { "Re_pères de règle", "_Grouper", "_Dissocier", "_Regrouper", "_Ordre", "_Aligner ou répartir", "Ajuster aux _marges" },
+        // Depuis N18 (règle 14) : « Repères de mise en page… » en tête, comme Layout Guides…, et
+        // « Faire pivoter ou retourner ▸ » après l'alignement, comme Rotate or Flip ▸ (p. 16).
+        Assert.Equal(new[]
+            {
+                "Repères de m_ise en page…", "Re_pères de règle", "_Grouper", "_Dissocier", "_Regrouper", "_Ordre",
+                "_Aligner ou répartir", "_Faire pivoter ou retourner", "Ajuster aux _marges",
+            },
             Libelles(Menu(fenetre, "_Disposition")));
         Assert.Equal(new[] { "Premier _plan", "Arrière-p_lan", "_Avancer", "_Reculer" }, Libelles(Menu(fenetre, "_Ordre")));
         Assert.Equal(new[]

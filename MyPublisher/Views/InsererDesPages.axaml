@@ -1,0 +1,85 @@
+<!--
+    « Insérer des pages » (poste A8, livré par N18 ; fiche 08 ; fiche 23, f18) : le dialogue que
+    Publisher ouvre à Insert ▸ Page… (Ctrl+Maj+N, p. 22). Un nombre de pages, une position — avant
+    ou après la page courante —, et un contenu : des pages vierges, une zone de texte par page, ou
+    les objets d'une page désignée, dupliqués. Le numéro de cette page reste grisé tant que son
+    option n'est pas choisie, comme chez Publisher.
+
+    Il ne double aucun champ du dock (décision 5 de la phase N) : ce qu'il demande ne se règle
+    nulle part ailleurs. OK, le bouton par défaut (Entrée) ; Annuler, le bouton d'annulation
+    (Échap). Le dialogue refermé par sa barre de titre n'insère rien.
+
+    Une vue de la phase : elle ne cite que l'apparence (Apparence.axaml), aucune couleur en dur.
+-->
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:views="using:MyPublisher.Views"
+        x:Class="MyPublisher.Views.InsererDesPages"
+        Title="Insérer des pages"
+        Width="380" SizeToContent="Height"
+        CanResize="False" ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner"
+        Background="{StaticResource Blanc}"
+        Foreground="{StaticResource Texte}">
+
+    <Window.Styles>
+        <!-- Les boutons de réponse, comme ceux de la question d'avant la perte (N11). -->
+        <Style Selector="Button.principal">
+            <Setter Property="Background" Value="{StaticResource Accent}"/>
+            <Setter Property="Foreground" Value="{StaticResource Blanc}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+        </Style>
+        <Style Selector="Button.principal:pointerover /template/ ContentPresenter#PART_ContentPresenter,
+                         Button.principal:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{StaticResource AccentSurvol}"/>
+            <Setter Property="Foreground" Value="{StaticResource Blanc}"/>
+        </Style>
+        <Style Selector="Button.reponse">
+            <Setter Property="MinWidth" Value="96"/>
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="8,0,0,0"/>
+        </Style>
+        <Style Selector="TextBlock.rubrique">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="0,14,0,4"/>
+        </Style>
+        <Style Selector="RadioButton.choix">
+            <Setter Property="FontSize" Value="12.5"/>
+            <Setter Property="MinHeight" Value="26"/>
+        </Style>
+    </Window.Styles>
+
+    <StackPanel Margin="20,16,20,16">
+        <DockPanel>
+            <TextBlock Classes="libelle" Text="Nombre de nouvelles pages" VerticalAlignment="Center" Margin="0,0,12,0"/>
+            <views:ChampNumerique x:Name="NombreDeNouvellesPages" Classes="champ" Width="80" HorizontalAlignment="Right"
+                                  FormatString="0" Increment="1" Minimum="1" Maximum="999" Value="1"/>
+        </DockPanel>
+
+        <TextBlock Classes="rubrique" Text="Position"/>
+        <RadioButton x:Name="AvantLaPage" Classes="choix" GroupName="Position" Content="Avant la page courante"/>
+        <RadioButton x:Name="ApresLaPage" Classes="choix" GroupName="Position" Content="Après la page courante" IsChecked="True"/>
+
+        <TextBlock Classes="rubrique" Text="Contenu"/>
+        <RadioButton x:Name="PagesVierges" Classes="choix" GroupName="Contenu" Content="Insérer des pages vierges" IsChecked="True"/>
+        <RadioButton x:Name="UneZoneDeTexte" Classes="choix" GroupName="Contenu" Content="Créer une zone de texte sur chaque page"/>
+        <DockPanel>
+            <RadioButton x:Name="DupliquerLesObjets" Classes="choix" GroupName="Contenu" Content="Dupliquer tous les objets de la page"
+                         VerticalAlignment="Center"/>
+            <!-- Grisé tant que son option n'est pas choisie (p. 22). -->
+            <views:ChampNumerique x:Name="PageACopier" Classes="champ" Width="64" HorizontalAlignment="Right"
+                                  FormatString="0" Increment="1" Minimum="1"
+                                  IsEnabled="{Binding #DupliquerLesObjets.IsChecked}"/>
+        </DockPanel>
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,18,0,0">
+            <Button x:Name="BoutonOk" Classes="reponse principal" Content="OK" IsDefault="True" Click="OnOk"/>
+            <Button x:Name="BoutonAnnuler" Classes="reponse" Content="Annuler" IsCancel="True" Click="OnAnnuler"/>
+        </StackPanel>
+    </StackPanel>
+</Window>

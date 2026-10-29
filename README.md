@@ -129,7 +129,11 @@ document « modifié », et le zoom ne change jamais de lui-même, ni à l'ouver
 la fenêtre change de taille.
 
 Le panneau **Pages** montre chaque page en vignette, au rapport de la page, son numéro
-dessous ; la page courante est bordée de bleu, et un clic sur une autre y mène. La vignette
+dessous ; la page courante est bordée de bleu, et un clic sur une autre y mène. *Page ▸ Insérer
+des pages…* (`Ctrl+Maj+N`) en insère plusieurs d'un coup, avant ou après la page courante :
+vierges, portant chacune un bloc de texte égal à la zone des marges, ou portant chacune une copie
+des blocs d'une page qu'on désigne — un champ grisé tant que son option n'est pas choisie, comme
+chez Publisher. Les noms « Page n » se renumérotent, et une annulation rend le document d'avant. La vignette
 est un schéma, comme celles du catalogue de modèles — le texte en filets, à la place des
 lignes de la page, l'image en cadre barré, les formes et le fond de page dans leurs
 couleurs —, et elle suit chaque retouche, l'annulation comprise.
@@ -176,9 +180,21 @@ sélectionner » le laisse. Le geste s'annule, et se garde à l'enregistrement.
 
 La **barre d'état** affiche en permanence, à droite, la position du curseur, puis la
 position et la taille du bloc sélectionné, la page, le format et le zoom, avec son curseur
-en échelle logarithmique. La position et la taille suivent le geste pendant qu'on déplace
+en échelle logarithmique. Le numéro de la page est un champ : `F5` ou `Ctrl+B` — « Atteindre la
+page » — y mènent, un numéro tapé puis `Entrée` mène à la page, et un numéro hors du document est
+refusé, avec un message. La position et la taille suivent le geste pendant qu'on déplace
 ou qu'on redimensionne : au moment où l'on tire une poignée, l'œil est sur la page et non
 sur le dock.
+
+Les entrées « … » des menus mènent au dock, comme les dialogues *Format…* de Publisher : *Fichier ▸
+Mise en page…* au format, *Disposition ▸ Repères de mise en page…* aux marges et à la grille,
+*Repères de règle ▸ Format…* aux repères, *Page ▸ Arrière-plan…* au fond de page, *Texte ▸
+Paragraphe…* aux retraits, *Faire pivoter ou retourner ▸ Rotation personnalisée…* à l'angle — le
+dock rouvert s'il est replié, l'onglet choisi, la section ouverte, le focus dans son premier champ ;
+*Texte ▸ Police…* mène à la liste des polices de la barre contextuelle. Le même sous-menu fait
+pivoter d'un quart de tour, à gauche ou à droite, comme les boutons −90° et +90° de Position et
+taille, en un pas. *Insertion ▸ Numéro de page*, *Date* et *Coordonnées ▸* posent un bloc de texte
+qui porte son champ.
 
 `Ctrl+F1` — ou *Fenêtre ▸ Replier les panneaux* — masque le panneau Pages et le dock pour
 rendre leur place à la planche ; un second `Ctrl+F1` les rend tels qu'ils étaient. Le menu
@@ -362,15 +378,14 @@ domaine où il est rangé.
 Ce sont les touches de Publisher en français, relevées sur l'aide de Microsoft et écrites,
 avec le sort de chacune, dans la fiche 24 (`MyPublisher/Docs/Publisher2007/24-raccourcis-clavier-francais.md`).
 Celles dont la fonction n'existe pas encore restent libres pour le poste qui la servira :
-`Ctrl+B` (Atteindre la page), `Ctrl+M`, `Ctrl+K`, `Ctrl+P` (Imprimer), `Ctrl+Maj+E`,
-`Ctrl+Maj+H` (la coupure de mots). `Ctrl+Maj+F` et `Ctrl+Maj+B`, la boîte Police et le carnet
+`Ctrl+M`, `Ctrl+K`, `Ctrl+P` (Imprimer), `Ctrl+Maj+E`, `Ctrl+Maj+H` (la coupure de mots). `Ctrl+Maj+F` et `Ctrl+Maj+B`, la boîte Police et le carnet
 d'adresses dans Publisher, restent Premier plan et Arrière-plan, `Alt+F6` étant pris par le
 bureau.
 
 Tant qu'un champ de texte a le clavier — la saisie d'un bloc sur la page, un champ du
 dock ou de la barre —, les raccourcis d'objet se taisent et leur touche revient au champ :
 `Ctrl+A`, `Ctrl+D`, `Ctrl+Maj+G`, `Ctrl+Maj+F` et `Ctrl+Maj+B`. `Ctrl+Maj+X` supprime
-l'objet, même là.
+l'objet, même là ; les touches des pages jouent aussi, la saisie d'un bloc refermée d'abord.
 
 Les menus s'ouvrent au clavier comme sous Windows : `Alt`, puis la lettre soulignée, que chaque
 niveau a une seule fois et qui se cherche au seul niveau ouvert — `Alt`, `D`, `O`, `P` porte au
@@ -389,6 +404,15 @@ comptés pour rien : sur un AZERTY, `Ctrl+]` se tape `Ctrl+AltGr+)`, `Ctrl+[` se
 | `Ctrl+W` ou `Ctrl+F4` | Fermer le document, puis rendre le catalogue des modèles |
 | `Alt+F4` | Quitter. Avant de perdre des modifications, Nouveau, Ouvrir, Fermer et Quitter demandent : Enregistrer (`Entrée`), Ne pas enregistrer, Annuler (`Échap`) |
 | `Ctrl+Maj+P` | Exporter en PDF, même en saisie |
+
+### Pages
+
+| Raccourci | Action |
+|---|---|
+| `Ctrl+Maj+N` | Insérer des pages : un nombre, avant ou après la page courante, vierges, avec une zone de texte chacune, ou copiées d'une page désignée — en un pas |
+| `Ctrl+Maj+U` | Dupliquer la page courante, après elle |
+| `Ctrl+Pg.Suiv` / `Ctrl+Pg.Préc` | Page suivante / précédente |
+| `F5` ou `Ctrl+B` | Atteindre la page : le focus au numéro de page de la barre d'état ; un numéro puis `Entrée` y mène, `Échap` y renonce |
 
 ### Édition
 

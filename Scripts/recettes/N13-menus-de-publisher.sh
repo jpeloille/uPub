@@ -13,7 +13,9 @@
 #         déclencher ; « _Edition » a remplacé « _Édition » ;
 #      b. Disposition est rangé comme celui de Publisher 2007 (le livre, p. 16) : « Ordre ▸ »
 #         et ses quatre ordres, « Aligner ou répartir ▸ » et ses six alignements, ses deux
-#         répartitions et leur repère, « Regrouper » sur sa commande ; les cibles des autres
+#         répartitions et leur repère, « Regrouper » sur sa commande — et, depuis N18, « Repères
+#         de mise en page… » en tête et « Faire pivoter ou retourner ▸ » après l'alignement,
+#         comme Layout Guides… et Rotate or Flip ▸ chez Publisher ; les cibles des autres
 #         restent telles quelles — « Ajuster aux _marges » (le juge), « Tr_ait » (A10) ;
 #      c. « Regrouper » : le groupe retenu d'une ligne dans UngroupSelected, la commande dans
 #         le partiel du poste (règle 10), sa disponibilité suivie avec la sélection ;
@@ -144,7 +146,8 @@ def entrees_de(entete):
     return [(e.get("Header"), e.get("Command") or e.get("IsChecked")) for e in menus[0] if e.tag == A + "MenuItem"] if menus else []
 
 exige([h for h, _ in entrees_de("_Disposition")] ==
-      ["Re_pères de règle", "_Grouper", "_Dissocier", "_Regrouper", "_Ordre", "_Aligner ou répartir", "Ajuster aux _marges"],
+      ["Repères de m_ise en page…", "Re_pères de règle", "_Grouper", "_Dissocier", "_Regrouper", "_Ordre", "_Aligner ou répartir",
+       "_Faire pivoter ou retourner", "Ajuster aux _marges"],
       f"Disposition n'est pas rangé comme Publisher : {[h for h, _ in entrees_de('_Disposition')]}.")
 exige(entrees_de("_Ordre") == [("Premier _plan", "{Binding BringToFrontCommand}"), ("Arrière-p_lan", "{Binding SendToBackCommand}"),
                                ("_Avancer", "{Binding BringForwardCommand}"), ("_Reculer", "{Binding SendBackwardCommand}")],

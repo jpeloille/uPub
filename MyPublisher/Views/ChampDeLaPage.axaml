@@ -1,0 +1,60 @@
+<!--
+    Le numéro de page de la barre d'état, devenu un champ (poste N18, fiche 23, d16 ; la fiche 24,
+    « Atteindre la page », F5 ou Ctrl+B). Il se lit comme avant, « Page 2 sur 3 », au gris de la
+    barre d'état ; le numéro est un champ sans fond ni bord tant qu'il n'a pas le focus, comme
+    le champ du zoom (N4). F5, Ctrl+B et Page ▸ Atteindre la page… y mettent le focus, tout le
+    numéro pris ; un clic aussi. On y tape un numéro : il part à Entrée, et mène à la page ; un
+    numéro hors du document est refusé, et la barre d'état dit pourquoi. Échap, ou le focus
+    perdu, y renonce ; Entrée et Échap rendent la planche.
+
+    Le champ n'ouvre aucune transaction : changer de page ne change pas le document.
+
+    Une vue de la phase : elle ne cite que l'apparence (Apparence.axaml), aucune couleur en dur.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:MyPublisher.ViewModels"
+             x:Class="MyPublisher.Views.ChampDeLaPage"
+             x:DataType="vm:MainWindowViewModel">
+
+    <UserControl.Styles>
+        <!-- Au repos, le chiffre de la barre d'état : corps 11,5, au gris de l'état, sans fond ni
+             bord — le bord est là, transparent, pour que le focus ne déplace pas le chiffre. -->
+        <Style Selector="TextBox#NumeroDePage">
+            <Setter Property="MinWidth" Value="22"/>
+            <Setter Property="Height" Value="20"/>
+            <Setter Property="MinHeight" Value="0"/>
+            <Setter Property="Padding" Value="3,0"/>
+            <Setter Property="FontSize" Value="11.5"/>
+            <Setter Property="FontFeatures" Value="+tnum"/>
+            <Setter Property="TextAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Foreground" Value="{StaticResource Etat}"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="SelectionBrush" Value="{StaticResource Accent}"/>
+            <Setter Property="SelectionForegroundBrush" Value="{StaticResource Blanc}"/>
+        </Style>
+        <Style Selector="TextBox#NumeroDePage:pointerover /template/ Border#PART_BorderElement">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BordChamp}"/>
+        </Style>
+        <Style Selector="TextBox#NumeroDePage:focus /template/ Border#PART_BorderElement">
+            <Setter Property="Background" Value="{StaticResource Blanc}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource Accent}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+        </Style>
+        <Style Selector="TextBox#NumeroDePage:pointerover, TextBox#NumeroDePage:focus">
+            <Setter Property="Foreground" Value="{StaticResource Texte}"/>
+        </Style>
+    </UserControl.Styles>
+
+    <StackPanel Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
+        <TextBlock Text="Page" VerticalAlignment="Center"/>
+        <TextBox x:Name="NumeroDePage" VerticalAlignment="Center"
+                 ToolTip.Tip="Atteindre la page (F5 ou Ctrl+B) — tapez un numéro puis Entrée"/>
+        <TextBlock x:Name="TotalDesPages" VerticalAlignment="Center"/>
+    </StackPanel>
+</UserControl>

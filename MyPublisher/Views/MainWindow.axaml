@@ -128,6 +128,17 @@
              question avant de perdre des modifications, puis rend le catalogue. -->
         <KeyBinding Gesture="Ctrl+W" Command="{Binding FermerLeDocumentCommand}"/>
         <KeyBinding Gesture="Ctrl+F4" Command="{Binding FermerLeDocumentCommand}"/>
+        <!-- Les pages au clavier (poste N18), aux touches de Publisher en français (fiche 24) :
+             Ctrl+Maj+N ouvre « Insérer des pages » (A8), Ctrl+Maj+U duplique la page,
+             Ctrl+Pg.Suiv et Ctrl+Pg.Préc changent de page, F5 et Ctrl+B mènent au numéro de page
+             de la barre d'état. Même en saisie : la saisie d'un bloc se referme d'abord, dans son
+             pas. Ctrl+N, que OnKeyDown prend, n'y prend plus Maj. -->
+        <KeyBinding Gesture="Ctrl+Shift+N" Command="{Binding InsererDesPagesCommand}"/>
+        <KeyBinding Gesture="Ctrl+Shift+U" Command="{Binding DupliquerLaPageCommand}"/>
+        <KeyBinding Gesture="Ctrl+PageDown" Command="{Binding PageSuivanteCommand}"/>
+        <KeyBinding Gesture="Ctrl+PageUp" Command="{Binding PagePrecedenteCommand}"/>
+        <KeyBinding Gesture="F5" Command="{Binding AtteindreLaPageCommand}"/>
+        <KeyBinding Gesture="Ctrl+B" Command="{Binding AtteindreLaPageCommand}"/>
     </Window.KeyBindings>
 
     <Window.Styles>
@@ -636,6 +647,9 @@
                         <MenuItem Header="_Enregistrer" InputGesture="Ctrl+S" Click="OnSave"/>
                         <MenuItem Header="Enregistrer _sous…" Click="OnSaveAs"/>
                         <Separator/>
+                        <!-- Les entrées « … » mènent au réglage du dock (poste N18, décision 5) : le
+                             format de la page est à l'onglet Document. -->
+                        <MenuItem x:Name="MenuMiseEnPage" Header="_Mise en page…" Command="{Binding MiseEnPageCommand}"/>
                         <MenuItem Header="Exporter en _PDF…" InputGesture="Ctrl+Shift+P" Command="{Binding ExporterEnPdfCommand}"/>
                         <Separator/>
                         <Separator x:Name="SeparateurDesRecents" IsVisible="False"/>
@@ -676,6 +690,28 @@
                         <MenuItem Header="_Rectangle" Command="{Binding AddRectangleCommand}"/>
                         <MenuItem Header="_Ellipse" Command="{Binding AddEllipseCommand}"/>
                         <MenuItem Header="Tr_ait" Command="{Binding AddLineCommand}"/>
+                        <Separator/>
+                        <!-- Les blocs à champ de C4, comme Insert ▸ Page Numbers, Date and Time et
+                             Business Information de Publisher (p. 22 ; poste N18) : un bloc de texte
+                             qui porte son champ, posé dans la zone de composition. -->
+                        <MenuItem x:Name="MenuNumeroDePage" Header="_Numéro de page" Command="{Binding InsererUnChampCommand}"
+                                  CommandParameter="{x:Static models:FieldKind.PageNumber}"/>
+                        <MenuItem Header="_Date" Command="{Binding InsererUnChampCommand}"
+                                  CommandParameter="{x:Static models:FieldKind.Date}"/>
+                        <MenuItem x:Name="MenuCoordonnees" Header="_Coordonnées">
+                            <MenuItem Header="_Nom" Command="{Binding InsererUnChampCommand}"
+                                      CommandParameter="{x:Static models:FieldKind.ContactName}"/>
+                            <MenuItem Header="_Fonction" Command="{Binding InsererUnChampCommand}"
+                                      CommandParameter="{x:Static models:FieldKind.ContactTitle}"/>
+                            <MenuItem Header="_Société" Command="{Binding InsererUnChampCommand}"
+                                      CommandParameter="{x:Static models:FieldKind.ContactOrganisation}"/>
+                            <MenuItem Header="_Adresse" Command="{Binding InsererUnChampCommand}"
+                                      CommandParameter="{x:Static models:FieldKind.ContactAddress}"/>
+                            <MenuItem Header="_Téléphone" Command="{Binding InsererUnChampCommand}"
+                                      CommandParameter="{x:Static models:FieldKind.ContactPhone}"/>
+                            <MenuItem Header="D_evise" Command="{Binding InsererUnChampCommand}"
+                                      CommandParameter="{x:Static models:FieldKind.ContactTagline}"/>
+                        </MenuItem>
                     </MenuItem>
 
                     <!-- Le menu Disposition, rangé comme celui de Publisher 2007 (le livre, p. 16 et
@@ -684,9 +720,14 @@
                          « Ordre », l'alignement, la répartition et leur repère sous « Aligner ou
                          répartir ». « Regrouper » refait le dernier groupe dissous, en un pas. -->
                     <MenuItem Header="_Disposition">
+                        <!-- Layout Guides… et Format… des repères de règle (p. 16, 18, 20) : le dock
+                             les porte, l'entrée y mène (poste N18). -->
+                        <MenuItem x:Name="MenuReperesDeMiseEnPage" Header="Repères de m_ise en page…"
+                                  Command="{Binding ReperesDeMiseEnPageCommand}"/>
                         <MenuItem Header="Re_pères de règle">
                             <MenuItem Header="Ajouter un repère _horizontal" Command="{Binding AddHorizontalRulerGuideCommand}"/>
                             <MenuItem Header="Ajouter un repère _vertical" Command="{Binding AddVerticalRulerGuideCommand}"/>
+                            <MenuItem x:Name="MenuFormatDesReperes" Header="_Format…" Command="{Binding FormatDesReperesCommand}"/>
                             <Separator/>
                             <MenuItem Header="_Effacer tous les repères" Command="{Binding ClearRulerGuidesCommand}"/>
                         </MenuItem>
@@ -725,6 +766,14 @@
                             <MenuItem Header="Par rapport aux _marges" ToggleType="CheckBox"
                                       IsChecked="{Binding AlignToMargins, Mode=TwoWay}"/>
                         </MenuItem>
+                        <!-- Rotate or Flip ▸ de Publisher (p. 16 ; A9, poste N18) : le quart de tour, en
+                             un pas, et l'angle libre au champ du dock. Les miroirs attendent C8. -->
+                        <MenuItem x:Name="MenuFairePivoter" Header="_Faire pivoter ou retourner">
+                            <MenuItem Header="Faire pivoter à _gauche de 90°" Command="{Binding PivoterAGaucheCommand}"/>
+                            <MenuItem Header="Faire pivoter à _droite de 90°" Command="{Binding PivoterADroiteCommand}"/>
+                            <Separator/>
+                            <MenuItem Header="Rotation _personnalisée…" Command="{Binding RotationPersonnaliseeCommand}"/>
+                        </MenuItem>
                         <Separator/>
                         <MenuItem Header="Ajuster aux _marges" Command="{Binding FitToMarginsCommand}"/>
                     </MenuItem>
@@ -733,6 +782,11 @@
                          dans le texte, et l'import d'un fichier, qui y passe avec son nom et
                          son libellé (poste B2 ; les tests et la recette le cherchent ainsi). -->
                     <MenuItem Header="_Texte">
+                        <!-- Format ▸ Font…, Paragraph… de Publisher (p. 24 ; poste N18) : la police est
+                             dans la barre contextuelle, les retraits et les espacements au dock. -->
+                        <MenuItem x:Name="MenuPolice" Header="_Police…" Command="{Binding PoliceCommand}"/>
+                        <MenuItem x:Name="MenuParagraphe" Header="Pa_ragraphe…" Command="{Binding ParagrapheCommand}"/>
+                        <Separator/>
                         <MenuItem Header="_Gras" InputGesture="Ctrl+G" Command="{Binding BasculerGrasCommand}"/>
                         <MenuItem Header="_Italique" InputGesture="Ctrl+I" Command="{Binding BasculerItaliqueCommand}"/>
                         <MenuItem Header="_Souligné" InputGesture="Ctrl+U" Command="{Binding SoulignerCommand}"/>
@@ -752,10 +806,21 @@
                                   IsEnabled="{Binding PeutImporterTexte}"/>
                     </MenuItem>
 
+                    <!-- Le menu Page (poste N18) : Insert ▸ Page… et Duplicate Page de Publisher, à leurs
+                         touches (p. 22), « Insérer des pages » étant le dialogue de A8 ; les pages au
+                         clavier ; l'arrière-plan, au dock. -->
                     <MenuItem Header="_Page">
+                        <MenuItem x:Name="MenuInsererDesPages" Header="_Insérer des pages…" InputGesture="Ctrl+Shift+N"
+                                  Command="{Binding InsererDesPagesCommand}"/>
                         <MenuItem Header="_Ajouter une page" Command="{Binding AddPageCommand}"/>
-                        <MenuItem Header="_Dupliquer la page" Command="{Binding DuplicatePageCommand}"/>
+                        <MenuItem Header="_Dupliquer la page" InputGesture="Ctrl+Shift+U" Command="{Binding DupliquerLaPageCommand}"/>
                         <MenuItem Header="_Supprimer la page" Command="{Binding DeletePageCommand}"/>
+                        <Separator/>
+                        <MenuItem Header="Page s_uivante" InputGesture="Ctrl+PageDown" Command="{Binding PageSuivanteCommand}"/>
+                        <MenuItem Header="Page p_récédente" InputGesture="Ctrl+PageUp" Command="{Binding PagePrecedenteCommand}"/>
+                        <MenuItem Header="A_tteindre la page…" InputGesture="F5" Command="{Binding AtteindreLaPageCommand}"/>
+                        <Separator/>
+                        <MenuItem x:Name="MenuArrierePlan" Header="Arrière-p_lan…" Command="{Binding ArrierePlanCommand}"/>
                     </MenuItem>
 
                     <!-- Le menu Affichage montre ses gestes (poste N4), et ses deux bascules de
@@ -904,14 +969,9 @@
                            Width="130" TextAlignment="Right"
                            Text="{Binding FrameSizeLabel}"
                            IsVisible="{Binding HasSelection}"/>
-                <TextBlock Grid.Column="4" x:Name="PageSurPages" Margin="18,0,0,0">
-                    <TextBlock.Text>
-                        <MultiBinding StringFormat="Page {0} sur {1}">
-                            <Binding Path="CurrentPageNumber"/>
-                            <Binding Path="Document.Pages.Count"/>
-                        </MultiBinding>
-                    </TextBlock.Text>
-                </TextBlock>
+                <!-- « Page 2 sur 3 », dont le numéro est un champ (poste N18) : F5 et Ctrl+B y mènent,
+                     un numéro tapé puis Entrée mène à la page. -->
+                <views:ChampDeLaPage Grid.Column="4" x:Name="PageSurPages" Margin="18,0,0,0"/>
                 <TextBlock Grid.Column="5" x:Name="FormatDeLaPage" Margin="18,0,0,0">
                     <TextBlock.Text>
                         <MultiBinding Converter="{x:Static conv:FormatDePage.Instance}">
@@ -1057,7 +1117,8 @@
                                                             <TextBlock Text="Position et taille"/>
                                                         </StackPanel>
                                                     </ToggleButton>
-                                                    <Grid Classes="contenuDeSection" ColumnDefinitions="*,8,*" RowDefinitions="Auto,8,Auto,8,Auto,8,Auto"
+                                                    <Grid x:Name="ContenuPositionEtTaille" Classes="contenuDeSection" ColumnDefinitions="*,8,*"
+                                                          RowDefinitions="Auto,8,Auto,8,Auto,8,Auto,8,Auto"
                                                           IsVisible="{Binding #Root.((vm:MainWindowViewModel)DataContext).SectionPositionOuverte}">
                                                         <DockPanel Grid.Row="0" Grid.Column="0" IsVisible="{Binding !IsLine}">
                                                             <TextBlock Classes="libelle libelleAGauche" Text="X" Width="12" Margin="0,0,6,0"/>
@@ -1118,7 +1179,19 @@
                                                             <views:ChampNumerique x:Name="ChampFinY" Classes="champ" TextConverter="{x:Static conv:Unite.Millimetres}" Increment="1"
                                                                            Value="{Binding #Root.((vm:MainWindowViewModel)DataContext).FinDuTraitY, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
                                                         </DockPanel>
-                                                        <DockPanel Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="3">
+                                                        <!-- Le quart de tour (A9, poste N18) : les deux commandes du
+                                                             menu Disposition ▸ Faire pivoter ou retourner, en un pas.
+                                                             Sans icône : la recette I1 n'admet que celles de la
+                                                             maquette, qui n'en dessine pas. -->
+                                                        <StackPanel Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="3" Orientation="Horizontal" Spacing="4">
+                                                            <Button x:Name="BoutonPivoterAGauche" Classes="boutonDuDock" Content="−90°"
+                                                                    ToolTip.Tip="Faire pivoter à gauche de 90°"
+                                                                    Command="{Binding #Root.((vm:MainWindowViewModel)DataContext).PivoterAGaucheCommand}"/>
+                                                            <Button x:Name="BoutonPivoterADroite" Classes="boutonDuDock" Content="+90°"
+                                                                    ToolTip.Tip="Faire pivoter à droite de 90°"
+                                                                    Command="{Binding #Root.((vm:MainWindowViewModel)DataContext).PivoterADroiteCommand}"/>
+                                                        </StackPanel>
+                                                        <DockPanel Grid.Row="8" Grid.Column="0" Grid.ColumnSpan="3">
                                                             <TextBlock Classes="libelle libelleAGauche" Text="Nom" Margin="0,0,6,0"/>
                                                             <TextBox x:Name="ChampNom" Classes="champ" Text="{Binding Name}"/>
                                                         </DockPanel>
@@ -1239,7 +1312,7 @@
                                                             <TextBlock Text="Paragraphe"/>
                                                         </StackPanel>
                                                     </ToggleButton>
-                                                    <Grid Classes="contenuDeSection" ColumnDefinitions="*,8,*" RowDefinitions="Auto,8,Auto,8,Auto"
+                                                    <Grid x:Name="ContenuParagraphe" Classes="contenuDeSection" ColumnDefinitions="*,8,*" RowDefinitions="Auto,8,Auto,8,Auto"
                                                           IsVisible="{Binding #Root.((vm:MainWindowViewModel)DataContext).SectionParagrapheOuverte}">
                                                         <StackPanel Grid.Row="0" Grid.Column="0">
                                                             <TextBlock Classes="libelle libelleAuDessus" Text="Retrait à gauche"/>
@@ -1810,7 +1883,7 @@
                                         <TextBlock Text="Format"/>
                                     </StackPanel>
                                 </ToggleButton>
-                                <Grid Classes="contenuDeSection" ColumnDefinitions="*,8,*" RowDefinitions="Auto,8,Auto,8,Auto"
+                                <Grid x:Name="ContenuFormat" Classes="contenuDeSection" ColumnDefinitions="*,8,*" RowDefinitions="Auto,8,Auto,8,Auto"
                                       IsVisible="{Binding SectionFormatOuverte}">
                                     <ComboBox Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3" x:Name="FormatDePage" Classes="champ"
                                               ItemsSource="{Binding PageSizes}"
@@ -1841,7 +1914,7 @@
                                         <TextBlock Text="Marges"/>
                                     </StackPanel>
                                 </ToggleButton>
-                                <Grid Classes="contenuDeSection" ColumnDefinitions="*,8,*" RowDefinitions="Auto,8,Auto"
+                                <Grid x:Name="ContenuMarges" Classes="contenuDeSection" ColumnDefinitions="*,8,*" RowDefinitions="Auto,8,Auto"
                                       IsVisible="{Binding SectionMargesOuverte}">
                                     <StackPanel Grid.Row="0" Grid.Column="0">
                                         <TextBlock Classes="libelle libelleAuDessus" Text="Gauche"/>
@@ -1880,7 +1953,7 @@
                                         <TextBlock Text="Grille"/>
                                     </StackPanel>
                                 </ToggleButton>
-                                <Grid Classes="contenuDeSection" ColumnDefinitions="*,8,*" RowDefinitions="Auto,6,Auto,8,Auto,8,Auto"
+                                <Grid x:Name="ContenuGrille" Classes="contenuDeSection" ColumnDefinitions="*,8,*" RowDefinitions="Auto,6,Auto,8,Auto,8,Auto"
                                       IsVisible="{Binding SectionGrilleOuverte}">
                                     <TextBlock Grid.Row="0" Grid.ColumnSpan="3" Classes="aide"
                                                Text="Les repères de composition ne s'impriment pas ; l'aimantation s'y accroche."/>
@@ -1932,7 +2005,7 @@
                                         <TextBlock Text="Repères de règle"/>
                                     </StackPanel>
                                 </ToggleButton>
-                                <StackPanel Classes="contenuDeSection" Spacing="6" IsVisible="{Binding SectionReperesOuverte}">
+                                <StackPanel x:Name="ContenuReperesDeRegle" Classes="contenuDeSection" Spacing="6" IsVisible="{Binding SectionReperesOuverte}">
                                     <TextBlock Classes="aide"
                                                Text="Glissez depuis une règle pour en poser un ; ramenez-le hors de la page pour l'enlever."/>
                                     <StackPanel Orientation="Horizontal" Spacing="4">
@@ -1985,7 +2058,7 @@
                                         <TextBlock Text="Fond de page"/>
                                     </StackPanel>
                                 </ToggleButton>
-                                <StackPanel Classes="contenuDeSection" Spacing="6" IsVisible="{Binding SectionFondDePageOuverte}">
+                                <StackPanel x:Name="ContenuFondDePage" Classes="contenuDeSection" Spacing="6" IsVisible="{Binding SectionFondDePageOuverte}">
                                     <CheckBox Classes="case" Content="Fond de page" IsChecked="{Binding Document.HasBackground}"/>
                                     <StackPanel IsEnabled="{Binding Document.HasBackground}" Spacing="6">
                                         <DockPanel>
