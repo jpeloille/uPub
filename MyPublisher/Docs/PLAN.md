@@ -120,7 +120,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **N14** | Les champs | **100 %** | Les champs numériques du dock et de la barre contextuelle sont des `ChampNumerique` (`Views/ChampNumerique.cs`), dérivés de `NumericUpDown` sous son apparence : la valeur ne part plus à chaque frappe lisible — taper « 210 » dans la largeur de la page l'écrivait à 2, 21 puis 210 mm —, mais à `Entrée`, `Tab`, la sortie du champ, `↑` et `↓`, la molette, une fois ; `↑` et `↓` partent de ce qui est tapé, même tout pris après un refus. `Unite` lit mm, cm, pt, pi et le pouce (« po », « in », `"`), à la virgule comme au point, en fractions exactes de millimètre : « 2 cm » dans X donne 20,0 mm, « 12 pt » dans une marge 4,23 mm, « 1" » 25,4 mm ; l'affichage reste en millimètres. Une saisie illisible ou hors des bornes n'est pas ramenée à la borne : la valeur d'avant revient, et la barre d'état le dit, bornes comprises, par `Status`, le canal du zoom tapé de N4. `Échap` renonce et rend la planche, au dock comme dans la barre (règle 13) ; `Entrée` dans la barre valide et rend la planche, au dock garde le champ. Ce qui attend dans un champ part avant que la fenêtre referme sa transaction (`ClosePropertyEdit`, le piège du plan : fermer le document pose alors la question), et avant que le modèle de vue referme les siennes, change la sélection, enregistre ou exporte (`MainWindowViewModel.Champs.cs`). Le catalogue et le dialogue des coordonnées se ferment par `Échap` (`IsCancel`) ; `Tab` ne s'arrête plus sur les titres de section du dock. Douze tests sur la fenêtre ; trois tests de la barre réécrits (règle 14) ; sept sabotages au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **N15** | L'application connaît la sélection du texte | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 5 |
 | **N16** | Tabulation et saut de ligne forcé | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 5, après N15 dans la même copie |
-| **N17** | Les modificateurs du glisser, et le rectangle de sélection | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 5 |
+| **N17** | Les modificateurs du glisser, et le rectangle de sélection | **100 %** | Sur un bloc, `Ctrl` et `Maj` ne basculent plus la sélection à la pression mais au relâché ; passé le seuil de Q21, le bloc s'ajoute et le geste devient un déplacement : sous `Ctrl`, des copies posées à la place des originaux, qui restent, en un pas ; sous `Maj`, tenu sur l'axe dominant, que l'aimantation ne fait pas bouger. Au tracé, `Maj` donne un carré ou un cercle, `Ctrl` trace depuis le centre, à l'aperçu comme au bloc ; `Ctrl` sur une poignée redimensionne depuis le centre, bloc tourné compris. Un rectangle tiré dans le vide ou depuis le gris prend, au relâché, les blocs visibles dont l'emprise est tout entière dedans, `Maj` ou `Ctrl` les ajoutant ; il se dessine dans l'`Overlay`, à l'accent et à la projection de l'apparence lus par le code. `Échap` annule le glissé en cours — déplacement, copie, poignée, rotation, extrémité, repère, rectangle — sans pas. Le curseur de rotation est le tracé de `IconeRotation`, dessiné comme la main et la loupe. La mécanique vit dans `PageCanvas.Gestes.cs` ; les trois cibles du piège restent, une fois chacune, et restent attrapées. Dix-sept tests sous `poste=N17`, aucun test réécrit ; deux aides au banc, `Tenir` et `Lacher` ; quatre sabotages au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **N18** | Les menus vers le dock, et les pages, avec A8 et A9 | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 5 |
 | **N19** | Le corps et la police : une liste, et une frappe | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 5 |
 | **N20** | Rechercher et remplacer | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 6 |
@@ -7934,6 +7934,98 @@ dans l'`Overlay`, aux pinceaux de l'apparence lus par le code (règle 4).
 
 Fichiers : `PageCanvas.axaml.cs`, `PageCanvas.Gestes.cs` (neuf), README (Souris). Dépend de Q21 et
 N12. Effort : moyen.
+
+*Livré le 29 octobre 2026*, dans la salve Saisie 5 ; la relecture adversariale vient après la
+fusion. **La mécanique** vit dans `PageCanvas.Gestes.cs` ; `PageCanvas.axaml.cs` n'y fait que
+brancher. Sur un bloc, sous `Ctrl` ou `Maj`, la pression ne touche plus à la sélection :
+`PrendreSousUnModificateur` retient le bloc, ouvre la transaction du geste et prend le pointeur.
+Le relâché d'un geste qui n'a pas glissé le bascule (`BasculerAuRelache`, après `CommitEdit`),
+comme le faisait la pression. Au premier mouvement passé le seuil de Q21, le bloc s'ajoute à la
+sélection s'il n'y était pas, et, sous `Ctrl`, chaque bloc visible de la sélection est cloné à sa
+place, au-dessus de tout, dans l'ordre de superposition — `Ctrl+D` sans le décalage —, les copies
+devenant la sélection que le geste emporte ; la copie et son déplacement font le pas que la
+pression a ouvert. Sous `Maj`, `ApplyMove` tient l'axe dominant du chemin (`TenirLAxe`, à
+égalité l'horizontale), et l'axe tenu n'est pas aimanté. `Maj` se lit pendant le mouvement, comme
+`Alt` ; la copie se décide sur la pression. Au tracé, `CoinsDuTrace` sert l'aperçu et le bloc
+posé : sous `Maj`, le côté est le plus grand des deux chemins ; sous `Ctrl`, la pression est le
+centre. Sur une poignée, `Ctrl` passe `ApplyResize` par `DepuisLeCentre` — le bord opposé suit en
+miroir, sans descendre sous la taille minimale, les proportions de `Maj` recentrées —, lu par un
+champ et non par un paramètre, pour laisser intacte la cible du juge
+`else ApplyResize(frame, page, maj != _vm.ConserverLesProportions);`. Une pression dans le vide
+de la page ou sur le gris vide la sélection comme avant, hors `Ctrl` et `Maj`, et tire un
+**rectangle de sélection** : il ne paraît qu'au-delà du seuil, se pose dans l'`Overlay`, pointillé
+d'accent sur la projection, les deux pinceaux lus par `TryFindResource`, et, au relâché, prend les
+blocs visibles de la page dont l'emprise (`Extent`, rotation comprise) est tout entière dedans, dans
+l'ordre de la page ; sous `Maj` ou `Ctrl`, ils s'ajoutent à la sélection. **Échap** pendant un
+glissé est lu par la planche (`OnKeyDown`, avant la sortie de la saisie) : `AnnulerLeGlisse` rend
+les départs du déplacement, retire les copies et resélectionne les originaux, rend la géométrie
+d'un bloc qu'on redimensionne, tourne ou dont on tire une extrémité, rend un repère à sa place ou
+retire celui qu'on tirait d'une règle, efface le rectangle, puis referme la transaction, sans pas
+puisque rien n'a changé ; la suite du geste, jusqu'au relâché, ne fait plus rien. Le tracé, la main
+et le glissé dans le texte gardent leur `Échap`. **Le curseur de rotation** est le tracé de
+`IconeRotation`, lu par `TraceDeLIcone` et dessiné par `Dessiner` (I6), le point chaud au centre du
+cercle ; la main du jeu standard a quitté la planche. Le README le dit, au sous-tableau « Souris »
+et à la liste de ce que l'application sait faire ; `PageCanvas.Gestes.cs` entre dans
+`vues_de_la_phase` de I1.
+
+**Les tests.** `ModificateursDuGlisserTests`, dix-sept sous `poste=N17` : Ctrl+glisser donne deux
+blocs en un pas, l'original à sa place, et sur un bloc non pris copie la sélection et lui ; un
+Ctrl+clic tenu laisse la sélection, le relâché la bascule, un Ctrl+clic qui tremble n'ajoute que le
+bloc ; Maj+glisser garde Y, puis X sur le bloc déjà pris, chaque fois en un pas, et l'axe tenu ne
+s'aimante pas à la marge qui attire le même glissé sans Maj ; un carré, un cercle, un cadre centré,
+un carré centré, et l'aperçu déjà carré ; Ctrl sur un coin et sur un côté garde le centre, sur un
+bloc tourné de 30° aussi, Maj y gardant les proportions ; un rectangle prend deux blocs sur trois,
+tiré sur la page et depuis le gris (deux cas), à rebours aussi, sans le bloc masqué ; sous Maj et
+sous Ctrl il ajoute (deux cas) ; il se dessine dans l'`Overlay`, aux pinceaux de l'apparence,
+au-delà du seuil seulement ; Échap rend le bloc à sa place sans pas, et défait de même une copie,
+un redimensionnement, une rotation et un rectangle ; le curseur de rotation est dessiné, n'est aucun
+des quatorze curseurs du jeu standard que la planche emploie, et reste le même d'un survol à
+l'autre. Deux aides au banc, dans la région « Les gestes » : `Tenir`, la première moitié d'un
+glissé, et `Lacher`. **Règle 14** : aucun test ne lisait la sélection entre la pression et le
+relâché d'un Ctrl+clic ou d'un Maj+clic, ni ne glissait dans le vide en attendant que rien ne soit
+pris — le glissé sur le gris de I4 tire un rectangle sans hauteur, qui ne prend rien ; aucun n'est
+réécrit, et la suite d'interface passe de 484 à 501 tests, tous verts, sans qu'un `poste=` en perde
+ni en gagne hors de N17. Le test de C3, un clic et trois Maj+clics, reste vert.
+
+*Recette jouée* : `Scripts/recettes/N17-modificateurs-du-glisser.sh`. Les sources d'abord : la
+partie `Gestes` et son inscription à I1 ; les trois cibles du piège, une fois chacune dans
+`PageCanvas.axaml.cs` et nulle part ailleurs ; aucune bascule à la pression, la bascule au relâché
+après la transaction, la copie ; l'axe, le centre, le tracé ; le rectangle dans l'`Overlay`, aux
+pinceaux de l'apparence, sans `PageRoot` ; l'icône de rotation, sans la main du jeu standard ;
+Échap avant la saisie ; les sept lignes du README. Puis les dix-sept tests. Les recettes voisines
+passent : Q21-Q22, N12, C3, Q14, Q23, I1, I4-Q10, I6, A10, N1 et A4. **Le juge** : quatre sabotages
+— celui du plan, Ctrl+glisser qui déplace l'original ; Maj+glisser qui laisse filer l'axe ; le
+rectangle qui prend un bloc à moitié dedans ; Échap qui laisse le bloc où il est —, attrapés par la
+recette et la classe. Les trois cibles du piège ont été rejouées à la main contre `PlancheTests`,
+le garde-fou que le juge attend d'elles : la ligne qui trouve le bloc atteint, la garde de l'outil
+armé sur le gris et le chemin du pointeur dans le repère du bloc restent attrapées.
+
+*Choisi sans certitude.*
+- `Maj` attend le relâché comme `Ctrl`, alors que le plan ne le disait que de `Ctrl` : sans cela,
+  Maj+glisser sur un bloc déjà pris le retirait de la sélection au lieu de le déplacer.
+- Un Ctrl+glisser ou un Maj+glisser sur un bloc non pris l'ajoute à la sélection, et c'est
+  l'ensemble qui est copié ou déplacé, comme le Ctrl+clic l'aurait ajouté. Je n'ai pas vérifié ce
+  que fait Publisher d'un bloc non pris quand d'autres le sont.
+- La copie se décide sur la touche tenue à la pression ; `Ctrl` pressé en chemin ne copie pas, et
+  `Ctrl` lâché en chemin ne défait pas la copie. `Maj`, lui, se lit à chaque mouvement, et l'axe
+  dominant se relit à chaque mouvement aussi.
+- Les copies prennent le nom de leur original et se posent au-dessus de tout, comme celles de
+  `Ctrl+D`, dans l'ordre de superposition des originaux.
+- Le côté du carré tracé sous Maj est le plus grand des deux chemins, et non le plus petit.
+- Le rectangle prend au relâché, et non pendant le geste ; il ajoute sous Maj ou Ctrl sans rien
+  retirer ; il prend les blocs de la page, un groupe entier mais pas ses membres (N26) ; un bloc
+  tourné y entre par son emprise, le rectangle qui contient ses quatre coins.
+- Échap annule aussi le glissé d'un repère, que le plan ne nommait pas ; pendant un tracé, il garde
+  son sens d'avant : il désarme l'outil, qui abandonne le tracé.
+- Le curseur de rotation a son point chaud au centre du cercle, et le trait de 1,8 de la loupe.
+
+*Relevé, non corrigé.*
+- La fiche 23 dit encore, à c2, que le clic bascule le bloc, et à c8, c10 à c14, ce qui manquait :
+  le poste ne la touche pas, comme ceux qui l'ont précédé.
+- L'allure du curseur de rotation ne s'éprouve pas sans affichage (N1) : le test vérifie qu'il est
+  dessiné, sur le tracé que l'apparence fournit, non ce qu'on voit.
+- Un Ctrl+glisser pris par le bord d'un bloc sélectionné, à moins de 7 px d'une poignée, prend la
+  poignée et redimensionne depuis le centre : les poignées passent avant le bloc, comme avant.
 
 #### N18 — Les menus vers le dock, et les pages, avec A8 et A9 *(fiche 23, b17, d16, e5, e8, e9, e12, e15, e16, e18, f17, f18)*
 
