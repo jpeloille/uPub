@@ -39,8 +39,8 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **A5** | Formats de page | **100 %** | B4, B5, Executive, Tabloid au catalogue, et largeur/hauteur libres au panneau. `FormatVersion` reste à 3 |
 | **A6** | Taille du bloc dans la barre d'état | **100 %** | Position **et** taille du bloc, suivies pendant le geste et non seulement à sa fin |
 | **A7** | Alignement vertical du texte | **100 %** | Haut, milieu, bas sur le bloc de texte ; le calage est borné à zéro. `FormatVersion` reste à 3 |
-| **A8** | Insérer des pages : nombre, position, contenu | 0 % | Spécifié le 11 octobre 2026 ; livré avec N18 (phase N, salve Saisie 5) |
-| **A9** | Rotation par quart de tour | 0 % | Spécifié le 11 octobre 2026 ; livré avec N18 (phase N, salve Saisie 5) |
+| **A8** | Insérer des pages : nombre, position, contenu | **100 %** | Livré avec N18 (salve Saisie 5) : le dialogue *Insérer des pages* (`Views/InsererDesPages.axaml`), à *Page ▸ Insérer des pages…* et à `Ctrl+Maj+N` — un nombre, avant ou après la page courante, des pages vierges, une zone de texte par page égale à la zone des marges, ou la copie des blocs d'une page désignée, dont le numéro reste grisé tant que son option n'est pas choisie (p. 22) ; OK par `Entrée`, Annuler par `Échap`. L'insertion se fait en un pas, au modèle de vue (`InsererDesPages`), des instances distinctes, les noms « Page n » renumérotés, la première page insérée courante. La recette d'origine — 3 pages, la page 2 courante, 4 pages avant copiées de la page 1 : 7 pages, les pages 2 à 5 portant les trois blocs de la page 1, une annulation — jouée au clavier et au pointeur sur le dialogue. Trois tests sous `poste=A8` ; deux sabotages au juge. Recette dans `Scripts/recettes/` (celle de N18) ; relecture et juge après fusion |
+| **A9** | Rotation par quart de tour | **100 %** | Livré avec N18 (salve Saisie 5) : *Disposition ▸ Faire pivoter ou retourner ▸* — à gauche et à droite de 90°, et *Rotation personnalisée…*, qui mène à l'angle du dock —, comme Publisher (p. 16), et deux boutons −90° et +90° à Position et taille, sans icône. Chaque bloc pris tourne autour de son centre, l'angle ramené entre 0 et 360° comme la poignée le ramène : 350° plus 90° donne 80°, 0° moins 90° donne 270° ; en un pas, où que soit le focus (`UnGesteUnPas`). Une image tournée d'un quart de tour au menu passe `comparer-rendus.sh` à 0,07 %, sous 0,5 %. Quatre tests sous `poste=A9` ; deux sabotages au juge. Recette dans `Scripts/recettes/` (celle de N18) ; relecture et juge après fusion |
 | **A10** | Objet trait, et flèche | **100 %** | `ShapeKind.Line` : un trait est une forme couchée, sans hauteur, longue de sa largeur, que sa rotation oriente autour de son milieu ; il se définit par ses deux extrémités (`PoserLesExtremites`), et la taille minimale d'un bloc ne s'y applique jamais. `StartArrow` et `EndArrow`, une pointe pleine facultative à chaque bout ; `FormatVersion` ne change pas, Samples et Templates réenregistrés. L'outil Ligne (`L`) du rail, entre Ellipse et la loupe, trace d'une extrémité à l'autre, `Maj` à 0, 45 ou 90°, la bulle disant longueur et angle ; *Insertion ▸ Trait*. Deux poignées sur les extrémités, sans rotation ; survol à 3 pt de l'encre. Au dock, X1, Y1, X2, Y2 à la place du cadre, les pointes, et le contour pour l'épaisseur et la couleur. Un coup de crayon `m … l S` au PDF, au même endroit qu'à l'écran ; les vignettes le dessinent. L'import des Fiches rend 5 traits et 0 rectangle de substitution, R5 compte les traits à part. L'icône du poste sert. Treize tests d'interface, vingt-huit du noyau ; relu et jugé le 26 octobre 2026 : un groupe étiré met désormais ses traits à l'échelle par leurs extrémités, et non par leur largeur ; treize sabotages au juge. Recette dans `Scripts/recettes/` |
 | **A11** | Aimantation réglable, et aux autres blocs | 0 % | Spécifié le 11 octobre 2026 ; repris en phase N (salve Saisie 13) : au redimensionnement et au tracé, préférences de N11 |
 | **A12** | Menu contextuel du bloc | 0 % | Spécifié le 11 octobre 2026 ; repris et élargi en phase N (salve Saisie 6) : presse-papiers, Format du bloc… vers le dock, double-clic sur une image ou une forme |
@@ -121,7 +121,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **N15** | L'application connaît la sélection du texte | **100 %** | Le modèle de vue connaît la sélection du texte en saisie : `SelectionDuTexte` — le bloc ou la case, le début, la fin, le curseur, et l'ancre qui s'en déduit —, rangée début avant fin, le curseur au bout que le geste déplace (`SelectionEnd` du champ : son `CaretIndex` ne suit pas `Maj+→`), et `ParagraphesDeLaSelection`, par `MiseEnForme.Paragraphes`, donc `Recalage.ParagrapheDe` — l'une et l'autre nulles hors saisie, les paragraphes aussi pour une case. La planche la tient depuis `PageCanvas.Saisie.cs` sans toucher son fichier principal (règle 16) : elle suit le champ de la saisie dès qu'il prend le focus, à chaque pression, glissé, flèche et frappe, ne dit plus rien d'un champ sans focus — le champ réduit sa sélection à un curseur en perdant le focus, et la barre la ferait oublier —, ramène la sélection gardée dans ses bornes quand le texte change au dock, et la vide quand le champ se cache, à la sortie de la saisie. Un glissé sur les caractères 4 à 7 donne (4, 7), `Maj+→` (4, 8), une frappe (5, 5) ; le corps pris à la barre ne change rien ; Échap vide. Huit tests sous `poste=N15` ; un sabotage au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **N16** | Tabulation et saut de ligne forcé | **100 %** | `Tab`, dans la saisie d'un bloc, met « \t » au curseur (`AcceptsTab` sur le champ de la page) : le mot suivant tombe au taquet de 36 pt, à l'écran comme au PDF à 0,05 pt près, et la saisie et le focus restent dans le champ ; `Maj+Tab` ne sort plus du bloc et n'écrit rien ; dans le dock, `Tab` reste la navigation. `Maj+Entrée` pose U+2028 (`Compositeur.SautDeLigne`), le saut de ligne forcé, que la planche écrit à la place de la sélection (`PageCanvas.Saisie.cs`) : `Decouper` coupe la ligne sans fermer le paragraphe — ni retrait de première ligne ni espace avant après lui, l'espace après au bout du paragraphe —, et `Recalage` ne le compte pas comme un saut : le compte des paragraphes et les écarts ne bougent pas. Les champs de la page et du dock écrivent « \n » (`NewLine`), et non `Environment.NewLine`. La composition des documents existants ne change pas : l'empreinte de N3 sur les 19 documents du corpus est identique avant et après. Huit tests du noyau et six sur la fenêtre sous `poste=N16` ; README (Texte) ; trois sabotages au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **N17** | Les modificateurs du glisser, et le rectangle de sélection | **100 %** | Sur un bloc, `Ctrl` et `Maj` ne basculent plus la sélection à la pression mais au relâché ; passé le seuil de Q21, le bloc s'ajoute et le geste devient un déplacement : sous `Ctrl`, des copies posées à la place des originaux, qui restent, en un pas ; sous `Maj`, tenu sur l'axe dominant, que l'aimantation ne fait pas bouger. Au tracé, `Maj` donne un carré ou un cercle, `Ctrl` trace depuis le centre, à l'aperçu comme au bloc ; `Ctrl` sur une poignée redimensionne depuis le centre, bloc tourné compris. Un rectangle tiré dans le vide ou depuis le gris prend, au relâché, les blocs visibles dont l'emprise est tout entière dedans, `Maj` ou `Ctrl` les ajoutant ; il se dessine dans l'`Overlay`, à l'accent et à la projection de l'apparence lus par le code. `Échap` annule le glissé en cours — déplacement, copie, poignée, rotation, extrémité, repère, rectangle — sans pas. Le curseur de rotation est le tracé de `IconeRotation`, dessiné comme la main et la loupe. La mécanique vit dans `PageCanvas.Gestes.cs` ; les trois cibles du piège restent, une fois chacune, et restent attrapées. Dix-sept tests sous `poste=N17`, aucun test réécrit ; deux aides au banc, `Tenir` et `Lacher` ; quatre sabotages au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
-| **N18** | Les menus vers le dock, et les pages, avec A8 et A9 | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 5 |
+| **N18** | Les menus vers le dock, et les pages, avec A8 et A9 | **100 %** | Le chemin vers le dock (décision 5) : `MainWindowViewModel.VersLeDock.cs` ouvre la section et lève une `DockDemande`, que la fenêtre traite — le dock rouvert s'il est replié, l'onglet choisi, le focus dans le champ visé ou le premier de la section, cherché après la mise en page, les gabarits gardés ne montrant la section qu'au passage suivant —, sans pas d'annulation. Sept entrées « … » : *Fichier ▸ Mise en page…* (Format), *Disposition ▸ Repères de mise en page…* (Marges et Grille), *Repères de règle ▸ Format…*, *Page ▸ Arrière-plan…* (Fond de page), *Texte ▸ Paragraphe…*, *Rotation personnalisée…* (l'angle), et *Texte ▸ Police…*, qui mène à la liste des polices de la barre contextuelle, la police ayant quitté le dock (règle 1) ; Police et Paragraphe grisés sans texte, comme chez Publisher. Les pages au clavier, aux touches de la fiche 24 : `Ctrl+Maj+N` (le dialogue de A8 ; `OnKeyDown` n'y prend plus Maj pour Nouveau), `Ctrl+Maj+U` (dupliquer la page, en un pas, même en saisie), `Ctrl+Pg.Suiv` et `Ctrl+Pg.Préc`, `F5` et `Ctrl+B`, qui mènent au numéro de page de la barre d'état, devenu un champ (`Views/ChampDeLaPage.axaml`) : « 3 » puis `Entrée` mène à la page 3, « 99 » est refusé avec un message, `Échap` renonce. *Insertion ▸ Numéro de page, Date, Coordonnées ▸* posent un bloc à champ (C4). Disposition rangé comme Publisher : *Repères de mise en page…* en tête, *Faire pivoter ou retourner ▸* après l'alignement. Sept tests sous `poste=N18` ; trois tests voisins réécrits (règle 14) ; deux sabotages au juge. **`Ctrl+Maj+U` est pris par ibus** sur la machine du propriétaire : lié comme Publisher, non mesuré à l'écran (voir la section). Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **N19** | Le corps et la police : une liste, et une frappe | **100 %** | La police de la barre se tape, au texte et au tableau : `ListeDesPolices` (`Views/ListeDesPolices.cs`), une `ComboBox` éditable sous son apparence, dont la frappe ne passe plus par la recherche d'Avalonia 11.3.9 — qui prenait, à chaque lettre, l'entrée de même texte : « DejaVu Sans Mono » tapé posait DejaVu Sans au onzième caractère. La liste s'ouvre sur les familles dont le libellé commence par la frappe, sans la casse, la première marquée — « Geo » propose Georgia —, `↑` et `↓` promènent la marque, `Entrée` la pose en un pas et rend la planche, `Tab` la pose et passe au corps, `Échap` renonce ; une police que rien ne commence est refusée, et la barre d'état le dit (`Status`, N14) ; la zone montre le libellé, « Corps du jeu — DejaVu Sans », « Georgia (absente) » ; Q20 et la règle 1 tiennent. Le corps garde son champ (N14 : « 10,5 » tapé donne 10,5 pt) et reçoit « Tailles du corps », un menu volant des dix-sept tailles du noyau (`CorpsStandard`, N10), la taille du bloc cochée, en un pas (`PoserLeCorps`, `MainWindowViewModel.CorpsEtPolice.cs`). Seize tests sur la fenêtre ; deux tests voisins réécrits (règle 14) ; deux sabotages au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **N20** | Rechercher et remplacer | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 6 |
 | **N21** | La saisie montre le texte composé | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 6 ; attend la décision de voie |
@@ -1383,6 +1383,11 @@ des marges. Effort : faible.
 option n'est pas choisie (p. 22) ; `Ctrl+Maj+U`, qui duplique la page. Ce dialogue ne double aucun
 champ du dock (décision 5 de la phase N).
 
+*Livré le 29 octobre 2026*, par N18, avec sa recette d'origine, jouée sur le dialogue au clavier et
+au pointeur (`InsererDesPagesTests`, `poste=A8`) : le dialogue, l'insertion en un pas, des instances
+distinctes, les noms renumérotés ; la zone de texte égale à la zone des marges ; le champ grisé. Le
+détail est dans la section de N18.
+
 #### A9 — Rotation par quart de tour *(fiches 14, 22)*
 
 Deux commandes, +90° et −90°, au menu Disposition et au panneau. La rotation, sa poignée
@@ -1396,6 +1401,12 @@ s'annule en un pas. Effort : faible.
 sous-menu *Faire pivoter ou retourner ▸* de Disposition, comme Publisher (p. 16), et deux boutons
 au dock, sans icône, la recette I1 n'admettant que celles de la maquette. A12 reprend le
 sous-menu.
+
+*Livré le 29 octobre 2026*, par N18, avec sa recette d'origine (`QuartDeTourTests`, `poste=A9`) :
+350° plus 90° donne 80°, 0° moins 90° donne 270°, chaque commande en un pas, au menu et aux deux
+boutons −90° et +90° de Position et taille ; une image tournée au menu passe `comparer-rendus.sh` à
+0,07 %, sous la tolérance de 0,5 % que la recette de N18 lui donne. Le détail est dans la section de
+N18.
 
 #### A10 — Objet trait, et flèche *(fiche 02)*
 
@@ -8182,6 +8193,118 @@ la mise en page. Le dialogue neuf s'inscrit dans `vues_de_la_phase` de la recett
 Fichiers : `MainWindowViewModel.VersLeDock.cs` (neuf), `MainWindow.axaml` (menus, barre d'état),
 `MainWindow.axaml.cs` (`DockDemande`), un dialogue neuf, la recette I1, README (Pages). Dépend de
 N13. Effort : moyen.
+
+*Livré le 29 octobre 2026*, dans la salve Saisie 5, avec A8 et A9 ; la relecture adversariale vient
+après la fusion. **Arrêt sur un point**, dit plus bas — `Ctrl+Maj+U`, que le bureau prend ; le reste
+du poste est livré.
+
+**Le chemin vers le dock.** `MainWindowViewModel.VersLeDock.cs` porte les sept commandes des entrées
+« … » ; chacune montre le dock (`DockVisible`, comme le menu Fenêtre), ouvre sa section par la
+propriété de session qui la tient (`SectionMargesOuverte`…), puis lève une `DockDemande` — la
+destination (la barre contextuelle, Propriétés, Document), la section par le nom de son contenu
+(`ContenuMarges`, posé sur sept sections), le champ par son nom, ou rien pour le premier champ de la
+section. La fenêtre choisit l'onglet, puis cherche le champ au passage `Background` du répartiteur,
+trois fois au plus : la section d'une sorte de bloc n'est montrée par les gabarits gardés qu'à la mise
+en page suivante (le piège du plan). Le focus ouvre la transaction du panneau, qui se referme sans
+pas, rien n'ayant changé. *Fichier ▸ Mise en page…* mène au format, *Disposition ▸ Repères de mise en
+page…* aux marges — la grille ouverte avec elles —, *Repères de règle ▸ Format…* à la section des
+repères, *Page ▸ Arrière-plan…* au fond de page, *Texte ▸ Paragraphe…* aux retraits, *Rotation
+personnalisée…* au champ de l'angle. Police et Paragraphe se grisent sans bloc de texte — Police
+s'offre aussi pour un tableau —, Rotation personnalisée sans bloc seul ; leur disponibilité suit la
+sélection (`NotifySelection`, une ligne).
+
+**Les pages.** Le menu Page porte *Insérer des pages…* (`Ctrl+Maj+N`, A8), *Ajouter une page*,
+*Dupliquer la page* (`Ctrl+Maj+U`), *Supprimer la page*, *Page suivante* et *Page précédente*
+(`Ctrl+Pg.Suiv`, `Ctrl+Pg.Préc`), *Atteindre la page…* (`F5`, et `Ctrl+B` en seconde liaison) et
+*Arrière-plan…*. Les liaisons de la fenêtre passent avant le champ qui a le focus (lu décompilé :
+`KeyboardDevice.ProcessRawEvent` essaie les `KeyBinding` du focus à la racine avant de lever
+`KeyDown`) : les touches des pages jouent même en saisie. `Ctrl+Maj+U` et l'insertion vident d'abord
+la sélection, ce qui referme la saisie d'un bloc dans son pas, puis font le leur par `UnGesteUnPas` ;
+sans cela, la saisie se refermait au milieu de leur transaction et la leur perdait son pas.
+`OnKeyDown`, qui prenait `Ctrl+N` avec ou sans Maj (relevé par N10), ne la prend plus que sans : la
+liaison passant avant, la garde ne sert que si la commande ne peut pas s'exécuter. Le numéro de page
+de la barre d'état est un champ, `ChampDeLaPage`, au geste du champ du zoom de N4 : il montre la page
+courante tant qu'on n'y tape pas, `F5`, `Ctrl+B` et *Atteindre la page…* y mènent, le numéro tout
+pris ; `Entrée` lit la page au modèle de vue (`AtteindreLaPage`), qui mène à la page ou refuse —
+« « 99 » est refusé : le document a 3 pages, de 1 à 3. », « « deux » n'est pas un numéro de page. » —
+par `Status` ; `Échap` et la sortie du champ renoncent. Aucun pas : changer de page ne change pas le
+document.
+
+**A8 et A9** sont écrits dans leurs sections. **Insertion ▸ Numéro de page, Date, Coordonnées ▸**
+(*Nom*, *Fonction*, *Société*, *Adresse*, *Téléphone*, *Devise*) posent un bloc de texte qui porte
+son champ (C4), dans la zone de composition, en un pas, sans ouvrir de saisie.
+
+*Recette jouée* : `Scripts/recettes/N18-menus-vers-le-dock.sh`. Les sources : les sept entrées sur
+leur commande, chacune ouvrant sa section, la demande levée après, traitée après la mise en page ; les
+six liaisons et leurs menus ; `Ctrl+N` sans Maj ; le champ de la page et son refus ; le dialogue de A8,
+son champ grisé, l'insertion en un pas, des copies distinctes ; le sous-menu et les boutons de A9 ;
+les blocs à champ ; le sous-tableau « Pages » du README, la fiche 24, les deux vues neuves à la
+recette I1. Puis sept tests sous `poste=N18` (`MenusVersLeDockTests`) : chaque entrée « … », le dock
+replié et l'onglet Styles choisi, la section fermée — la recette du plan ; les entrées grisées ; le
+numéro de page, « 3 », « 99 », « deux », `Échap`, `Ctrl+B` ; `Ctrl+Pg.Suiv` et `Ctrl+Pg.Préc`, même en
+saisie, et les gestes du menu Page en français ; `Ctrl+Maj+U` en un pas pendant une saisie ;
+`Ctrl+Maj+N` qui ouvre le dialogue, `Ctrl+N` le catalogue ; les blocs à champ. Trois sous `poste=A8`,
+quatre sous `poste=A9`, et les voisins réécrits. Puis l'image tournée de A9, mesurée par
+`comparer-rendus.sh`. La règle 14 : `MenusDePublisherTests.Le_menu_Disposition_est_range_comme_Publisher`
+et la recette N13 lisent Disposition avec ses deux entrées neuves ; `DispositionTests.Le_menu_Texte_porte_le_gras_l_italique_les_alignements_et_l_import`
+lit Police… et Paragraphe… en tête du menu Texte ; `DispositionTests.La_barre_d_etat_dit_la_page_le_format_et_le_zoom`
+lit le numéro dans le champ. La recette de A4 ne compte plus `Ctrl+B` parmi les touches réservées, et
+écrit `PageDown` et `PageUp` « Pg.Suiv » et « Pg.Préc », comme les menus. Six sabotages au juge : une
+entrée « … » qui ouvre l'onglet sans la section (le sabotage du plan), `Ctrl+Maj+U` sans refermer la
+saisie d'abord, les pages copiées qui partagent leurs blocs, les pages « avant » insérées après, le
+quart de tour à gauche qui tourne à droite, l'angle qui ne se ramène plus entre 0 et 360°.
+
+*Arrêt — `Ctrl+Maj+U` et ibus.* Relevé le 29 octobre 2026 par `gsettings list-recursively` (GNOME
+50.1, IBus 1.5.34, moteur `xkb:fr::fra`) : aucune des touches du poste n'est prise par le bureau, sauf
+`Ctrl+Maj+U`, la saisie Unicode d'ibus (`org.freedesktop.ibus.panel.emoji unicode-hotkey
+['<Control><Shift>u']`) — la fiche 24 le disait déjà. Et Avalonia 11.3.9 passe ses touches à ibus :
+lu décompilé, `X11PlatformOptions.EnableIme` vaut vrai par défaut, et `X11DBusImeHelper` choisit la
+méthode de saisie sur `AVALONIA_IM_MODULE`, `GTK_IM_MODULE` ou `QT_IM_MODULE` — ici `ibus`. Il est
+donc probable que `Ctrl+Maj+U` n'arrive pas à la fenêtre et ouvre la saisie Unicode ; ce n'est pas
+mesuré — le banc ne passe pas par ibus, et la sonde du clavier (`MYPUBLISHER_SONDE_CLAVIER`) se joue
+à l'écran du propriétaire. La règle 12 veut qu'une touche que le bureau capte garde son remplaçant ;
+la commande n'avait pas de touche avant le poste, et le plan ne lui en donne pas d'autre. La touche
+est liée comme Publisher la donne, et le menu Dupliquer la page l'affiche. Les voies, au choix du
+propriétaire : la garder ainsi, Publisher l'ayant ; lui donner un remplaçant, comme `Ctrl+Maj+F` et
+`Ctrl+Maj+B` pour `Alt+F6` (A4) ; ou décharger ibus de la touche sur sa machine.
+
+*Ce que l'implémentation a appris.*
+- **`Ctrl+Maj+N` n'était pas libre** : `OnKeyDown` le prenait pour Nouveau, `Maj` comptée pour rien —
+  N10 l'avait relevé et laissé à N18. Il n'était lié nulle part ailleurs, ni dans la fiche 24 ni au
+  README : le poste le reprend.
+- **Texte ▸ Police… ne mène pas au dock.** La police, le corps et la graisse sont montés dans la
+  barre contextuelle (I3), et le dock ne les porte plus (règle 1) : l'entrée mène à la liste des
+  polices de la barre, par la même `DockDemande`, destination « barre ».
+- **Une image PNG à palette ne s'exporte pas** : ImageMagick choisit seul une palette pour quatre
+  couleurs, et l'export dit « Unsupported image format » sans image au PDF. La recette écrit la sienne
+  en vraies couleurs sur 8 bits. Relevé, non corrigé : l'export refuse ces images-là en général.
+
+*Choisi sans certitude* :
+- *Repères de mise en page…* ouvre les marges et la grille, le focus à la marge de gauche : le
+  dialogue *Layout Guides* de Publisher a trois onglets, marges, grille et lignes de base, qui sont
+  ici deux sections ; la page maître double et le repère central (f17) ne sont pas faits ;
+- *Repères de règle ▸ Format…* et *Page ▸ Arrière-plan…* mettent le focus au premier champ de la
+  section, faute d'un champ que le plan nomme : la position du premier repère, sinon le bouton
+  « Vertical » ; la case « Fond de page » ;
+- les entrées « … » montrent le dock même replié, mais ne rendent pas le panneau Pages, que
+  `Ctrl+F1` a replié avec lui ; et elles oublient l'état d'avant le repli, comme le menu Fenêtre ;
+- `Ctrl+Pg.Suiv` à la dernière page ne fait rien et le dit (« Dernière page ») ; la page suivante et
+  la précédente sont toujours offertes au menu ;
+- les touches des pages jouent même en saisie, comme l'export : la saisie se referme d'abord ;
+- après l'insertion, la première page insérée est la page courante, comme après *Ajouter une page* ;
+- *Insertion ▸ Coordonnées ▸* pose les six champs de texte, sans le logo, qui est un bloc image ;
+  les blocs à champ ont une taille par défaut — 60 × 30 pt pour un numéro, 200 × 30 pt sinon, 60 pt
+  de haut pour l'adresse ;
+- plusieurs blocs pris tournent chacun autour de son centre, et non l'ensemble autour du sien ;
+- dans le README et les menus, `Ctrl+Pg.Suiv` et `Ctrl+Pg.Préc`, comme les menus les écrivent
+  (`GestesEnFrancais`, N13), et non « Ctrl+Pg. suiv » de l'aide.
+
+*Relevé, non corrigé* :
+- dans le dialogue de A8, déduit du code de `ChampNumerique` et non joué : `Entrée` validée dans un
+  champ continue jusqu'au bouton OK, si bien que taper « 4 » puis `Entrée` insère aussitôt — le
+  geste d'un dialogue —, et une saisie refusée garde le dialogue sans le dire, le dialogue n'ayant
+  pas de barre d'état ; `Échap` dans un champ y renonce et rend le focus (N14), et c'est l'`Échap`
+  suivant qui ferme le dialogue.
 
 #### N19 — Le corps et la police : une liste, et une frappe *(fiche 23, b6)*
 

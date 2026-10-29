@@ -11,7 +11,9 @@ chaque fonction et chaque touche ci-dessous en est recopiée mot pour mot, coqui
 61, dont les captures portent des touches.
 **Verdict** : `mixte` — l'aide compte 102 lignes hors du ruban, dont quelques-unes deux fois.
 MyPublisher en lie 31, dont 15 touchées par N10 ; il en garde 2 à un autre usage et en remplace
-2 ; 5 reviennent à un autre poste du plan, 27 sont réservées et 35 écartées. Les secondes touches
+2 ; 5 reviennent à un autre poste du plan, 27 sont réservées et 35 écartées. Le poste N18 en a lié
+six de plus, le 29 octobre 2026 — Ctrl+Maj+N, Ctrl+Maj+U, Ctrl+Pg. suiv, Ctrl+Pg. préc, et F5 ou
+Ctrl+B deux fois —, dont quatre étaient à venir et deux réservées. Les secondes touches
 du presse-papiers, `Ctrl+Inser`, `Maj+Suppr` et `Maj+Inser`, d'abord relevées sans être liées,
 le sont depuis le 28 octobre 2026, à la demande du propriétaire.
 
@@ -219,17 +221,17 @@ Les sections de l'aide, dans son ordre, sans celle du ruban.
 
 | Fonction (aide, mot pour mot) | Touche (aide) | Livre de 2007 | Sort |
 |---|---|---|---|
-| Afficher la boîte de dialogue Atteindre la page | F5 ou Ctrl+B | HR | **réservé** : N18 |
-| Insérer une page simple ou une page double. Si vous créez un bulletin d’informations, cela ouvre la boîte de dialogue Insérer des pages de type Composition | Ctrl+Maj+N | p. 22, *Page…* `Ctrl+Shift+N` | **à venir** : N18, avec le dialogue de A8 |
-| Insérer une page en double après la page sélectionnée | Ctrl+Maj+U | p. 22, *Duplicate Page* `Ctrl+Shift+U` | **à venir** : N18 ; la commande Dupliquer la page existe déjà, sans touche |
+| Afficher la boîte de dialogue Atteindre la page | F5 ou Ctrl+B | HR | **lié** (N18) : le focus au numéro de page de la barre d'état, devenu un champ, plutôt qu'un dialogue |
+| Insérer une page simple ou une page double. Si vous créez un bulletin d’informations, cela ouvre la boîte de dialogue Insérer des pages de type Composition | Ctrl+Maj+N | p. 22, *Page…* `Ctrl+Shift+N` | **lié** (N18) : le dialogue Insérer des pages de A8 |
+| Insérer une page en double après la page sélectionnée | Ctrl+Maj+U | p. 22, *Duplicate Page* `Ctrl+Shift+U` | **lié** (N18) : Page ▸ Dupliquer la page — ibus prend la touche pour la saisie Unicode, voir « Ce que le bureau prend » |
 
 #### Passer d’une page à l’autre
 
 | Fonction (aide, mot pour mot) | Touche (aide) | Livre de 2007 | Sort |
 |---|---|---|---|
-| Afficher la boîte de dialogue Atteindre la page. | F5 ou Ctrl+B | HR | **réservé** : N18 |
-| Atteindre la page suivante | Ctrl+Pg. suiv | HR | **à venir** : N18 |
-| Atteindre la page précédente | Ctrl+Pg. préc | HR | **à venir** : N18 |
+| Afficher la boîte de dialogue Atteindre la page. | F5 ou Ctrl+B | HR | **lié** (N18), comme plus haut |
+| Atteindre la page suivante | Ctrl+Pg. suiv | HR | **lié** (N18) |
+| Atteindre la page précédente | Ctrl+Pg. préc | HR | **lié** (N18) |
 | Passer de la page active à la page maître, et vice versa | Ctrl+M | p. 9, *Master Page* `Ctrl+M` | **réservé**, aucun poste : les pages maîtres ne sont pas planifiées |
 
 #### Utiliser la page maître
@@ -349,3 +351,14 @@ Leurs voisins le sont : `Alt+F4` ferme la fenêtre, `Ctrl+Alt+F4` change de sess
 personnalisé (`custom-keybindings` vide) ; ibus prend `Ctrl+Maj+U` (saisie Unicode), `Super+.` et
 `Super+;` (émojis). `Alt+F6`, que Publisher donne au premier plan, est pris par la plupart des
 gestionnaires de fenêtres (A4).
+
+Relevé de nouveau le 29 octobre 2026 pour le poste N18, par `gsettings list-recursively` (GNOME
+50.1, IBus 1.5.34, moteur `xkb:fr::fra`) : ni `Ctrl+Maj+N`, ni `Ctrl+Pg. suiv`, ni `Ctrl+Pg. préc`, ni
+`F5`, ni `Ctrl+B` ne sont pris par le bureau — `Ctrl+Pg. suiv`, `Ctrl+Pg. préc` et `Ctrl+Maj+N` ne
+le sont que par le terminal Ptyxis, chez lui ; le bureau prend `Super+Pg. suiv` et
+`Ctrl+Alt+F5`, leurs voisins. **`Ctrl+Maj+U` reste à ibus** (`org.freedesktop.ibus.panel.emoji
+unicode-hotkey ['<Control><Shift>u']`), et Avalonia 11.3.9 lui passe les touches : lu décompilé,
+`X11PlatformOptions.EnableIme` vaut vrai par défaut, et la méthode de saisie se choisit sur
+`QT_IM_MODULE` ou `XMODIFIERS`, ici `ibus`. La touche est liée comme Publisher la donne ; qu'elle
+arrive à la fenêtre sur ce bureau n'est pas mesuré — la sonde du clavier
+(`MYPUBLISHER_SONDE_CLAVIER`) le dira.

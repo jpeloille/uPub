@@ -125,7 +125,9 @@ traitees = ({f"Ctrl+{k}" for k in interceptees_ctrl} | {f"Shift+{k}" for k in se
 
 # Ce que le README écrit pour une touche : « Maj » pour Shift, et les noms français.
 noms = {"Shift": "Maj", "Back": "Retour arrière", "Delete": "Suppr", "Insert": "Inser", "Escape": "Échap", "Space": "Espace",
-        "Left": "Flèches", "Right": "Flèches", "Up": "Flèches", "Down": "Flèches"}
+        "Left": "Flèches", "Right": "Flèches", "Up": "Flèches", "Down": "Flèches",
+        # Comme les menus et les bulles les écrivent (GestesEnFrancais, N13) ; poste N18.
+        "PageDown": "Pg.Suiv", "PageUp": "Pg.Préc"}
 def au_readme(geste):
     return "+".join(noms.get(partie, partie) for partie in geste.split("+"))
 
@@ -187,10 +189,10 @@ for entete, geste, commande, parametre in menus:
 
 # ---------------------------------------------- d. les touches réservées restent libres
 # Leur fonction n'existe pas encore dans MyPublisher : elles attendent le poste qui la sert
-# (règle 12 ; fiche 24). Ctrl+B, Atteindre la page (N18) ; Ctrl+M, la page maître ; Ctrl+K,
-# le lien hypertexte ; Ctrl+P, Imprimer (B3) ; Ctrl+Maj+E, la bibliothèque (C7) ; Ctrl+Maj+H,
-# la coupure de mots.
-reservees = ["Ctrl+B", "Ctrl+M", "Ctrl+K", "Ctrl+P", "Ctrl+Shift+E", "Ctrl+Shift+H"]
+# (règle 12 ; fiche 24). Ctrl+M, la page maître ; Ctrl+K, le lien hypertexte ; Ctrl+P, Imprimer
+# (B3) ; Ctrl+Maj+E, la bibliothèque (C7) ; Ctrl+Maj+H, la coupure de mots. Ctrl+B, Atteindre la
+# page, a quitté la liste avec le poste qui le sert (N18) : il est lié, et le README le dit.
+reservees = ["Ctrl+M", "Ctrl+K", "Ctrl+P", "Ctrl+Shift+E", "Ctrl+Shift+H"]
 for geste in reservees:
     lettre = geste.split("+")[-1]
     prise = (geste in gestes or any(g == geste for _, g, _, _ in menus) or lettre in sections["ctrl+"]

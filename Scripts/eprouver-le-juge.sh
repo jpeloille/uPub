@@ -2858,6 +2858,52 @@ saboter "Maj+Tab (N16) écrit une tabulation en saisie" \
     '' \
     'N16-tabulation-et-saut-force|TabulationEtSautForceTests'
 
+# N18 : les menus vers le dock. Le sabotage du plan : une entrée « … » qui ouvre l'onglet sans la
+# section — Fichier ▸ Mise en page… choisit l'onglet Document, mais le format reste replié, et le
+# focus ne trouve pas son champ.
+saboter "une entrée « … » ouvre l'onglet sans la section (N18)" \
+    MyPublisher/ViewModels/MainWindowViewModel.VersLeDock.cs \
+    '        () => SectionFormatOuverte = true);' \
+    '        () => { });' \
+    'N18-menus-vers-le-dock|MenusVersLeDockTests'
+
+# Ctrl+Maj+U pendant une saisie : sans la sélection vidée d'abord, la saisie se referme au milieu
+# de la transaction de la copie, qui perd son pas.
+saboter "Ctrl+Maj+U duplique la page sans refermer la saisie d'abord (N18)" \
+    MyPublisher/ViewModels/MainWindowViewModel.VersLeDock.cs \
+    $'        SetSelection([]);\n        UnGesteUnPas(() => DuplicatePageCommand.Execute(null));' \
+    '        UnGesteUnPas(() => DuplicatePageCommand.Execute(null));' \
+    'N18-menus-vers-le-dock|MenusVersLeDockTests'
+
+# A8 : les pages copiées portent les blocs de la page désignée eux-mêmes, et non des copies — une
+# retouche sur l'une se verrait sur toutes.
+saboter "les pages insérées partagent les blocs de la page copiée (A8)" \
+    MyPublisher/ViewModels/MainWindowViewModel.VersLeDock.cs \
+    'foreach (var bloc in modele.Frames) page.Frames.Add(bloc.Clone());' \
+    'foreach (var bloc in modele.Frames) page.Frames.Add(bloc);' \
+    'N18-menus-vers-le-dock|InsererDesPagesTests'
+
+# A8 : « avant la page courante » insère après.
+saboter "les pages insérées avant vont après (A8)" \
+    MyPublisher/ViewModels/MainWindowViewModel.VersLeDock.cs \
+    'var rang = Document.Pages.IndexOf(CurrentPage) + (demande.Avant ? 0 : 1);' \
+    'var rang = Document.Pages.IndexOf(CurrentPage) + 1;' \
+    'N18-menus-vers-le-dock|InsererDesPagesTests'
+
+# A9 : le quart de tour à gauche tourne à droite — 0° moins 90° donne 90°, et non 270°.
+saboter "le quart de tour à gauche tourne à droite (A9)" \
+    MyPublisher/ViewModels/MainWindowViewModel.VersLeDock.cs \
+    'private void PivoterAGauche() => Pivoter(-90);' \
+    'private void PivoterAGauche() => Pivoter(90);' \
+    'N18-menus-vers-le-dock|QuartDeTourTests'
+
+# A9 : l'angle n'est plus ramené entre 0 et 360° — 350° plus 90° donne 440°.
+saboter "le quart de tour ne ramène plus l'angle entre 0 et 360° (A9)" \
+    MyPublisher/ViewModels/MainWindowViewModel.VersLeDock.cs \
+    'public static double QuartDeTour(double angle, double pas) => ((angle + pas) % 360 + 360) % 360;' \
+    'public static double QuartDeTour(double angle, double pas) => angle + pas;' \
+    'N18-menus-vers-le-dock|QuartDeTourTests'
+
 # Un motif qui ne désigne aucun sabotage ne prouve rien. « eprouver-le-juge.sh I4 » sortait
 # en 0 sur « 0 sabotages, 0 attrapés », quand les intitulés de la planche ne portaient pas
 # encore le code du poste : le filet passait pour éprouvé sans qu'on l'ait troué.

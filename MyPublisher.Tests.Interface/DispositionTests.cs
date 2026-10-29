@@ -621,7 +621,11 @@ public class DispositionTests
         var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(bloc, forme));
 
         var menu = fenetre.GetVisualDescendants().OfType<MenuItem>().Single(m => Equals(m.Header, "_Texte"));
-        var entrees = menu.Items.OfType<MenuItem>().ToList();
+        // Police… et Paragraphe… en tête depuis N18 (règle 14), comme le menu Format de Publisher
+        // (p. 24) : ils mènent à la barre et au dock. La mise en forme suit.
+        var toutes = menu.Items.OfType<MenuItem>().ToList();
+        Assert.Equal(new[] { "_Police…", "Pa_ragraphe…" }, toutes.Take(2).Select(e => e.Header as string));
+        var entrees = toutes.Skip(2).ToList();
         Assert.Equal(new[]
         {
             "_Gras", "_Italique", "_Souligné", "_Aligner le texte à gauche", "_Centrer le texte", "Aligner le texte à _droite",
@@ -855,14 +859,18 @@ public class DispositionTests
         document.Pages.Add(new Page { Name = "Page 3" });
         var (fenetre, vm) = Rendu.Ouvrir(document);
 
-        var page = Trouver<TextBlock>(fenetre, "PageSurPages");
+        // Le numéro de page est un champ depuis N18 (règle 14) : « Page », le numéro, « sur 3 ».
+        var page = Trouver<Control>(fenetre, "PageSurPages");
+        string Lu() =>
+            $"{page.GetVisualDescendants().OfType<TextBlock>().First().Text} {Trouver<TextBox>(page, "NumeroDePage").Text} " +
+            Trouver<TextBlock>(page, "TotalDesPages").Text;
         var format = Trouver<TextBlock>(fenetre, "FormatDeLaPage");
-        Assert.Equal("Page 1 sur 3", page.Text);
+        Assert.Equal("Page 1 sur 3", Lu());
         Assert.Equal("A4 portrait", format.Text);
 
         vm.CurrentPage = document.Pages[1];
         Rendu.Battre();
-        Assert.Equal("Page 2 sur 3", page.Text);
+        Assert.Equal("Page 2 sur 3", Lu());
 
         vm.IsLandscape = true;
         Rendu.Battre();
