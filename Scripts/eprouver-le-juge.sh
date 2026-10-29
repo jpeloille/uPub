@@ -2904,6 +2904,14 @@ saboter "le quart de tour ne ramène plus l'angle entre 0 et 360° (A9)" \
     'public static double QuartDeTour(double angle, double pas) => angle + pas;' \
     'N18-menus-vers-le-dock|QuartDeTourTests'
 
+# N19, repris le 30 octobre 2026 : un clic sur le nom de la police ouvre la liste. Retiré, la zone
+# éditable ne fait que poser son curseur, comme sur le bureau du propriétaire.
+saboter "un clic sur le nom de la police n'ouvre plus la liste (N19)" \
+    MyPublisher/Views/ListeDesPolices.cs \
+    $'        Filtrer(null);\n        Ouvrir(true);\n        Marquer();' \
+    $'        Filtrer(null);\n        Marquer();' \
+    'N19-corps-et-police|CorpsEtPoliceTests'
+
 # Un motif qui ne désigne aucun sabotage ne prouve rien. « eprouver-le-juge.sh I4 » sortait
 # en 0 sur « 0 sabotages, 0 attrapés », quand les intitulés de la planche ne portaient pas
 # encore le code du poste : le filet passait pour éprouvé sans qu'on l'ait troué.
