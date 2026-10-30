@@ -5,6 +5,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Presenters;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Threading;
 using Avalonia.VisualTree;
 using MyPublisher.Models;
 using MyPublisher.ViewModels;
@@ -209,6 +210,51 @@ public partial class PageCanvas
         AddHandler(GotFocusEvent, (_, args) => SuivreLaZoneDeSaisie(args.Source as TextBox),
             RoutingStrategies.Bubble, handledEventsToo: true);
         AddHandler(KeyDownEvent, ToucheDeLaSaisie, RoutingStrategies.Tunnel);
+
+        // Le texte trouvé par la recherche (N20) : l'écoute suit le modèle de vue, comme celle
+        // qu'AttachViewModel pose, sans toucher au fichier principal de la planche (règle 16).
+        DataContextChanged += (_, _) => SuivreLaRecherche();
+        SuivreLaRecherche();
+    }
+
+    // ------------------------------------------------------- le texte trouvé (N20)
+
+    /// <summary>Le modèle de vue dont la planche écoute la recherche.</summary>
+    private MainWindowViewModel? _vmDeLaRecherche;
+
+    private void SuivreLaRecherche()
+    {
+        if (_vmDeLaRecherche is not null) _vmDeLaRecherche.TexteTrouve -= OnTexteTrouve;
+        _vmDeLaRecherche = DataContext as MainWindowViewModel;
+        if (_vmDeLaRecherche is not null) _vmDeLaRecherche.TexteTrouve += OnTexteTrouve;
+    }
+
+    /// <summary>
+    /// La recherche a trouvé un texte dans un bloc de la page, que le modèle de vue a pris seul
+    /// (poste N20) : la saisie s'ouvre — ou reste ouverte, sur le même bloc —, la plage trouvée
+    /// sélectionnée, le curseur à sa fin, comme après un glissé (N12). Le champ prend le focus, et
+    /// la sélection est dite au modèle de vue comme toute autre (N15). Après l'ouverture : le champ
+    /// n'existe qu'au passage de mise en page qui suit, et <see cref="BeginTextEdit"/> y pose son
+    /// curseur d'abord.
+    /// </summary>
+    private void OnTexteTrouve(object? sender, SelectionDuTexte trouve)
+    {
+        if (trouve.Bloc is not TextFrame bloc) return;
+
+        if (!ReferenceEquals(_editing, bloc))
+        {
+            EndTextEdit();
+            BeginTextEdit(bloc, trouve.Fin);
+        }
+
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (!ReferenceEquals(_editing, bloc) || _zoneDeSaisie is not { } zone) return;
+
+            zone.Focus();
+            var longueur = zone.Text?.Length ?? 0;
+            PoserLaSelection(zone, Math.Clamp(trouve.Debut, 0, longueur), Math.Clamp(trouve.Fin, 0, longueur));
+        }, DispatcherPriority.Background);
     }
 
     /// <summary>

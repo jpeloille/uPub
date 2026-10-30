@@ -117,9 +117,19 @@ public static class Recalage
     /// sont parallèles à celles reçues.
     /// </summary>
     public static (IReadOnlyList<Plage?> Fragments, IReadOnlyList<Plage?> Ecarts) Recaler(
-        string avant, string apres, IReadOnlyList<Plage> fragments, IReadOnlyList<Plage> ecarts)
+        string avant, string apres, IReadOnlyList<Plage> fragments, IReadOnlyList<Plage> ecarts) =>
+        Recaler(avant, apres, Placer(apres, Edition.Deduire(avant, apres)), fragments, ecarts);
+
+    /// <summary>
+    /// Le recalage d'une édition CONNUE, et non déduite des deux textes : celle d'un remplacement
+    /// que rien ne tape (poste N20, rechercher et remplacer). La déduction lirait « bulletin »
+    /// remplacé par « bulletins » comme un « s » tapé après le mot, qui prendrait le style du
+    /// caractère d'avant ; l'édition dite est le remplacement du mot entier, et le texte qui le
+    /// remplace prend le style du premier caractère remplacé, la règle de Q1.
+    /// </summary>
+    public static (IReadOnlyList<Plage?> Fragments, IReadOnlyList<Plage?> Ecarts) Recaler(
+        string avant, string apres, Edition edition, IReadOnlyList<Plage> fragments, IReadOnlyList<Plage> ecarts)
     {
-        var edition = Placer(apres, Edition.Deduire(avant, apres));
         var ancre = Ancre(avant, edition);
         var paragraphes = Paragraphes(avant, apres, edition);
         var nombre = Sauts(apres, 0, apres.Length) + 1;
@@ -338,8 +348,19 @@ public static class Recalage
     {
         if (avant == apres) return;
 
+        Appliquer(avant, apres, Placer(apres, Edition.Deduire(avant, apres)), fragments, ecarts);
+    }
+
+    /// <summary>
+    /// Le même report, pour une édition connue (voir <see cref="Recaler(string, string, Edition,
+    /// IReadOnlyList{Plage}, IReadOnlyList{Plage})"/>) : le remplacement d'un texte trouvé, que
+    /// <see cref="Recherche.Remplacer(TextFrame, Plage, string)"/> fait sans passer par l'écran.
+    /// </summary>
+    public static void Appliquer(
+        string avant, string apres, Edition edition, IList<StyleSpan> fragments, IList<ParagraphSpan>? ecarts)
+    {
         var (nouveauxFragments, nouveauxEcarts) = Recaler(
-            avant, apres,
+            avant, apres, edition,
             fragments.Select(f => new Plage(f.Start, f.Length)).ToList(),
             ecarts?.Select(e => new Plage(e.Start, e.Length)).ToList() ?? []);
 
