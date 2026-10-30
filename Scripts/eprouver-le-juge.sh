@@ -2912,6 +2912,18 @@ saboter "un clic sur le nom de la police n'ouvre plus la liste (N19)" \
     $'        Filtrer(null);\n        Marquer();' \
     'N19-corps-et-police|CorpsEtPoliceTests'
 
+saboter "Remplacer tout empile un pas par occurrence (N20)" \
+    MyPublisher/ViewModels/MainWindowViewModel.Rechercher.cs \
+    'RemplacerLOccurrence(new Occurrence(cible, plage), par);' \
+    'RemplacerUneOccurrence(new Occurrence(cible, plage), par);' \
+    'N20-rechercher-remplacer|RechercherRemplacerTests'
+
+saboter "le remplacement déduit son édition au lieu de la dire : le style n'est plus celui du premier caractère (N20)" \
+    MyPublisher.Core/Models/Recherche.cs \
+    'Recalage.Appliquer(texte, apres, new Edition(plage.Start, plage.Length, par.Length), fragments, ecarts);' \
+    'Recalage.Appliquer(texte, apres, fragments, ecarts);' \
+    'N20-rechercher-remplacer|RechercheTests'
+
 # Un motif qui ne désigne aucun sabotage ne prouve rien. « eprouver-le-juge.sh I4 » sortait
 # en 0 sur « 0 sabotages, 0 attrapés », quand les intitulés de la planche ne portaient pas
 # encore le code du poste : le filet passait pour éprouvé sans qu'on l'ait troué.

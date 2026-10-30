@@ -1,0 +1,102 @@
+<!--
+    La barre de recherche (poste N20 ; fiche 23, e23). Publisher a son volet Office *Rechercher et
+    remplacer*, sur Ctrl+F, F3, Maj+F4 et Ctrl+H (fiche 24) ; MyPublisher pose une barre sur la
+    planche, en haut à droite, sous la règle et à gauche de l'ascenseur. Elle ne déplace pas la
+    planche (règle 3 de la phase I) : la fenêtre la pose dans la même case qu'elle, par-dessus ;
+    elle n'est pas dans PageRoot (règle 4), et rien d'elle ne s'imprime.
+
+    Le texte cherché, le texte de remplacement, « Respecter la casse », « Mot entier », puis
+    Suivant, Remplacer, Remplacer tout, et la croix qui la ferme. Les deux champs sont des champs
+    de texte : les lettres seules s'y écrivent et n'arment aucun outil (règle 9) ; Entrée y cherche
+    le suivant, Échap ferme la barre et rend la planche (règle 13). Les boutons ne prennent pas le
+    focus : Suivant laisse la saisie au texte qu'il trouve, et Remplacer fait son pas où que soit
+    le focus.
+
+    Elle ne s'ouvre aucune transaction : chercher ne change pas le document ; un remplacement
+    fait son propre pas (MainWindowViewModel.Rechercher.cs).
+
+    Une vue de la phase : elle ne cite que l'apparence (Apparence.axaml), aucune couleur en dur.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:MyPublisher.ViewModels"
+             x:Class="MyPublisher.Views.BarreDeRecherche"
+             x:DataType="vm:MainWindowViewModel">
+
+    <UserControl.Styles>
+        <!-- Une commande à libellé, comme celles de la barre contextuelle : corps 12, rayon 4, sans
+             bord, gris au survol, et sans focus. -->
+        <Style Selector="Button.commande">
+            <Setter Property="Focusable" Value="False"/>
+            <Setter Property="MinHeight" Value="0"/>
+            <Setter Property="Height" Value="26"/>
+            <Setter Property="Padding" Value="8,0"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BordChamp}"/>
+            <Setter Property="Background" Value="{StaticResource Blanc}"/>
+            <Setter Property="Foreground" Value="{StaticResource Commande}"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="Button.commande:pointerover /template/ ContentPresenter#PART_ContentPresenter,
+                         Button.commande:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{StaticResource Survol}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BordChamp}"/>
+            <Setter Property="Foreground" Value="{StaticResource Commande}"/>
+        </Style>
+        <!-- Suivant, le bouton principal : plein d'accent. -->
+        <Style Selector="Button.commande.principal">
+            <Setter Property="Background" Value="{StaticResource Accent}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource Accent}"/>
+            <Setter Property="Foreground" Value="{StaticResource Blanc}"/>
+        </Style>
+        <Style Selector="Button.commande.principal:pointerover /template/ ContentPresenter#PART_ContentPresenter,
+                         Button.commande.principal:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{StaticResource AccentSurvol}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource AccentSurvol}"/>
+            <Setter Property="Foreground" Value="{StaticResource Blanc}"/>
+        </Style>
+        <Style Selector="TextBox.champ">
+            <Setter Property="Width" Value="190"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Border x:Name="CadreDeLaRecherche" Background="{StaticResource Blanc}" BorderBrush="{StaticResource FiletFort}"
+            BorderThickness="1" CornerRadius="6" Padding="10,8">
+        <Grid ColumnDefinitions="Auto,8,Auto,6,Auto,6,Auto" RowDefinitions="Auto,6,Auto,6,Auto">
+            <TextBox Grid.Row="0" Grid.Column="0" x:Name="TexteCherche" Classes="champ"
+                     Watermark="Rechercher" Text="{Binding TexteCherche}"
+                     ToolTip.Tip="Le texte cherché (Ctrl+F) — Entrée cherche le suivant (F3)"/>
+            <Button Grid.Row="0" Grid.Column="2" x:Name="BoutonSuivant" Classes="commande principal"
+                    Content="Suivant" ToolTip.Tip="Rechercher le suivant (F3 ou Maj+F4)"
+                    Command="{Binding RechercherLeSuivantCommand}"/>
+            <Button Grid.Row="0" Grid.Column="6" x:Name="BoutonFermer" Classes="ib" Width="26" Height="26"
+                    Focusable="False" ToolTip.Tip="Fermer la recherche (Échap)"
+                    Command="{Binding FermerLaRechercheCommand}">
+                <Viewbox Width="14" Height="14">
+                    <Canvas Width="24" Height="24" ClipToBounds="True">
+                        <Path Classes="iconeTrait" StrokeThickness="2" StrokeLineCap="Round" Data="M6 6L18 18M18 6L6 18"/>
+                    </Canvas>
+                </Viewbox>
+            </Button>
+
+            <TextBox Grid.Row="2" Grid.Column="0" x:Name="TexteDeRemplacement" Classes="champ"
+                     Watermark="Remplacer par" Text="{Binding TexteDeRemplacement}"
+                     ToolTip.Tip="Le texte qui remplace ce qu'on trouve (Ctrl+H)"/>
+            <Button Grid.Row="2" Grid.Column="2" x:Name="BoutonRemplacer" Classes="commande"
+                    Content="Remplacer" ToolTip.Tip="Remplacer la sélection, puis chercher le suivant"
+                    Command="{Binding RemplacerCommand}"/>
+            <Button Grid.Row="2" Grid.Column="4" Grid.ColumnSpan="3" x:Name="BoutonRemplacerTout" Classes="commande"
+                    Content="Remplacer tout" ToolTip.Tip="Remplacer dans tout le document, en un pas"
+                    Command="{Binding RemplacerToutCommand}"/>
+
+            <StackPanel Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="7" Orientation="Horizontal" Spacing="14">
+                <CheckBox x:Name="RespecterLaCasse" Classes="case" Content="Respecter la casse"
+                          IsChecked="{Binding RespecterLaCasse}"/>
+                <CheckBox x:Name="MotEntier" Classes="case" Content="Mot entier" IsChecked="{Binding MotEntier}"/>
+            </StackPanel>
+        </Grid>
+    </Border>
+</UserControl>

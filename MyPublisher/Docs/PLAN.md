@@ -123,7 +123,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **N17** | Les modificateurs du glisser, et le rectangle de sélection | **100 %** | Sur un bloc, `Ctrl` et `Maj` ne basculent plus la sélection à la pression mais au relâché ; passé le seuil de Q21, le bloc s'ajoute et le geste devient un déplacement : sous `Ctrl`, des copies posées à la place des originaux, qui restent, en un pas ; sous `Maj`, tenu sur l'axe dominant, que l'aimantation ne fait pas bouger. Au tracé, `Maj` donne un carré ou un cercle, `Ctrl` trace depuis le centre, à l'aperçu comme au bloc ; `Ctrl` sur une poignée redimensionne depuis le centre, bloc tourné compris. Un rectangle tiré dans le vide ou depuis le gris prend, au relâché, les blocs visibles dont l'emprise est tout entière dedans, `Maj` ou `Ctrl` les ajoutant ; il se dessine dans l'`Overlay`, à l'accent et à la projection de l'apparence lus par le code. `Échap` annule le glissé en cours — déplacement, copie, poignée, rotation, extrémité, repère, rectangle — sans pas. Le curseur de rotation est le tracé de `IconeRotation`, dessiné comme la main et la loupe. La mécanique vit dans `PageCanvas.Gestes.cs` ; les trois cibles du piège restent, une fois chacune, et restent attrapées. Dix-sept tests sous `poste=N17`, aucun test réécrit ; deux aides au banc, `Tenir` et `Lacher` ; quatre sabotages au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **N18** | Les menus vers le dock, et les pages, avec A8 et A9 | **100 %** | Le chemin vers le dock (décision 5) : `MainWindowViewModel.VersLeDock.cs` ouvre la section et lève une `DockDemande`, que la fenêtre traite — le dock rouvert s'il est replié, l'onglet choisi, le focus dans le champ visé ou le premier de la section, cherché après la mise en page, les gabarits gardés ne montrant la section qu'au passage suivant —, sans pas d'annulation. Sept entrées « … » : *Fichier ▸ Mise en page…* (Format), *Disposition ▸ Repères de mise en page…* (Marges et Grille), *Repères de règle ▸ Format…*, *Page ▸ Arrière-plan…* (Fond de page), *Texte ▸ Paragraphe…*, *Rotation personnalisée…* (l'angle), et *Texte ▸ Police…*, qui mène à la liste des polices de la barre contextuelle, la police ayant quitté le dock (règle 1) ; Police et Paragraphe grisés sans texte, comme chez Publisher. Les pages au clavier, aux touches de la fiche 24 : `Ctrl+Maj+N` (le dialogue de A8 ; `OnKeyDown` n'y prend plus Maj pour Nouveau), `Ctrl+Maj+U` (dupliquer la page, en un pas, même en saisie), `Ctrl+Pg.Suiv` et `Ctrl+Pg.Préc`, `F5` et `Ctrl+B`, qui mènent au numéro de page de la barre d'état, devenu un champ (`Views/ChampDeLaPage.axaml`) : « 3 » puis `Entrée` mène à la page 3, « 99 » est refusé avec un message, `Échap` renonce. *Insertion ▸ Numéro de page, Date, Coordonnées ▸* posent un bloc à champ (C4). Disposition rangé comme Publisher : *Repères de mise en page…* en tête, *Faire pivoter ou retourner ▸* après l'alignement. Sept tests sous `poste=N18` ; trois tests voisins réécrits (règle 14) ; deux sabotages au juge. **`Ctrl+Maj+U` est pris par ibus** sur la machine du propriétaire : lié comme Publisher, non mesuré à l'écran (voir la section). Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **N19** | Le corps et la police : une liste, et une frappe | **100 %** | La police de la barre se tape, au texte et au tableau : `ListeDesPolices` (`Views/ListeDesPolices.cs`), une `ComboBox` éditable sous son apparence, dont la frappe ne passe plus par la recherche d'Avalonia 11.3.9 — qui prenait, à chaque lettre, l'entrée de même texte : « DejaVu Sans Mono » tapé posait DejaVu Sans au onzième caractère. La liste s'ouvre sur les familles dont le libellé commence par la frappe, sans la casse, la première marquée — « Geo » propose Georgia —, `↑` et `↓` promènent la marque, `Entrée` la pose en un pas et rend la planche, `Tab` la pose et passe au corps, `Échap` renonce ; une police que rien ne commence est refusée, et la barre d'état le dit (`Status`, N14) ; la zone montre le libellé, « Corps du jeu — DejaVu Sans », « Georgia (absente) » ; Q20 et la règle 1 tiennent. Repris le 30 octobre 2026, à la demande du propriétaire : un clic sur le nom ouvre la liste entière, la police du bloc marquée, le nom tout pris, et un second clic la referme, sans rien poser. Le corps garde son champ (N14 : « 10,5 » tapé donne 10,5 pt) et reçoit « Tailles du corps », un menu volant des dix-sept tailles du noyau (`CorpsStandard`, N10), la taille du bloc cochée, en un pas (`PoserLeCorps`, `MainWindowViewModel.CorpsEtPolice.cs`). Vingt tests sur la fenêtre ; deux tests voisins réécrits (règle 14) ; trois sabotages au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
-| **N20** | Rechercher et remplacer | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 6 |
+| **N20** | Rechercher et remplacer | **100 %** | La barre de recherche (`Views/BarreDeRecherche.axaml`), posée par la fenêtre sur la planche, en haut à droite, sous la règle, par-dessus — la planche ne bouge pas (règle 3), rien n'entre dans `PageRoot` (règle 4) : le texte cherché, le texte de remplacement, *Respecter la casse*, *Mot entier*, Suivant, Remplacer, Remplacer tout, et sa croix. `Ctrl+F` et *Edition ▸ Rechercher…* l'ouvrent, le focus au texte cherché ; `Ctrl+H` et *Remplacer…*, au texte de remplacement ; `F3` et `Maj+F4` cherchent le suivant, et ouvrent la barre quand il n'y a rien à chercher ; `Entrée` y cherche le suivant, `Échap` la ferme et rend la planche — les quatre touches, réservées par la fiche 24, y sont liées. Le parcours (`MainWindowViewModel.Rechercher.cs`) va de page en page, puis de haut en bas et de gauche à droite, dans les blocs de texte visibles et sans champ, les cases des tableaux et ce que portent les groupes, et reprend au début en le disant ; le texte trouvé est sélectionné en saisie, la page suivant (`TexteTrouve`, que la planche sert depuis `PageCanvas.Saisie.cs`) ; dans un groupe, le groupe est sélectionné, dans une case, le tableau, et la barre d'état dit où. Le remplacement passe par le noyau (`Models/Recherche.cs`, et `Recalage.Appliquer` pour une édition dite et non déduite) : le texte remplacé prend le style de son premier caractère (Q1) ; *Remplacer* fait un pas, *Remplacer tout* un seul pour le document. Neuf tests du noyau et dix sur la fenêtre sous `poste=N20` ; deux sabotages au juge. **Le texte trouvé prend le focus** : une seconde `Entrée` l'écrirait par-dessus (voir la section). Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **N21** | La saisie montre le texte composé | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 6 ; attend la décision de voie |
 | **N22** | Les caractères spéciaux | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 7 |
 | **N23** | Puces et numérotation | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 8 |
@@ -8495,6 +8495,105 @@ ferme et rend la planche). Elle s'inscrit dans `vues_de_la_phase` de la recette 
 Fichiers : `Views/BarreDeRecherche.axaml` (neuve), `MainWindowViewModel.Rechercher.cs` (neuf),
 `MainWindow.axaml` (menu Edition, liaisons), README (Édition), la recette I1. Dépend de N15.
 Effort : moyen.
+
+*Livré le 31 octobre 2026*, dans la salve Saisie 6 ; la relecture adversariale vient après la
+fusion. **La barre** (`Views/BarreDeRecherche.axaml` et son code) est posée par la fenêtre dans la
+case de la planche, par-dessus, en haut à droite, sous la règle du haut et à gauche de
+l'ascenseur : la planche ne bouge pas quand elle paraît (règle 3), et elle n'est ni dans la planche
+ni dans `PageRoot` (règle 4). Le texte cherché, le texte de remplacement, *Respecter la casse*,
+*Mot entier*, Suivant — le bouton principal, plein d'accent —, Remplacer, Remplacer tout, et une
+croix ; les boutons ne prennent pas le focus, les couleurs sont celles de l'apparence, et la barre
+est une vue de la phase (I1). Ses deux champs sont des champs de texte : les lettres seules s'y
+écrivent (règle 9) ; `Entrée` y cherche le suivant ; `Échap`, pris avant la fenêtre, ferme la barre
+et rend la planche (règle 13), après quoi « T » arme de nouveau l'outil texte. **Les touches**,
+réservées jusqu'ici par la fiche 24 seule — ni le README ni la liste de la recette A4 ne les
+nommaient — : `Ctrl+F` et *Edition ▸ Rec_hercher…* ouvrent la barre, le focus au texte cherché,
+tout pris ; `Ctrl+H` et *Re_mplacer…*, au texte de remplacement — au texte cherché tant qu'il est
+vide ; `F3` et `Maj+F4` cherchent le suivant, même en saisie, et ouvrent la barre quand il n'y a
+rien à chercher, en le disant. Le bureau n'en prend aucune (`gsettings`, relevé dans la fiche 24),
+qui les dit liées. **Le parcours** (`MainWindowViewModel.Rechercher.cs`) : les pages dans leur
+ordre ; sur la page, les blocs visibles par le haut de leur empreinte, puis par sa gauche ; dans
+un tableau, ses cases ligne après ligne ; dans un groupe, ses blocs visibles de même ; les blocs
+de texte à champ sont sautés. La recherche part de la fin de la sélection du texte en saisie
+(N15) — du curseur —, sinon de l'occurrence montrée dans un groupe ou une case, du début du bloc
+sélectionné, ou du début de la page courante ; au bout du document, elle reprend au début, et la
+barre d'état le dit. Le texte trouvé dans un bloc de texte : le modèle de vue change de page,
+prend le bloc seul et lève `TexteTrouve` ; la planche, depuis `PageCanvas.Saisie.cs` (l'écoute
+suit le contexte, posée au premier attachement), ouvre la saisie si elle ne l'est pas sur ce bloc
+— `BeginTextEdit` —, puis donne le focus au champ et y pose la plage, le curseur à sa fin, comme
+le glissé de N12 : la sélection est dite au modèle de vue comme toute autre. Dans un groupe, le
+groupe est sélectionné et la barre d'état le dit, jusqu'à N26 ; dans une case, le tableau, et la
+case est nommée (« L1 · C2 ») — la page n'a pas de saisie de case. **Le remplacement**, par le
+noyau : `Recherche` (`MyPublisher.Core/Models/Recherche.cs`) trouve les occurrences, sans
+chevauchement, et remplace une plage dans un bloc ou une case en recalant ses fragments et ses
+écarts par `Recalage.Appliquer`, qui reçoit désormais une édition dite ; *Remplacer* remplace la
+sélection si c'en est une occurrence, en un pas (`UnGesteUnPas`), puis trouve la suivante ;
+*Remplacer tout* remplace les occurrences de chaque texte de la dernière à la première, dans un
+seul geste pour tout le document. Chercher n'empile aucun pas. Le README le dit (le sous-tableau
+« Édition », ce que l'application sait faire) ; la fiche 24 aussi.
+
+*Recette jouée* : `Scripts/recettes/N20-rechercher-remplacer.sh`. Les sources d'abord : la barre,
+vue à elle, posée dans la case de la planche, par-dessus, en haut à droite, hors de la planche,
+dans les vues de I1 ; les quatre touches liées une fois sur les commandes du partiel, le menu
+Edition, le README et la fiche 24 ; le remplacement par une édition dite, jamais par la propriété
+`Saisie`, et *Remplacer tout* en un seul `UnGesteUnPas` ; le texte trouvé servi par le partiel de
+la saisie, `PageCanvas.axaml.cs` intact ; `Échap` pris avant la fenêtre. Puis neuf tests du noyau
+(`RechercheTests`) — les occurrences sans chevauchement, la casse et les accents, le mot entier,
+une plage qui est une occurrence, la suivante depuis une position, le texte remplacé au style de
+son premier caractère, un remplacement qui raccourcit sans toucher les écarts, une case, et un
+remplacement qui contient ce qu'on cherche — et dix sur la fenêtre (`RechercherRemplacerTests`) :
+sur l'exemple, « texte » trouvé à chaque `F3`, sélectionné en saisie à la bonne plage, page 1
+puis page 2, puis `Maj+F4` qui repart du début, sans aucun pas ; « bulletin » cherché depuis la
+page 2, trouvé au sous-titre de la page 1 à chaque `F3` ; *Remplacer tout* « bulletin » par
+« journal » sur deux pages, quatre remplacements, le gras et l'italique gardés, un seul pas qu'une
+annulation défait ; sur ATA 21, les « air » que `F3` parcourt avant de repartir du début, autant
+qu'une recherche sur le texte des blocs en compte, puis « Air » remplacé par « Gaz » à la casse,
+le gras du titre « Air Production » gardé, en un pas ; la casse, le mot entier et l'ordre de la
+page ; *Remplacer*, qui trouve d'abord, puis remplace en un pas et trouve la suivante ; un groupe
+et une case ; `F3` sans rien à chercher, « T » écrit dans la barre, `Échap` ; la barre qui ne
+déplace pas la planche, et le menu Edition ; la recherche qui part du curseur. Au juge, le
+sabotage du plan — *Remplacer tout* qui empile un pas par occurrence, chaque remplacement passant
+par le pas de *Remplacer* — et le remplacement dont l'édition est déduite au lieu d'être dite.
+
+*Ce que l'implémentation a appris.*
+- **« bulletin » n'est qu'une fois dans le texte de l'exemple**, au sous-titre (« Bulletin
+  trimestriel de mise en page — n° 1 ») ; le titre, « Le Petit Composeur », ne le porte pas, et
+  l'exemple n'a aucun fragment — le gras du titre est celui du bloc. La recette du plan supposait
+  plusieurs « bulletin » et un titre gras par fragment : elle est jouée sur « texte », qui est sur
+  les deux pages, pour la page qui suit, sur « bulletin » depuis la page 2, et, pour les
+  fragments gardés, sur un document bâti par le test et sur ATA 21.
+- **L'édition que Q1 déduit des deux textes ne vaut pas pour un remplacement** : « bulletin »
+  remplacé par « bulletins » se lit comme un « s » tapé au bout du mot, qui prend le style du
+  caractère d'avant. `Recalage` reçoit donc l'édition elle-même — le mot entier remplacé —, et le
+  texte qui le remplace prend le style de son premier caractère, la règle de Q1.
+- Une vue cachée n'a pas d'enfants dans l'arbre visuel : le contenu d'un `UserControl` n'est posé
+  qu'à la mesure. Les tests cherchent les boutons de la barre une fois qu'elle paraît.
+
+*Choisi sans certitude* :
+- **`F3` et `Maj+F4` cherchent le suivant** : l'aide les donne, avec `Ctrl+F`, pour « afficher le
+  volet Rechercher », et la recette du plan veut un texte « trouvé à chaque `F3` ». Ils cherchent,
+  et n'ouvrent la barre que s'il n'y a rien à chercher ;
+- **le texte trouvé prend le focus**, puisqu'il est sélectionné en saisie : le champ oublie sa
+  sélection en perdant le focus (N15), et l'écran ne la montrerait pas. Il s'ensuit qu'après
+  `Entrée` dans la barre, le focus est dans le texte, et qu'une seconde `Entrée` écrirait un saut
+  de paragraphe à la place du texte trouvé (un `Ctrl+Z` le défait) ; `F3` continue. Le volet de
+  Publisher garde le focus ; la voie 2a de R7 (N21), qui dessinera la sélection sur la
+  composition, permettrait de le laisser à la barre — au propriétaire de dire s'il le veut ;
+- la barre montre toujours ses deux champs ; `Ctrl+H` ne change que le champ qui prend le focus ;
+- l'ordre de la page se lit sur l'empreinte des blocs, le haut d'abord, sans tolérance — deux
+  blocs dont le haut diffère d'un centième de point se rangent par lui, non par leur gauche ; dans
+  un groupe, sur l'empreinte de ses blocs dans son repère ;
+- la comparaison est ordinale, sans la casse par `OrdinalIgnoreCase` : les accents comptent ; un
+  mot entier n'a ni lettre ni chiffre de part et d'autre — l'apostrophe et le trait d'union le
+  bornent ;
+- *Remplacer* sur une sélection qui n'est pas une occurrence ne remplace rien et trouve la
+  suivante ; *Remplacer tout* ne demande pas de confirmation, et dit son compte ;
+- `Échap` rend la planche comme la barre contextuelle le fait (N14), en ôtant le focus, et non à la
+  saisie qui resterait ouverte.
+
+*Relevé, non corrigé* : la barre ne dit pas le rang de l'occurrence (« 3 sur 12 ») ; le texte
+d'un groupe se remplace mais ne se sélectionne pas, jusqu'à N26 ; la fiche 23 garde sa ligne e23
+telle quelle, comme pour N8.
 
 #### N21 — La saisie montre le texte composé *(fiche 23, a10, a11, a20, a21)*
 
