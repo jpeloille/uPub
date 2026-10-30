@@ -115,6 +115,13 @@ désarme tout seul après usage, pour qu'on puisse ajuster immédiatement ce qu'
 poser ; un bloc de texte passe même directement en saisie. L'image y est rangée parmi les
 outils, mais ne se trace pas : elle demande d'abord un fichier.
 
+Pendant la **saisie** d'un bloc de texte, la page montre le texte tel qu'il s'imprime —
+fragments, retraits, taquets, colonnes et coupure compris — : le curseur, la sélection et ce
+que la méthode d'entrée compose se dessinent dessus, et le clic, le glissé, le double et le
+triple clic visent les caractères qu'on voit. Les flèches, `Début`, `Fin` et les touches de
+page suivent encore les lignes d'un champ de texte caché, qui ne coupe pas toujours au même
+endroit : le curseur peut y sauter d'une ligne de plus ou de moins que la ligne affichée.
+
 Deux outils du rail ne posent rien : ils naviguent. La **main** fait glisser la planche,
 sans toucher à aucun bloc ; `Espace` tenu la prête sans changer d'outil. La **loupe**
 zoome d'un pas au clic, en arrière sous `Alt`, et le point visé reste sous le pointeur —
@@ -492,7 +499,8 @@ comptés pour rien : sur un AZERTY, `Ctrl+]` se tape `Ctrl+AltGr+)`, `Ctrl+[` se
 |---|---|
 | Clic | Dans le texte d'un bloc, y entre, le curseur au caractère visé ; sur son bord, le prend |
 | Glisser | Dans le texte, sélectionne du texte ; par le bord, déplace le bloc |
-| Double-clic | Dans le texte, sélectionne un mot |
+| Double-clic | Dans le texte, sélectionne un mot ; glissé ensuite, étend la sélection par mots |
+| Triple-clic | Dans le texte en saisie, sélectionne le paragraphe ; glissé ensuite, étend la sélection par paragraphes |
 | `Maj` + clic dans le texte en saisie | Étend la sélection du texte |
 | `Ctrl` ou `Maj` + clic | Ajoute un bloc à la sélection, ou l'en retire, au relâché, sans entrer dans son texte |
 | `Ctrl` + glisser un bloc | Copie la sélection, le bloc compris : les copies suivent le pointeur, les originaux restent ; un seul pas |
