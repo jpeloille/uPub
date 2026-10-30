@@ -247,6 +247,10 @@ public partial class PageCanvas : UserControl
         AddHandler(GotFocusEvent, (_, e) => SuivreLeFocusDeLaSaisie(e, focus: true), RoutingStrategies.Bubble);
         AddHandler(LostFocusEvent, (_, e) => SuivreLeFocusDeLaSaisie(e, focus: false), RoutingStrategies.Bubble);
 
+        // Le menu contextuel du bloc : sa demande, d'où qu'elle vienne, et sa fermeture (poste A12,
+        // PageCanvas.MenuDuBloc.cs).
+        BrancherLeMenuDuBloc();
+
         Surface.PropertyChanged += (_, e) =>
         {
             if (e.Property == BoundsProperty) RefreshOverlay();
@@ -569,18 +573,26 @@ public partial class PageCanvas : UserControl
         // Un clic hors du texte en saisie la referme, puis fait ce qu'il ferait hors saisie :
         // il prend une poignée, un repère, un autre bloc, ou vide la sélection — d'un seul
         // geste, comme Publisher (poste N5, fiche 23, a8 et a9). Rien n'est rejoué. Avant le
-        // choix du bouton : la pression du bouton droit sort aussi de la saisie, et c'est ici
-        // que le menu contextuel la prendra (A12).
+        // choix du bouton : la pression du bouton droit sort aussi de la saisie.
         if (_editing is not null) EndTextEdit();
 
         if (_vm?.CurrentPage is null) return;
-        if (!e.GetCurrentPoint(Surface).Properties.IsLeftButtonPressed) return;
+
+        // Le bouton droit suit le chemin du gauche jusqu'à la sélection, puis s'arrête, sans
+        // glissé : son relâché ouvrira le menu contextuel (poste A12, PageCanvas.MenuDuBloc.cs).
+        // La main, la loupe, l'outil armé, les poignées et les repères ne le prennent pas.
+        var boutons = e.GetCurrentPoint(Surface).Properties;
+        var droit = boutons.IsRightButtonPressed && !boutons.IsLeftButtonPressed;
+        if (!boutons.IsLeftButtonPressed && !droit) return;
 
         Focus();
 
         // La main et la loupe passent avant tout : elles ne touchent à aucun bloc (I6), et
-        // n'ouvrent la saisie d'aucun texte.
-        if (PrendreLaNavigation(e)) return;
+        // n'ouvrent la saisie d'aucun texte. Le bouton droit ne les prend pas.
+        if (!droit)
+        {
+            if (PrendreLaNavigation(e)) return;
+        }
 
         var surfacePoint = e.GetPosition(Surface);
         var page = ToPageCoordinates(surfacePoint);
@@ -590,7 +602,7 @@ public partial class PageCanvas : UserControl
         // Un outil armé prend la main : on crée au lieu de sélectionner. Sur le gris, il ne
         // se passe rien, et l'outil reste armé : le bloc tomberait hors de la page, où
         // PageRoot le rognerait tout entier.
-        if (_vm.IsDrawing)
+        if (_vm.IsDrawing && !droit)
         {
             e.Handled = true;
             if (!DansLaPage(page)) return;
@@ -604,6 +616,13 @@ public partial class PageCanvas : UserControl
 
         if (_vm.SingleSelected is { Visible: true } single && HitHandle(single, surfacePoint) is { } anchor)
         {
+            // Au bouton droit, la poignée est au bloc pris : la sélection reste (A12).
+            if (droit)
+            {
+                e.Handled = true;
+                return;
+            }
+
             // Même prise, mêmes repères de départ, même capture : la rotation n'est
             // qu'un second mode de ce geste-là. BeginEdit ici, CommitEdit au relâché,
             // comme le redimensionnement — c'est ce qui la rend annulable d'un pas.
@@ -626,7 +645,7 @@ public partial class PageCanvas : UserControl
 
         // Un repère passe avant les blocs : il est fin, on ne l'attrape qu'en le visant,
         // et c'est le seul moyen de le reprendre une fois posé.
-        if (HitGuide(page) is var (guide, vertical) && guide is not null)
+        if (!droit && HitGuide(page) is var (guide, vertical) && guide is not null)
         {
             BeginGuideDrag(guide, vertical);
             e.Pointer.Capture(InputLayer);
@@ -641,6 +660,16 @@ public partial class PageCanvas : UserControl
         var hit = DansLaPage(page) ? _vm.CurrentPage.Frames.LastOrDefault(f => f.Visible && f.HitTest(page.X, page.Y)) : null;
         // La bande de bord d'un bloc sélectionné s'étend jusqu'à son cadre (poste N12).
         hit = BlocVise(page, hit);
+
+        // Le bouton droit s'arrête à la sélection : le bloc atteint, pris seul s'il ne l'était
+        // pas, ou le vide, qui la vide (A12).
+        if (droit)
+        {
+            PrendreAuBoutonDroit(hit);
+            e.Handled = true;
+            return;
+        }
+
         var additive = e.KeyModifiers.HasFlag(KeyModifiers.Control) ||
                        e.KeyModifiers.HasFlag(KeyModifiers.Shift);
 
@@ -651,6 +680,13 @@ public partial class PageCanvas : UserControl
             // aussi un rectangle de sélection, que Ctrl et Maj font ajouter (poste N17).
             if (!additive) _vm.SetSelection([]);
             CommencerLeRectangle(page, additive, e);
+            e.Handled = true;
+            return;
+        }
+
+        // Un double-clic sur une image ou une forme ouvre sa section du dock (A12, décision 5).
+        if (!additive && OuvrirSaSection(hit, e))
+        {
             e.Handled = true;
             return;
         }
@@ -1454,6 +1490,13 @@ public partial class PageCanvas : UserControl
         if (e.Key == Key.Escape && _editing is not null)
         {
             EndTextEdit();
+            e.Handled = true;
+            return;
+        }
+
+        // Maj+F10 ouvre le menu contextuel, sous la sélection (poste A12).
+        if (OuvrirLeMenuAuClavier(e))
+        {
             e.Handled = true;
             return;
         }

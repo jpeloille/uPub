@@ -112,9 +112,13 @@ if presse:
     exige(instructions.count("if (_editing is not null) EndTextEdit();") == 1
           and not re.search(r"EndTextEdit\(\);\s*\}?\s*return;", presse.group(1)),
           "OnPointerPressed rend la main après avoir refermé la saisie.")
+# Le double-clic sur une image ou une forme, depuis A12, se lit — une fois, la pression comptée
+# par Avalonia, dans PageCanvas.MenuDuBloc.cs — et ne se fabrique pas : toute autre mention du
+# compte des clics reste refusée.
 for fichier in sorted((racine / "MyPublisher/Views").glob("PageCanvas*.cs")):
     texte = fichier.read_text(encoding="utf-8")
-    exige(not re.search(r"RaiseEvent\s*\(|DoubleTappedEvent|ClickCount", texte),
+    lus = re.findall(r"\be\.ClickCount != 2\b", texte) if fichier.name == "PageCanvas.MenuDuBloc.cs" else []
+    exige(not re.search(r"RaiseEvent\s*\(|DoubleTappedEvent", texte) and texte.count("ClickCount") == len(lus) <= 1,
           f"{fichier.name} rejoue un geste ou fabrique un double-clic.")
 print("    c. OnPointerPressed referme la saisie avant toute chose, puis agit ; rien n'est rejoué")
 

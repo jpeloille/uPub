@@ -25,7 +25,8 @@
 #         paragraphe nommé, ni nuancier — confirmé par le propriétaire le 24 octobre 2026.
 #         Seul ce qui s'affiche compte : un commentaire qui les nomme ne dessine rien. Un
 #         libellé se lit comme il s'affiche, sans ses touches d'accès : « A_juster le texte »
-#         est « Ajuster le texte » à l'écran.
+#         est « Ajuster le texte » à l'écran. Depuis A12, la planche aussi (PageCanvas.axaml) : son
+#         menu contextuel, écrit dans la fenêtre, et son menu du texte en saisie.
 #      d. Les noms que tests, recettes et banc cherchent survivent (règle 6), et le dock a
 #         ses quatre onglets, dans l'ordre de la maquette.
 #      e. Les vues que le poste écrit sont dans la liste des vues de la phase de la recette
@@ -164,7 +165,9 @@ print("    b. barre contextuelle et entrée de page dans leurs fichiers ; Page e
 
 INTERDITS = ["Habillage", "Effets", "Ajuster le texte", "Gabarit", "Pipette", "Graisse", "Style de paragraphe",
              "Corps de texte", "Chaînage", "Nuancier", "Regular"]
-for fichier in (FENETRE, barre, entree):
+# La planche aussi, depuis le poste A12 : le menu contextuel du bloc et celui du texte en saisie
+# n'y offrent rien du seuil D.
+for fichier in (FENETRE, barre, entree, VUES / "PageCanvas.axaml"):
     if not fichier.exists():
         continue
     arbre = ET.fromstring(fichier.read_text(encoding="utf-8"))

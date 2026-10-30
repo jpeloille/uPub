@@ -280,7 +280,11 @@
                          écrit « \n », et non Environment.NewLine, « \r\n » sous Windows ; Maj+Entrée,
                          le saut de ligne forcé, est posé par la planche (poste N16,
                          PageCanvas.Saisie.cs). -->
+                    <!-- Sans le menu du thème, Couper, Copier, Coller : la demande du clic droit monte
+                         à la planche, dont le menu garde ces trois entrées en saisie et y ajoute
+                         Format du bloc… (poste A12). -->
                     <TextBox IsVisible="{Binding IsEditing}"
+                             ContextFlyout="{x:Null}"
                              Text="{Binding Saisie, Mode=TwoWay}"
                              FontSize="{Binding FontSize}"
                              FontWeight="{Binding Bold, Converter={x:Static conv:Conv.Weight}}"

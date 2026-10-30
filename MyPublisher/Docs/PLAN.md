@@ -43,7 +43,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **A9** | Rotation par quart de tour | **100 %** | Livré avec N18 (salve Saisie 5) : *Disposition ▸ Faire pivoter ou retourner ▸* — à gauche et à droite de 90°, et *Rotation personnalisée…*, qui mène à l'angle du dock —, comme Publisher (p. 16), et deux boutons −90° et +90° à Position et taille, sans icône. Chaque bloc pris tourne autour de son centre, l'angle ramené entre 0 et 360° comme la poignée le ramène : 350° plus 90° donne 80°, 0° moins 90° donne 270° ; en un pas, où que soit le focus (`UnGesteUnPas`). Une image tournée d'un quart de tour au menu passe `comparer-rendus.sh` à 0,07 %, sous 0,5 %. Quatre tests sous `poste=A9` ; deux sabotages au juge. Recette dans `Scripts/recettes/` (celle de N18) ; relecture et juge après fusion |
 | **A10** | Objet trait, et flèche | **100 %** | `ShapeKind.Line` : un trait est une forme couchée, sans hauteur, longue de sa largeur, que sa rotation oriente autour de son milieu ; il se définit par ses deux extrémités (`PoserLesExtremites`), et la taille minimale d'un bloc ne s'y applique jamais. `StartArrow` et `EndArrow`, une pointe pleine facultative à chaque bout ; `FormatVersion` ne change pas, Samples et Templates réenregistrés. L'outil Ligne (`L`) du rail, entre Ellipse et la loupe, trace d'une extrémité à l'autre, `Maj` à 0, 45 ou 90°, la bulle disant longueur et angle ; *Insertion ▸ Trait*. Deux poignées sur les extrémités, sans rotation ; survol à 3 pt de l'encre. Au dock, X1, Y1, X2, Y2 à la place du cadre, les pointes, et le contour pour l'épaisseur et la couleur. Un coup de crayon `m … l S` au PDF, au même endroit qu'à l'écran ; les vignettes le dessinent. L'import des Fiches rend 5 traits et 0 rectangle de substitution, R5 compte les traits à part. L'icône du poste sert. Treize tests d'interface, vingt-huit du noyau ; relu et jugé le 26 octobre 2026 : un groupe étiré met désormais ses traits à l'échelle par leurs extrémités, et non par leur largeur ; treize sabotages au juge. Recette dans `Scripts/recettes/` |
 | **A11** | Aimantation réglable, et aux autres blocs | 0 % | Spécifié le 11 octobre 2026 ; repris en phase N (salve Saisie 13) : au redimensionnement et au tracé, préférences de N11 |
-| **A12** | Menu contextuel du bloc | 0 % | Spécifié le 11 octobre 2026 ; repris et élargi en phase N (salve Saisie 6) : presse-papiers, Format du bloc… vers le dock, double-clic sur une image ou une forme |
+| **A12** | Menu contextuel du bloc | **100 %** | Un clic droit sur un bloc le prend — seul s'il n'était pas pris, la sélection gardée sinon — et ouvre le menu de la planche (`MenuDuBloc`, posé sur `PageCanvas` et écrit dans `MainWindow.axaml` à côté des menus) : Couper, Copier, Coller, Supprimer le texte, Supprimer, Ordre ▸, Faire pivoter ou retourner ▸, Grouper, Dissocier, Regrouper, Aligner ou répartir ▸, Modifier le texte ▸ Importer un texte…, *Format du bloc…*, Zoom ▸ ; un bloc de coordonnées y ajoute *Modifier les coordonnées…* et *Convertir en texte*. Chaque entrée est liée à la même commande — ou au même gestionnaire de la fenêtre — que son pendant aux menus, avec le même geste affiché ; trois sont neuves (`MainWindowViewModel.MenuDuBloc.cs`) : Supprimer le texte, en un pas, grisée sur un bloc vide ou à champ ; Convertir en texte, en un pas ; Format du bloc…, qui mène à la section du dock propre à la sorte du bloc par la `DockDemande` de N18, comme le double-clic sur une image ou une forme. Dans le vide, le clic droit vide la sélection et ouvre le menu de la page (Coller, Repères de mise en page…, Arrière-plan…) ; dans le texte en saisie, celui du texte (Couper, Copier, Coller, Format du bloc…), la sélection du texte gardée, la zone n'ayant plus le menu du thème. `Maj+F10` et la touche Menu l'ouvrent sous la sélection ; règles et barres de défilement n'ouvrent rien. Quinze tests sous `poste=A12`, aucun test réécrit ; une aide au banc, `CliquerDroit` en un point ; la recette N5 lit désormais un double-clic, sans le fabriquer, et la recette I2 lit aussi `PageCanvas.axaml` ; quatre sabotages au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **A13** | Rognage manuel de l'image | 0 % | Spécifié le 11 octobre 2026 ; repris en phase N (salve Saisie 14) : Rogner au menu contextuel |
 | **A14** | Contour et ombre du caractère | 0 % | Spécifié le 11 octobre 2026 ; PDFsharp à éprouver d'abord |
 | **A15** | Sections : numérotation qui repart | 0 % | Spécifié le 11 octobre 2026 |
@@ -1538,6 +1538,126 @@ de I2 ; N5 doit aussi rendre au bouton droit la pression qui sort de la saisie.
 menus, avec le même geste affiché ; `Maj+F10` ouvre le menu ; un clic droit sur une règle n'ouvre
 rien ; un double-clic sur une image ouvre la section Image. Dépend de N8, N17 et N18. Des deux
 postes qu'il attendait, B2 est livré, et A9 l'est avec N18. Effort : moyen.
+
+*Livré le 31 octobre 2026*, dans la salve Saisie 6 ; la relecture adversariale vient après la
+fusion. **La pression du bouton droit** suit, dans `OnPointerPressed`, le chemin du gauche jusqu'à
+la sélection : elle referme d'abord la saisie (N5), passe la main, la loupe, l'outil armé et les
+repères, garde la sélection sur une poignée du bloc pris, puis, la ligne du juge `var hit =` restant
+une, s'arrête à `PrendreAuBoutonDroit` — le bloc atteint pris seul s'il ne l'était pas, la sélection
+gardée s'il l'était, le vide qui la vide —, sans glissé ni saisie ni rectangle. **Le menu** est
+`MenuDuBloc`, posé sur la planche (`PageCanvas.ContextMenu`) et non sur sa couche, et écrit dans
+`MainWindow.axaml`, à côté des menus : c'est là que vivent les gestionnaires de Couper, Copier,
+Coller (N8), d'Importer un texte… (B2) et des Informations professionnelles, que ses entrées
+reprennent tels quels, comme elles reprennent les commandes et les gestes des autres. Avalonia
+ouvre le menu au relâché, sur la demande (`ContextRequested`) que lève le contrôle atteint ; la
+planche la prend au passage descendant (`PageCanvas.MenuDuBloc.cs`) : venue d'une règle, d'une barre
+de défilement ou du coin des règles, elle l'arrête ; venue de la couche, de la planche ou du texte en
+saisie, elle prépare le menu — les entrées du contexte, lues sur les classes de chacune (`saisie`,
+`blocs`, `vide`, `siTexte`, `siCoordonnees`), les séparateurs qui ne séparent plus rien masqués, la
+disponibilité des entrées neuves, la place — et la laisse aller au menu. La zone du texte en saisie
+n'a plus le menu du thème (`ContextFlyout="{x:Null}"`, la seule ligne que le poste écrit dans
+`PageCanvas.axaml`, où N21 travaille) : sa demande monte à la planche, qui montre le menu du texte ;
+la zone garde sa sélection pendant que le menu a le focus, et le reprend à sa fermeture, comme la
+planche hors saisie. La fenêtre retient le champ sous le menu à son ouverture (`Opening`), comme à
+la pression sur la barre (N8) : Copier, au menu du texte, copie ce qui était sélectionné. `Maj+F10`
+est lu par la planche, qui ouvre elle-même le menu sous la sélection ; la touche Menu passe par
+Avalonia, et le menu se pose de même sous la sélection, au milieu de la planche visible sans rien
+de pris. **Les entrées neuves**, au partiel `MainWindowViewModel.MenuDuBloc.cs` (règle 10) :
+*Supprimer le texte* vide le bloc par sa `Saisie`, en un pas (`UnGesteUnPas`), le cadre et le style
+du bloc gardés ; *Convertir en texte* pose, à la place du champ d'un bloc de coordonnées, le texte
+qu'il affiche ; *Format du bloc…* ouvre la section propre à la sorte — le cadre d'un texte
+(`ContenuCadreDeTexte`), l'image, le trait, le groupe, le tableau, le fond et le contour d'un
+rectangle ou d'une ellipse —, six contenus de section du dock nommés pour cela. **Le double-clic**
+sur une image ou une forme mène à Format du bloc… : la seconde pression ne déplace rien, et le bloc
+est pris seul. Le README le dit, au fil de l'interface et aux sous-tableaux « Souris » et « Objets » ;
+`PageCanvas.MenuDuBloc.cs` entre dans `vues_de_la_phase` de I1.
+
+*Recette jouée* : `Scripts/recettes/A12-menu-contextuel.sh`. Les sources d'abord : le menu sur la
+planche, non sur la couche, la zone en saisie sans le menu du thème ; chacune des trente-deux
+entrées à commande ou à gestionnaire confrontée à son pendant aux menus — même commande, même
+paramètre, même libellé à l'écran, même geste, même garde, même case —, les trois neuves sans
+pendant, au partiel ; les entrées du texte en saisie, du vide et des blocs, les lettres d'accès
+uniques au niveau ; rien du seuil D ; le bouton droit après la ligne du juge, la demande au passage
+descendant, `Maj+F10`, le double-clic ; le README et I1. Puis quinze tests sous `poste=A12`
+(`MenuDuBlocTests`) : un clic droit au centre d'un bloc qui le prend seul et ouvre le menu de la
+planche, sans pas — la recette d'origine ; un clic droit dans une sélection qui la garde, Grouper
+offert, Format du bloc… grisé, le bouton droit tenu et mené qui ne glisse rien ; le vide, sur la page
+et sur le gris, qui vide la sélection — la recette d'origine — et ouvre le menu de la page ; Échap qui
+rend le focus à la planche, où Suppr joue ; chaque entrée sur la même instance de commande que son
+pendant, au même libellé et au même geste, et le geste affiché en français, « Suppr », « Ctrl+Maj+F »,
+« Ctrl++ » ; Premier plan au menu, en un pas ; Couper au menu du bloc puis Coller au menu du vide, qui
+le rend à sa place, un pas chacun ; Supprimer le texte en un pas, grisé sur un bloc vide ou à champ,
+absent d'une forme, l'import gardé comme au menu Texte ; Convertir en texte en un pas, sur un bloc de
+coordonnées seulement ; Format du bloc… vers la section de cinq sortes, dock replié et section
+fermée, sans pas ; le double-clic sur une image et sur une forme ; `Maj+F10` et la touche Menu, le
+menu sous le bloc, et sans sélection le menu de la page ; un clic droit sur les deux règles et les
+barres de défilement, qui n'ouvre rien ; en saisie, le menu du texte, la sélection gardée, Copier et
+Couper sur elle, la frappe qui reprend ; Échap au menu du texte et Format du bloc…, la saisie gardée.
+Puis le voisin, le bouton droit de N5. La suite d'interface passe de 549 à 564 tests, tous verts.
+Les recettes voisines passent : N5, N8, N17, N18, N12, Q14, N13, A4, I1, I2-B7, N1, Q23, I6, et
+`Scripts/controle.sh`. **Le juge** : quatre sabotages — le clic droit qui ne prend plus le bloc hors
+de la sélection ; Supprimer, au menu, lié à la commande de Dupliquer ; la demande des règles qui
+n'est plus arrêtée ; la zone en saisie qui perd sa sélection sous le menu —, attendus par la recette
+ou par `MenuDuBlocTests`.
+
+*Ce que l'implémentation a appris.*
+- **Le menu ouvert garde le focus qu'il a pris.** `ContextMenu.PopupOpened` donne le focus au menu
+  et retient l'élément d'avant (`_previousFocus`), qu'il ne rend jamais, lu décompilé : la planche
+  le rend à sa fermeture — à la zone en saisie, ou à elle-même —, sauf si une entrée l'a mené
+  ailleurs, comme Format du bloc… au dock.
+- **Un `TextBox` ne garde sa sélection, en perdant le focus, que pour son propre menu**
+  (`TextBox.OnLostFocus`) : sous celui de la planche, il la vidait. Le temps que le menu est
+  ouvert, la zone en saisie ne la vide plus (`ClearSelectionOnLostFocus`).
+- **Ouvert au clavier, Avalonia pose le menu sous le contrôle qui le demande** — la planche
+  entière : la planche lui donne la place de la sélection (`PlacementRect`). `Maj+F10` n'est pas dans
+  `PlatformHotkeyConfiguration.OpenContextMenu`, qui ne porte que la touche Menu (N1 l'avait relevé).
+- **La recette N5 interdisait tout `ClickCount` et tout `RaiseEvent` dans la planche**, pour qu'aucun
+  double-clic n'y soit fabriqué ni aucun geste rejoué. Le double-clic de la décision 5 se lit : la
+  recette admet désormais une lecture, `e.ClickCount != 2`, dans `PageCanvas.MenuDuBloc.cs`, et
+  aucune autre mention ; `Maj+F10` ouvre le menu sans lever d'événement. La recette N12 refuse
+  toujours `DoubleTapped`.
+- **Les sous-menus ne reprennent pas les libellés des menus** : recettes et tests de N13 et N18
+  cherchent « _Ordre » ou « _Aligner ou répartir » une seule fois dans la fenêtre. Le menu dit « O_rdre »,
+  « A_ligner ou répartir », « Faire _pivoter ou retourner », « R_egrouper », « _Arrière-plan… » ; ses
+  entrées feuilles gardent ceux de leur pendant.
+- **Une cible du juge** — `if (PrendreLaNavigation(e)) return;`, de I6 — a été rendue telle quelle :
+  le bouton droit l'encadre au lieu de la réécrire.
+- Les sections du dock propres à une sorte de bloc n'avaient pas de nom où la `DockDemande` les
+  vise : six contenus en reçoivent un.
+
+*Choisi sans certitude* :
+- le menu est écrit dans `MainWindow.axaml`, et non dans `PageCanvas.axaml` comme la recette le
+  laissait entendre : c'est ce qui lie Couper, Copier, Coller, Importer un texte… et Modifier les
+  coordonnées… aux gestionnaires mêmes de leurs pendants, que la planche n'atteint pas ; les
+  interdits de I2 s'étendent quand même à `PageCanvas.axaml`, et la recette A12 les lit au menu ;
+- au bouton droit, la main, la loupe et un outil armé ne jouent pas : le clic droit prend et ouvre
+  le menu, l'outil reste armé ; un repère ne se prend pas au bouton droit, le bloc dessous l'est ;
+  sur une poignée du bloc pris, la sélection reste ;
+- Format du bloc… ouvre le cadre d'un bloc de texte — l'onglet *Text Box* du dialogue de Publisher,
+  et non *Colors and Lines*, qui est son premier —, le fond et le contour d'un rectangle ou d'une
+  ellipse, qui n'ont pas d'autre section, et la section Groupe d'un groupe ;
+- le double-clic vaut pour une image et pour une forme, trait compris ; un groupe et un tableau le
+  laissent comme avant ;
+- *Supprimer le texte* et *Modifier le texte ▸* ne paraissent que pour un bloc de texte seul ; Supprimer
+  le texte part par la saisie, si bien que les fragments et les écarts de paragraphe partent avec le
+  texte ;
+- *Convertir en texte* est une commande neuve aussi, que le plan ne disait pas : le champ cède la place
+  au texte qu'il affiche, et le texte caché sous le champ est remplacé, ses fragments avec lui ;
+  *Modifier les coordonnées…* ouvre le dialogue des jeux, celui d'*Edition ▸ Informations
+  professionnelles…* ;
+- le menu de la page n'a que les trois entrées que le plan nomme, sans Zoom ▸ ; Coller y colle comme
+  `Ctrl+V`, à la place des blocs copiés, et non sous le pointeur ;
+- au clavier sans rien de pris, le menu s'ouvre au milieu de la planche visible ;
+- au menu du texte, Format du bloc… garde la saisie ouverte et mène le focus au dock, comme une entrée
+  « … » de la barre.
+
+*Relevé, non corrigé* :
+- sous X11, le menu est une fenêtre à part : que le focus revienne à la zone en saisie à sa
+  fermeture, et que la fenêtre retienne le champ sous lui, n'est mesuré qu'au banc ;
+- un clic droit sur un repère de règle n'a pas le menu du repère de Publisher ; `Maj+F10` dans le dock
+  ou dans la barre n'ouvre rien, la planche ne le lisant que quand elle ou son texte a le focus ;
+- la fiche 23 dit encore c3, c16, c25, e1, e2 et f16 manquants ou partiels : le poste ne la touche
+  pas, comme ceux qui l'ont précédé.
 
 #### A13 — Rognage manuel de l'image *(fiche 14)*
 

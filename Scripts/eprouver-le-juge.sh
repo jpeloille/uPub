@@ -2912,6 +2912,38 @@ saboter "un clic sur le nom de la police n'ouvre plus la liste (N19)" \
     $'        Filtrer(null);\n        Marquer();' \
     'N19-corps-et-police|CorpsEtPoliceTests'
 
+# A12 : le clic droit sur un bloc hors de la sélection ne le prend plus — le menu s'ouvre sur la
+# sélection d'avant, et Couper emporterait un autre bloc que celui qu'on visait.
+saboter "le clic droit ne prend pas le bloc hors de la sélection (A12)" \
+    MyPublisher/Views/PageCanvas.MenuDuBloc.cs \
+    '        else if (!_vm.Selection.Contains(bloc)) _vm.SelectOnly(bloc);' \
+    '        else if (!_vm.Selection.Contains(bloc)) { }' \
+    'A12-menu-contextuel|MenuDuBlocTests'
+
+# A12 : une entrée du menu liée à la commande d'une voisine — Supprimer qui duplique. Elle a encore
+# un pendant aux menus, mais ni le libellé ni le geste ne sont les siens.
+saboter "une entrée du menu contextuel sur la commande d'une voisine (A12)" \
+    MyPublisher/Views/MainWindow.axaml \
+    '<MenuItem Classes="blocs" Header="_Supprimer" InputGesture="Delete" Command="{Binding DeleteSelectedCommand}"/>' \
+    '<MenuItem Classes="blocs" Header="_Supprimer" InputGesture="Delete" Command="{Binding DuplicateSelectedCommand}"/>' \
+    'A12-menu-contextuel|MenuDuBlocTests'
+
+# A12 : la demande des règles et des barres de défilement n'est plus arrêtée — un clic droit sur une
+# règle ouvre le menu de la planche.
+saboter "un clic droit sur une règle ouvre le menu (A12)" \
+    MyPublisher/Views/PageCanvas.MenuDuBloc.cs \
+    '        if (!ReferenceEquals(source, InputLayer) && !ReferenceEquals(source, this) && !dansLeTexte)' \
+    '        if (source is null)' \
+    'A12-menu-contextuel|MenuDuBlocTests'
+
+# A12 : en saisie, la zone perd sa sélection quand le menu prend le focus — elle ne la garde que pour
+# son propre menu, que la planche a remplacé.
+saboter "le texte en saisie perd sa sélection sous le menu (A12)" \
+    MyPublisher/Views/PageCanvas.MenuDuBloc.cs \
+    '            zone.ClearSelectionOnLostFocus = false;' \
+    '            zone.ClearSelectionOnLostFocus = true;' \
+    'A12-menu-contextuel|MenuDuBlocTests'
+
 # Un motif qui ne désigne aucun sabotage ne prouve rien. « eprouver-le-juge.sh I4 » sortait
 # en 0 sur « 0 sabotages, 0 attrapés », quand les intitulés de la planche ne portaient pas
 # encore le code du poste : le filet passait pour éprouvé sans qu'on l'ait troué.

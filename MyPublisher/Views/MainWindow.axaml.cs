@@ -89,6 +89,9 @@ public partial class MainWindow : Window
         // perde (poste N8) : en tunnel, avant que la pression ne donne le focus à l'entrée.
         AddHandler(PointerPressedEvent, OnPressionAvantLeMenu, RoutingStrategies.Tunnel, handledEventsToo: true);
         AddHandler(KeyDownEvent, OnToucheAvantLeMenu, RoutingStrategies.Tunnel, handledEventsToo: true);
+        // De même pour le menu contextuel de la planche (poste A12), qui prend le focus en
+        // s'ouvrant : retenu à sa demande, avant l'ouverture, quel que soit le geste qui l'ouvre.
+        MenuDuBloc.Opening += (_, _) => RetenirLeChampSousLeMenu();
 
         // La fenêtre quittée Espace tenu ne verra pas son relâchement : la main se lâche ici (I6).
         Deactivated += (_, _) => PageView.MainTenue = false;

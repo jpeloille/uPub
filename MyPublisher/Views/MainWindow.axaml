@@ -1068,7 +1068,94 @@
             </Border>
 
             <!-- La planche : le poste I4 la refait, celui-ci n'y touche pas. -->
-            <views:PageCanvas Grid.Column="2" x:Name="PageView"/>
+            <views:PageCanvas Grid.Column="2" x:Name="PageView">
+                <!-- Le menu contextuel du bloc (poste A12, fiche 11 ; fiche 23, c3, e1, e2, c25), posé
+                     sur la planche et non sur sa couche de saisie : la touche Menu lève sa demande
+                     sur le contrôle qui a le focus, et la couche ne l'a jamais. Il est écrit ici,
+                     à côté des menus, parce que chaque entrée est liée à la même commande — ou au
+                     même gestionnaire de la fenêtre — que son pendant aux menus, avec le même
+                     geste affiché ; la recette A12 les confronte. Trois entrées seulement sont
+                     neuves : Supprimer le texte, Convertir en texte et Format du bloc….
+
+                     Les classes disent où chaque entrée paraît, et la planche les lit à
+                     l'ouverture (PageCanvas.MenuDuBloc.cs) : « saisie », le texte en saisie ;
+                     « blocs », un bloc ou plusieurs pris ; « vide », rien de pris ; « siTexte », un
+                     bloc de texte seul ; « siCoordonnees », un bloc de coordonnées seul. Les lettres
+                     d'accès sont uniques au niveau, et les sous-menus ne reprennent pas le libellé
+                     de leur pendant, que les recettes et les tests cherchent une seule fois. -->
+                <views:PageCanvas.ContextMenu>
+                    <ContextMenu x:Name="MenuDuBloc">
+                        <MenuItem Classes="saisie blocs" Header="Co_uper" InputGesture="Ctrl+X" Click="OnCouper"/>
+                        <MenuItem Classes="saisie blocs" Header="_Copier" InputGesture="Ctrl+C" Click="OnCopier"/>
+                        <MenuItem Classes="saisie blocs vide" Header="C_oller" InputGesture="Ctrl+V" Click="OnColler"/>
+                        <Separator Classes="blocs"/>
+                        <MenuItem Classes="blocs siTexte" Header="Supprimer le _texte" Command="{Binding SupprimerLeTexteCommand}"/>
+                        <MenuItem Classes="blocs" Header="_Supprimer" InputGesture="Delete" Command="{Binding DeleteSelectedCommand}"/>
+                        <Separator Classes="blocs"/>
+                        <MenuItem Classes="blocs" Header="O_rdre">
+                            <MenuItem Header="Premier _plan" InputGesture="Ctrl+Shift+F"
+                                      Command="{Binding BringToFrontCommand}"/>
+                            <MenuItem Header="Arrière-p_lan" InputGesture="Ctrl+Shift+B"
+                                      Command="{Binding SendToBackCommand}"/>
+                            <MenuItem Header="_Avancer" Command="{Binding BringForwardCommand}"/>
+                            <MenuItem Header="_Reculer" Command="{Binding SendBackwardCommand}"/>
+                        </MenuItem>
+                        <MenuItem Classes="blocs" Header="Faire _pivoter ou retourner">
+                            <MenuItem Header="Faire pivoter à _gauche de 90°" Command="{Binding PivoterAGaucheCommand}"/>
+                            <MenuItem Header="Faire pivoter à _droite de 90°" Command="{Binding PivoterADroiteCommand}"/>
+                            <Separator/>
+                            <MenuItem Header="Rotation _personnalisée…" Command="{Binding RotationPersonnaliseeCommand}"/>
+                        </MenuItem>
+                        <Separator Classes="blocs"/>
+                        <MenuItem Classes="blocs" Header="_Grouper" InputGesture="Ctrl+Shift+G"
+                                  Command="{Binding GroupSelectedCommand}"/>
+                        <MenuItem Classes="blocs" Header="_Dissocier" InputGesture="Ctrl+Shift+G"
+                                  Command="{Binding UngroupSelectedCommand}"/>
+                        <MenuItem Classes="blocs" Header="R_egrouper" Command="{Binding RegrouperCommand}"/>
+                        <MenuItem Classes="blocs" Header="A_ligner ou répartir">
+                            <MenuItem Header="Aligner à _gauche" Command="{Binding AlignLeftCommand}"/>
+                            <MenuItem Header="_Centrer horizontalement" Command="{Binding AlignCentreHorizontallyCommand}"/>
+                            <MenuItem Header="Aligner à _droite" Command="{Binding AlignRightCommand}"/>
+                            <Separator/>
+                            <MenuItem Header="Aligner en _haut" Command="{Binding AlignTopCommand}"/>
+                            <MenuItem Header="Centrer _verticalement" Command="{Binding AlignCentreVerticallyCommand}"/>
+                            <MenuItem Header="Aligner en _bas" Command="{Binding AlignBottomCommand}"/>
+                            <Separator/>
+                            <MenuItem Header="Répartir hori_zontalement" Command="{Binding DistributeHorizontallyCommand}"/>
+                            <MenuItem Header="Répartir vertica_lement" Command="{Binding DistributeVerticallyCommand}"/>
+                            <Separator/>
+                            <MenuItem Header="Par rapport aux _marges" ToggleType="CheckBox"
+                                      IsChecked="{Binding AlignToMargins, Mode=TwoWay}"/>
+                        </MenuItem>
+                        <Separator Classes="blocs saisie"/>
+                        <!-- Change Text ▸ de Publisher (p. 34) : l'import de B2, au même gestionnaire
+                             et sous la même garde que celui du menu Texte. -->
+                        <MenuItem Classes="blocs siTexte" Header="_Modifier le texte">
+                            <MenuItem Header="Importer un te_xte…" Click="OnImportText"
+                                      IsEnabled="{Binding PeutImporterTexte}"/>
+                        </MenuItem>
+                        <!-- La balise du bloc de coordonnées (p. 54) : le dialogue des jeux, celui
+                             d'Edition ▸ Informations professionnelles…, et le champ rendu au texte. -->
+                        <MenuItem Classes="blocs siCoordonnees" Header="Modifier les coordo_nnées…" Click="OnEditBusinessInfo"/>
+                        <MenuItem Classes="blocs siCoordonnees" Header="Con_vertir en texte" Command="{Binding ConvertirEnTexteCommand}"/>
+                        <!-- Format Text Box… de Publisher : la section du dock propre à la sorte du
+                             bloc (décision 5, poste N18). -->
+                        <MenuItem Classes="blocs saisie" Header="Format du _bloc…" Command="{Binding FormatDuBlocCommand}"/>
+                        <Separator Classes="blocs"/>
+                        <MenuItem Classes="blocs" Header="_Zoom">
+                            <MenuItem Header="Zoom _avant" InputGesture="Ctrl+OemPlus" Command="{Binding ZoomInCommand}"/>
+                            <MenuItem Header="Zoom a_rrière" InputGesture="Ctrl+OemMinus" Command="{Binding ZoomOutCommand}"/>
+                            <MenuItem Header="_Taille réelle" InputGesture="Ctrl+D0" Command="{Binding ZoomResetCommand}"/>
+                            <MenuItem Header="Page _entière" InputGesture="Ctrl+Shift+L" Command="{Binding PageEntiereCommand}"/>
+                            <MenuItem Header="_Objets sélectionnés" Command="{Binding ObjetsSelectionnesCommand}"/>
+                        </MenuItem>
+                        <!-- Dans le vide : la page, ses repères et son fond (N18). -->
+                        <Separator Classes="vide"/>
+                        <MenuItem Classes="vide" Header="Repères de m_ise en page…" Command="{Binding ReperesDeMiseEnPageCommand}"/>
+                        <MenuItem Classes="vide" Header="_Arrière-plan…" Command="{Binding ArrierePlanCommand}"/>
+                    </ContextMenu>
+                </views:PageCanvas.ContextMenu>
+            </views:PageCanvas>
 
             <!-- Le dock, 292 px et un filet, à quatre onglets. C'est l'utilisateur qui choisit
                  l'onglet ; le premier suit la sélection comme le panneau d'avant. -->
@@ -1218,7 +1305,7 @@
                                                             <TextBlock Text="Cadre de texte"/>
                                                         </StackPanel>
                                                     </ToggleButton>
-                                                    <Grid Classes="contenuDeSection" ColumnDefinitions="*,8,*" RowDefinitions="Auto,8,Auto,Auto"
+                                                    <Grid x:Name="ContenuCadreDeTexte" Classes="contenuDeSection" ColumnDefinitions="*,8,*" RowDefinitions="Auto,8,Auto,Auto"
                                                           IsVisible="{Binding #Root.((vm:MainWindowViewModel)DataContext).SectionCadreOuverte}">
                                                         <!-- Les colonnes du BLOC, où le texte coule de l'une à l'autre —
                                                              à ne pas confondre avec celles de la grille, à l'onglet
@@ -1407,7 +1494,7 @@
                                                             <TextBlock Text="Trait"/>
                                                         </StackPanel>
                                                     </ToggleButton>
-                                                    <StackPanel Classes="contenuDeSection" Spacing="6"
+                                                    <StackPanel x:Name="ContenuTrait" Classes="contenuDeSection" Spacing="6"
                                                                 IsVisible="{Binding #Root.((vm:MainWindowViewModel)DataContext).SectionTraitOuverte}">
                                                         <CheckBox x:Name="PointeAuDebut" Classes="case" IsChecked="{Binding StartArrow}">
                                                             <TextBlock Text="Pointe de flèche au début"/>
@@ -1432,7 +1519,7 @@
                                                             <TextBlock Text="Groupe"/>
                                                         </StackPanel>
                                                     </ToggleButton>
-                                                    <StackPanel Classes="contenuDeSection" Spacing="4"
+                                                    <StackPanel x:Name="ContenuGroupe" Classes="contenuDeSection" Spacing="4"
                                                                 IsVisible="{Binding #Root.((vm:MainWindowViewModel)DataContext).SectionGroupeOuverte}">
                                                         <TextBlock FontSize="12" Text="{Binding Children.Count, StringFormat='{}{0} blocs réunis'}"/>
                                                         <TextBlock Classes="aide" Text="Le groupe se déplace, se tourne et se redimensionne d'une pièce ; le redimensionner met ses blocs à la même échelle. Pour en retoucher un, dissociez (Ctrl+Maj+G)."/>
@@ -1452,7 +1539,7 @@
                                                             <TextBlock Text="Tableau"/>
                                                         </StackPanel>
                                                     </ToggleButton>
-                                                    <StackPanel Classes="contenuDeSection" Spacing="8"
+                                                    <StackPanel x:Name="ContenuTableau" Classes="contenuDeSection" Spacing="8"
                                                                 IsVisible="{Binding #Root.((vm:MainWindowViewModel)DataContext).SectionTableauOuverte}">
                                                         <TextBlock Classes="aide" Text="Les colonnes et les lignes font la taille du bloc : les élargir l'élargit, le redimensionner les mesure à la même aune."/>
 
@@ -1581,7 +1668,7 @@
                                                             <TextBlock Text="Image"/>
                                                         </StackPanel>
                                                     </ToggleButton>
-                                                    <StackPanel Classes="contenuDeSection" Spacing="3"
+                                                    <StackPanel x:Name="ContenuImage" Classes="contenuDeSection" Spacing="3"
                                                                 IsVisible="{Binding #Root.((vm:MainWindowViewModel)DataContext).SectionImageOuverte}">
                                                         <TextBlock Classes="aide" Text="{Binding Path}" IsVisible="{Binding !HasField}"/>
 
@@ -1633,7 +1720,7 @@
                                                             <TextBlock Text="Fond et contour"/>
                                                         </StackPanel>
                                                     </ToggleButton>
-                                                    <StackPanel Classes="contenuDeSection" Spacing="8"
+                                                    <StackPanel x:Name="ContenuFondEtContour" Classes="contenuDeSection" Spacing="8"
                                                                 IsVisible="{Binding #Root.((vm:MainWindowViewModel)DataContext).SectionFondOuverte}">
                                                         <!-- Le fond : « Aucun », ou l'une des quatre sortes. Sans fond,
                                                              ce qui passe sous le bloc reste visible. -->
