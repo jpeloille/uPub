@@ -2924,6 +2924,24 @@ saboter "le remplacement déduit son édition au lieu de la dire : le style n'es
     'Recalage.Appliquer(texte, apres, fragments, ecarts);' \
     'N20-rechercher-remplacer|RechercheTests'
 
+# N21 : la saisie montre le texte composé. Le sabotage du plan : la composition de nouveau
+# masquée pendant la saisie — le champ, caché, ne dessine rien, et la page perd son texte dès
+# qu'on y entre.
+saboter "la composition (N21) de nouveau masquée pendant la saisie" \
+    MyPublisher/Views/PageCanvas.axaml \
+    '<views:TexteCompose Bloc="{Binding}">' \
+    '<views:TexteCompose IsVisible="{Binding !IsEditing}" Bloc="{Binding}">' \
+    'N21-saisie-sur-la-composition|SaisieSurLaCompositionTests'
+
+# Le bord d'un caractère mesuré hors du morceau façonné, comme avant le poste : la chasse du
+# préfixe seule passe 3,4 pt plus loin que le dessin dans une ligature, et quelques dixièmes dans
+# un crénage — le curseur se dessine à côté de son caractère.
+saboter "le bord d'un caractère (N21) mesuré hors du morceau façonné" \
+    MyPublisher.Core/Models/Compositeur.cs \
+    'var avant = dedans <= 0 ? 0 : metriques.Bord(morceau.Texte, morceau.Style, dedans);' \
+    'var avant = dedans <= 0 ? 0 : metriques.Largeur(morceau.Texte[..dedans], morceau.Style);' \
+    'N21-saisie-sur-la-composition|SaisieSurLaCompositionTests'
+
 # Un motif qui ne désigne aucun sabotage ne prouve rien. « eprouver-le-juge.sh I4 » sortait
 # en 0 sur « 0 sabotages, 0 attrapés », quand les intitulés de la planche ne portaient pas
 # encore le code du poste : le filet passait pour éprouvé sans qu'on l'ait troué.

@@ -89,6 +89,7 @@ vues_de_la_phase=(
     MyPublisher/Views/CoucheDeSaisie.cs
     MyPublisher/Views/QuestionAvantDePerdre.axaml
     MyPublisher/Views/PageCanvas.Saisie.cs
+    MyPublisher/Views/MarquesDuTexte.cs
     MyPublisher/Views/PageCanvas.Gestes.cs
     MyPublisher/Views/ChampNumerique.cs
     MyPublisher/Views/ListeDesPolices.cs

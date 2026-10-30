@@ -5,6 +5,7 @@ using System.Globalization;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media;
+using Avalonia.Media.TextFormatting;
 using Avalonia.VisualTree;
 using MyPublisher.Converters;
 using MyPublisher.Models;
@@ -132,8 +133,9 @@ public abstract class ControleDeBloc : Control
     private void SurChangement(object? _, System.ComponentModel.PropertyChangedEventArgs e)
     {
         // La saisie qui s'ouvre ou se ferme ne change pas ce que le contrôle dessine : le texte
-        // composé se masque, le marqueur de débordement reste (poste N12). Redessinés, ils
-        // recomposaient le bloc à chaque entrée dans un texte, dans la pression même.
+        // composé reste à l'écran depuis la voie 2a (poste N21), le marqueur de débordement
+        // aussi (poste N12). Redessinés, ils recomposaient le bloc à chaque entrée dans un
+        // texte, dans la pression même.
         if (e.PropertyName == nameof(TextFrame.IsEditing)) return;
         InvalidateVisual();
     }
@@ -246,6 +248,65 @@ public sealed class MetriquesAvalonia : Compositeur.IMetriques
             metriques.UnderlinePosition * style.FontSize / em,
             metriques.UnderlineThickness * style.FontSize / em,
             style.FontSize);
+    }
+
+    /// <summary>
+    /// Les bords de chaque morceau déjà façonné, une fois par texte et par style : la
+    /// géométrie demande le même morceau à chaque pas de sa recherche (<see cref="Bord"/>).
+    /// </summary>
+    private readonly Dictionary<(string Texte, StyleEffectif Style), double[]> _bords = [];
+
+    /// <summary>
+    /// Le bord avant l'unité <paramref name="position"/> du morceau, dans le morceau façonné
+    /// d'un tenant, tel que <see cref="Composer"/> le dessine — crénage et ligatures compris
+    /// (poste N21). Voir <see cref="Compositeur.IMetriques.Bord"/>.
+    /// </summary>
+    public double Bord(string texte, StyleEffectif style, int position)
+    {
+        if (position <= 0 || texte.Length == 0) return 0;
+        if (!_bords.TryGetValue((texte, style), out var bords))
+        {
+            bords = Bords(texte, style);
+            _bords[(texte, style)] = bords;
+        }
+
+        return bords[Math.Min(position, texte.Length)];
+    }
+
+    /// <summary>
+    /// Le bord avant chaque unité du texte façonné, et sa chasse au bout. La mise en page
+    /// d'Avalonia rend, pour une unité prise dans une grappe — les deux lettres d'une
+    /// ligature « fl », une paire de substitution —, le bord de la grappe : deux positions
+    /// au même point, que le clic ne saurait plus distinguer, et un curseur qui ne bouge pas
+    /// sous la flèche. Dans une grappe, les positions se répartissent donc d'un bord à
+    /// l'autre, à parts égales, comme les traitements de texte posent le curseur dans une
+    /// ligature : <see cref="Compositeur.PositionLaPlusProche"/> demande des bords qui
+    /// croissent.
+    /// </summary>
+    private double[] Bords(string texte, StyleEffectif style)
+    {
+        var bords = new double[texte.Length + 1];
+        using (var mise = new TextLayout(texte, Police(style), style.FontSize, Brushes.Black))
+        {
+            for (var i = 0; i < texte.Length; i++) bords[i] = mise.HitTestTextPosition(i).X;
+        }
+
+        bords[texte.Length] = Largeur(texte, style);
+
+        var grappe = 0;
+        for (var i = 1; i <= texte.Length; i++)
+        {
+            if (i < texte.Length && bords[i] == bords[grappe]) continue;
+
+            for (var j = grappe + 1; j < i; j++)
+            {
+                bords[j] = bords[grappe] + (bords[i] - bords[grappe]) * (j - grappe) / (i - grappe);
+            }
+
+            grappe = i;
+        }
+
+        return bords;
     }
 
     public FormattedText Composer(string texte, StyleEffectif style) =>

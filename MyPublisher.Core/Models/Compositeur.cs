@@ -123,6 +123,24 @@ public static class Compositeur
 
         /// <summary>Hauteur de ligne naturelle de la police, en points.</summary>
         double Naturelle(StyleEffectif style);
+
+        /// <summary>
+        /// L'abscisse du point d'insertion placé avant l'unité <paramref name="position"/>
+        /// d'un morceau, comptée depuis son début, dans le morceau tel que CE rendu le dessine
+        /// — d'un seul tenant (poste N21, sur la décision du 26 octobre 2026). C'est
+        /// <see cref="Abscisse"/> qui la demande : le curseur, le clic et la sélection.
+        ///
+        /// Un rendu qui façonne son texte — Avalonia, par HarfBuzz — crénèle et lie : la
+        /// chasse de « butterf » mesurée seule passe 3,4 pt plus loin que le bord de « f »
+        /// dans « butterfly », où « fl » est une ligature. Mesurer le préfixe seul, comme on
+        /// le faisait, posait le curseur à côté de son caractère (le relevé de N7). Un tel
+        /// rendu lit le bord dans le morceau façonné.
+        ///
+        /// Par défaut, la chasse du préfixe : c'est exactement le bord d'un rendu qui ne
+        /// façonne pas, comme le PDF, qui pose chaque glyphe à l'avance du précédent.
+        /// </summary>
+        double Bord(string texte, StyleEffectif style, int position) =>
+            position <= 0 ? 0 : Largeur(texte[..position], style);
     }
 
     /// <summary>
@@ -746,8 +764,9 @@ public static class Compositeur
             if (dedans >= morceau.Texte.Length) continue;
 
             // Le début d'un morceau est son abscisse, telle que le rendu la pose ; un point
-            // plus loin dans le morceau, la chasse de ce qui le précède, à la règle du rendu.
-            var avant = dedans <= 0 ? 0 : metriques.Largeur(morceau.Texte[..dedans], morceau.Style);
+            // plus loin dans le morceau, son bord dans le morceau façonné, à la règle du
+            // rendu : crénage et ligatures compris (poste N21).
+            var avant = dedans <= 0 ? 0 : metriques.Bord(morceau.Texte, morceau.Style, dedans);
             return morceau.X + decalages[m] + avant;
         }
 

@@ -15,7 +15,9 @@
 #         de Border — NavigationTests la cherche par Trouver<Border>(…, "InputLayer") — et
 #         répond elle-même au test de survol (ICustomHitTest) ;
 #      b. la planche ne l'éteint plus : aucun « InputLayer.IsHitTestVisible » ; elle lui dit ce
-#         qu'elle laisse au champ, le texte en saisie et lui seul ;
+#         qu'elle laisse au champ, le texte en saisie et lui seul — depuis la voie 2a (N21), plus
+#         rien : PageCanvas.Saisie.cs remet « Laisse » à nul, et la couche prend le clic sur le
+#         texte en saisie, que le champ caché ne reçoit plus ; la recette N21 le vérifie ;
 #      c. OnPointerPressed referme la saisie avant toute chose, avant même le choix du bouton
 #         (la pression du bouton droit en sort aussi, et A12 la prendra là), puis agit comme
 #         d'habitude ; rien n'est rejoué : la planche ne lève aucun événement de pointeur ;
@@ -112,9 +114,12 @@ if presse:
     exige(instructions.count("if (_editing is not null) EndTextEdit();") == 1
           and not re.search(r"EndTextEdit\(\);\s*\}?\s*return;", presse.group(1)),
           "OnPointerPressed rend la main après avoir refermé la saisie.")
+# Le compte des clics, la planche le lit sur la pression, telle que la plate-forme la donne : le
+# double et le triple clic dans le texte en saisie, que le champ caché ne reçoit plus (poste N21,
+# règle 14). Elle n'en fabrique aucun.
 for fichier in sorted((racine / "MyPublisher/Views").glob("PageCanvas*.cs")):
     texte = fichier.read_text(encoding="utf-8")
-    exige(not re.search(r"RaiseEvent\s*\(|DoubleTappedEvent|ClickCount", texte),
+    exige(not re.search(r"RaiseEvent\s*\(|DoubleTappedEvent|ClickCount\s*=[^=]", texte),
           f"{fichier.name} rejoue un geste ou fabrique un double-clic.")
 print("    c. OnPointerPressed referme la saisie avant toute chose, puis agit ; rien n'est rejoué")
 

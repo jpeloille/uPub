@@ -15,6 +15,9 @@ namespace MyPublisher.Views;
 /// les poignées dessinées autour du bloc en saisie ne se tiraient pas (fiche 23, a8 et a9).
 /// Elle reste désormais atteignable partout, sauf là où <see cref="Laisse"/> lui dit de
 /// laisser passer le pointeur : sur le texte en saisie, que la planche lui désigne (poste N5).
+/// Depuis la voie 2a (poste N21), la planche ne lui fait plus rien laisser : le champ de la
+/// saisie est caché, et c'est elle qui prend le clic sur le texte en saisie, lu sur la
+/// composition.
 ///
 /// Elle dérive de <see cref="Border"/>, que les tests cherchent sous le nom « InputLayer »
 /// (règle 6), et s'habille comme lui.
