@@ -3041,6 +3041,16 @@ saboter "la numérotation (N23) ne s'interrompt pas" \
     '' \
     'N23-puces-et-numeros|PucesEtNumeros'
 
+# Q13, repris par Q26 sur la décision du propriétaire (31 octobre 2026) : comparer-mots.sh tient une
+# ligne centrée par son milieu, et non plus par son premier mot, l'écran crénelant quand le PDF ne
+# le fait pas. Une ligne centrée que le PDF pose 2 pt trop à droite doit toujours être vue : les
+# cases centrées des Fiches.
+saboter "le PDF pose une ligne centrée 2 pt trop à droite (Q13, repris par Q26)" \
+    MyPublisher.Core/Services/PdfExporter.cs \
+    'TextAlign.Center => gauche + (ligne.Disponible - ligne.Largeur) / 2,' \
+    'TextAlign.Center => gauche + (ligne.Disponible - ligne.Largeur) / 2 + 2,' \
+    'Q13-coupure'
+
 # Un motif qui ne désigne aucun sabotage ne prouve rien. « eprouver-le-juge.sh I4 » sortait
 # en 0 sur « 0 sabotages, 0 attrapés », quand les intitulés de la planche ne portaient pas
 # encore le code du poste : le filet passait pour éprouvé sans qu'on l'ait troué.

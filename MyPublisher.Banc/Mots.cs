@@ -44,8 +44,15 @@ internal static class Mots
 
     private sealed record Mot(string Texte, double X, double Y, double Largeur);
 
+    /// <summary>
+    /// Une ligne composée, avec son fer : « Center », « Right », « Justify » ou « Left ». C'est ce
+    /// qui dit à <c>comparer-mots.sh</c> où la ligne s'ancre — le premier mot à gauche et en
+    /// justifié, le milieu en centré, le bout en fer à droite (décidé par le propriétaire le 31
+    /// octobre 2026, poste Q26) : l'écran crénèle et le PDF non, si bien qu'une ligne centrée
+    /// pose son premier mot à la moitié de l'écart des deux mesures, que son milieu ignore.
+    /// </summary>
     private sealed record Ligne(
-        string Texte, double Haut, double Bas, double Gauche, double Droite, List<Mot> Mots);
+        string Texte, double Haut, double Bas, double Gauche, double Droite, List<Mot> Mots, string Fer);
 
     /// <summary>Un bloc relevé, avec le rectangle qu'il couvre sur la page — tourné compris.</summary>
     private sealed record Bloc(
@@ -109,6 +116,11 @@ internal static class Mots
                     continue;
                 }
 
+                // Le fer de chaque ligne, lu sur la géométrie que l'écran dessine, rang par rang :
+                // c'est la même composition que celle du dessin. Sous la contre-épreuve de Q13
+                // (« --coupure-seule »), les rangs peuvent ne plus se répondre ; le verdict y
+                // tombe sur les lignes coupées autrement, pas sur leur place.
+                var fers = controle.Geometrie()?.Lignes.Select(l => l.Ligne.Fer).ToList() ?? [];
                 var lignes = controle.Poser(metriques, composition)
                     .GroupBy(p => p.Ligne)
                     .OrderBy(g => g.Key)
@@ -121,7 +133,8 @@ internal static class Mots
                             string.Join(" ", string.Concat(g.Select(p => p.Texte))
                                 .Split(' ', StringSplitOptions.RemoveEmptyEntries)),
                             haut, haut + premier.Avance, gauche, gauche + premier.Disponible,
-                            Assembler(g, m.M31, m.M32));
+                            Assembler(g, m.M31, m.M32),
+                            (g.Key < fers.Count ? fers[g.Key] : TextAlign.Left).ToString());
                     })
                     .ToList();
 
