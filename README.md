@@ -47,6 +47,16 @@ Les recettes demandent trois outils hors .NET : `pdftoppm` (poppler-utils), `mag
 sudo apt install poppler-utils imagemagick libmspub-tools
 ```
 
+La vérification orthographique lit les dictionnaires de Hunspell que le système range dans
+`/usr/share/hunspell` : l'anglais y est souvent déjà ; le français demande un paquet, comme
+`pub2raw`. Sans lui, le texte français n'est pas vérifié, et la barre d'état le dit une fois.
+Les tests et les recettes n'en dépendent pas : ils lisent un petit dictionnaire écrit pour eux,
+dans `Scripts/fixtures/orthographe/`.
+
+```bash
+sudo apt install hunspell-fr hunspell-en-us
+```
+
 La recette de Q12, `Scripts/verifier-dependances.sh`, se lance à part : elle demande
 l'accès à nuget.org pour lire la base des vulnérabilités connues, et échoue en le disant
 quand elle ne peut pas la lire — jamais un vert faute de réseau. À jouer avant une
@@ -299,6 +309,17 @@ Fenêtre masque aussi l'un ou l'autre.
   sélectionné, dans une case, le tableau, et la barre d'état dit où.
   *Remplacer tout* fait un seul pas d'annulation, et le texte remplacé prend le style de son
   premier caractère : un mot gras remplacé reste gras.
+- **La vérification orthographique** (*Edition ▸ Vérifier l'orthographe…*, `F7` ; *Vérifier
+  pendant la frappe*) : chaque mot que le dictionnaire de sa langue ne connaît pas — la langue du
+  caractère, du bloc ou du document — est souligné d'un trait ondulé rouge sur les blocs de la
+  page, peu après la frappe ; le mot qu'on est en train de taper ne l'est qu'une fois quitté. Le
+  trait ne s'imprime pas. Au clic droit sur un mot souligné, en saisie, ses suggestions viennent
+  en tête du menu, avec *Ignorer tout* et *Ajouter au dictionnaire*. `F7` met la barre de
+  recherche en mode orthographe : la faute suivante, dans l'ordre de la recherche, est
+  sélectionnée dans son texte, avec ses suggestions — *Ignorer*, *Ignorer tout*, *Remplacer*, en
+  un pas, *Ajouter au dictionnaire*. Les mots ajoutés le sont pour leur langue, et survivent au
+  redémarrage ; *Ignorer tout* vaut pour la session. Les mots tout en capitales et ceux qui
+  portent un chiffre ne sont pas vérifiés.
 - **Le souligné** a les dix-sept sortes de Publisher, rangées en quatre réglages comme
   dans OpenDocument : le trait — plein, pointillé, tirets, tirets longs, tiret-point,
   tiret-point-point, vague —, simple ou double, de l'épaisseur de la police ou deux fois
@@ -509,6 +530,7 @@ comptés pour rien : sur un AZERTY, `Ctrl+]` se tape `Ctrl+AltGr+)`, `Ctrl+[` se
 | `Ctrl+A` | Sélectionner tous les blocs de la page ; dans la saisie d'un bloc ou dans un champ, tout le texte du champ |
 | `Ctrl+F` / `Ctrl+H` | Rechercher / Remplacer : la barre de recherche, en haut à droite de la planche, le focus au texte cherché / au texte de remplacement |
 | `F3` ou `Maj+F4` | Rechercher le suivant : le texte trouvé est sélectionné en saisie, la page suivant ; le focus reste dans la barre s'il y était, et va au texte trouvé sinon ; sans rien à chercher, la barre s'ouvre. Même en saisie |
+| `F7` | Vérifier l'orthographe : la barre de recherche en mode orthographe, sur la faute suivante, sélectionnée dans son texte, avec ses suggestions. Même en saisie |
 | Dans la barre de recherche : `Entrée`, `Échap` | Cherche le suivant, le focus restant dans la barre ; ferme la barre, et rend le focus au texte trouvé, où l'on tape par-dessus — à la planche s'il n'y en a pas |
 | `Échap` | Désarme l'outil, sinon désélectionne ; dans un champ, du dock ou de la barre contextuelle, renonce à ce qui est tapé et le quitte |
 | Dans un champ numérique : `Entrée`, `Tab`, `↑` / `↓` | Valide ce qui est tapé — dans la barre contextuelle, `Entrée` rend aussi la planche — ; passe au champ suivant ; un pas de plus ou de moins |
@@ -673,6 +695,16 @@ maquette l'affiche, la grille entière mise à l'échelle d'un bloc : une mise �
 icône par icône la normaliserait sur sa propre boîte englobante, l'épaisseur du trait
 varierait alors de 40 % d'un bouton à l'autre et l'ensemble cesserait de faire système.
 
+**La vérification orthographique est Hunspell, en code géré.** Le paquet
+[WeCantSpell.Hunspell](https://github.com/aarondandy/WeCantSpell.Hunspell) 7.0.1 est un
+portage de Hunspell en C#, sans bibliothèque native, qui lit les dictionnaires du système. Sa
+licence est celle de Hunspell, au choix MPL 1.1, GPL 2.0 ou LGPL 2.1 (`license.txt` du paquet
+et du dépôt) ; MyPublisher l'emploie sous **MPL 1.1**, sans la modifier. Le code source de cette
+bibliothèque est disponible sous les termes de la MPL 1.1 à
+<https://github.com/aarondandy/WeCantSpell.Hunspell>, version 7.0.1 (révision `ab5709d`), et
+sur nuget.org. Les dictionnaires ne sont pas distribués avec l'application : chaque paquet du
+système porte sa licence.
+
 **Les interactions passent par une couche de saisie transparente** posée sur la page,
 et non par le test de survol des blocs. Les contrôles internes (image, zone de texte)
 n'interceptent donc jamais le pointeur, et les blocs sont testés dans l'ordre de
@@ -695,6 +727,9 @@ La variable `MYPUBLISHER_PREFERENCES` désigne un autre dossier : les tests et l
 recettes la pointent vers un dossier temporaire, et n'écrivent jamais dans la
 configuration de la personne. Une clé que le fichier porte sans que cette version la
 connaisse est réécrite telle quelle.
+Elles gardent aussi la case *Vérifier pendant la frappe* et le **dictionnaire de
+l'utilisateur** — les mots ajoutés par *Ajouter au dictionnaire*, rangés par langue
+(`DictionnaireDeLUtilisateur`, `"fr-FR": [ … ]`).
 
 ## Format de fichier
 

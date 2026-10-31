@@ -129,7 +129,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **N22** | Les caractères spéciaux | **100 %** | *Affichage ▸ Caractères spéciaux* et `Ctrl+Maj+Y` : une bascule de la session (`CaracteresSpeciauxVisibles`, `MainWindowViewModel.CaracteresSpeciaux.cs`), fermée à l'ouverture, hors du document et de l'historique, qui joue aussi en saisie sans la refermer. Sur chaque bloc de texte visible de la page, un point pour chaque espace, une flèche pour chaque tabulation, ¶ à chaque fin de paragraphe et au bout du texte, ↵ à chaque saut forcé, à l'accent de l'apparence et au corps du texte, aux places de N3 : ¶ au `PointDe` de son saut à 0,01 pt, sur le texte riche, l'exemple et ATA 21 ; une espace sur toute sa chasse, élargie par la justification ou pendante au bout d'une ligne renvoyée (`GeometrieDuTexte.AbscisseSur`, un accesseur ajouté à `TexteCompose.cs`). Le dessin (`Views/CaracteresSpeciaux.cs`, posé par `PageCanvas.CaracteresSpeciaux.cs`) vit dans l'`Overlay`, où il entre à la première ouverture de la bascule ; il est mené par la transformation des contrôles qui dessinent le bloc — tourné, mis à l'échelle — et découpé par la page et par le bloc ; un bloc ne se recompose que quand il change. L'encre de la page est identique, bascule ouverte ou fermée ; le PDF ne change pas ; `PageCanvas.axaml.cs` n'est pas touché. Pas de bouton ¶ : la maquette n'en a pas. Huit tests sous `poste=N22` ; un sabotage au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **N23** | Puces et numérotation | **100 %** | Une propriété de paragraphe, `Liste` — aucune, puces (« • » par défaut, ou le caractère tapé), numéros « 1. », « a) », « i. » avec leur premier numéro —, valeur immuable (`ListeDeParagraphe`) sur `TextFrame` et sur `ParagraphSpan`, clé additive : `FormatVersion` reste 5, Samples et Templates réenregistrés (`"Liste": null`, rien d'autre), l'import inchangé. Les paragraphes consécutifs d'une même liste se numérotent de proche en proche, un paragraphe hors liste interrompt la suite, le premier numéro la fait repartir. La composition pose la marque en tête de la première ligne, au retrait de première ligne et au style du premier caractère : un morceau sans position (`Morceau.SansPosition`), que le curseur, le clic (N3), le souligné et les caractères spéciaux (N22) sautent, et que l'écran, le PDF, les vignettes et le compte de I9 voient par la même composition. Poser une liste donne le retrait suspendu d'Office (18 pt) à un paragraphe sans retrait, l'ôter le rend. Au dock, section Paragraphe : « Puces et numéros », la puce, le premier numéro, sur les paragraphes du `ParagrapheVise` (R6) — le bloc hors saisie, la sélection en saisie ; *Texte ▸ Puces et numéros…* y mène (N18). En saisie, Entrée dans un élément continue la liste (Q1), Entrée dans un élément vide l'en sort. Trente-quatre tests (vingt-quatre du noyau, dix sur la fenêtre), dont le PDF lu par `pdftotext -bbox` à 0,05 pt de l'écran ; l'empreinte de la composition du corpus inchangée. Recette dans `Scripts/recettes/`, un sabotage au juge ; relecture et juge après fusion |
 | **N24** | Exposant, indice, capitales | **100 %** | Une clé `Capitales` — aucune, capitales, petites capitales — sur `TextFrame` et `StyleSpan`, additive : `FormatVersion` reste 5, Samples et Templates réenregistrés (`"Capitales"`, rien d'autre). La composition dessine en capitales sans toucher à `Text`, caractère pour caractère (`char.ToUpperInvariant` : « ß » reste tel quel, les positions de N3 tiennent), et fabrique les petites capitales en dessinant les minuscules en capitales à 70 % du corps, la ligne de base d'un exposant gardée ; un mot en petites capitales ne se coupe pas entre ses deux tailles. L'exposant et l'indice d'Office tels que l'import les lit : la ligne de base décalée de la moitié du corps, le corps à 67 % — l'import applique désormais au corps la taille relative de libmspub, qu'il croyait déjà répercutée, et lit ses capitales. Sur la `MiseEnFormeVisee` de R7, en un pas : `Ctrl+Maj+=` l'exposant, `Ctrl+=` l'indice — le zoom avant n'a plus de touche, le « + » du pavé numérique compris —, `Ctrl+Maj+K` les petites majuscules, et *Texte ▸ Exposant et majuscules ▸* les quatre, au menu du texte aussi ; chacune bascule. Les documents sans exposant ni capitales se rendent à l'identique : l'empreinte de la composition de 18 des 19 documents du corpus est inchangée, les Fiches changent par leurs quatre indices. Quatorze tests (huit du noyau, six sur la fenêtre), dont le « 2 » de « x2 » au PDF au corps et à la ligne de base attendus, et les petites capitales à 0,1 pt de 70 % de la hauteur des capitales ; six tests voisins et les recettes A4, R5 et R7 repris (règle 14) ; deux sabotages au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
-| **N25** | La vérification orthographique | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 9 ; dépendance neuve à éprouver d'abord |
+| **N25** | La vérification orthographique | **100 %** | La dépendance éprouvée d'abord : WeCantSpell.Hunspell 7.0.1, un portage de Hunspell en code géré, au noyau seul, sous la triple licence de Hunspell (MPL 1.1, GPL 2.0, LGPL 2.1, lue dans le paquet et le dépôt), prise sous MPL 1.1 sans modification — la mention et la source au README ; `verifier-dependances.sh` ne la signale pas (il échoue, sur la base aussi, sur `System.Security.Cryptography.Pkcs` 8.0.1, tiré par PdfSharp). Un service du noyau, `Orthographe` : les dictionnaires de Hunspell du système (`/usr/share/hunspell`), chargés à la première demande, une langue de N9 menant à son fichier (`fr-FR` → `fr_FR`, puis `fr`) ; les fautes d'un texte mot par mot, chaque mot dans la langue de son premier caractère, avec un cache par mot ; sigles et mots à chiffre hors vérification ; un dictionnaire absent le dit une fois à la barre d'état, et rien n'est souligné dans cette langue. Donné par `App.axaml.cs` seul, comme les préférences. Un trait ondulé, au rouge de l'apparence, sous chaque faute des blocs visibles de la page, aux abscisses de N3, sur chaque ligne qu'elle occupe, dans l'`Overlay` (`FautesSoulignees`), par le suivi des blocs de N22, désormais partagé — tourné, mis à l'échelle et découpé avec le bloc ; le mot qu'on tape ne se souligne qu'une fois quitté ; l'encre de la page et le PDF identiques, vérification ouverte ou fermée ; `PageCanvas.axaml.cs` n'est pas touché. `F7` et *Edition ▸ Vérifier l'orthographe…* : la barre de N20 en mode orthographe, la faute suivante dans l'ordre de lecture de N20, sélectionnée en saisie, ses suggestions dans une liste qui prend le focus — Ignorer, Ignorer tout (la session), Remplacer (un pas, `Entrée`), Ajouter au dictionnaire ; `Échap` rend le mot. Au clic droit sur une faute en saisie, ses suggestions en tête du menu du texte (A12), puis Ignorer tout et Ajouter au dictionnaire. Le dictionnaire de l'utilisateur, par langue, et la case *Vérifier pendant la frappe* (menu Edition) dans les préférences de N11. Le banc relève les fautes d'un document (`orthographe`) : ATA 21 en `en-US`, 8 mots signalés sur 521, stable. Vingt tests sous `poste=N25`, dix du noyau et dix sur la fenêtre, sur un dictionnaire de test (`Scripts/fixtures/orthographe/`) ; deux sabotages au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **N26** | Taper dans le texte d'un groupe, et prendre un membre seul | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 10 |
 | **N27** | Taper dans une case, sur la page | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 11 ; revient sur un choix écrit en C9 |
 | **N28** | Lignes et colonnes à l'endroit choisi, et plusieurs cases à la fois | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 12 |
@@ -9742,6 +9742,151 @@ ATA 21 en `en-US`, le nombre de mots signalés est relevé et stable ; au juge :
 Fichiers : `MyPublisher.Core/Services/Orthographe.cs` (neuf), le paquet, le fichier partiel des
 marques de N22, la barre de N20, `MainWindow.axaml` (menu, liaison), README, `Scripts/fixtures/`.
 Dépend de N9, N20, N21 et N22. Effort : lourd.
+
+*Livré le 1er novembre 2026*, dans la salve Saisie 9 ; la relecture adversariale et le juge viennent
+après la fusion. **La dépendance, éprouvée d'abord.** WeCantSpell.Hunspell **7.0.1** (30 novembre
+2025, cibles `net10.0`, `net8.0` et `netstandard2.0`, aucune dépendance pour `net10.0`), un portage
+de Hunspell en code géré, sans bibliothèque native. Sa licence, lue dans le paquet (`license.txt`,
+le `.nuspec` disant `<license type="file">`) et dans le dépôt (le même `license.txt`, que GitHub
+range en « Other ») : celle de Hunspell, **au choix MPL 1.1, GPL 2.0 ou LGPL 2.1**. MyPublisher la
+prend sous MPL 1.1, sans modifier la bibliothèque : la MPL 1.1 ne demande alors, pour distribuer le
+binaire, qu'une mention disant que le code source est disponible sous ses termes, et où (§ 3.6) —
+l'obligation de publier le source (§ 3.2) ne vaut que pour les modifications. La mention est au
+README, section *Choix techniques*, avec le dépôt et la révision `ab5709d` de la 7.0.1 — l'application
+est déjà distribuée avec libmspub, sous MPL 2.0. `Scripts/verifier-dependances.sh` ne la signale pas ; il échoue
+pourtant, sur la base comme sur la copie, sur `System.Security.Cryptography.Pkcs` 8.0.1, que tire
+PdfSharp 6.2.1 (GHSA-846f-f764-76mx, haute ; GHSA-2fmv-rv2c-59x7, moyenne) — relevé plus bas. Le
+paquet entre au noyau seul.
+
+**Le service** (`MyPublisher.Core/Services/Orthographe.cs`, neuf). Ses dossiers de dictionnaires lui
+sont donnés ; `Orthographe.DuSysteme()` lit `/usr/share/hunspell`. Une étiquette de N9 mène à son
+fichier par son nom (`NomsDeFichier`) : `fr-FR` cherche `fr_FR`, puis `fr` ; `en-US`, `en_US`, puis
+`en` ; `sr-Latn-RS`, `sr_Latn_RS`, `sr_RS`, `sr`. Un dictionnaire se charge à la première demande de
+sa langue (le français du système : 123 ms ; l'anglais : 98 ms), une fois ; absent ou illisible,
+l'événement `DictionnaireAbsent` le dit une fois, et tout mot de cette langue est juste. Les mots
+(`Mots`) : une suite de lettres, de chiffres et de marques, qu'une apostrophe — droite ou
+typographique — ou un trait d'union entre deux lettres ne coupe pas ; Hunspell juge « l'avion »,
+« aujourd’hui », « porte-avions » et « c'est-à-dire » en entier (relevé sur le dictionnaire français
+du système). Comme Office par défaut, un mot qui porte un chiffre ou qui est tout en capitales n'est
+pas vérifié (`HorsVerification`). Chaque mot est jugé une fois par langue (`MotsJuges` compte les
+passages au dictionnaire) ; un mot suivi d'un point que le dictionnaire écrit avec lui — « etc. » —
+n'est pas une faute. `Fautes(bloc, document)` juge chaque mot dans la langue de son premier caractère
+(`Langues.DuCaractere`, N9), rien pour un bloc à champ ; de même pour une case. `Suggestions` en
+rend six au plus. `IgnorerPartout` vaut pour la session ; `Ajouter` met le mot au dictionnaire
+chargé — Hunspell en accepte alors la forme capitalisée — et vide le cache de la langue.
+**Les préférences** (`Preferences.cs`) gagnent `VerifierPendantLaFrappe`, vrai d'emblée, et
+`DictionnaireDeLUtilisateur`, les mots par langue, triés, chacun une fois, nettoyés à la lecture ;
+la clé inconnue de A11 survit toujours.
+
+**Qui donne le service.** `App.axaml.cs`, une ligne, comme les préférences : un modèle de vue construit
+ailleurs — un test, le banc — n'a pas de correcteur, et ne souligne rien. Le partiel du poste,
+`MainWindowViewModel.Orthographe.cs` : `Orthographe` (le dictionnaire de l'utilisateur y entre au
+passage), `VerifierPendantLaFrappe` (écrit aux préférences), `VerificationActive`,
+`VersionDeLOrthographe` (un mot ignoré ou ajouté), `FautesDuBloc`, `FauteEn`, `SuggestionsPour`,
+`CorrigerLaFaute` (un pas, par `Recherche.Remplacer` de N20 : le mot remplacé prend le style de son
+premier caractère), `IgnorerToutLeMot`, `AjouterLeMot` ; la barre d'état dit une fois par langue
+« Aucun dictionnaire pour « fr-FR » … (sudo apt install hunspell-fr) ».
+
+**Le trait.** Le suivi des blocs de N22 (`PageCanvas.CaracteresSpeciaux.cs`) suit désormais les blocs
+de la page quand les caractères spéciaux sont montrés **ou** que la vérification est active, garde la
+géométrie de chaque composition, et pose pour chaque faute un `TraitDeFaute` par ligne qu'elle
+occupe, de l'`AbscisseSur` de son début à celle de sa fin, sur la ligne de base de la ligne et au corps
+de son premier caractère. Un second contrôle de l'`Overlay`, `FautesSoulignees` (`Views/FautesSoulignees.cs`,
+neuf), posé à la première vérification active, les dessine dans le repère de chaque bloc, mené et
+découpé par les mêmes couches que les caractères : la vague de I7 (`Souligne.Vague`), d'un pixel
+d'écran d'épaisseur et d'amplitude à tous les zooms, à un cinquième du corps sous la ligne de base,
+au rouge `Aucun` de l'apparence, la seule couleur rouge de la maquette (son commentaire le dit). Un
+texte qui change recompose son bloc, comme pour N22, sur le geste qui suit (« peu après la
+frappe ») ; le curseur qui bouge, un mot ignoré ou ajouté, la langue du document ne font que relire
+les fautes sur la composition gardée. Le mot qu'on tape — le curseur à son bout, rien de sélectionné —
+n'est pas souligné. Rien dans `PageRoot` ni au PDF ; `PageCanvas.axaml.cs` n'est pas touché.
+
+**`F7`** (*Edition ▸ Vérifier l'orthographe…*, liée ; la fiche 24 la dit liée) : la barre de N20 passe
+en mode orthographe (`ModeOrthographe`) — le mot, une liste des suggestions, Ignorer, Ignorer tout,
+Remplacer, Ajouter au dictionnaire et sa croix. Le parcours reprend les cibles et le départ de N20
+(`Cibles`, `Depart`) : les pages, puis de haut en bas et de gauche à droite, les groupes et les cases
+compris ; le curseur dans un mot le vérifie ; au bout, la vérification reprend au début et le dit ;
+sans faute, « La vérification orthographique est terminée. ». Une faute dans un bloc est sélectionnée
+en saisie par le `TexteTrouve` de N20, la page suivant ; puis la liste des suggestions prend le focus
+(`OrthographeDemandee`), la première choisie : `↑` et `↓` choisissent, `Entrée` remplace, `Échap`
+ferme la barre et rend le focus au mot sélectionné. Remplacer fait un pas. `Ctrl+F` et `Ctrl+H`
+rendent la barre à la recherche (une ligne dans `DemanderLaRecherche`, une dans `PretARechercher`).
+**Au clic droit** sur une faute en saisie — ou la touche Menu, `Maj+F10`, le curseur dans le mot ou à
+son bout —, le menu du texte d'A12 commence par ses suggestions, en gras, puis « Ignorer tout »,
+« Ajouter au dictionnaire » et un séparateur (`PageCanvas.Orthographe.cs`, neuf ; deux lignes dans
+`PageCanvas.MenuDuBloc.cs`) : posées à la préparation du menu, retirées à la suivante, jamais
+écrites dans `MainWindow.axaml`. Une suggestion remplace le mot en un pas, le curseur après lui.
+**La case** *Vérifier pendant la frappe*, au menu Edition sous *Vérifier l'orthographe…*.
+
+**Le banc** relève les fautes d'un document (`MyPublisher.Banc orthographe <doc> [--langue]
+[--dictionnaires]`, `MyPublisher.Banc/Orthographe.cs`) : trois relevés — un correcteur neuf, le même
+au cache plein, un second correcteur — qui doivent être égaux. **ATA 21 en `en-US`**, sur
+`hunspell-en-us` 1:2020.12.07-4build1 : **8 mots signalés sur 521**, les mêmes trois fois — « shutof »,
+« Tduct », « byflow », « decktemperature », « pb », « tocontrol », « inorder », « theflight » : des
+espaces perdues et deux coquilles du document. ATA 21 est écrit en anglais sous une étiquette
+`fr-FR` (N9) : dans sa langue, sur `hunspell-fr` 1:7.7-1, 308 mots sur 521. Les Fiches, en `en-US`,
+32 ; l'exemple, en `fr-FR`, 4 (« MyPublisher », « fontconfig », « mypub »).
+
+Le poste touche, hors des fichiers que le plan nomme : `Preferences.cs` (deux clés et une méthode),
+`App.axaml.cs` (une ligne), `PageCanvas.axaml` (le style du trait), `Apparence.axaml` (le commentaire
+de `CouleurAucun`), `PageCanvas.MenuDuBloc.cs` (deux appels), `MainWindowViewModel.Rechercher.cs`
+(deux lignes), la fiche 24 (F7 liée), le banc (une commande) et la recette I1 (deux vues). Ni
+`Compositeur.cs`, ni `TexteCompose.cs`, ni `PageCanvas.axaml.cs`, ni l'export.
+
+*Recette jouée* : `Scripts/recettes/N25-orthographe.sh`. Les sources — le paquet au noyau seul, sa
+licence restaurée, la MPL 1.1 et la source au README ; le service sur `/usr/share/hunspell`, donné
+par `App.axaml.cs` seul ; F7, le menu, la case, le README, la fiche 24 ; le trait dans l'`Overlay`,
+hors de `PageRoot`, de l'export et du fichier principal de la planche, à la couleur de l'apparence ;
+les vues à la recette I1 —, puis dix tests du noyau (`OrthographeTests`) et dix sur la fenêtre
+(`VerificationOrthographiqueTests`) : avec le dictionnaire de test (`Scripts/fixtures/orthographe/`,
+un anglais de 26 mots et un français de 12, écrits pour), « recieve » souligné et « receive » non,
+le trait à 0,01 pt des places de N3 ; `Rendu.Encre` de la page et le PDF identiques sans correcteur,
+vérification ouverte et fermée ; F7 sur cinq fautes de quatre blocs et deux pages, dans l'ordre de
+lecture, puis la reprise au début, Échap qui rend le mot, Ctrl+F qui rend la recherche ; Remplacer
+par `Entrée` et par le bouton, un pas chacun ; un mot ajouté qui survit à un redémarrage, Ignorer
+tout non ; le clic droit ; le mot qu'on tape, puis quitté ; la case ; le trait d'un bloc tourné à
+200 %, vu rouge à l'image, et celui d'une ligne qui sort du bloc découpé ; chaque mot dans sa langue,
+la langue du document changée, un dictionnaire absent dit une fois ; sans correcteur, rien. Enfin,
+le relevé d'ATA 21 en `en-US` sur le dictionnaire du système : 8 sur 521, stable ; sans
+`/usr/share/hunspell/en_US.dic`, la recette le dit et saute ce temps. Deux sabotages au juge : celui
+du plan, un trait ondulé dans `PageRoot` ; et *Ajouter au dictionnaire* qui n'écrit plus les
+préférences.
+
+*Ce que l'implémentation a appris.*
+- **Le suivi de N22 menait tout au repère de son propre contrôle**, qui n'est dans l'`Overlay` que si
+  les caractères ont été montrés : sans lui, aucune couche, et aucun trait. Les deux contrôles sont
+  posés au même endroit ; le repère est celui des caractères s'il y est, sinon celui des fautes.
+- **Une `ListBox` d'Avalonia 11.3.9 ne prend pas le focus** (`Focusable` faux par défaut : ses
+  éléments le prennent) ; la liste des suggestions le déclare. Et le focus ne se donne qu'après la
+  mise en page : la barre le prend en file, derrière la saisie que la planche ouvre sur la faute ;
+  la sélection du mot reste celle que le modèle de vue garde (N15).
+- **Le PDF n'est pas identique d'un export à l'autre** : PdfSharp tire au hasard le préfixe du
+  sous-ensemble de chaque police (`/TOXCZB+DejaVu#20Sans`) et écrit un identifiant et des dates XMP. Le
+  test compare les deux exports ces quatre champs retirés.
+- **ATA 21 n'est pas en français** : N9 lit fidèlement son étiquette `fr-FR`, mais le texte est
+  anglais — d'où le relevé en `en-US` que le plan demandait, et 308 mots signalés dans sa langue.
+
+*Choisi sans certitude* :
+- la licence : prise sous MPL 1.1, l'obligation est une mention et un lien ; c'est la lecture de la
+  § 3.6 pour une bibliothèque non modifiée — au propriétaire de la confirmer ;
+- *Edition*, faute de menu *Outils* : Publisher range *Spelling* et ses options sous *Tools* ; MyPublisher
+  n'a pas ce menu, et la vérification prend la barre de la recherche ;
+- *Ignorer* laisse la faute soulignée et passe à la suivante ; Word efface ce soulignement-là ;
+- les mots tout en capitales et ceux qui portent un chiffre ne sont pas vérifiés, sans case pour le
+  changer ; le mot du curseur n'est pas souligné tant que le curseur est à son bout ;
+- le trait garde un pixel d'épaisseur à tous les zooms, à un cinquième du corps sous la ligne de base ;
+- les suggestions sont six au plus ; un mot sans suggestion se dit « (Aucune suggestion) », grisé ;
+- *Remplacer* sans suggestion ne fait rien et le dit ; il n'y a pas de champ « Remplacer par » libre :
+  on corrige dans le texte.
+
+*Relevé, non corrigé* :
+- **`Scripts/verifier-dependances.sh` échoue déjà sur la base** : `System.Security.Cryptography.Pkcs`
+  8.0.1, tiré par PdfSharp 6.2.1, porte GHSA-846f-f764-76mx (haute) et GHSA-2fmv-rv2c-59x7 (moyenne).
+  Rien du poste ; à un poste de la phase Q ;
+- les cases de tableau ne sont pas soulignées : elles ne sont pas dessinées par `TexteCompose`. F7 les
+  parcourt, et la barre d'état nomme la case ;
+- un dictionnaire se charge sur le fil de l'interface, à la première demande de sa langue : une
+  centaine de millisecondes au premier bloc français.
 
 ### Lot 4 — Les postes lourds de fin
 

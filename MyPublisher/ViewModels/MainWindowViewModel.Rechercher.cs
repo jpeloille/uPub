@@ -161,6 +161,8 @@ public partial class MainWindowViewModel
 
     private void DemanderLaRecherche(bool remplacer)
     {
+        // La barre repasse à la recherche si F7 l'avait mise à l'orthographe (N25).
+        ModeOrthographe = false;
         RechercheVisible = true;
         RechercheDemandee?.Invoke(this, remplacer);
     }
@@ -253,7 +255,7 @@ public partial class MainWindowViewModel
     /// <summary>Il y a de quoi chercher ; sinon, la barre s'ouvre et le dit.</summary>
     private bool PretARechercher()
     {
-        if (RechercheVisible && !string.IsNullOrEmpty(TexteCherche)) return true;
+        if (RechercheVisible && !ModeOrthographe && !string.IsNullOrEmpty(TexteCherche)) return true;
 
         DemanderLaRecherche(remplacer: false);
         if (string.IsNullOrEmpty(TexteCherche)) Status = "Tapez le texte à rechercher.";

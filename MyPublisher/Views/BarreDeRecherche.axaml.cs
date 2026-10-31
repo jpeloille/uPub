@@ -42,9 +42,18 @@ public partial class BarreDeRecherche : UserControl
 
     private void Ecouter()
     {
-        if (_vm is not null) _vm.RechercheDemandee -= OnRechercheDemandee;
+        if (_vm is not null)
+        {
+            _vm.RechercheDemandee -= OnRechercheDemandee;
+            _vm.OrthographeDemandee -= OnOrthographeDemandee;
+        }
+
         _vm = DataContext as MainWindowViewModel;
-        if (_vm is not null) _vm.RechercheDemandee += OnRechercheDemandee;
+        if (_vm is not null)
+        {
+            _vm.RechercheDemandee += OnRechercheDemandee;
+            _vm.OrthographeDemandee += OnOrthographeDemandee;
+        }
     }
 
     /// <summary>
@@ -62,7 +71,23 @@ public partial class BarreDeRecherche : UserControl
         }, DispatcherPriority.Background);
     }
 
-    /// <summary><c>Entrée</c> cherche le suivant ; <c>Échap</c> ferme la barre et rend la planche.</summary>
+    /// <summary>
+    /// <c>F7</c> (poste N25) : la liste des suggestions prend le focus, une fois que la mise en page
+    /// l'a posée — la barre vient peut-être de paraître —, et après que la planche a ouvert la
+    /// saisie sur la faute, ce qu'elle fait au même rang de la file.
+    /// </summary>
+    private void OnOrthographeDemandee(object? sender, EventArgs e)
+    {
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (Suggestions.IsEffectivelyVisible) Suggestions.Focus();
+        }, DispatcherPriority.Background);
+    }
+
+    /// <summary>
+    /// <c>Entrée</c> cherche le suivant — remplace la faute, dans la liste des suggestions (N25) ;
+    /// <c>Échap</c> ferme la barre et rend la planche, ou le mot fautif.
+    /// </summary>
     private void SurTouche(object? sender, KeyEventArgs e)
     {
         if (_vm is null || e.KeyModifiers != KeyModifiers.None) return;
@@ -72,6 +97,11 @@ public partial class BarreDeRecherche : UserControl
             case Key.Escape:
                 _vm.FermerLaRechercheCommand.Execute(null);
                 RendreLaPlanche();
+                e.Handled = true;
+                break;
+            case Key.Enter when _vm.ModeOrthographe && e.Source is Visual source &&
+                                source.GetSelfAndVisualAncestors().Contains(Suggestions):
+                _vm.RemplacerLaFauteCommand.Execute(null);
                 e.Handled = true;
                 break;
             case Key.Enter when e.Source is TextBox:

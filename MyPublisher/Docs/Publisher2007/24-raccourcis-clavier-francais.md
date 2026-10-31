@@ -132,7 +132,7 @@ Les sections de l'aide, dans son ordre, sans celle du ruban.
 |---|---|---|---|
 | Afficher le volet Office Rechercher et remplacer, dans lequel l’option Rechercher est sélectionnée | F3, Ctrl+F ou Maj+F4 | HR | **lié** (N20) : `Ctrl+F` ouvre la barre de recherche, le focus au texte cherché ; `F3` et `Maj+F4` cherchent le suivant, et ouvrent la barre s'il n'y a rien à chercher |
 | Afficher le volet Office Rechercher et remplacer , avec l’option Remplacer sélectionnée | Ctrl+H | HR | **lié** (N20) : la barre de recherche, le focus au texte de remplacement |
-| Vérifier l’orthographe | F7 | HR | **réservé** : N25 |
+| Vérifier l’orthographe | F7 | HR | **lié** (N25) : la barre de recherche en mode orthographe, sur la faute suivante, sélectionnée dans son texte, avec ses suggestions |
 | Afficher le volet Office Dictionnaire des synonymes | Maj+F7 | HR | **réservé**, aucun poste : MyPublisher n'a pas de dictionnaire des synonymes |
 | Afficher le volet Office Rechercher | Maintenez la touche Alt enfoncée et cliquez sur un mot | HR | **écarté** : un clic, vers un volet de recherche documentaire que rien ne prévoit |
 | Sélectionner tout le texte. Si le curseur se trouve dans une zone de texte, cela sélectionne tout le texte de l’article actuel. Si le curseur ne se trouve dans aucune zone de texte, cela sélectionne tous les objets d’une page. | Ctrl+A | HR | **lié** (N6) : les blocs de la page ; dans la saisie d'un bloc ou dans un champ, tout son texte |

@@ -1,0 +1,12 @@
+# Un petit dictionnaire anglais, écrit pour les tests du poste N25 (la vérification
+# orthographique) : les tests et la recette ne dépendent d'aucun paquet du système.
+# Au format de Hunspell ; S fait le pluriel, D le passé. REP propose « ei » pour « ie ».
+SET UTF-8
+TRY esianrtolcdugmphbyfvkwzESIANRTOLCDUGMPHBYFVKWZ
+REP 1
+REP ie ei
+SFX S Y 1
+SFX S 0 s .
+SFX D Y 2
+SFX D 0 d e
+SFX D 0 ed [^e]

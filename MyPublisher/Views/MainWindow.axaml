@@ -171,6 +171,10 @@
         <KeyBinding Gesture="Ctrl+H" Command="{Binding OuvrirLeRemplacementCommand}"/>
         <KeyBinding Gesture="F3" Command="{Binding RechercherLeSuivantCommand}"/>
         <KeyBinding Gesture="Shift+F4" Command="{Binding RechercherLeSuivantCommand}"/>
+        <!-- La vérification orthographique (poste N25), à la touche de Publisher en français
+             (fiche 24) : F7 ouvre la barre de recherche en mode orthographe, sur la faute suivante.
+             Même en saisie : la zone de texte ne prend pas F7. -->
+        <KeyBinding Gesture="F7" Command="{Binding VerifierLOrthographeCommand}"/>
     </Window.KeyBindings>
 
     <Window.Styles>
@@ -716,6 +720,13 @@
                                   Command="{Binding OuvrirLaRechercheCommand}"/>
                         <MenuItem x:Name="MenuRemplacer" Header="Re_mplacer…" InputGesture="Ctrl+H"
                                   Command="{Binding OuvrirLeRemplacementCommand}"/>
+                        <!-- Tools ▸ Spelling ▸ Spelling… et Spelling Options de Publisher (poste N25) :
+                             MyPublisher n'a pas de menu Outils ; la vérification va avec la recherche,
+                             dont elle prend la barre. La case est gardée dans les préférences. -->
+                        <MenuItem x:Name="MenuVerifierLOrthographe" Header="_Vérifier l'orthographe…" InputGesture="F7"
+                                  Command="{Binding VerifierLOrthographeCommand}"/>
+                        <MenuItem x:Name="MenuVerifierPendantLaFrappe" Header="Vérifier pendant la _frappe"
+                                  ToggleType="CheckBox" IsChecked="{Binding VerifierPendantLaFrappe, Mode=TwoWay}"/>
                         <Separator/>
                         <MenuItem Header="_Informations professionnelles…" Click="OnEditBusinessInfo"/>
                     </MenuItem>

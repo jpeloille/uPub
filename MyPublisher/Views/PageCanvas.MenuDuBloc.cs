@@ -88,6 +88,7 @@ public partial class PageCanvas
     private bool OuvrirLeMenuAuClavier(KeyEventArgs e)
     {
         if (e.Key != Key.F10 || e.KeyModifiers != KeyModifiers.Shift || ContextMenu is not { } menu || menu.IsOpen) return false;
+        _caractereSousLeMenu = null;
         if (!Preparer(menu, this, auClavier: true)) return false;
 
         // Ouvert sous la place que Preparer a posée ; la demande du pointeur garde la sienne.
@@ -117,6 +118,7 @@ public partial class PageCanvas
             return;
         }
 
+        RetenirLeCaractereSousLeMenu(e);
         if (!Preparer(menu, source as Control ?? this, auClavier: !e.TryGetPosition(null, out _))) e.Handled = true;
     }
 
@@ -134,6 +136,8 @@ public partial class PageCanvas
         var texte = _vm.SingleSelected is TextFrame;
         var coordonnees = _vm.EstUnBlocDeCoordonnees;
         _vm.NotifierLeMenuDuBloc();
+        // Les suggestions d'une faute, en tête du menu du texte (N25).
+        PoserLesSuggestions(menu, contexte);
         MontrerLesEntrees(menu, contexte, texte, coordonnees);
 
         // Le texte en saisie garde sa sélection pendant que le menu a le focus : Copier la lira.

@@ -3091,6 +3091,22 @@ saboter "l'exposant garde le corps plein (N24)" \
     'FontSize = corps,' \
     'N24-exposant-indice-capitales|ExposantEtCapitales'
 
+# N25 : le sabotage du plan — un trait ondulé dans PageRoot. Les fautes soulignées entreraient dans
+# ce que l'écran compare au PDF (règle 4) : l'encre de la page changerait avec la vérification.
+saboter "un trait ondulé des fautes (N25) dessiné dans PageRoot" \
+    MyPublisher/Views/PageCanvas.CaracteresSpeciaux.cs \
+    '        Overlay.Children.Insert(0, _fautesSoulignees);' \
+    '        PageRoot.Children.Add(_fautesSoulignees);' \
+    'N25-orthographe|VerificationOrthographiqueTests'
+
+# N25 : Ajouter au dictionnaire qui n'écrit plus les préférences — le mot vaut pour la session, et
+# se souligne de nouveau au redémarrage. Gardé par le redémarrage d'un test, sans horloge.
+saboter "un mot ajouté au dictionnaire (N25) ne survit pas au redémarrage" \
+    MyPublisher/ViewModels/MainWindowViewModel.Orthographe.cs \
+    '        if (Preferences.AjouterAuDictionnaire(faute.Langue, faute.Mot)) EnregistrerLesPreferences();' \
+    '        Preferences.AjouterAuDictionnaire(faute.Langue, faute.Mot);' \
+    'N25-orthographe|VerificationOrthographiqueTests'
+
 # Un motif qui ne désigne aucun sabotage ne prouve rien. « eprouver-le-juge.sh I4 » sortait
 # en 0 sur « 0 sabotages, 0 attrapés », quand les intitulés de la planche ne portaient pas
 # encore le code du poste : le filet passait pour éprouvé sans qu'on l'ait troué.

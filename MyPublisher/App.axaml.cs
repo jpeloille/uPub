@@ -39,6 +39,11 @@ public partial class App : Application
             // banc, en prend un magasin en mémoire, qui n'écrit nulle part.
             var viewModel = new MainWindowViewModel(preferences: Preferences.Charger());
 
+            // Le correcteur orthographique (poste N25), sur les dictionnaires du système : donné
+            // ici, et seulement ici, comme les préférences. Un modèle de vue construit ailleurs n'en
+            // a pas, et ne souligne rien.
+            viewModel.Orthographe = Orthographe.DuSysteme();
+
             // « MyPublisher document.mypub » ouvre directement le document, ce qui
             // permet aussi d'associer l'extension au gestionnaire de fichiers.
             var startupFile = desktop.Args?.FirstOrDefault(arg =>
