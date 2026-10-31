@@ -96,6 +96,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **Q24** | Annuler ou Rétablir ne laisse plus une saisie hors de toute transaction | **100 %** | `Undo` et `Redo` referment ce qui est ouvert, comme avant, puis lèvent un avis sur chaque chemin, rien à défaire compris (`MainWindowViewModel.Transactions.cs`), sans rien rouvrir eux-mêmes : chaque propriétaire encore actif rouvre sa propre transaction, et lui seul — la saisie sur la page si elle l'est toujours, le champ du dock ou de la barre s'il a toujours le focus, et deux que le plan ne nommait pas, le glissé dont le bouton est tenu et le sélecteur de couleur resté ouvert. Une annulation qui relit le document referme la saisie, et rien ne se rouvre pour elle. Les trois cas du plan se montraient, le déduit compris : un champ de la barre sous un `Ctrl+Z` sans rien à annuler, une marge de l'onglet Document sous une vraie annulation ; les champs du bloc, eux, perdent le focus à une annulation, la sélection se vidant en passant. Neuf tests, dont sept tombaient sur le code d'avant ; le test du double-clic de Q14 n'est plus joué à froid par la recette, où il tombait sous la charge de la machine, avant Q24 comme après ; relecture et juge après fusion. Recette dans `Scripts/recettes/` |
 | **Q25** | Un réglage fait pendant une saisie a son propre pas | **100 %** | Confirmé d'abord par un test : la transaction de la saisie s'ouvrait au double-clic et ne se refermait qu'à Échap, et le corps réglé à la barre, le retrait saisi au dock ou la couleur prise au sélecteur pendant la frappe se fondaient dans son pas. Elle suit désormais le focus de la zone de saisie sur la page — ouverte quand la zone le prend, refermée quand elle le perd, et à `EndTextEdit` ; la saisie reste ouverte quand on clique dans la barre ou le dock, et les boutons G, I et S, qui ne prennent pas le focus, gardent `UnGesteUnPas`. La réponse de la planche à l'avis de Q24 suit le même focus : sous un `Ctrl+Z` sans rien à annuler, seul le champ qui a le focus rouvre sa transaction. Le sélecteur de couleur referme la sienne dès que son volet commence à se refermer, avant de rendre le focus à la zone, qui rouvrait la sienne dedans. Cinq tests, dont quatre tombaient sur le code d'avant ; relecture et juge après fusion. Recette dans `Scripts/recettes/` |
 | **Q26** | L'import garde le fer des cases et des paragraphes à gauche | **100 %** | Décidé le 31 octobre 2026 par le propriétaire, sur le relevé de R6. `PubImporter.cs` retient le fer de chaque paragraphe ouvert : une case dont le bloc de texte n'est pas ouvert dans la source prend dans `FinCellule` le fer de son premier paragraphe — les 16 valeurs centrées des Fiches le sont, à l'import, à l'écran (0,0000 pt) et au PDF (0,022 pt au plus) — ; dans `FinTexte`, le fer du bloc est le plus répandu de tous ses paragraphes, et tout paragraphe d'un autre fer reçoit son écart, le fer à gauche compris — ATA 21 lu paragraphe par paragraphe au fer de `pub2raw`, 31 justifiés et 21 à gauche. Avant et après, bloc par bloc, les deux documents ne diffèrent que par ces 20 fers. `FormatVersion` reste 5 : un document déjà importé se réimporte. L'aller-retour de R6 sur les Fiches joué : chaque bande prise d'un clic, le dock montre « Centré » sans rien écrire. Huit tests sous `poste=Q26` (cinq du noyau, trois d'interface) ; règle 14 : un test de Q1 réécrit (l'écart du titre d'ATA 21 reste au titre sous un saut tapé), le commentaire d'un test de R6 ; deux sabotages au juge. Décidé par le propriétaire le 31 octobre 2026 : `comparer-mots.sh` (Q13) tient une ligne centrée par son milieu, une ligne au fer à droite par son bout, les autres par leur premier mot, toujours à 1 pt — l'écran crénèle et le PDF non ; le banc donne le fer de chaque ligne composée ; un sabotage de plus au juge, une ligne centrée posée 2 pt trop à droite au PDF. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
+| **Q27** | La faille de la dépendance de PdfSharp | 0 % | Décidé le 1er novembre 2026 par le propriétaire, sur le relevé de N25 ; salve Saisie 10 |
 | **I1** | Apparence de l'interface | **100 %** | `Views/Apparence.axaml` — pas « charte », qui nomme le jeu du document —, chargée par `App.axaml` : les 26 couleurs de l'interface de la maquette, une fois chacune et sous leur nom ; cinq classes aux tailles et aux couleurs de la feuille de style de la maquette, dont le bouton-icône de 30 × 30 plein d'accent quand il est actif ; 35 icônes au tracé de la maquette, à la couleur courante, une par emploi. L'écran d'aujourd'hui ne change pas d'un pixel. La recette tient la liste des vues de la phase et le poste de chaque icône, que les postes suivants complètent ; une vue qui cite l'apparence ou écrit en dur une de ses couleurs sans être dans la liste la fait échouer. Recette dans `Scripts/recettes/` |
 | **I2** | Disposition de la fenêtre | **100 %** | La fenêtre de la maquette, de haut en bas. Barre de menus : la marque, le titre du document centré, deux menus neufs — Texte (gras `Ctrl+G`, italique `Ctrl+I`, les quatre alignements, « Importer un te_xte… ») et Fenêtre (les deux panneaux, et B7). Barre principale à icônes : Annuler et Rétablir grisés sur un historique vide, mais pas pendant une saisie qui a déjà changé le bloc ; « Page entière » posé pour I6. La place de la barre contextuelle, de hauteur constante, et sa pastille, dans son propre fichier pour I3. Rail d'outils, sans Main, Zoom ni Ligne avant leur geste. Panneau Pages, dont l'entrée est un contrôle à part pour I5. Dock à quatre onglets, sections repliables retenues le temps de la session, longueurs en millimètres, vignettes de Fond et contour, « Blocs de la page » l'avant en tête. Barre d'état : la page, le format, le zoom en échelle logarithmique. Chaque champ, chaque onglet et chaque geste de la fenêtre fait un seul pas d'annulation ; les vingt-six icônes du poste servent. Repris après relecture : quatorze défauts, tous refermés ; jugé le 26 octobre 2026, sur la fenêtre de I3, I5 et I6 : vingt-cinq sabotages, vingt-cinq pris par leur garde-fou. Recette dans `Scripts/recettes/` |
 | **I3** | Barre contextuelle | **100 %** | La barre suit la sélection, à la suite de la pastille de I2. Pour un bloc de texte : la police avec la garde de Q20, le corps, le gras, l'italique, le souligné — bouton S, `Ctrl+U` et « Souligné » au menu Texte sur la commande de I7, qui retire le souligné quelle qu'en soit la sorte ou pose le trait simple, et un chevron qui propose le double, l'épais et « mots seuls » —, les quatre alignements, la droite comprise, l'interligne en multiple, et la couleur du texte, dont la vignette ouvre le sélecteur du jeu ; un tableau a la même mise en forme, sans l'alignement ni le souligné ; un groupe se dissocie, plusieurs blocs s'alignent et se répartissent ; une image, une forme ou la page n'ont que la pastille. Ce que la barre porte a quitté le dock : la section Caractère, l'alignement et l'interligne de Paragraphe, la mise en forme du tableau. Chaque bouton joue la commande du menu Texte sans prendre le focus et ne se coche que par le bloc, si bien que chaque clic fait son pas, même pendant une saisie ; le sélecteur de couleur, ouvert hors de la barre, tient sa propre transaction ; `Échap` quitte un champ de la barre et rend les lettres seules aux outils. Un clic sur « Centrer le texte » centre le bloc à l'écran et au PDF en un pas. Treize tests ; relu et jugé le 26 octobre 2026 : les commandes de la barre — Aligner, Répartir, Dissocier — ne prennent plus le focus et font leur pas au clic, au lieu de l'attendre et d'y fondre la flèche suivante ; « Souligné » ne s'offre plus sans bloc de texte ; neuf sabotages au juge, le poste n'en avait aucun. Repris après le contrôle indépendant : deux de ces tests tombaient trois fois sur quatorze en suite entière — un clic dans un menu tout juste ouvert, ou sur un bouton que la barre venait d'échanger, cherchait sa cible dans la dernière image rendue, où elle n'était pas encore ; le banc, pas le produit. Le clic au centre d'un contrôle n'a plus qu'une aide, `Rendu.Cliquer`, pour les trois classes qui en avaient chacune une copie : elle attend que l'image montre le contrôle sous son centre, et échoue en nommant ce qui le couvre. Recette dans `Scripts/recettes/` |
@@ -137,9 +138,9 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **D** | Moteur de composition | — | Décision non ouverte ; à rouvrir quand A, B et C sont livrées |
 
 **Par phase** — P : 4 sur 4 · A : 11 sur 15 · B : 4 sur 7 · C : 7 sur 9 · R : 7 sur 7 ·
-Q : 23 sur 26 · I : 9 sur 9 · N : 26 sur 29 · D : non planifié.
+Q : 23 sur 27 · I : 9 sur 9 · N : 26 sur 29 · D : non planifié.
 
-Soit **91 postes sur 106**. Le 31 octobre 2026, le propriétaire a ajouté N29, sur la mesure de N21, et Q26, sur le relevé de R6. Le 25 octobre 2026, la phase N en a ajouté vingt-huit, et la phase Q
+Soit **91 postes sur 107**. Le 1er novembre 2026, le propriétaire a ajouté Q27, sur le relevé de N25. Le 31 octobre 2026, le propriétaire a ajouté N29, sur la mesure de N21, et Q26, sur le relevé de R6. Le 25 octobre 2026, la phase N en a ajouté vingt-huit, et la phase Q
 deux (Q24, Q25), tirés de la relecture du cours sous l'angle de la saisie (fiche 23). Le
 24 octobre 2026, la phase I en avait ajouté neuf, tirés de la
 maquette de la nouvelle interface. Le compte avait doublé le 11 octobre 2026 sans que rien ne
@@ -5434,6 +5435,31 @@ sur les lignes coupées autrement, non sur leur place.
   butterfly valve… » perd sa marge de 0,193 in. C'est ce que T1 de l'étude de 98 corrige ; les fers
   d'ATA 21 n'en souffrent pas, ses paragraphes voisins étant tous justifiés.
 
+### Q27 — La faille de la dépendance de PdfSharp
+
+*Décidé le 1er novembre 2026 par le propriétaire, sur le relevé de N25.* `Scripts/verifier-dependances.sh`
+(Q12) échoue, et échouait avant N25 : PdfSharp 6.2.1, au noyau, tire `System.Security.Cryptography.Pkcs`
+8.0.1, que deux avancées visent — GHSA-846f-f764-76mx (haute) et GHSA-2fmv-rv2c-59x7 (moyenne). Les
+cinq projets la reçoivent.
+
+La correction est le plus petit pas qui ferme les deux avancées, comme Q12 l'a fait pour
+`Tmds.DBus.Protocol` : la version corrigée de `Pkcs` épinglée au noyau, avec son pourquoi en
+commentaire dans le `.csproj`, ou une version de PdfSharp qui la tire d'elle-même si elle ne change
+rien d'autre. Le poste relève d'abord, dans le paquet et ses notes de version, laquelle des deux
+déplace le moins, et le dit.
+
+*Piège* : l'export doit rester celui d'avant au point près. PdfSharp tire au hasard le préfixe des
+sous-ensembles de polices et écrit un identifiant et des dates XMP (relevé de N25) : la comparaison
+des PDF les retire, et rien d'autre.
+
+*Recette* : `Scripts/verifier-dependances.sh` passe, son point 4 lisant dans `MyPublisher.deps.json`
+la version corrigée de `Pkcs` ; les PDF du corpus exportés avant et après sont identiques, ces
+quatre champs retirés ; Q13 et `Scripts/controle.sh` passent. La contre-épreuve de Q12 tient : un
+projet jetable qui tire `Pkcs` 8.0.1 y est signalé.
+
+Fichiers : `MyPublisher.Core/MyPublisher.Core.csproj`, `Scripts/verifier-dependances.sh` si son
+point 4 doit nommer le paquet, README (*Choix techniques*). Effort : léger.
+
 ---
 
 ## Phase I — La nouvelle interface
@@ -9707,6 +9733,10 @@ deux lignes sur 304 changent de largeur, aucune coupure, et l'encre de la page q
   et reste tel quel.
 - Le zoom avant n'a plus de touche au clavier ; Publisher en français n'en donne pas d'autre.
 
+*Confirmé le 1er novembre 2026 par le propriétaire* : le décalage d'Office compté sur le corps
+réduit — un indice de 10 pt descend de 3,35 pt, et non de 5 — et le zoom avant laissé sans touche
+au clavier ; il garde `F9`, `Ctrl+Maj+L`, `Ctrl+−`, `Ctrl+0`, la molette et la loupe.
+
 #### N25 — La vérification orthographique *(fiche 23, a26)*
 
 *Spécifié le 25 octobre 2026, sur la décision 6.* Publisher souligne les fautes pendant la frappe,
@@ -9887,6 +9917,10 @@ préférences.
   parcourt, et la barre d'état nomme la case ;
 - un dictionnaire se charge sur le fil de l'interface, à la première demande de sa langue : une
   centaine de millisecondes au premier bloc français.
+
+*Confirmé le 1er novembre 2026 par le propriétaire* : WeCantSpell.Hunspell prise sous MPL 1.1, la
+bibliothèque non modifiée, l'obligation tenue par la mention et le lien du README. La faille de
+`System.Security.Cryptography.Pkcs` va à Q27.
 
 ### Lot 4 — Les postes lourds de fin
 
@@ -10111,7 +10145,8 @@ y prend R6, R7, A8, A9, A11, A12, A13, Q21 et Q22. Ses salves partagent `MainWin
 | **Saisie 7** | R6 · N22 · N29 | Le paragraphe du curseur ; les caractères spéciaux, dans l'`Overlay` ; le clavier sur les lignes composées, ajouté le 31 octobre 2026 |
 | **Saisie 8** | R7 · N23 · Q26 | Le texte riche à la souris ; les puces ; le fer à l'import, ajouté le 31 octobre 2026 |
 | **Saisie 9** | N24 · N25 | Exposant et capitales ; l'orthographe |
-| **Saisie 10 à 14** | N26 · N27 · N28 · A11 · A13, un par salve | Tous dans `PageCanvas.axaml.cs` |
+| **Saisie 10** | N26 · Q27 | Taper dans un groupe (`PageCanvas`) ; la faille de PdfSharp, ajoutée le 1er novembre 2026 |
+| **Saisie 11 à 14** | N27 · N28 · A11 · A13, un par salve | Tous dans `PageCanvas.axaml.cs` |
 | **3** | A15 · B4 · Q11 | Ce qui reste des anciennes salves 3 et 5 : des postes courts, indépendants les uns des autres. B7 et Q23 étaient passés au lot 1, A10 au lot 2 ; Q10, absorbé par I4, est clos |
 | **4** | B3 + B6 · C7 · A14 | L'impression et son aperçu, la bibliothèque, le contour du caractère, chacun précédé de son essai |
 | **5** | C8 · Q18 · Q19 | Le miroir, et deux dettes sans urgence |
