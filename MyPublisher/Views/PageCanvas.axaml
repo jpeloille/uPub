@@ -300,9 +300,13 @@
                          taille, pour deux raisons : la méthode d'entrée ouvre sa fenêtre près
                          de son curseur, et ses flèches, Début, Fin et les pages suivent ses
                          lignes — qu'un poste à part rendra à la composition. Opacité nulle et
-                         non masqué : un contrôle masqué ne prend pas le focus. -->
+                         non masqué : un contrôle masqué ne prend pas le focus. Sans le menu du
+                         thème, Couper, Copier, Coller (poste A12) : la touche Menu, que le champ
+                         reçoit puisqu'il a le focus, ouvre le menu de la planche, qui garde ces
+                         trois entrées en saisie et y ajoute Format du bloc…. -->
                     <TextBox IsVisible="{Binding IsEditing}"
                              Opacity="0" IsHitTestVisible="False"
+                             ContextFlyout="{x:Null}"
                              Text="{Binding Saisie, Mode=TwoWay}"
                              FontSize="{Binding FontSize}"
                              FontWeight="{Binding Bold, Converter={x:Static conv:Conv.Weight}}"

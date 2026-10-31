@@ -2489,12 +2489,14 @@ saboter "le clic qui sort de la saisie (N5) ne fait rien d'autre" \
     'if (_editing is not null) { EndTextEdit(); return; }' \
     'N5-clic-de-sortie|ClicDeSortieTests'
 
-# La couche couvre aussi le texte en saisie : un clic dans le texte, au lieu d'y poser le
-# curseur, referme la saisie.
-saboter "la couche de saisie (N5) ne laisse plus le texte à son champ" \
-    MyPublisher/Views/CoucheDeSaisie.cs \
-    'new Rect(Bounds.Size).Contains(point) && Laisse?.Invoke(point) != true;' \
-    'new Rect(Bounds.Size).Contains(point);' \
+# Repris par A12 (règle 14), après la voie 2a : la couche ne laisse plus rien au champ caché, et
+# l'ancien sabotage — la couche qui couvre le texte en saisie — n'avait plus de prise. Celui-ci
+# lui fait laisser toute la planche pendant la saisie, comme avant N5 : un clic sur un autre bloc
+# ne le prend plus d'un seul geste.
+saboter "la couche de saisie (N5) se laisse traverser pendant la saisie" \
+    MyPublisher/Views/PageCanvas.Saisie.cs \
+    'InputLayer.Laisse = null;' \
+    'InputLayer.Laisse = _ => _editing is not null;' \
     'N5-clic-de-sortie|ClicDeSortieTests'
 
 # N6 : les raccourcis de la fenêtre laissent la touche au champ. Une liaison ne rend la touche
@@ -2941,6 +2943,38 @@ saboter "le bord d'un caractère (N21) mesuré hors du morceau façonné" \
     'var avant = dedans <= 0 ? 0 : metriques.Bord(morceau.Texte, morceau.Style, dedans);' \
     'var avant = dedans <= 0 ? 0 : metriques.Largeur(morceau.Texte[..dedans], morceau.Style);' \
     'N21-saisie-sur-la-composition|SaisieSurLaCompositionTests'
+
+# A12 : le clic droit sur un bloc hors de la sélection ne le prend plus — le menu s'ouvre sur la
+# sélection d'avant, et Couper emporterait un autre bloc que celui qu'on visait.
+saboter "le clic droit ne prend pas le bloc hors de la sélection (A12)" \
+    MyPublisher/Views/PageCanvas.MenuDuBloc.cs \
+    '        else if (!_vm.Selection.Contains(bloc)) _vm.SelectOnly(bloc);' \
+    '        else if (!_vm.Selection.Contains(bloc)) { }' \
+    'A12-menu-contextuel|MenuDuBlocTests'
+
+# A12 : une entrée du menu liée à la commande d'une voisine — Supprimer qui duplique. Elle a encore
+# un pendant aux menus, mais ni le libellé ni le geste ne sont les siens.
+saboter "une entrée du menu contextuel sur la commande d'une voisine (A12)" \
+    MyPublisher/Views/MainWindow.axaml \
+    '<MenuItem Classes="blocs" Header="_Supprimer" InputGesture="Delete" Command="{Binding DeleteSelectedCommand}"/>' \
+    '<MenuItem Classes="blocs" Header="_Supprimer" InputGesture="Delete" Command="{Binding DuplicateSelectedCommand}"/>' \
+    'A12-menu-contextuel|MenuDuBlocTests'
+
+# A12 : la demande des règles et des barres de défilement n'est plus arrêtée — un clic droit sur une
+# règle ouvre le menu de la planche.
+saboter "un clic droit sur une règle ouvre le menu (A12)" \
+    MyPublisher/Views/PageCanvas.MenuDuBloc.cs \
+    '        if (!ReferenceEquals(source, InputLayer) && !ReferenceEquals(source, this) && !dansLeTexte)' \
+    '        if (source is null)' \
+    'A12-menu-contextuel|MenuDuBlocTests'
+
+# A12 : en saisie, la zone perd sa sélection quand le menu prend le focus — elle ne la garde que pour
+# son propre menu, que la planche a remplacé.
+saboter "le texte en saisie perd sa sélection sous le menu (A12)" \
+    MyPublisher/Views/PageCanvas.MenuDuBloc.cs \
+    '            zone.ClearSelectionOnLostFocus = false;' \
+    '            zone.ClearSelectionOnLostFocus = true;' \
+    'A12-menu-contextuel|MenuDuBlocTests'
 
 # Un motif qui ne désigne aucun sabotage ne prouve rien. « eprouver-le-juge.sh I4 » sortait
 # en 0 sur « 0 sabotages, 0 attrapés », quand les intitulés de la planche ne portaient pas

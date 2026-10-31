@@ -97,6 +97,7 @@ vues_de_la_phase=(
     MyPublisher/Views/InsererDesPages.axaml
     MyPublisher/Views/BarreDeRecherche.axaml
     MyPublisher/Views/BarreDeRecherche.axaml.cs
+    MyPublisher/Views/PageCanvas.MenuDuBloc.cs
 )
 
 # Le relevé d'avant la phase : les couleurs de la maquette que des fichiers hors de la

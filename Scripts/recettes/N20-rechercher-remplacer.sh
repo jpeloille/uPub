@@ -95,7 +95,8 @@ exige('x:Class="MyPublisher.Views.BarreDeRecherche"' in barre, "la barre de rech
 for nom in ("TexteCherche", "TexteDeRemplacement", "RespecterLaCasse", "MotEntier",
             "BoutonSuivant", "BoutonRemplacer", "BoutonRemplacerTout", "BoutonFermer"):
     exige(f'x:Name="{nom}"' in barre, f"la barre n'a pas « {nom} ».")
-pose = re.search(r'<views:PageCanvas Grid\.Column="2" x:Name="PageView"/>\s*(?:<!--.*?-->\s*)?'
+# La planche porte son menu contextuel depuis A12 : son élément se ferme après lui.
+pose = re.search(r'<views:PageCanvas Grid\.Column="2" x:Name="PageView"(?:/>|>.*?</views:PageCanvas>)\s*(?:<!--.*?-->\s*)?'
                  r'<views:BarreDeRecherche Grid\.Column="2" x:Name="BarreDeRecherche"\s+'
                  r'HorizontalAlignment="Right" VerticalAlignment="Top"', fenetre, re.S)
 exige(pose is not None, "la barre n'est pas posée dans la case de la planche, par-dessus, en haut à droite.")

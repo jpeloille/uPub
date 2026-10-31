@@ -601,6 +601,19 @@ public static class Rendu
     }
 
     /// <summary>
+    /// Un clic droit en un point de la fenêtre — de la page, par <see cref="SurLaPage"/>, le plus
+    /// souvent —, et le menu contextuel qu'il ouvre, attendu comme après
+    /// <see cref="CliquerDroit(Control)"/> (poste A12). Un clic droit qui ne doit rien ouvrir se
+    /// joue par <see cref="Cliquer(TopLevel, Point, RawInputModifiers, MouseButton, bool)"/>, le
+    /// bouton dit.
+    /// </summary>
+    public static ContextMenu CliquerDroit(TopLevel racine, Point point)
+    {
+        Cliquer(racine, point, bouton: MouseButton.Right);
+        return MenuOuvert(racine, $"un clic droit en {point}");
+    }
+
+    /// <summary>
     /// Le menu contextuel ouvert dans cette racine, attendu image après image, dix au plus.
     /// <paramref name="geste"/> dit, dans l'échec, ce qui devait l'ouvrir.
     /// </summary>

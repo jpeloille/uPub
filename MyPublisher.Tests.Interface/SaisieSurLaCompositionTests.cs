@@ -8,6 +8,7 @@ using Avalonia.Controls.Presenters;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using Avalonia.VisualTree;
 using MyPublisher.Models;
 using MyPublisher.Services;
@@ -458,11 +459,14 @@ public class SaisieSurLaCompositionTests(ITestOutputHelper sortie)
         Assert.Equal(new SelectionDuTexte(bloc, null, 4, 13, 13), vm.SelectionDuTexte);
 
         var planche = fenetre.GetVisualDescendants().OfType<PageCanvas>().Single();
+        // Le menu du texte (A12) prend la demande, et la marque traitée : on la compte au passage,
+        // traitée ou non (règle 14, repris à la fusion d'A12).
         var demandes = 0;
-        planche.ContextRequested += (_, _) => demandes++;
-        Rendu.Cliquer(fenetre, Sur(8), bouton: MouseButton.Right);
+        planche.AddHandler(Control.ContextRequestedEvent, (_, _) => demandes++, RoutingStrategies.Bubble, handledEventsToo: true);
+        var menu = Rendu.CliquerDroit(fenetre, Sur(8));
         Assert.True(bloc.IsEditing, "le clic droit dans le texte a refermé la saisie");
         Assert.Equal(1, demandes);
+        Assert.Same(planche.ContextMenu, menu);
         Assert.Equal((4, 13), Selection(zone));
         Assert.Single(Marques(fenetre).Plages);
     }

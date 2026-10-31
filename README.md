@@ -211,6 +211,19 @@ pivoter d'un quart de tour, à gauche ou à droite, comme les boutons −90° et
 taille, en un pas. *Insertion ▸ Numéro de page*, *Date* et *Coordonnées ▸* posent un bloc de texte
 qui porte son champ.
 
+Un **clic droit** sur un bloc le prend — seul s'il n'était pas pris, la sélection gardée sinon — et
+ouvre son menu, comme chez Publisher : Couper, Copier, Coller, Supprimer le texte, Supprimer, Ordre ▸,
+Faire pivoter ou retourner ▸, Grouper, Dissocier, Regrouper, Aligner ou répartir ▸, Modifier le
+texte ▸ Importer un texte…, *Format du bloc…* et Zoom ▸ ; un bloc de coordonnées y ajoute *Modifier
+les coordonnées…* et *Convertir en texte*. Chaque entrée joue la commande de son pendant aux menus,
+avec la même touche ; *Supprimer le texte* vide le bloc en un pas, et *Format du bloc…* mène à la
+section du dock propre à sa sorte — le cadre du texte, l'image, le fond et le contour d'une forme,
+le trait, le groupe, le tableau —, comme un double-clic sur une image ou une forme. Dans le vide, le
+clic droit vide la sélection et ouvre le menu de la page : Coller, *Repères de mise en page…*,
+*Arrière-plan…* ; dans le texte en saisie, celui du texte : Couper, Copier, Coller, *Format du
+bloc…*. `Maj+F10` et la touche Menu l'ouvrent sous la sélection ; les règles et les barres de
+défilement n'en ont pas.
+
 `Ctrl+F1` — ou *Fenêtre ▸ Replier les panneaux* — masque le panneau Pages et le dock pour
 rendre leur place à la planche ; un second `Ctrl+F1` les rend tels qu'ils étaient. Le menu
 Fenêtre masque aussi l'un ou l'autre.
@@ -473,6 +486,7 @@ comptés pour rien : sur un AZERTY, `Ctrl+]` se tape `Ctrl+AltGr+)`, `Ctrl+[` se
 | Flèches | Déplacer de 3 pt (`Maj` : 0,5 pt) |
 | `Alt` + flèches, dans la saisie d'un bloc | Déplacer le bloc de 3 pt (`Maj` : 0,5 pt), sans quitter la saisie |
 | `Tab` / `Maj+Tab` | Sélectionner le bloc suivant / précédent dans l'ordre de la page, les blocs masqués sautés, quand la planche a le focus ; dans le dock, `Tab` va au champ suivant |
+| `Maj+F10` ou `Menu` | Ouvre le menu contextuel de la sélection, sous elle ; en saisie, celui du texte ; sans sélection, celui de la page |
 
 ### Texte
 
@@ -511,8 +525,9 @@ comptés pour rien : sur un AZERTY, `Ctrl+]` se tape `Ctrl+AltGr+)`, `Ctrl+[` se
 |---|---|
 | Clic | Dans le texte d'un bloc, y entre, le curseur au caractère visé ; sur son bord, le prend |
 | Glisser | Dans le texte, sélectionne du texte ; par le bord, déplace le bloc |
-| Double-clic | Dans le texte, sélectionne un mot ; glissé ensuite, étend la sélection par mots |
+| Double-clic | Dans le texte, sélectionne un mot ; glissé ensuite, étend la sélection par mots. Sur une image ou une forme, ouvre sa section du dock |
 | Triple-clic | Dans le texte en saisie, sélectionne le paragraphe ; glissé ensuite, étend la sélection par paragraphes |
+| Clic droit | Sur un bloc, le prend — seul s'il n'était pas pris — et ouvre son menu ; dans le vide, vide la sélection et ouvre celui de la page ; dans le texte en saisie, celui du texte ; rien sur les règles |
 | `Maj` + clic dans le texte en saisie | Étend la sélection du texte |
 | `Ctrl` ou `Maj` + clic | Ajoute un bloc à la sélection, ou l'en retire, au relâché, sans entrer dans son texte |
 | `Ctrl` + glisser un bloc | Copie la sélection, le bloc compris : les copies suivent le pointeur, les originaux restent ; un seul pas |

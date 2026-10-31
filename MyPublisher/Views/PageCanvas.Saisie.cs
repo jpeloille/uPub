@@ -261,9 +261,8 @@ public partial class PageCanvas
 
         // La saisie sur le texte composé (poste N21). La couche ne laisse plus rien au champ,
         // caché : elle garde le clic dans le texte en saisie, que la pression ci-dessous prend
-        // avant qu'OnPointerPressed ne referme la saisie. Ce que la couche laissait au champ
-        // (LaisseAuTexteEnSaisie, poste N5) ne sert plus ; il reste dans le fichier principal de
-        // la planche, qu'un autre poste de la salve retouche (règle 16).
+        // avant qu'OnPointerPressed ne referme la saisie. Ce que la couche laissait au champ, du
+        // poste N5 à la voie 2a, a quitté la planche (A12, après la fusion de N21).
         InputLayer.Laisse = null;
         AddHandler(PointerPressedEvent, PressionDansLaSaisie, RoutingStrategies.Tunnel);
 
