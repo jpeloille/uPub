@@ -50,6 +50,14 @@ public readonly record struct ReglagesDeLaPlage
     public double? SpaceBefore { get; init; }
     public double? SpaceAfter { get; init; }
     public TextAlign? Align { get; init; }
+
+    /// <summary>
+    /// La liste (poste N23), à la pose seulement : <see cref="ListeDeParagraphe.Aucune"/> sort les
+    /// paragraphes de la liste du bloc. <see cref="MiseEnForme.Lire(string, IReadOnlyList{ParagraphSpan}, ParagrapheEffectif, Plage)"/>
+    /// la laisse nulle — « aucune » et « mixte » s'y confondraient — : la liste se lit paragraphe par
+    /// paragraphe, sur <see cref="ParagrapheEffectif.Liste"/>, avec ses numéros (<see cref="Listes"/>).
+    /// </summary>
+    public ListeDeParagraphe? Liste { get; init; }
 }
 
 /// <summary>
@@ -452,40 +460,49 @@ public static class MiseEnForme
     /// Ce qu'un écart de paragraphe dit, sans sa place : la règle de
     /// <see cref="ParagrapheEffectif.Resoudre"/>. Même exigence que pour
     /// <see cref="Surcharges"/> : toutes les propriétés de <see cref="ParagraphSpan"/> y
-    /// sont (N23, les listes, l'y ajoutera).
+    /// sont, la liste de N23 comprise.
     /// </summary>
     private readonly record struct SurchargesDeParagraphe(
         double? IndentLeft, double? IndentRight, double? IndentFirstLine, double? SpaceBefore,
-        double? SpaceAfter, TextAlign? Align)
+        double? SpaceAfter, TextAlign? Align, ListeDeParagraphe? Liste = null)
     {
         public static SurchargesDeParagraphe De(ParagraphSpan e) =>
-            new(e.IndentLeft, e.IndentRight, e.IndentFirstLine, e.SpaceBefore, e.SpaceAfter, e.Align);
+            new(e.IndentLeft, e.IndentRight, e.IndentFirstLine, e.SpaceBefore, e.SpaceAfter, e.Align, e.Liste);
 
         public ParagraphSpan Ecart(int debut, int fin) => new()
         {
             Start = debut, Length = fin - debut, IndentLeft = IndentLeft, IndentRight = IndentRight,
             IndentFirstLine = IndentFirstLine, SpaceBefore = SpaceBefore, SpaceAfter = SpaceAfter, Align = Align,
+            Liste = Liste,
         };
 
         public SurchargesDeParagraphe Puis(SurchargesDeParagraphe dessus) => new(
             dessus.IndentLeft ?? IndentLeft, dessus.IndentRight ?? IndentRight,
             dessus.IndentFirstLine ?? IndentFirstLine, dessus.SpaceBefore ?? SpaceBefore,
-            dessus.SpaceAfter ?? SpaceAfter, dessus.Align ?? Align);
+            dessus.SpaceAfter ?? SpaceAfter, dessus.Align ?? Align, dessus.Liste ?? Liste);
 
         public ParagrapheEffectif Sur(ParagrapheEffectif commun) => new(
             IndentLeft ?? commun.IndentLeft, IndentRight ?? commun.IndentRight,
             IndentFirstLine ?? commun.IndentFirstLine, SpaceBefore ?? commun.SpaceBefore,
-            SpaceAfter ?? commun.SpaceAfter, Align ?? commun.Align);
+            SpaceAfter ?? commun.SpaceAfter, Align ?? commun.Align)
+        {
+            Liste = Liste is { } liste ? Listes.Effective(liste) : Listes.Effective(commun.Liste),
+        };
 
         public SurchargesDeParagraphe Poser(ReglagesDeLaPlage reglages) => new(
             reglages.IndentLeft ?? IndentLeft, reglages.IndentRight ?? IndentRight,
             reglages.IndentFirstLine ?? IndentFirstLine, reglages.SpaceBefore ?? SpaceBefore,
-            reglages.SpaceAfter ?? SpaceAfter, reglages.Align ?? Align);
+            reglages.SpaceAfter ?? SpaceAfter, reglages.Align ?? Align, reglages.Liste ?? Liste);
 
+        /// <summary>
+        /// Une liste qui dessine ce que le bloc dessine devient nulle : « aucune » sous un bloc
+        /// sans liste, ou la liste même du bloc. « Aucune » sous un bloc qui en porte une reste.
+        /// </summary>
         public SurchargesDeParagraphe Normaliser(ParagrapheEffectif commun) => new(
             Sauf(IndentLeft, commun.IndentLeft), Sauf(IndentRight, commun.IndentRight),
             Sauf(IndentFirstLine, commun.IndentFirstLine), Sauf(SpaceBefore, commun.SpaceBefore),
-            Sauf(SpaceAfter, commun.SpaceAfter), Sauf(Align, commun.Align));
+            Sauf(SpaceAfter, commun.SpaceAfter), Sauf(Align, commun.Align),
+            Liste is { } liste && Listes.Effective(liste) == Listes.Effective(commun.Liste) ? null : Liste);
     }
 
     // -------------------------------------------------------------- la mise en forme, une fois

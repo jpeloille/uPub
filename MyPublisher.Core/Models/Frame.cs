@@ -674,6 +674,17 @@ public partial class TextFrame : Frame
     private double _spaceAfter;
 
     /// <summary>
+    /// La liste de tous les paragraphes du bloc (poste N23) : aucune, des puces ou des numéros ;
+    /// ses écarts peuvent la changer. Nulle par défaut — le cas de tous les documents écrits
+    /// jusqu'ici, qui se composent comme avant —, sans migration : <c>FormatVersion</c> reste à 5
+    /// (règle 15). Une liste ne court pas d'un bloc à l'autre : chaque bloc numérote les siens.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Paragraph))]
+    [property: JsonPropertyOrder(285)]
+    private ListeDeParagraphe? _liste;
+
+    /// <summary>
     /// Paragraphes qui s'écartent des réglages ci-dessus, repérés par indice. Vide veut
     /// dire que le bloc est d'un seul tenant — et dans les documents réels, il ne l'est
     /// pas : un même bloc d'ATA 21 mêle des paragraphes au fer à gauche et des listes à
@@ -732,7 +743,7 @@ public partial class TextFrame : Frame
     /// </summary>
     [JsonIgnore]
     public ParagrapheEffectif Paragraph =>
-        new(IndentLeft, IndentRight, IndentFirstLine, SpaceBefore, SpaceAfter, Align);
+        new(IndentLeft, IndentRight, IndentFirstLine, SpaceBefore, SpaceAfter, Align) { Liste = Listes.Effective(Liste) };
 
     /// <summary>Le découpage en colonnes d'un seul tenant, pour la composition.</summary>
     [JsonIgnore] public Colonnage Colonnage => new(Columns, ColumnGap);
@@ -757,7 +768,7 @@ public partial class TextFrame : Frame
             PaddingRight = PaddingRight, PaddingBottom = PaddingBottom, Field = Field,
             IndentLeft = IndentLeft, IndentRight = IndentRight,
             IndentFirstLine = IndentFirstLine, SpaceBefore = SpaceBefore, SpaceAfter = SpaceAfter,
-            Columns = Columns, ColumnGap = ColumnGap, VerticalAlign = VerticalAlign
+            Liste = Liste, Columns = Columns, ColumnGap = ColumnGap, VerticalAlign = VerticalAlign
         };
         // Les fragments comme les écarts de paragraphe sont copiés et non partagés :
         // deux blocs issus d'une duplication doivent pouvoir diverger.

@@ -438,6 +438,8 @@ public sealed class GeometrieDuTexte
         Morceau? suivant = null;
         foreach (var morceau in posee.Ligne.Morceaux)
         {
+            // La marque d'une liste n'est pas du texte (poste N23).
+            if (morceau.EstUneMarque) continue;
             if (morceau.Debut < index && index <= morceau.Debut + morceau.Texte.Length) return morceau.Style;
             if (morceau.Debut >= index) suivant ??= morceau;
         }

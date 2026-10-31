@@ -203,7 +203,11 @@ public sealed class ParagrapheVise : ObservableObject
         return bloc.Paragraph != avant;
     }
 
-    private bool Ecrire(Func<TextFrame, bool> ecriture)
+    /// <summary>
+    /// Une écriture du panneau sur le bloc seul, ses avis tenus jusqu'à la fin. Interne depuis N23 :
+    /// la liste du paragraphe (<see cref="ListeVisee"/>) écrit par elle.
+    /// </summary>
+    internal bool Ecrire(Func<TextFrame, bool> ecriture)
     {
         if (Bloc is not { } bloc || _enEcriture) return false;
 
@@ -269,7 +273,7 @@ public sealed class ParagrapheVise : ObservableObject
         {
             case nameof(TextFrame.Text) or nameof(TextFrame.Align) or nameof(TextFrame.IndentLeft)
                 or nameof(TextFrame.IndentRight) or nameof(TextFrame.IndentFirstLine)
-                or nameof(TextFrame.SpaceBefore) or nameof(TextFrame.SpaceAfter):
+                or nameof(TextFrame.SpaceBefore) or nameof(TextFrame.SpaceAfter) or nameof(TextFrame.Liste):
                 Notifier();
                 break;
         }
