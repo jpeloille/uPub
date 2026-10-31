@@ -192,6 +192,14 @@ public static class PubImporter
         private readonly Dictionary<string, (int Caracteres, int Fragments)> _languesDuBloc = new(StringComparer.Ordinal);
         private readonly Dictionary<string, (int Caracteres, int Fragments)> _languesDuDocument = new(StringComparer.Ordinal);
         private readonly List<ParagraphSpan> _paragraphes = [];
+
+        /// <summary>
+        /// Le fer de chaque paragraphe ouvert, dans l'ordre, qu'il ait reçu un écart ou non
+        /// (poste Q26) : <see cref="_paragraphes"/> ne garde que ceux qui s'écartent du
+        /// paragraphe ordinaire, et un paragraphe au fer à gauche sans autre réglage n'y
+        /// est pas.
+        /// </summary>
+        private readonly List<TextAlign> _fers = [];
         private int _paragraphe;
         private int _debutFragment;
         private Dictionary<string, string>? _styleCourant;
@@ -323,6 +331,7 @@ public static class PubImporter
             _fragments.Clear();
             _languesDuBloc.Clear();
             _paragraphes.Clear();
+            _fers.Clear();
             _paragraphe = 0;
         }
 
@@ -371,6 +380,7 @@ public static class PubImporter
                 "justify" => TextAlign.Justify,
                 _ => TextAlign.Left,
             };
+            _fers.Add(fer);
 
             if (gauche != 0 || droite != 0 || premiere != 0 || avant != 0 || apres != 0 ||
                 fer != TextAlign.Left)
@@ -577,14 +587,25 @@ public static class PubImporter
             Parler(_bloc);
             Degager(_bloc);
             foreach (var fragment in _fragments) _bloc.Spans.Add(fragment);
-            foreach (var paragraphe in _paragraphes) _bloc.Paragraphs.Add(paragraphe);
 
             // L'alignement le plus répandu devient celui du bloc ; les autres restent
             // portés par leur paragraphe. Sans cela un bloc mêlant justifié et fer à
             // gauche perdrait la moitié de sa mise en forme.
-            var fers = _paragraphes.GroupBy(p => p.Align ?? TextAlign.Left)
-                                   .OrderByDescending(g => g.Count()).ToList();
+            //
+            // Le compte se fait sur TOUS les paragraphes, et tout paragraphe dont le fer
+            // n'est pas celui du bloc reçoit son écart, le fer à gauche compris (poste
+            // Q26). Un paragraphe au fer à gauche sans autre réglage n'a pas d'écart à
+            // l'ouverture : il prenait le fer du bloc, et dans un bloc justifié en
+            // majorité il passait justifié — ATA 21 en comptait 36 pour 31 dans la source.
+            var fers = _fers.GroupBy(f => f).OrderByDescending(g => g.Count()).ToList();
             if (fers.Count > 0) _bloc.Align = fers[0].Key;
+            for (var i = 0; i < _fers.Count; i++)
+            {
+                if (_fers[i] == _bloc.Align || _paragraphes.Any(p => p.Start == i)) continue;
+                _paragraphes.Add(new ParagraphSpan { Start = i, Length = 1, Align = _fers[i] });
+            }
+
+            foreach (var paragraphe in _paragraphes.OrderBy(p => p.Start)) _bloc.Paragraphs.Add(paragraphe);
 
             Nommer(_bloc);
 
@@ -934,6 +955,7 @@ public static class PubImporter
             _fragments.Clear();
             _languesDuBloc.Clear();
             _paragraphes.Clear();
+            _fers.Clear();
             _paragraphe = 0;
         }
 
@@ -945,10 +967,18 @@ public static class PubImporter
         {
             // Une case dont le bloc de texte n'a pas été ouvert n'a rien reçu ; les
             // documents à reprendre en comptent trente-cinq sur cinquante et une.
-            if (_cellule is not null && _cellule.Text.Length == 0 && _texte.Length > 0)
+            if (_cellule is not null && _cellule.Text.Length == 0)
             {
-                _cellule.Text = _texte.ToString();
-                ParlerDansLaCase(_cellule);
+                if (_texte.Length > 0)
+                {
+                    _cellule.Text = _texte.ToString();
+                    ParlerDansLaCase(_cellule);
+                }
+
+                // Son fer est celui de son premier paragraphe : une case n'en a qu'un
+                // (poste Q26). Sans lui, les seize valeurs centrées des Fiches — la colonne
+                // du milieu des bandes, « DC GEN 1+2 FAULT » — arrivaient au fer à gauche.
+                if (_fers.Count > 0) _cellule.Align = _fers[0];
             }
 
             _cellule = null;

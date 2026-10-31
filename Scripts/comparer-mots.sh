@@ -31,8 +31,12 @@
 #
 # Le verdict porte sur les lignes coupées autrement et sur les mots sans ligne : il en
 # faut zéro. La tolérance,
-# en points, porte sur la place du premier mot de chaque ligne, qui doit être la même
-# des deux côtés à la tolérance près. Elle vaut 1 pt par défaut, et ce n'est pas un
+# en points, porte sur la place de chaque ligne, qui doit être la même des deux côtés à la
+# tolérance près : son premier mot à gauche et en justifié, son milieu en centré, son bout
+# en fer à droite — le fer que le banc donne pour chaque ligne composée. Chaque rendu pose
+# une ligne à sa propre mesure, et l'écran crénèle quand le PDF ne le fait pas : centrée,
+# son premier mot se décale de la moitié de l'écart, son milieu non (décidé par le
+# propriétaire le 31 octobre 2026, au poste Q26). Elle vaut 1 pt par défaut, et ce n'est pas un
 # souhait : la mise en page d'Avalonia arrondit la place d'un bloc au pixel — à
 # l'échelle du banc, un bloc posé à 56,69 pt est dessiné à 57 —, et le PDF ne
 # l'arrondit pas. Un premier mot déplacé d'une ligne entière, lui, dépasse 10 pt.
@@ -216,19 +220,38 @@ for numero in pages:
                 manquants = sorted(set(sans_blancs(texte_ecran)) - set(sans_blancs(texte_pdf)))
                 symboles.append(f"page {numero} · {bloc['Nom']}, ligne {rang + 1} : "
                                 f"{' '.join(repr(c)[1:-1] for c in manquants) or 'ordre des symboles'}")
-            # La place de la ligne : son premier mot porteur de lettres, des deux côtés,
-            # quand c'est le même mot. Ce qui ne coupe pas autrement doit encore se
-            # poser au même endroit, à la tolérance près.
-            premier_ecran = next((m for m in mots if lettres(m["Texte"])), None)
-            premier_pdf = next((m for m in pdf if lettres(m[4])), None)
+            # La place de la ligne, là où elle s'ancre, des deux côtés, sur ses mots porteurs
+            # de lettres quand ce sont les mêmes. Ce qui ne coupe pas autrement doit encore
+            # se poser au même endroit, à la tolérance près — qui ne s'élargit pas.
+            #
+            # L'ancre suit le fer de la ligne, que le banc donne (décidé par le propriétaire
+            # le 31 octobre 2026, poste Q26) : le premier mot à gauche et en justifié, le
+            # milieu de la ligne en centré, son bout droit en fer à droite. Chaque rendu pose
+            # la ligne à sa propre mesure, et l'écran crénèle quand le PDF ne le fait pas —
+            # l'écart que les limites du README rangent déjà : une ligne centrée de 98 pt au
+            # PDF en mesurait 96 à l'écran, et son premier mot se décalait de la moitié de la
+            # différence (1,29 pt dans les cases des Fiches) quand son milieu restait en place.
+            porteurs_ecran = [m for m in mots if lettres(m["Texte"])]
+            porteurs_pdf = [m for m in pdf if lettres(m[4])]
+            fer = ligne.get("Fer", "Left")
             # Seulement quand ils s'écrivent pareil : un symbole que le PDF n'écrit pas
             # déplace le début du mot sans déplacer le mot.
-            if premier_ecran and premier_pdf and premier_ecran["Texte"] == premier_pdf[4]:
-                decalage = abs(premier_pdf[0] - premier_ecran["X"])
+            if porteurs_ecran and porteurs_pdf and porteurs_ecran[0]["Texte"] == porteurs_pdf[0][4] \
+                    and (fer not in ("Center", "Right") or porteurs_ecran[-1]["Texte"] == porteurs_pdf[-1][4]):
+                debut_ecran, debut_pdf = porteurs_ecran[0]["X"], porteurs_pdf[0][0]
+                fin_ecran = porteurs_ecran[-1]["X"] + porteurs_ecran[-1]["Largeur"]
+                fin_pdf = porteurs_pdf[-1][2]
+                if fer == "Center":
+                    ancre, ecran_x, pdf_x = "le milieu de la ligne", (debut_ecran + fin_ecran) / 2, (debut_pdf + fin_pdf) / 2
+                elif fer == "Right":
+                    ancre, ecran_x, pdf_x = "le bout de la ligne", fin_ecran, fin_pdf
+                else:
+                    ancre, ecran_x, pdf_x = f"« {porteurs_ecran[0]['Texte']} »", debut_ecran, debut_pdf
+                decalage = abs(pdf_x - ecran_x)
                 ecart_max = max(ecart_max, decalage)
                 if decalage > tolerance:
-                    deplacees.append(f"page {numero} · {bloc['Nom']}, ligne {rang + 1} : « {premier_ecran['Texte']} » "
-                                     f"à {premier_ecran['X']:.2f} pt à l'écran, {premier_pdf[0]:.2f} pt au PDF")
+                    deplacees.append(f"page {numero} · {bloc['Nom']}, ligne {rang + 1} : {ancre} "
+                                     f"à {ecran_x:.2f} pt à l'écran, {pdf_x:.2f} pt au PDF")
 
 for e in coupees:
     print(f"  coupée autrement — {e}")
@@ -244,7 +267,7 @@ for e in symboles:
 etiquette = "toutes les pages" if pages_demandees == "tout" else f"page {pages[0]}"
 print(f"{etiquette} : {lignes_vues} lignes, {mots_vus} mots dans {blocs_vus} blocs ; "
       f"{len(coupees)} ligne(s) coupée(s) autrement ; {len(deplacees)} déplacée(s) de plus de {tolerance:g} pt "
-      f"(écart max du premier mot {ecart_max:.2f} pt) ; {len(orphelins)} mot(s) du PDF sans ligne à l'écran ; "
+      f"(écart max de la place de la ligne {ecart_max:.2f} pt) ; {len(orphelins)} mot(s) du PDF sans ligne à l'écran ; "
       f"{len(ecartes)} bloc(s) non comparé(s) ; "
       f"{len(symboles)} ligne(s) dont un symbole diffère. Banc : {banc}")
 

@@ -29,7 +29,14 @@
 #   3. « comparer-mots.sh » — le banc contre le PDF du vrai binaire, mot à mot — sur
 #      les deux pages de l'exemple et sur toutes celles des deux documents ATR, à zéro
 #      ligne coupée autrement, et cela trois fois : le banc charge d'abord le romain,
-#      puis le gras, puis l'italique ;
+#      puis le gras, puis l'italique — chaque ligne posée au même endroit
+#      des deux côtés, à 1 pt : son premier mot à gauche et en justifié, son MILIEU en
+#      centré, son BOUT en fer à droite. Décidé par le propriétaire le 31 octobre 2026, au
+#      poste Q26 : l'écran crénèle et le PDF non, ce que les limites du README rangent déjà ;
+#      chacun pose une ligne centrée à sa mesure, et son premier mot se décale de la moitié
+#      de l'écart — 1,29 pt dans les cases des Fiches, centrées depuis Q26, quand leur
+#      milieu reste à 0,52 pt. La tolérance ne s'élargit pas : une ligne centrée que le PDF
+#      pose 2 pt trop à droite tombe (sabotage du juge) ;
 #   4. « comparer-mots.sh » sur le document de la recette, Samples/recette-coupure.mypub,
 #      à zéro ligne coupée autrement. Il porte les cas que le corpus ne porte pas,
 #      trouvés à la relecture de Q13 : 48 blocs aux largeurs en demi-points, de 150,4 à

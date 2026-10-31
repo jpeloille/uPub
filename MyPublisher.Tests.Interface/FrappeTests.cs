@@ -213,9 +213,13 @@ public class FrappeTests
 
         Assert.Equal(paragraphes + 1, bloc.Text.Split('\n').Length);
 
-        // Chaque écart a descendu d'un paragraphe, et chaque paragraphe se compose
-        // avec le retrait qu'il avait.
-        Assert.Equal(ecarts.Select(indice => indice + 1), bloc.Paragraphs.Select(ecart => ecart.Start));
+        // Chaque écart des paragraphes qui suivent le titre a descendu d'un paragraphe, et
+        // chaque paragraphe se compose avec le retrait qu'il avait. Le titre, au fer à gauche
+        // dans un bloc justifié, porte depuis Q26 son propre écart, qui ne dit que ce fer
+        // (« fo:text-align: left » dans pub2raw) : le saut tapé à son bout le laisse au titre
+        // (règle 14 — avant Q26, le titre n'avait pas d'écart, et passait justifié).
+        Assert.Equal(0, ecarts[0]);
+        Assert.Equal(ecarts.Select(indice => indice == 0 ? 0 : indice + 1), bloc.Paragraphs.Select(ecart => ecart.Start));
         Assert.Equal(retraits, RetraitsComposes(bloc));
     }
 
