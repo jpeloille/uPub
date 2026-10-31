@@ -369,7 +369,7 @@ public class JeuxTests
         Assert.Equal(["scheme:heading", "scheme:body"], vm.FontFamilies.Take(2));
 
         var liste = fenetre.GetVisualDescendants().OfType<ComboBox>()
-            .Single(c => ReferenceEquals(c.DataContext, texte) && ReferenceEquals(c.ItemsSource, vm.FontFamilies));
+            .Single(c => ReferenceEquals(Rendu.BlocRegle(c), texte) && ReferenceEquals(c.ItemsSource, vm.FontFamilies));
         liste.SelectedItem = "scheme:heading";
         Rendu.Battre();
 

@@ -251,6 +251,11 @@ public class RaccourcisFrancaisTests
             // L'entrée pose le curseur au point visé (N12) ; elle sélectionnait tout le texte, que la frappe remplaçait.
             zone.SelectAll();
             Rendu.Taper(fenetre, "abc");
+            // Depuis R7, le corps en saisie va aux caractères visés — la sélection, ou le mot du
+            // curseur, qui est ici au bout de « abc », hors d'un mot. Tout le texte pris, c'est le
+            // bloc, comme avant (règle 14) ; les deux pas ne changent pas.
+            zone.SelectAll();
+            Rendu.Battre();
             frapper(fenetre);
             Assert.Equal(corps, bloc.FontSize);
             Assert.True(bloc.IsEditing, $"{quoi} a refermé la saisie");

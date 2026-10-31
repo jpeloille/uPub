@@ -82,7 +82,7 @@ public class BarreContextuelleTests
         Rendu.Battre();
 
         var police = Trouver<ComboBox>(Barre(fenetre), "PoliceDuBloc");
-        Assert.Same(bloc, police.DataContext);
+        Assert.Same(bloc, Rendu.BlocRegle(police));
         Assert.Equal("DejaVu Sans", police.SelectedItem);
         var corps = Trouver<NumericUpDown>(Barre(fenetre), "CorpsDuBloc");
         Assert.Equal(EnPoints(10.5), corps.Text);
@@ -231,7 +231,7 @@ public class BarreContextuelleTests
         // La couleur : la vignette ouvre le sélecteur, dont une pastille écrit la référence.
         Rendu.Cliquer(Trouver<Button>(Barre(fenetre), "CouleurDuTexte"));
         var selecteur = SelecteurOuvert(fenetre);
-        Assert.Same(bloc, selecteur.DataContext);
+        Assert.Same(bloc, Rendu.BlocRegle(selecteur));
         Rendu.Cliquer(selecteur.GetVisualDescendants().OfType<Button>().Single(b => b.Tag is EmplacementDeCouleur.Accent1));
         Rendu.Cliquer(selecteur.GetVisualDescendants().OfType<Button>().Single(b => b.Tag is EmplacementDeCouleur.Accent3));
         Assert.Equal("scheme:accent3", bloc.Foreground);
@@ -613,7 +613,7 @@ public class BarreContextuelleTests
             vm.SelectOnly(frame);
             Rendu.Battre();
             var visibles = fenetre.GetVisualDescendants().OfType<Control>()
-                .Where(c => c.IsEffectivelyVisible && ReferenceEquals(c.DataContext, frame)).ToList();
+                .Where(c => c.IsEffectivelyVisible && ReferenceEquals(Rendu.BlocRegle(c), frame)).ToList();
             var dock = Trouver<Border>(fenetre, "Dock");
 
             // La police (Q20, C5b), le corps et l'interligne : un champ chacun, dans la barre.
@@ -643,10 +643,10 @@ public class BarreContextuelleTests
                 .Single(b => Equals(ToolTip.GetTip(b), "Couleur du texte") && b.IsEffectivelyVisible);
             Rendu.Cliquer(vignette);
             var selecteur = Assert.IsType<SelecteurDeCouleur>(Assert.IsType<Flyout>(vignette.Flyout).Content);
-            Assert.Same(frame, selecteur.DataContext);
+            Assert.Same(frame, Rendu.BlocRegle(selecteur));
             Assert.Equal(frame is TextFrame texte ? texte.Foreground : ((TableFrame)frame).Foreground, selecteur.Valeur);
             Assert.DoesNotContain(fenetre.GetVisualDescendants().OfType<SelecteurDeCouleur>(),
-                s => ReferenceEquals(s.DataContext, frame) && s.Valeur == selecteur.Valeur && !ReferenceEquals(s, selecteur));
+                s => ReferenceEquals(Rendu.BlocRegle(s), frame) && s.Valeur == selecteur.Valeur && !ReferenceEquals(s, selecteur));
             ((Flyout)vignette.Flyout!).Hide();
             Rendu.Battre();
 

@@ -237,17 +237,26 @@ public partial class MainWindowViewModel
     public bool EstUnBlocDeTexte => SingleSelected is TextFrame;
 
     /// <summary>
-    /// Gras, <c>Ctrl+G</c> comme dans Publisher en français. Le bloc entier, faute d'une
-    /// sélection dans le texte : c'est ce que fait la case du dock, en un pas d'annulation.
+    /// Gras, <c>Ctrl+G</c> comme dans Publisher en français, en un pas d'annulation. Sur un bloc de
+    /// texte, les caractères visés (poste R7, <c>MiseEnFormeVisee</c>) : en saisie, la sélection ou
+    /// le mot du curseur ; hors saisie, tous les caractères du bloc, fragments compris. Sur un
+    /// tableau, le tableau, comme avant.
     /// </summary>
     [RelayCommand(CanExecute = nameof(PorteDuTexte))]
-    private void BasculerGras() => Retoucher(texte => texte.Bold = !texte.Bold, tableau => tableau.Bold = !tableau.Bold,
-        "Gras");
+    private void BasculerGras()
+    {
+        if (!BasculerLeTexte(Bascule.Gras, "Gras")) Retoucher(_ => { }, tableau => tableau.Bold = !tableau.Bold, "Gras");
+    }
 
     /// <summary>Italique, <c>Ctrl+I</c> ; même règle que le gras.</summary>
     [RelayCommand(CanExecute = nameof(PorteDuTexte))]
-    private void BasculerItalique() => Retoucher(texte => texte.Italic = !texte.Italic,
-        tableau => tableau.Italic = !tableau.Italic, "Italique");
+    private void BasculerItalique()
+    {
+        if (!BasculerLeTexte(Bascule.Italique, "Italique"))
+        {
+            Retoucher(_ => { }, tableau => tableau.Italic = !tableau.Italic, "Italique");
+        }
+    }
 
     /// <summary>
     /// Les quatre alignements du texte, au menu Texte : le bloc hors saisie, les paragraphes de
@@ -445,6 +454,10 @@ public partial class MainWindowViewModel
         AugmenterLeRetraitCommand.NotifyCanExecuteChanged();
         // Le souligné de I7, au menu Texte et dans la barre depuis I3 : un bloc de texte seul.
         SoulignerCommand.NotifyCanExecuteChanged();
+        // Ctrl+Espace, Ctrl+Maj+C et Ctrl+Maj+V (R7) : un bloc de texte seul.
+        RetirerLaMiseEnFormeCommand.NotifyCanExecuteChanged();
+        CopierLaMiseEnFormeCommand.NotifyCanExecuteChanged();
+        CollerLaMiseEnFormeCommand.NotifyCanExecuteChanged();
     }
 
     private void SurBlocRetouche(object? sender, PropertyChangedEventArgs e)

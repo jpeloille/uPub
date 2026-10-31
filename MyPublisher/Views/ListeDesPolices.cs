@@ -327,7 +327,10 @@ public class ListeDesPolices : ComboBox
             Abandonner();
             if (TopLevel.GetTopLevel(this)?.DataContext is MainWindowViewModel vm)
             {
-                vm.Status = $"« {saisie} » n'est pas une police de cette machine : la police reste {avant}.";
+                // Une sélection du texte qui mêle plusieurs polices n'en montre aucune (R7) : rien ne
+                // change, et on ne nomme pas une police qui n'est pas celle de tout le texte visé.
+                if (avant.Length == 0) vm.Status = $"« {saisie} » n'est pas une police de cette machine : rien n'est changé.";
+                else vm.Status = $"« {saisie} » n'est pas une police de cette machine : la police reste {avant}.";
             }
 
             return false;

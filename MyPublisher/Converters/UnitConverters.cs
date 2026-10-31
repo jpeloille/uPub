@@ -35,7 +35,7 @@ public sealed class PointsToMillimetres : IValueConverter
     private readonly Affiches _affiches = new();
 
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
-        value is double points ? _affiches.Retenir((decimal)Units.PointsToMm(points), points) : null;
+        value is double points ? _affiches.Retenir((decimal)Units.PointsToMm(points), points) : _affiches.Oublier();
 
     public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => value switch
     {
@@ -99,6 +99,18 @@ internal sealed class Affiches
         _affiche = null;
         return reconnu;
     }
+
+    /// <summary>
+    /// Le champ ne montre plus rien — l'état mixte de la sélection du texte (poste R7) : la case se
+    /// vide. Gardée, elle prêterait la valeur exacte d'un affichage d'avant au premier nombre tapé
+    /// qui lui serait égal. <see cref="Retrouver"/> la vide, quel que soit le nombre ; aucun n'est
+    /// rendu ici. Rend le rien que le champ affiche.
+    /// </summary>
+    public object? Oublier()
+    {
+        Retrouver(decimal.MinValue, out _);
+        return null;
+    }
 }
 
 /// <summary>
@@ -115,7 +127,7 @@ public sealed class DoubleToDecimal : IValueConverter
     private readonly Affiches _affiches = new();
 
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
-        value is double number && !double.IsNaN(number) ? _affiches.Retenir((decimal)Math.Round(number, 4), number) : null;
+        value is double number && !double.IsNaN(number) ? _affiches.Retenir((decimal)Math.Round(number, 4), number) : _affiches.Oublier();
 
     public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => value switch
     {

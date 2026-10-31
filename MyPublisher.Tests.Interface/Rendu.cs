@@ -287,6 +287,15 @@ public static class Rendu
         return image.Pixels[i] < 128 && image.Pixels[i + 1] < 128 && image.Pixels[i + 2] < 128;
     }
 
+    /// <summary>
+    /// Le bloc qu'un contrôle règle : son contexte, ou, pour la police, le corps, le gras,
+    /// l'italique, le souligné et la couleur de la barre, le bloc de la mise en forme visée dont ils
+    /// prennent le contexte depuis le poste R7 — les caractères visés d'un bloc de texte. Les tests
+    /// qui cherchaient ces contrôles par leur bloc les cherchent par lui (règle 14).
+    /// </summary>
+    public static object? BlocRegle(Control controle) =>
+        controle.DataContext is MiseEnFormeVisee visee ? visee.Bloc : controle.DataContext;
+
     #region Les gestes
 
     // ================================================================== les gestes

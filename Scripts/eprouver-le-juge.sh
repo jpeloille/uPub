@@ -675,10 +675,13 @@ saboter "une copie de bloc perd son souligné" \
     'Italic = Italic, Foreground = Foreground, Align = Align,' \
     'CloneTests|I7-souligne|Souligne(Ecran)?Tests'
 
+# Repris par R7 (règle 14) : « Souligné » ne referme plus lui-même la saisie ouverte ; il passe,
+# avec le gras, l'italique et le corps, par la mise en forme des caractères visés, qui fait son
+# pas par UnGesteUnPas. La prise est rendue là.
 saboter "« Souligné » s'emboîte dans la saisie ouverte, sans pas à lui" \
-    MyPublisher/ViewModels/MainWindowViewModel.Souligne.cs \
-    'EndPendingEdit();' \
-    '' \
+    MyPublisher/ViewModels/MainWindowViewModel.MiseEnFormeVisee.cs \
+    '        UnGesteUnPas(() => change = geste(visee));' \
+    '        change = geste(visee);' \
     'I7-souligne|Souligne(Ecran)?Tests'
 
 # I8 — masquer un bloc. Posés à la relecture du 26 octobre 2026 : le poste était fusionné
@@ -3015,6 +3018,29 @@ saboter "une marque des caractères spéciaux (N22) dessinée dans PageRoot" \
     '        Overlay.Children.Insert(0, _caracteresSpeciaux);' \
     '        PageRoot.Children.Add(_caracteresSpeciaux);' \
     'N22-caracteres-speciaux|CaracteresSpeciauxTests'
+
+# R7 : éditer le texte riche à la souris. Le premier est la recette du plan : une sélection de
+# trois caractères qui passe au bloc entier — le gras du bloc, et non un fragment {4, 3, Bold}. Le
+# deuxième rouvre le défaut que la fiche 23 relevait : hors saisie, le bloc change, et le gras
+# qu'un import a écrit dans un fragment reste tel quel. Le troisième est le piège de Q14 : la
+# mémoire du corps gardée quand la sélection mixte ne lui donne rien ; sa garde est un test pur.
+saboter "une sélection du texte mise en forme sur tout le bloc (R7)" \
+    MyPublisher/ViewModels/MainWindowViewModel.MiseEnFormeVisee.cs \
+    '        !EnSaisie || (plage.Start == 0 && plage.Length > 0 && plage.Length == (bloc.Text ?? "").Length);' \
+    '        true;' \
+    'R7-texte-riche-a-la-souris|TexteRicheALaSourisTests'
+
+saboter "hors saisie, les fragments du bloc laissés tels quels (R7)" \
+    MyPublisher/ViewModels/MainWindowViewModel.MiseEnFormeVisee.cs \
+    '        var fragments = MiseEnForme.Poser(texte, bloc.Spans, commun, new Plage(0, texte.Length), style);' \
+    '        var fragments = false;' \
+    'R7-texte-riche-a-la-souris|TexteRicheALaSourisTests'
+
+saboter "la mémoire du corps gardée sous l'état mixte (R7, Q14)" \
+    MyPublisher/Converters/UnitConverters.cs \
+    '        value is double number && !double.IsNaN(number) ? _affiches.Retenir((decimal)Math.Round(number, 4), number) : _affiches.Oublier();' \
+    '        value is double number && !double.IsNaN(number) ? _affiches.Retenir((decimal)Math.Round(number, 4), number) : null;' \
+    'R7-texte-riche-a-la-souris|TexteRicheALaSourisTests'
 
 # Un motif qui ne désigne aucun sabotage ne prouve rien. « eprouver-le-juge.sh I4 » sortait
 # en 0 sur « 0 sabotages, 0 attrapés », quand les intitulés de la planche ne portaient pas

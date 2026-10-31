@@ -18,7 +18,9 @@ du presse-papiers, `Ctrl+Inser`, `Maj+Suppr` et `Maj+Inser`, d'abord relevées s
 le sont depuis le 28 octobre 2026, à la demande du propriétaire. Le poste N20 en a lié deux de
 plus, le 31 octobre 2026, réservées jusque-là : F3, Ctrl+F ou Maj+F4, et Ctrl+H — rechercher et
 remplacer. Le poste N22 en a lié une, le même jour, réservée jusque-là : Ctrl+Maj+Y, les caractères
-spéciaux.
+spéciaux. Le poste R7 en a lié cinq, le même jour, réservées jusque-là : Ctrl+Maj+C et Ctrl+Maj+V
+deux fois — copier et coller la mise en forme — et Ctrl+Espace, le style du texte rendu aux
+caractères.
 
 ## Pourquoi une fiche de plus
 
@@ -134,15 +136,15 @@ Les sections de l'aide, dans son ordre, sans celle du ruban.
 | Afficher le volet Office Dictionnaire des synonymes | Maj+F7 | HR | **réservé**, aucun poste : MyPublisher n'a pas de dictionnaire des synonymes |
 | Afficher le volet Office Rechercher | Maintenez la touche Alt enfoncée et cliquez sur un mot | HR | **écarté** : un clic, vers un volet de recherche documentaire que rien ne prévoit |
 | Sélectionner tout le texte. Si le curseur se trouve dans une zone de texte, cela sélectionne tout le texte de l’article actuel. Si le curseur ne se trouve dans aucune zone de texte, cela sélectionne tous les objets d’une page. | Ctrl+A | HR | **lié** (N6) : les blocs de la page ; dans la saisie d'un bloc ou dans un champ, tout son texte |
-| Mettre le texte en gras | Ctrl+G | p. 10, *Bold* `Ctrl+B` | **lié** avant N10 : le gras du bloc (R7 pour la sélection) |
+| Mettre le texte en gras | Ctrl+G | p. 10, *Bold* `Ctrl+B` | **lié** avant N10 : le gras du bloc ; depuis R7, en saisie, la sélection du texte ou le mot du curseur, et hors saisie tous les caractères du bloc |
 | Mettre le texte en italique | Ctrl+I | p. 10, *Italic* `Ctrl+I` | **lié** avant N10 |
 | Souligner le texte | Ctrl+U | p. 10, *Underline* `Ctrl+U` | **lié** (I3) |
 | Transformer le texte en petites majuscules ou celles-ci en minuscules ou majuscules | Ctrl+Maj+K | HR | **réservé** : N24 |
 | Ouvrir la boîte de dialogue Police | Ctrl+Maj+F | HR | **gardé** : Premier plan (A4, règle 12), `Alt+F6` étant pris par le bureau ; la boîte Police n'existe pas, le dock en tient lieu |
-| Copier la mise en forme | Ctrl+Maj+C | HR | **réservé** : R7 |
-| Coller la mise en forme | Ctrl+Maj+V | HR | **réservé** : R7 |
+| Copier la mise en forme | Ctrl+Maj+C | HR | **lié** (R7) : la mise en forme des caractères visés, au menu Texte aussi |
+| Coller la mise en forme | Ctrl+Maj+V | HR | **lié** (R7) : posée sur les caractères visés, en un pas |
 | Activer ou désactiver l’option Caractères spéciaux | Ctrl+Maj+Y | p. 9, *Special Characters* `Ctrl+Shift+Y` | **lié** (N22) : *Affichage ▸ Caractères spéciaux*, une bascule de la session, même en saisie |
-| Appliquer à la mise en forme des caractères le style de texte actuel | Ctrl+Espace | HR | **réservé** : R7 — `MiseEnForme.Retirer` (N2) attend la sélection du texte |
+| Appliquer à la mise en forme des caractères le style de texte actuel | Ctrl+Espace | HR | **lié** (R7) : *Texte ▸ Effacer la mise en forme* — les caractères visés reprennent le style du bloc, par `MiseEnForme.Retirer` (N2) ; la langue reste |
 | Appliquer ou supprimer la mise en indice | Ctrl+= | HR | **gardé** au zoom avant jusqu'à N24, qui le prend (règle 12). Sur l'AZERTY du propriétaire, `Ctrl` + « = » arrive en `OemPlus` sous `Control`, et le zoom le prend (sonde) |
 | Appliquer ou supprimer la mise en exposant | Ctrl+Maj+= | HR | **réservé** : N24. Sur l'AZERTY, `OemPlus` sous `Control, Shift`, symbole « + », que rien ne prend (sonde) |
 | Augmenter l’espace entre les lettres d’un mot (crénage) | Ctrl+Maj+] | HR | **réservé**, aucun poste : MyPublisher n'a pas de crénage. La table du corps lit le caractère : sur un QWERTY, `Ctrl+Maj+]` produit « } », qu'elle ignore ; sur l'AZERTY, `Maj` + AltGr + « ) » n'a pas été relevé |
@@ -167,8 +169,8 @@ Les sections de l'aide, dans son ordre, sans celle du ruban.
 
 | Fonction (aide, mot pour mot) | Touche (aide) | Livre de 2007 | Sort |
 |---|---|---|---|
-| Copier la mise en forme du texte sélectionné | Ctrl+Maj+C | HR | **réservé** : R7 |
-| Appliquer la mise en forme copiée au texte | Ctrl+Maj+V | HR | **réservé** : R7 |
+| Copier la mise en forme du texte sélectionné | Ctrl+Maj+C | HR | **lié** (R7), comme plus haut |
+| Appliquer la mise en forme copiée au texte | Ctrl+Maj+V | HR | **lié** (R7), comme plus haut |
 
 #### Copier, couper, coller ou supprimer du texte ou des objets
 

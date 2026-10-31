@@ -424,6 +424,11 @@ public class TransactionsDeSaisieTests
         Rendu.Battre();
         etats.Add(("abc", Etat(vm)));
 
+        // Depuis R7, la mise en forme prise à la barre en saisie va aux caractères visés — la
+        // sélection, ou le mot du curseur, qui est ici au bout de « abc », hors d'un mot. Tout le
+        // texte pris, c'est le bloc, comme avant (règle 14) ; le pas ne change pas.
+        zone.SelectAll();
+        Rendu.Battre();
         var corps = SaisieDe(Trouver<NumericUpDown>(Barre(fenetre), "CorpsDuBloc"));
         Rendu.Cliquer(corps);
         Assert.True(corps.IsFocused, "le clic n'a pas donné le focus au corps");
@@ -507,6 +512,11 @@ public class TransactionsDeSaisieTests
         Rendu.Battre();
         etats.Add(("abc", Etat(vm)));
 
+        // Depuis R7, la mise en forme prise à la barre en saisie va aux caractères visés — la
+        // sélection, ou le mot du curseur, qui est ici au bout de « abc », hors d'un mot. Tout le
+        // texte pris, c'est le bloc, comme avant (règle 14) ; le pas ne change pas.
+        zone.SelectAll();
+        Rendu.Battre();
         var vignette = Trouver<Button>(Barre(fenetre), "CouleurDuTexte");
         Rendu.Cliquer(vignette);
         var volet = Assert.IsType<Flyout>(vignette.Flyout);
@@ -551,11 +561,19 @@ public class TransactionsDeSaisieTests
         Rendu.Battre();
         etats.Add(("abc", Etat(vm)));
 
+        // Depuis R7, la mise en forme prise à la barre en saisie va aux caractères visés — la
+        // sélection, ou le mot du curseur, qui est ici au bout de « abc », hors d'un mot. Tout le
+        // texte pris, c'est le bloc, comme avant (règle 14) ; le pas ne change pas.
+        zone.SelectAll();
+        Rendu.Battre();
         Rendu.Cliquer(Barre(fenetre).GetVisualDescendants().OfType<ToggleButton>()
             .Single(b => Equals(ToolTip.GetTip(b), "Gras (Ctrl+G)") && b.IsEffectivelyVisible));
         Assert.True(bloc.Bold);
         Assert.True(zone.IsFocused, "le bouton G a pris le focus à la saisie");
         etats.Add(("le gras", Etat(vm)));
+        // La frappe reprend au bout du texte, et non par-dessus la sélection.
+        zone.SelectionStart = zone.SelectionEnd = zone.Text!.Length;
+        Rendu.Battre();
 
         fenetre.KeyTextInput("d");
         Rendu.Battre();
@@ -582,6 +600,10 @@ public class TransactionsDeSaisieTests
         var etats = new List<(string, string)> { ("l'ouverture", Etat(vm)) };
 
         var zone = Rendu.EntrerEnSaisie(fenetre, vm, bloc);
+        // Depuis R7, le corps pris à la barre en saisie va aux caractères visés : tout le texte
+        // pris, c'est le bloc, comme avant (règle 14).
+        zone.SelectAll();
+        Rendu.Battre();
         var corps = SaisieDe(Trouver<NumericUpDown>(Barre(fenetre), "CorpsDuBloc"));
         Rendu.Cliquer(corps);
         Assert.True(corps.IsFocused, "le clic n'a pas donné le focus au corps");

@@ -310,11 +310,13 @@ public partial class MainWindowViewModel : ViewModelBase
         var absentes = document.Pages
             .SelectMany(page => page.Frames)
             .SelectMany(Descendance)
-            .Select(bloc => bloc switch
+            .SelectMany(bloc => bloc switch
             {
-                TextFrame texte => texte.FontFamily,
-                TableFrame tableau => tableau.FontFamily,
-                _ => null,
+                // Les fragments aussi (poste R7) : la barre montre la police de la sélection du
+                // texte, qui peut être celle d'un fragment importé.
+                TextFrame texte => texte.Spans.Select(f => f.FontFamily).Prepend(texte.FontFamily),
+                TableFrame tableau => tableau.Cells.SelectMany(c => c.Spans).Select(f => f.FontFamily).Prepend(tableau.FontFamily),
+                _ => [],
             })
             .OfType<string>()
             .Where(police => police.Length > 0 && !PolicesDeLaMachine.Contains(police)

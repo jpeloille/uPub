@@ -150,7 +150,11 @@ La **barre contextuelle** dit d'abord ce qui est sélectionné — « Bloc de te
 un bloc de texte : la police, le corps, le gras, l'italique, le souligné — le bouton S
 bascule le trait simple, le chevron qui le suit propose le double, l'épais et « mots
 seuls » —, les quatre alignements, l'interligne en multiple et la couleur du texte, que
-sa vignette ouvre. Un tableau y a la même mise en forme, sans l'alignement, qui est celui
+sa vignette ouvre. En saisie, la police, le corps, le gras, l'italique, le souligné et la
+couleur visent la sélection du texte, ou, sans sélection, le mot du curseur, et la barre
+montre ce que ces caractères ont en commun : un champ vide, une vignette blanche, un bouton
+à moitié allumé quand ils diffèrent ; hors saisie, tous les caractères du bloc, fragments
+compris. Un tableau y a la même mise en forme, sans l'alignement, qui est celui
 de chaque case. Le corps se tape — « 10,5 » donne 10,5 pt — ou se choisit dans la liste
 des tailles standard, de 8 à 72 pt, que le chevron qui le suit ouvre. Un clic sur le nom
 de la police ouvre la liste entière, la police du bloc marquée et le nom tout pris ; un
@@ -259,7 +263,11 @@ Fenêtre masque aussi l'un ou l'autre.
   son rang — « L1 · C2 ».
 - **Plusieurs styles dans un même bloc** : une portion de texte porte sa propre police,
   son corps, son gras, son italique, son souligné, sa couleur, et se pose en indice ou en
-  exposant.
+  exposant. Elle se met en forme à la souris : trois mots sélectionnés, `Ctrl+G`, et eux
+  seuls passent en gras, en un pas, la frappe continuant ; sans sélection, c'est le mot du
+  curseur. *Texte ▸ Effacer la mise en forme* (`Ctrl+Espace`) rend à la sélection le style
+  du bloc ; *Copier* et *Coller la mise en forme* (`Ctrl+Maj+C`, `Ctrl+Maj+V`) la
+  reproduisent ailleurs.
   Ces styles suivent la frappe : un mot tapé dans un bloc importé laisse ses gras sur
   leurs mots, et un saut de ligne laisse chaque retrait à son paragraphe. Le texte tapé
   prend le style du caractère qui le précède ; en tête de texte ou de paragraphe, celui
@@ -504,9 +512,11 @@ comptés pour rien : sur un AZERTY, `Ctrl+]` se tape `Ctrl+AltGr+)`, `Ctrl+[` se
 
 | Raccourci | Action |
 |---|---|
-| `Ctrl+G` / `Ctrl+I` / `Ctrl+U` | Gras / Italique / Souligné du bloc de texte sélectionné |
+| `Ctrl+G` / `Ctrl+I` / `Ctrl+U` | Gras / Italique / Souligné : en saisie, la sélection du texte, ou le mot du curseur ; hors saisie, tous les caractères du bloc, fragments compris. Une sélection mixte prend le gras |
+| `Ctrl+Espace` | Rend aux caractères visés le style du bloc : la sélection, ou le mot du curseur, en saisie ; tout le bloc hors saisie. La langue reste |
+| `Ctrl+Maj+C` / `Ctrl+Maj+V` | Copier la mise en forme des caractères visés / la poser sur d'autres, en un pas |
 | `Ctrl+L` / `Ctrl+E` / `Ctrl+R` / `Ctrl+J` | Aligner le texte à gauche / Centrer / Aligner à droite / Justifier : le bloc entier, ou, en saisie, les paragraphes que touche la sélection |
-| `Ctrl+]` / `Ctrl+[` | Le corps d'un point de plus / de moins, sur le bloc de texte ou le tableau |
+| `Ctrl+]` / `Ctrl+[` | Le corps d'un point de plus / de moins, chaque caractère depuis le sien : la sélection ou le mot du curseur en saisie, tout le bloc hors saisie ; le tableau entier |
 | `Ctrl+Maj+>` / `Ctrl+Maj+<` | La taille suivante / précédente de la liste standard : 8, 9, 10, 10,5, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72 ; au-delà, de dix en dix ; en deçà, d'un point |
 | Dans la liste des polices de la barre : `Entrée` ou `Tab`, `↑` / `↓`, `Échap` | Pose la police proposée — la première de celles qui commencent par la frappe — et rend la planche, ou passe au champ suivant ; marque la proposition précédente / suivante ; renonce à ce qui est tapé et rend la planche |
 | Dans la saisie d'un bloc : `Entrée` / `Maj+Entrée` / `Tab` | Un nouveau paragraphe / Un saut de ligne forcé, qui coupe la ligne sans changer de paragraphe — ni retrait de première ligne, ni espace de paragraphe après lui / Une tabulation, au taquet suivant, tous les 36 pt ; `Maj+Tab` ne quitte pas le bloc. Dans le dock, `Tab` reste le passage au champ suivant |
@@ -754,10 +764,10 @@ partout ailleurs — à l'écran, à l'export — un chemin d'image est absolu.
   collée en tête d'elle-même donne deux lignes, dont la seconde prend le réglage de la
   ligne qui suit. Un fragment vidé par une suppression ne revient pas non plus si l'on
   retape le texte ; l'annulation du document le rend, au caractère près.
-- Les fragments de style se lisent, s'écrivent et se rendent, mais ne se saisissent pas
-  encore à la souris : on ne peut pas sélectionner trois mots dans un bloc pour les
-  mettre en gras. La barre contextuelle, le menu Texte et `Ctrl+G` agissent sur le bloc
-  entier.
+- Sans sélection, la mise en forme va au mot du curseur ; au bord d'un mot ou dans un
+  blanc, elle ne s'applique à rien, et la frappe qui suit ne la prend pas : Publisher et
+  Word la gardent en attente pour le texte qu'on va taper. Un tableau se met en forme en
+  entier : ses cases ne se saisissent pas sur la page.
 - L'interligne est un réglage du bloc entier : Publisher le règle par paragraphe.
 - La coupure des lignes se décide, à l'écran comme au PDF, sur la plus large des deux
   mesures, et sur la largeur du bloc telle que le modèle la donne. Ce qui est vérifié,

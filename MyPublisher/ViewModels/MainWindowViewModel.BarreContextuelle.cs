@@ -40,27 +40,26 @@ public partial class MainWindowViewModel
     };
 
     /// <summary>
-    /// Souligne le bloc de texte sélectionné de la sorte choisie au menu déroulant du
-    /// bouton S, en un pas d'annulation, où que soit le focus — la même règle que
-    /// « Souligné » (<see cref="Souligner"/>), dont le bouton lui-même et <c>Ctrl+U</c>
-    /// restent la bascule : retirer le souligné quelle qu'en soit la sorte, ou poser le
-    /// trait simple. Choisir la sorte que le bloc porte déjà ne fait pas de pas : ce n'est
-    /// pas un changement.
+    /// Souligne de la sorte choisie au menu déroulant du bouton S les caractères visés d'un bloc
+    /// de texte (poste R7, <c>MiseEnFormeVisee</c>) — la sélection ou le mot du curseur en saisie,
+    /// tous les caractères du bloc hors saisie —, en un pas d'annulation, où que soit le focus : la
+    /// même règle que « Souligné » (<see cref="Souligner"/>), dont le bouton lui-même et
+    /// <c>Ctrl+U</c> restent la bascule — retirer le souligné quelle qu'en soit la sorte, ou poser
+    /// le trait simple. Choisir la sorte que les caractères portent déjà ne fait pas de pas : ce
+    /// n'est pas un changement.
     /// </summary>
     [RelayCommand]
     private void SoulignerEn(SorteDeSouligne sorte)
     {
-        if (SingleSelected is not TextFrame bloc)
+        if (SingleSelected is not TextFrame)
         {
             Status = "Souligné : sélectionnez un seul bloc de texte.";
             return;
         }
 
         var souligne = SouligneDe(sorte);
-        if (bloc.Underline == souligne) return;
-
-        UnGesteUnPas(() => bloc.Underline = souligne);
-        Status = $"Souligné : {LibelleDe(sorte).ToLowerInvariant()}";
+        MettreEnFormeLeTexte(visee => visee.Poser(new StyleDeLaPlage { Underline = souligne }),
+            _ => $"Souligné : {LibelleDe(sorte).ToLowerInvariant()}");
     }
 }
 

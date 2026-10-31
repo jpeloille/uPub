@@ -126,7 +126,8 @@ public partial class BarreContextuelle : UserControl
 
     /// <summary>
     /// La liste des tailles du corps (N19 ; fiche 23, b6) : celles du noyau, de 8 à 72 pt
-    /// (<see cref="CorpsStandard.Tailles"/>, posées par N10), la taille du bloc cochée. Une
+    /// (<see cref="CorpsStandard.Tailles"/>, posées par N10), la taille du bloc cochée — pour un bloc
+    /// de texte, celle des caractères visés (R7). Une
     /// taille choisie fait son pas, où que soit le focus (<c>PoserLeCorps</c>, règle 2).
     ///
     /// Le corps tapé et non validé part d'abord, comme à l'ouverture du sélecteur de couleur : la
@@ -139,9 +140,10 @@ public partial class BarreContextuelle : UserControl
         if (sender is not MenuFlyout liste || DataContext is not MainWindowViewModel vm) return;
 
         RendreLeFocusDeLaBarre();
+        // Le corps des caractères visés d'un bloc de texte (R7) : mixte, aucune taille n'est cochée.
         var corps = vm.SingleSelected switch
         {
-            TextFrame texte => texte.FontSize,
+            TextFrame => vm.MiseEnFormeVisee.FontSize ?? double.NaN,
             TableFrame tableau => tableau.FontSize,
             _ => double.NaN,
         };
