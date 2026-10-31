@@ -628,12 +628,13 @@ public class DispositionTests
         Assert.Equal(new[] { "_Police…", "Pa_ragraphe…", "P_uces et numéros…" }, toutes.Take(3).Select(e => e.Header as string));
         var entrees = toutes.Skip(3).ToList();
         // La mise en forme des caractères suit le souligné depuis R7 (règle 14) : Ctrl+Espace,
-        // Ctrl+Maj+C et Ctrl+Maj+V ; sa recette les éprouve.
+        // Ctrl+Maj+C et Ctrl+Maj+V ; sa recette les éprouve. Exposant et majuscules ▸ les suit
+        // depuis N24 (règle 14), un sous-menu que la recette de N24 éprouve.
         Assert.Equal(new[]
         {
             "_Gras", "_Italique", "_Souligné", "_Effacer la mise en forme", "C_opier la mise en forme",
-            "Co_ller la mise en forme", "_Aligner le texte à gauche", "_Centrer le texte", "Aligner le texte à _droite",
-            "_Justifier", "Importer un te_xte…",
+            "Co_ller la mise en forme", "Exposant et _majuscules", "_Aligner le texte à gauche", "_Centrer le texte",
+            "Aligner le texte à _droite", "_Justifier", "Importer un te_xte…",
         }, entrees.Select(e => e.Header as string));
         Assert.Equal("MenuImporterTexte", entrees[^1].Name);
         Assert.Equal(KeyGesture.Parse("Ctrl+G"), entrees[0].InputGesture);
@@ -644,7 +645,7 @@ public class DispositionTests
         Assert.Equal(new[] { "Ctrl+Space", "Ctrl+Shift+C", "Ctrl+Shift+V" },
             entrees.Skip(3).Take(3).Select(e => e.InputGesture?.ToString()));
         Assert.Equal(new[] { "Ctrl+L", "Ctrl+E", "Ctrl+R", "Ctrl+J" },
-            entrees.Skip(6).Take(4).Select(e => e.InputGesture?.ToString()));
+            entrees.Skip(7).Take(4).Select(e => e.InputGesture?.ToString()));
 
         // Sans bloc de texte, rien n'est offert.
         vm.SelectOnly(forme);
@@ -671,8 +672,8 @@ public class DispositionTests
 
         foreach (var (entree, alignement) in new[]
                  {
-                     (entrees[7], TextAlign.Center), (entrees[8], TextAlign.Right),
-                     (entrees[9], TextAlign.Justify), (entrees[6], TextAlign.Left),
+                     (entrees[8], TextAlign.Center), (entrees[9], TextAlign.Right),
+                     (entrees[10], TextAlign.Justify), (entrees[7], TextAlign.Left),
                  })
         {
             entree.Command!.Execute(entree.CommandParameter);

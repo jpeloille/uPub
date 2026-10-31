@@ -458,6 +458,8 @@ public partial class MainWindowViewModel
         RetirerLaMiseEnFormeCommand.NotifyCanExecuteChanged();
         CopierLaMiseEnFormeCommand.NotifyCanExecuteChanged();
         CollerLaMiseEnFormeCommand.NotifyCanExecuteChanged();
+        // L'exposant, l'indice et les capitales (N24) : un bloc de texte seul.
+        NotifierExposantEtCapitales();
     }
 
     private void SurBlocRetouche(object? sender, PropertyChangedEventArgs e)

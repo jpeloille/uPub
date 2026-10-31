@@ -559,6 +559,16 @@ public partial class TextFrame : Frame
     [property: JsonPropertyOrder(145)]
     private Souligne _underline;
 
+    /// <summary>
+    /// Les capitales du bloc (poste N24), que ses fragments peuvent changer. Aucune par défaut —
+    /// le cas de tous les documents écrits jusqu'ici, qui se dessinent comme avant —, sans
+    /// migration : <c>FormatVersion</c> reste à 5 (règle 15). Le texte ne change pas : la
+    /// composition le dessine en capitales.
+    /// </summary>
+    [ObservableProperty]
+    [property: JsonPropertyOrder(147)]
+    private Capitales _capitales;
+
     [ObservableProperty]
     [property: JsonPropertyOrder(150)]
     private string _foreground = "#FF1A1A1A";
@@ -764,6 +774,7 @@ public partial class TextFrame : Frame
         {
             Text = Text, FontFamily = FontFamily, FontSize = FontSize, Bold = Bold,
             Italic = Italic, Underline = Underline, Foreground = Foreground, Align = Align,
+            Capitales = Capitales,
             Langue = Langue, LineHeight = LineHeight, PaddingLeft = PaddingLeft, PaddingTop = PaddingTop,
             PaddingRight = PaddingRight, PaddingBottom = PaddingBottom, Field = Field,
             IndentLeft = IndentLeft, IndentRight = IndentRight,

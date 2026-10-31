@@ -28,6 +28,9 @@ public readonly record struct StyleDeLaPlage
     public string? Foreground { get; init; }
     public double? BaselineShift { get; init; }
 
+    /// <summary>Les capitales (poste N24) : nulles, mixtes à la lecture, intouchées à la pose.</summary>
+    public Capitales? Capitales { get; init; }
+
     /// <summary>
     /// La langue (poste N9), lue brute : celle que les fragments écrivent sur toute la plage ;
     /// nulle quand ils n'en écrivent pas qu'une — deux langues mêlées, ou la plage qui s'en
@@ -126,7 +129,10 @@ public static class MiseEnForme
     /// </summary>
     public static StyleEffectif Commun(TextFrame bloc) => new(
         bloc.FontFamily, bloc.FontSize, bloc.Bold, bloc.Italic,
-        bloc.Underline, bloc.Foreground, BaselineShift: 0);
+        bloc.Underline, bloc.Foreground, BaselineShift: 0)
+    {
+        Capitales = bloc.Capitales,
+    };
 
     /// <summary>
     /// Le style des cases d'un tableau : celui du tableau, sans souligné. Le tableau n'en
@@ -171,6 +177,7 @@ public static class MiseEnForme
             Underline = Commune(styles, s => s.Underline),
             Foreground = Commune(styles, s => s.Foreground, couleur => charte.Couleur(couleur) ?? couleur),
             BaselineShift = Commune(styles, s => s.BaselineShift),
+            Capitales = Commune(styles, s => s.Capitales),
         };
     }
 
@@ -404,34 +411,39 @@ public static class MiseEnForme
     /// </summary>
     private readonly record struct Surcharges(
         string? FontFamily, double? FontSize, bool? Bold, bool? Italic, Souligne? Underline,
-        string? Foreground, double BaselineShift, string? Langue)
+        string? Foreground, double BaselineShift, string? Langue, Capitales? Capitales = null)
     {
         public static Surcharges De(StyleSpan f) =>
-            new(f.FontFamily, f.FontSize, f.Bold, f.Italic, f.Underline, f.Foreground, f.BaselineShift, f.Langue);
+            new(f.FontFamily, f.FontSize, f.Bold, f.Italic, f.Underline, f.Foreground, f.BaselineShift, f.Langue,
+                f.Capitales);
 
         public StyleSpan Fragment(int debut, int fin) => new()
         {
             Start = debut, Length = fin - debut, FontFamily = FontFamily, FontSize = FontSize, Bold = Bold,
             Italic = Italic, Underline = Underline, Foreground = Foreground, BaselineShift = BaselineShift,
-            Langue = Langue,
+            Capitales = Capitales, Langue = Langue,
         };
 
         /// <summary>Ce que disent ces surcharges recouvertes par <paramref name="dessus"/>, qui l'emporte.</summary>
         public Surcharges Puis(Surcharges dessus) => new(
             dessus.FontFamily ?? FontFamily, dessus.FontSize ?? FontSize, dessus.Bold ?? Bold,
             dessus.Italic ?? Italic, dessus.Underline ?? Underline, dessus.Foreground ?? Foreground,
-            dessus.BaselineShift != 0 ? dessus.BaselineShift : BaselineShift, dessus.Langue ?? Langue);
+            dessus.BaselineShift != 0 ? dessus.BaselineShift : BaselineShift, dessus.Langue ?? Langue,
+            dessus.Capitales ?? Capitales);
 
         /// <summary>Le style d'un caractère que ces surcharges recouvrent, sur le style du bloc.</summary>
         public StyleEffectif Sur(StyleEffectif commun) => new(
             FontFamily ?? commun.FontFamily, FontSize ?? commun.FontSize, Bold ?? commun.Bold,
             Italic ?? commun.Italic, Underline ?? commun.Underline, Foreground ?? commun.Foreground,
-            BaselineShift != 0 ? BaselineShift : commun.BaselineShift);
+            BaselineShift != 0 ? BaselineShift : commun.BaselineShift)
+        {
+            Capitales = Capitales ?? commun.Capitales,
+        };
 
         public Surcharges Poser(StyleDeLaPlage style) => new(
             style.FontFamily ?? FontFamily, style.FontSize ?? FontSize, style.Bold ?? Bold,
             style.Italic ?? Italic, style.Underline ?? Underline, style.Foreground ?? Foreground,
-            style.BaselineShift ?? BaselineShift, style.Langue ?? Langue);
+            style.BaselineShift ?? BaselineShift, style.Langue ?? Langue, style.Capitales ?? Capitales);
 
         /// <summary>
         /// Nulle, toute valeur égale à celle du bloc — comparée brute. Ce qui reste dit
@@ -447,7 +459,7 @@ public static class MiseEnForme
         public Surcharges Normaliser(StyleEffectif commun) => new(
             Sauf(FontFamily, commun.FontFamily), Sauf(FontSize, commun.FontSize), Sauf(Bold, commun.Bold),
             Sauf(Italic, commun.Italic), Sauf(Underline, commun.Underline), Sauf(Foreground, commun.Foreground),
-            BaselineShift.Equals(commun.BaselineShift) ? 0 : BaselineShift, Langue);
+            BaselineShift.Equals(commun.BaselineShift) ? 0 : BaselineShift, Langue, Sauf(Capitales, commun.Capitales));
 
         /// <summary>
         /// Ce que <c>Ctrl+Espace</c> laisse : la langue seule. Rendre au texte le style du

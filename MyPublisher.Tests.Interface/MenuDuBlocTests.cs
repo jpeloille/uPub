@@ -264,7 +264,9 @@ public class MenuDuBlocTests
         Assert.Equal("Ctrl+Maj+F", GesteAffiche(Entree(Entree(menu, "O_rdre"), "Premier _plan")));
         Assert.Equal("Ctrl+Maj+B", GesteAffiche(Entree(Entree(menu, "O_rdre"), "Arrière-p_lan")));
         Rendu.Cliquer(Entree(menu, "_Zoom"));
-        Assert.Equal("Ctrl++", GesteAffiche(Entree(Entree(menu, "_Zoom"), "Zoom _avant")));
+        // Le zoom avant n'a plus de touche depuis N24 (règle 14) : son pendant non plus.
+        Assert.True(string.IsNullOrEmpty(GesteAffiche(Entree(Entree(menu, "_Zoom"), "Zoom _avant"))));
+        Assert.Equal("Ctrl+−", GesteAffiche(Entree(Entree(menu, "_Zoom"), "Zoom a_rrière")));
         Assert.Equal("Ctrl+Maj+L", GesteAffiche(Entree(Entree(menu, "_Zoom"), "Page _entière")));
     }
 
@@ -611,7 +613,9 @@ public class MenuDuBlocTests
         var menu = Rendu.CliquerDroit(fenetre, Rendu.BordDuCaractere(zone, 3));
 
         Assert.True(bloc.IsEditing, "le clic droit dans le texte a refermé la saisie");
-        Assert.Equal(new[] { "Co_uper", "_Copier", "C_oller", "Format du _bloc…" }, Visibles(menu));
+        // L'exposant, l'indice et les capitales s'y ajoutent depuis N24 (règle 14) : la section les
+        // veut au menu contextuel du texte, sur le bloc de texte seul.
+        Assert.Equal(new[] { "Co_uper", "_Copier", "C_oller", "E_xposant et majuscules", "Format du _bloc…" }, Visibles(menu));
         SeparateursAuJuste(menu);
         Assert.Equal("Bonjour", zone.SelectedText);
         Assert.Equal((0, 7), (vm.SelectionDuTexte?.Debut, vm.SelectionDuTexte?.Fin));

@@ -66,6 +66,8 @@ public class MiseEnFormeTests
     {
         FontFamily = "DejaVu Sans", FontSize = 11, Bold = false, Italic = false, Underline = Souligne.Aucun,
         Foreground = "#FF1A1A1A", BaselineShift = 0,
+        // Les capitales du bloc, aucune (poste N24) : elles se lisent comme le reste.
+        Capitales = Capitales.Aucune,
     };
 
     private static readonly ParagrapheEffectif Paragraphe = new(0, 0, 0, 0, 0, TextAlign.Left);

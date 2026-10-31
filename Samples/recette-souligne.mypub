@@ -54,6 +54,7 @@
           "Bold": false,
           "Italic": false,
           "Underline": false,
+          "Capitales": "Aucune",
           "Foreground": "#FF000000",
           "Langue": null,
           "Spans": [
@@ -67,6 +68,7 @@
               "Underline": true,
               "Foreground": null,
               "BaselineShift": 0,
+              "Capitales": null,
               "Langue": null
             }
           ],
@@ -113,6 +115,7 @@
             "Thick": false,
             "WordsOnly": true
           },
+          "Capitales": "Aucune",
           "Foreground": "#FF000000",
           "Langue": null,
           "Spans": [],
@@ -154,6 +157,7 @@
           "Bold": false,
           "Italic": false,
           "Underline": false,
+          "Capitales": "Aucune",
           "Foreground": "#FF000000",
           "Langue": null,
           "Spans": [
@@ -172,6 +176,7 @@
               },
               "Foreground": null,
               "BaselineShift": 0,
+              "Capitales": null,
               "Langue": null
             }
           ],
@@ -218,6 +223,7 @@
             "Thick": false,
             "WordsOnly": false
           },
+          "Capitales": "Aucune",
           "Foreground": "#FF000000",
           "Langue": null,
           "Spans": [],
@@ -259,6 +265,7 @@
           "Bold": false,
           "Italic": false,
           "Underline": false,
+          "Capitales": "Aucune",
           "Foreground": "#FF000000",
           "Langue": null,
           "Spans": [
@@ -277,6 +284,7 @@
               },
               "Foreground": null,
               "BaselineShift": 0,
+              "Capitales": null,
               "Langue": null
             }
           ],
@@ -323,6 +331,7 @@
             "Thick": false,
             "WordsOnly": false
           },
+          "Capitales": "Aucune",
           "Foreground": "#FF000000",
           "Langue": null,
           "Spans": [],
@@ -364,6 +373,7 @@
           "Bold": false,
           "Italic": false,
           "Underline": false,
+          "Capitales": "Aucune",
           "Foreground": "#FF000000",
           "Langue": null,
           "Spans": [
@@ -382,6 +392,7 @@
               },
               "Foreground": null,
               "BaselineShift": 0,
+              "Capitales": null,
               "Langue": null
             }
           ],
@@ -428,6 +439,7 @@
             "Thick": false,
             "WordsOnly": false
           },
+          "Capitales": "Aucune",
           "Foreground": "#FF000000",
           "Langue": null,
           "Spans": [],
@@ -469,6 +481,7 @@
           "Bold": false,
           "Italic": false,
           "Underline": false,
+          "Capitales": "Aucune",
           "Foreground": "#FF000000",
           "Langue": null,
           "Spans": [
@@ -487,6 +500,7 @@
               },
               "Foreground": null,
               "BaselineShift": 0,
+              "Capitales": null,
               "Langue": null
             }
           ],
@@ -533,6 +547,7 @@
             "Thick": true,
             "WordsOnly": false
           },
+          "Capitales": "Aucune",
           "Foreground": "#FF000000",
           "Langue": null,
           "Spans": [],
@@ -574,6 +589,7 @@
           "Bold": false,
           "Italic": false,
           "Underline": false,
+          "Capitales": "Aucune",
           "Foreground": "#FF000000",
           "Langue": null,
           "Spans": [
@@ -592,6 +608,7 @@
               },
               "Foreground": null,
               "BaselineShift": 0,
+              "Capitales": null,
               "Langue": null
             }
           ],
@@ -638,6 +655,7 @@
             "Thick": true,
             "WordsOnly": false
           },
+          "Capitales": "Aucune",
           "Foreground": "#FF000000",
           "Langue": null,
           "Spans": [],
@@ -679,6 +697,7 @@
           "Bold": false,
           "Italic": false,
           "Underline": false,
+          "Capitales": "Aucune",
           "Foreground": "#FF000000",
           "Langue": null,
           "Spans": [
@@ -697,6 +716,7 @@
               },
               "Foreground": null,
               "BaselineShift": 0,
+              "Capitales": null,
               "Langue": null
             }
           ],
@@ -743,6 +763,7 @@
             "Thick": true,
             "WordsOnly": false
           },
+          "Capitales": "Aucune",
           "Foreground": "#FF000000",
           "Langue": null,
           "Spans": [],
@@ -784,6 +805,7 @@
           "Bold": false,
           "Italic": false,
           "Underline": false,
+          "Capitales": "Aucune",
           "Foreground": "#FF000000",
           "Langue": null,
           "Spans": [
@@ -802,6 +824,7 @@
               },
               "Foreground": null,
               "BaselineShift": 0,
+              "Capitales": null,
               "Langue": null
             }
           ],
@@ -848,6 +871,7 @@
             "Thick": true,
             "WordsOnly": false
           },
+          "Capitales": "Aucune",
           "Foreground": "#FF000000",
           "Langue": null,
           "Spans": [],
@@ -889,6 +913,7 @@
           "Bold": false,
           "Italic": false,
           "Underline": false,
+          "Capitales": "Aucune",
           "Foreground": "#FF000000",
           "Langue": null,
           "Spans": [
@@ -907,6 +932,7 @@
               },
               "Foreground": null,
               "BaselineShift": 0,
+              "Capitales": null,
               "Langue": null
             }
           ],
@@ -948,6 +974,7 @@
           "Bold": false,
           "Italic": false,
           "Underline": true,
+          "Capitales": "Aucune",
           "Foreground": "#FF1F3B57",
           "Langue": null,
           "Spans": [],
@@ -994,6 +1021,7 @@
             "Thick": false,
             "WordsOnly": true
           },
+          "Capitales": "Aucune",
           "Foreground": "#FF1F3B57",
           "Langue": null,
           "Spans": [],
@@ -1035,6 +1063,7 @@
           "Bold": false,
           "Italic": false,
           "Underline": true,
+          "Capitales": "Aucune",
           "Foreground": "#FFB0302A",
           "Langue": null,
           "Spans": [
@@ -1048,6 +1077,7 @@
               "Underline": null,
               "Foreground": null,
               "BaselineShift": 0.33,
+              "Capitales": null,
               "Langue": null
             }
           ],

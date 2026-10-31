@@ -54,6 +54,7 @@
           "Bold": false,
           "Italic": false,
           "Underline": false,
+          "Capitales": "Aucune",
           "Foreground": "#FF1A1A1A",
           "Langue": null,
           "Spans": [
@@ -67,6 +68,7 @@
               "Underline": null,
               "Foreground": null,
               "BaselineShift": 0,
+              "Capitales": null,
               "Langue": null
             },
             {
@@ -79,6 +81,7 @@
               "Underline": null,
               "Foreground": null,
               "BaselineShift": 0,
+              "Capitales": null,
               "Langue": null
             },
             {
@@ -91,6 +94,7 @@
               "Underline": null,
               "Foreground": "#FFCC0000",
               "BaselineShift": 0,
+              "Capitales": null,
               "Langue": null
             },
             {
@@ -103,6 +107,7 @@
               "Underline": null,
               "Foreground": null,
               "BaselineShift": 0,
+              "Capitales": null,
               "Langue": null
             }
           ],
@@ -144,6 +149,7 @@
           "Bold": false,
           "Italic": false,
           "Underline": false,
+          "Capitales": "Aucune",
           "Foreground": "#FF1A1A1A",
           "Langue": null,
           "Spans": [
@@ -157,6 +163,7 @@
               "Underline": null,
               "Foreground": null,
               "BaselineShift": -0.25,
+              "Capitales": null,
               "Langue": null
             },
             {
@@ -169,6 +176,7 @@
               "Underline": null,
               "Foreground": null,
               "BaselineShift": 0.35,
+              "Capitales": null,
               "Langue": null
             }
           ],
@@ -210,6 +218,7 @@
           "Bold": false,
           "Italic": false,
           "Underline": false,
+          "Capitales": "Aucune",
           "Foreground": "#FF1A1A1A",
           "Langue": null,
           "Spans": [
@@ -223,6 +232,7 @@
               "Underline": null,
               "Foreground": null,
               "BaselineShift": 0,
+              "Capitales": null,
               "Langue": null
             }
           ],
