@@ -622,10 +622,11 @@ public class DispositionTests
 
         var menu = fenetre.GetVisualDescendants().OfType<MenuItem>().Single(m => Equals(m.Header, "_Texte"));
         // Police… et Paragraphe… en tête depuis N18 (règle 14), comme le menu Format de Publisher
-        // (p. 24) : ils mènent à la barre et au dock. La mise en forme suit.
+        // (p. 24) : ils mènent à la barre et au dock ; Puces et numéros… les suit depuis N23. La
+        // mise en forme suit.
         var toutes = menu.Items.OfType<MenuItem>().ToList();
-        Assert.Equal(new[] { "_Police…", "Pa_ragraphe…" }, toutes.Take(2).Select(e => e.Header as string));
-        var entrees = toutes.Skip(2).ToList();
+        Assert.Equal(new[] { "_Police…", "Pa_ragraphe…", "P_uces et numéros…" }, toutes.Take(3).Select(e => e.Header as string));
+        var entrees = toutes.Skip(3).ToList();
         Assert.Equal(new[]
         {
             "_Gras", "_Italique", "_Souligné", "_Aligner le texte à gauche", "_Centrer le texte", "Aligner le texte à _droite",

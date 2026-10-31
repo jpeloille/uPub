@@ -806,6 +806,9 @@
                              dans la barre contextuelle, les retraits et les espacements au dock. -->
                         <MenuItem x:Name="MenuPolice" Header="_Police…" Command="{Binding PoliceCommand}"/>
                         <MenuItem x:Name="MenuParagraphe" Header="Pa_ragraphe…" Command="{Binding ParagrapheCommand}"/>
+                        <!-- Format ▸ Bullets and Numbering… (p. 24 ; poste N23) : la liste « Puces et
+                             numéros » de la section Paragraphe du dock. -->
+                        <MenuItem x:Name="MenuPucesEtNumeros" Header="P_uces et numéros…" Command="{Binding PucesEtNumerosCommand}"/>
                         <Separator/>
                         <MenuItem Header="_Gras" InputGesture="Ctrl+G" Command="{Binding BasculerGrasCommand}"/>
                         <MenuItem Header="_Italique" InputGesture="Ctrl+I" Command="{Binding BasculerItaliqueCommand}"/>
@@ -1432,7 +1435,7 @@
                                                             <TextBlock Text="Paragraphe"/>
                                                         </StackPanel>
                                                     </ToggleButton>
-                                                    <Grid x:Name="ContenuParagraphe" Classes="contenuDeSection" ColumnDefinitions="*,8,*" RowDefinitions="Auto,8,Auto,8,Auto,8,Auto"
+                                                    <Grid x:Name="ContenuParagraphe" Classes="contenuDeSection" ColumnDefinitions="*,8,*" RowDefinitions="Auto,8,Auto,8,Auto,8,Auto,8,Auto"
                                                           x:DataType="vm:ParagrapheVise"
                                                           DataContext="{Binding #Root.((vm:MainWindowViewModel)DataContext).ParagrapheVise}"
                                                           IsVisible="{Binding #Root.((vm:MainWindowViewModel)DataContext).SectionParagrapheOuverte}">
@@ -1486,6 +1489,40 @@
                                                             <views:ChampNumerique x:Name="EspaceApres" Classes="champ" TextConverter="{x:Static conv:Unite.MillimetresCourts}"
                                                                            Increment="1" Minimum="0"
                                                                            Value="{Binding SpaceAfter, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
+                                                        </StackPanel>
+                                                        <!-- Puces et numéros (poste N23 ; fiche 23, b12) : la liste des
+                                                             paragraphes visés — les mêmes que les retraits —, que
+                                                             Texte ▸ Puces et numéros… atteint ; la maquette n'a pas de
+                                                             bouton pour elle. À côté, la puce d'une liste à puces, ou le
+                                                             premier numéro d'une liste numérotée, qui fait repartir la
+                                                             suite au premier paragraphe visé. -->
+                                                        <StackPanel Grid.Row="8" Grid.Column="0" x:DataType="vm:ListeVisee"
+                                                                    DataContext="{Binding #Root.((vm:MainWindowViewModel)DataContext).ListeVisee}">
+                                                            <TextBlock Classes="libelle libelleAuDessus" Text="Puces et numéros"/>
+                                                            <ComboBox x:Name="ListeDuParagraphe" Classes="champ" HorizontalAlignment="Stretch"
+                                                                      ItemsSource="{x:Static vm:MainWindowViewModel.OptionsDeListe}"
+                                                                      SelectedItem="{Binding Option}">
+                                                                <ComboBox.ItemTemplate>
+                                                                    <DataTemplate DataType="vm:OptionDeListe">
+                                                                        <TextBlock Text="{Binding Libelle}"/>
+                                                                    </DataTemplate>
+                                                                </ComboBox.ItemTemplate>
+                                                            </ComboBox>
+                                                        </StackPanel>
+                                                        <StackPanel Grid.Row="8" Grid.Column="2" x:DataType="vm:ListeVisee"
+                                                                    DataContext="{Binding #Root.((vm:MainWindowViewModel)DataContext).ListeVisee}"
+                                                                    IsVisible="{Binding EnPuces}">
+                                                            <TextBlock Classes="libelle libelleAuDessus" Text="Puce"/>
+                                                            <TextBox x:Name="PuceDuParagraphe" Classes="champ" MaxLength="2"
+                                                                     Text="{Binding Puce}"/>
+                                                        </StackPanel>
+                                                        <StackPanel Grid.Row="8" Grid.Column="2" x:DataType="vm:ListeVisee"
+                                                                    DataContext="{Binding #Root.((vm:MainWindowViewModel)DataContext).ListeVisee}"
+                                                                    IsVisible="{Binding Numerotee}">
+                                                            <TextBlock Classes="libelle libelleAuDessus" Text="Premier numéro"/>
+                                                            <views:ChampNumerique x:Name="PremierNumero" Classes="champ"
+                                                                           FormatString="0" Increment="1" Minimum="1" Maximum="9999"
+                                                                           Value="{Binding PremierNumero}"/>
                                                         </StackPanel>
                                                     </Grid>
 

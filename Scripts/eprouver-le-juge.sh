@@ -3033,6 +3033,14 @@ saboter "un paragraphe à gauche importé (Q26) prend le fer de son bloc" \
     '' \
     'Q26-fer-a-l-import|FerALImport'
 
+# N23 : la numérotation qui ne s'interrompt pas — un paragraphe hors liste laisse la suite courir, et
+# l'élément d'après continue au numéro suivant au lieu de repartir à son premier numéro.
+saboter "la numérotation (N23) ne s'interrompt pas" \
+    MyPublisher.Core/Models/ListeDeParagraphe.cs \
+    '                precedente = null;' \
+    '' \
+    'N23-puces-et-numeros|PucesEtNumeros'
+
 # Un motif qui ne désigne aucun sabotage ne prouve rien. « eprouver-le-juge.sh I4 » sortait
 # en 0 sur « 0 sabotages, 0 attrapés », quand les intitulés de la planche ne portaient pas
 # encore le code du poste : le filet passait pour éprouvé sans qu'on l'ait troué.

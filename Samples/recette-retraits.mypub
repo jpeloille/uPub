@@ -69,6 +69,7 @@
           "IndentFirstLine": -18,
           "SpaceBefore": 0,
           "SpaceAfter": 0,
+          "Liste": null,
           "Paragraphs": [],
           "Columns": 1,
           "ColumnGap": 5.67,
@@ -109,6 +110,7 @@
           "IndentFirstLine": 0,
           "SpaceBefore": 0,
           "SpaceAfter": 0,
+          "Liste": null,
           "Paragraphs": [],
           "Columns": 1,
           "ColumnGap": 5.67,
@@ -149,6 +151,7 @@
           "IndentFirstLine": 0,
           "SpaceBefore": 0,
           "SpaceAfter": 0,
+          "Liste": null,
           "Paragraphs": [
             {
               "Start": 1,
@@ -158,7 +161,8 @@
               "IndentFirstLine": null,
               "SpaceBefore": null,
               "SpaceAfter": null,
-              "Align": null
+              "Align": null,
+              "Liste": null
             }
           ],
           "Columns": 1,
@@ -200,6 +204,7 @@
           "IndentFirstLine": 0,
           "SpaceBefore": 0,
           "SpaceAfter": 12,
+          "Liste": null,
           "Paragraphs": [],
           "Columns": 1,
           "ColumnGap": 5.67,
@@ -240,6 +245,7 @@
           "IndentFirstLine": 0,
           "SpaceBefore": 0,
           "SpaceAfter": 0,
+          "Liste": null,
           "Paragraphs": [],
           "Columns": 1,
           "ColumnGap": 5.67,

@@ -9,8 +9,23 @@ namespace MyPublisher.Models;
 /// son premier caractère dans le texte composé : <c>texte.Substring(Debut, Texte.Length)</c>
 /// est son <paramref name="Texte"/> (poste N3). C'est ce qui permet de passer d'un point de
 /// la ligne à un caractère du texte, et l'inverse — le curseur, le clic, la sélection.
+///
+/// La marque d'un élément de liste — « • », « 3. » — est un morceau sans position (poste N23) : elle
+/// se dessine en tête de la première ligne de son paragraphe, mais n'est pas dans le texte.
+/// <paramref name="Debut"/> vaut alors <see cref="SansPosition"/>, et <paramref name="Largeur"/>
+/// compte la marque et le blanc qui la sépare du texte, jusqu'au retrait suspendu.
 /// </summary>
-public readonly record struct Morceau(string Texte, StyleEffectif Style, double X, double Largeur, int Debut);
+public readonly partial record struct Morceau(string Texte, StyleEffectif Style, double X, double Largeur, int Debut);
+
+/// <summary>La marque d'un élément de liste, morceau sans position (poste N23).</summary>
+public readonly partial record struct Morceau
+{
+    /// <summary>Le début d'un morceau qui n'est pas dans le texte : la marque d'une liste.</summary>
+    public const int SansPosition = -1;
+
+    /// <summary>Le morceau est la marque d'un élément de liste, sans position dans le texte (N23).</summary>
+    public bool EstUneMarque => Debut < 0;
+}
 
 /// <summary>
 /// Une portion soulignée d'une ligne : de <paramref name="Debut"/> à <paramref name="Fin"/>,
@@ -225,6 +240,11 @@ public static class Compositeur
         var reglages = ParagrapheEffectif.Resoudre(
             mots.Count(u => u.FinDeLigne) + 1, ecarts, communParagraphe);
 
+        // La marque de chaque élément de liste — « • », « 3. » —, numérotée de proche en proche
+        // (poste N23). Un texte vide n'en dessine pas : la composition n'en rend aucune ligne, ni
+        // à l'écran ni au PDF, et la ligne qu'aurait un texte vide ne sert qu'au curseur.
+        var marques = texte.Length == 0 ? new string?[reglages.Count] : Listes.Marques(reglages);
+
         var courante = new List<Morceau>();
         var largeurCourante = 0.0;
         // La même ligne mesurée à la règle de coupure : c'est sur elle, et sur elle
@@ -239,6 +259,9 @@ public static class Compositeur
         var disponible = largeurColonne;
         // Où commence, dans le texte, la ligne en cours (poste N3).
         var debutDeLigne = 0;
+        // La marque du paragraphe en cours, tant qu'elle attend son style : celui de son premier
+        // caractère, qu'on ne connaît qu'à la première unité du paragraphe (poste N23).
+        var marqueAPoser = marques[0];
         Cadrer();
 
         // Le cadre de la ligne à venir. Il change deux fois : au passage à la ligne,
@@ -256,6 +279,29 @@ public static class Compositeur
 
         ParagrapheEffectif Reglage() => reglages[Math.Min(paragraphe, reglages.Count - 1)];
 
+        // La marque d'un élément de liste, posée en tête de la première ligne de son paragraphe,
+        // au style de son premier caractère (poste N23) : un morceau sans position dans le texte.
+        // Le texte la suit au retrait suspendu, quand elle y tient — c'est le creux qu'un retrait
+        // de première ligne négatif ménage —, sinon à la chasse d'une espace après elle. Sa
+        // largeur compte les deux, si bien que le texte, les taquets et le fer d'une ligne la
+        // voient comme un mot de plus. La décision du renvoi la mesure à la règle de coupure,
+        // commune aux deux rendus (Q13).
+        void PoserLaMarque(StyleEffectif style)
+        {
+            if (marqueAPoser is not { } marque) return;
+            marqueAPoser = null;
+
+            var pendant = -Reglage().IndentFirstLine;
+            var dessin = metriques.Largeur(marque, style);
+            var coupure = metriques.LargeurDeCoupure(marque, style);
+            var l = pendant > dessin ? pendant : dessin + metriques.Largeur(" ", style);
+            var c = pendant > coupure ? pendant : coupure + metriques.LargeurDeCoupure(" ", style);
+
+            courante.Add(new Morceau(marque, style, largeurCourante, l, Morceau.SansPosition));
+            largeurCourante += l;
+            coupureCourante += c;
+        }
+
         // Ferme la ligne en cours sur la position <fin> du texte ; la suivante commence à
         // <suivante> — après le saut qui ferme un paragraphe, ou là même où un mot est
         // renvoyé.
@@ -263,13 +309,13 @@ public static class Compositeur
         {
             // Les blancs de fin de ligne ne comptent ni dans la largeur ni à l'écran. Ils
             // restent dans la plage de la ligne : le curseur s'y pose.
-            while (courante.Count > 0 && courante[^1].Texte.Trim().Length == 0)
+            while (courante.Count > 0 && !courante[^1].EstUneMarque && courante[^1].Texte.Trim().Length == 0)
             {
                 largeurCourante -= courante[^1].Largeur;
                 courante.RemoveAt(courante.Count - 1);
             }
 
-            if (courante.Count > 0)
+            if (courante.Count > 0 && !courante[^1].EstUneMarque)
             {
                 var dernier = courante[^1];
                 var rogne = dernier.Texte.TrimEnd();
@@ -307,13 +353,26 @@ public static class Compositeur
 
             // Fermer sur une fin de paragraphe ouvre le suivant ; fermer sur un renvoi
             // à la ligne reste dans le même paragraphe, mais n'est plus sa première.
-            if (finDeParagraphe) paragraphe++;
+            if (finDeParagraphe)
+            {
+                paragraphe++;
+                marqueAPoser = marques[Math.Min(paragraphe, marques.Count - 1)];
+            }
+
             premiereLigne = finDeParagraphe;
             Cadrer();
         }
 
+        // Le style de la dernière unité : celui de la marque d'un paragraphe vide au bout du texte.
+        var styleDuBout = commun;
+
         foreach (var mot in mots)
         {
+            // La première unité du paragraphe donne son style à la marque : son premier
+            // caractère, ou le saut d'un paragraphe vide.
+            PoserLaMarque(mot.Style);
+            styleDuBout = mot.Style;
+
             // Le saut n'est dans aucune ligne : celle-ci finit avant lui, la suivante
             // commence après.
             if (mot.FinDeLigne)
@@ -353,7 +412,9 @@ public static class Compositeur
             // La décision ne lit que la règle de coupure, commune aux deux rendus. Lire
             // ici la largeur du dessin, c'est laisser l'écran et le PDF couper chacun à
             // sa mesure : c'était le défaut du poste Q13.
-            if (!tabulation && courante.Count > 0 &&
+            // Une ligne qui ne porte que la marque d'une liste est vide pour le renvoi : le mot reste
+            // avec sa marque (poste N23).
+            if (!tabulation && courante.Exists(m => !m.EstUneMarque) &&
                 coupureCourante + metriques.LargeurDeCoupure(mot.Texte.TrimEnd(), mot.Style) > disponible)
             {
                 var debut = mot.Texte.TrimStart();
@@ -375,6 +436,7 @@ public static class Compositeur
             coupureCourante += c;
         }
 
+        PoserLaMarque(styleDuBout);
         Fermer(finDeParagraphe: true, fin: texte.Length, suivante: texte.Length);
 
         // Chaque morceau porte son abscisse relative au début de la ligne ; on la
@@ -676,7 +738,8 @@ public static class Compositeur
         {
             var morceau = ligne.Morceaux[m];
             var souligne = morceau.Style.Underline;
-            if (!souligne.Actif) continue;
+            // La marque d'une liste n'est pas du texte : elle ne se souligne pas (poste N23).
+            if (!souligne.Actif || morceau.EstUneMarque) continue;
 
             var debut = morceau.X + decalages[m];
 
@@ -760,6 +823,8 @@ public static class Compositeur
         for (var m = 0; m < morceaux.Count; m++)
         {
             var morceau = morceaux[m];
+            // La marque d'une liste n'a pas de position : le texte commence après elle (N23).
+            if (morceau.EstUneMarque) continue;
             var dedans = position - morceau.Debut;
             if (dedans >= morceau.Texte.Length) continue;
 
@@ -770,9 +835,12 @@ public static class Compositeur
             return morceau.X + decalages[m] + avant;
         }
 
-        if (morceaux.Count == 0)
+        if (!morceaux.Any(m => !m.EstUneMarque))
         {
-            return Pendants(texte, ligne.Debut, position, commun, depart: 0, metriques);
+            // Une ligne sans texte : rien, ou la seule marque d'un élément de liste vide, après
+            // laquelle ses blancs pendent (poste N23).
+            var depart = morceaux.Count == 0 ? 0 : morceaux[^1].X + decalages[^1] + morceaux[^1].Largeur;
+            return depart + Pendants(texte, ligne.Debut, position, commun, depart, metriques);
         }
 
         var dernier = morceaux[^1];

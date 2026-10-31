@@ -103,11 +103,20 @@ public partial class ParagraphSpan : ObservableObject
     [property: JsonPropertyOrder(95)]
     private TextAlign? _align;
 
+    /// <summary>
+    /// La liste du paragraphe (poste N23), ou <c>null</c> pour celle du bloc. Une liste
+    /// <see cref="SorteDeListe.Aucune"/> sort le paragraphe d'une liste que le bloc porte. Une clé
+    /// additive (règle 15) : nulle dans tous les écarts écrits avant le poste.
+    /// </summary>
+    [ObservableProperty]
+    [property: JsonPropertyOrder(97)]
+    private ListeDeParagraphe? _liste;
+
     public ParagraphSpan Clone() => new()
     {
         Start = Start, Length = Length, IndentLeft = IndentLeft, IndentRight = IndentRight,
         IndentFirstLine = IndentFirstLine, SpaceBefore = SpaceBefore, SpaceAfter = SpaceAfter,
-        Align = Align,
+        Align = Align, Liste = Liste,
     };
 }
 
@@ -121,6 +130,14 @@ public readonly record struct ParagrapheEffectif(
     double SpaceBefore, double SpaceAfter, TextAlign Align)
 {
     /// <summary>
+    /// La liste du paragraphe (poste N23), nulle hors liste : une liste
+    /// <see cref="SorteDeListe.Aucune"/> n'arrive jamais ici (<see cref="Listes.Effective"/>), si
+    /// bien que deux paragraphes sans liste sont égaux. Hors des membres positionnels : les
+    /// réglages construits sans elle n'ont pas de liste, comme avant le poste.
+    /// </summary>
+    public ListeDeParagraphe? Liste { get; init; }
+
+    /// <summary>
     /// Les réglages de chacun des <paramref name="nombre"/> paragraphes du bloc. Les
     /// écarts qui se chevauchent, débordent ou remontent le temps sont ramenés à
     /// quelque chose de lisible plutôt que refusés, et le dernier posé l'emporte —
@@ -130,7 +147,7 @@ public readonly record struct ParagrapheEffectif(
         int nombre, IReadOnlyList<ParagraphSpan> ecarts, ParagrapheEffectif commun)
     {
         var reglages = new ParagrapheEffectif[Math.Max(nombre, 1)];
-        Array.Fill(reglages, commun);
+        Array.Fill(reglages, commun with { Liste = Listes.Effective(commun.Liste) });
 
         foreach (var ecart in ecarts)
         {
@@ -144,7 +161,10 @@ public readonly record struct ParagrapheEffectif(
                     ecart.IndentFirstLine ?? reglages[i].IndentFirstLine,
                     ecart.SpaceBefore ?? reglages[i].SpaceBefore,
                     ecart.SpaceAfter ?? reglages[i].SpaceAfter,
-                    ecart.Align ?? reglages[i].Align);
+                    ecart.Align ?? reglages[i].Align)
+                {
+                    Liste = ecart.Liste is { } liste ? Listes.Effective(liste) : reglages[i].Liste,
+                };
             }
         }
 

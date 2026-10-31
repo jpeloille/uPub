@@ -204,7 +204,7 @@ sur le dock.
 Les entrées « … » des menus mènent au dock, comme les dialogues *Format…* de Publisher : *Fichier ▸
 Mise en page…* au format, *Disposition ▸ Repères de mise en page…* aux marges et à la grille,
 *Repères de règle ▸ Format…* aux repères, *Page ▸ Arrière-plan…* au fond de page, *Texte ▸
-Paragraphe…* aux retraits, *Faire pivoter ou retourner ▸ Rotation personnalisée…* à l'angle — le
+Paragraphe…* aux retraits, *Texte ▸ Puces et numéros…* à la liste du paragraphe, *Faire pivoter ou retourner ▸ Rotation personnalisée…* à l'angle — le
 dock rouvert s'il est replié, l'onglet choisi, la section ouverte, le focus dans son premier champ ;
 *Texte ▸ Police…* mène à la liste des polices de la barre contextuelle. Le même sous-menu fait
 pivoter d'un quart de tour, à gauche ou à droite, comme les boutons −90° et +90° de Position et
@@ -306,6 +306,17 @@ Fenêtre masque aussi l'un ou l'autre.
   la barre contextuelle, au menu Texte et au clavier ; aucun bouton n'est allumé quand
   les paragraphes visés ont des fers différents. L'interligne, lui, reste un réglage
   du bloc : Publisher le règle par paragraphe, c'est un écart assumé.
+- **Puces et numérotation** : la liste « Puces et numéros » de la section Paragraphe
+  du dock — où mène *Texte ▸ Puces et numéros…* — met les mêmes paragraphes en liste à
+  puces (« • » par défaut, ou le caractère qu'on tape) ou numérotée, « 1. », « a) » ou
+  « i. », avec leur premier numéro. La marque se dessine dans le retrait de première
+  ligne, au style du premier caractère, à l'écran comme au PDF ; un paragraphe sans
+  retrait reçoit le retrait suspendu d'Office, 18 pt. Les éléments consécutifs d'une
+  même liste se numérotent de proche en proche ; un paragraphe hors de la liste
+  interrompt la suite, et le premier numéro la fait repartir. En saisie, Entrée dans un
+  élément continue la liste, et Entrée dans un élément vide l'en sort. Une liste ne
+  court pas d'un bloc à l'autre, et l'import d'un `.pub` ne la lit pas : ses listes
+  restent un retrait négatif et un caractère tapé.
 - **Colonnes à l'intérieur d'un bloc de texte** : on donne au bloc un nombre de
   colonnes et une gouttière, et le texte remplit la première jusqu'au bas du bloc
   avant de passer à la suivante. C'est autre chose que la grille de composition plus
