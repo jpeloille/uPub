@@ -16,8 +16,9 @@ namespace MyPublisher.Views;
 ///
 /// Elle tient ici ses touches et son focus : <c>Ctrl+F</c> et <c>Ctrl+H</c> la font prendre le
 /// focus, au texte cherché ou au texte de remplacement, tout le texte pris ; <c>Entrée</c> dans
-/// l'un ou l'autre cherche le suivant ; <c>Échap</c> la ferme et rend la planche (règle 13 de la
-/// phase N) — avant la fenêtre, pour laquelle <c>Échap</c> désélectionnerait.
+/// l'un ou l'autre cherche le suivant, le focus restant dans la barre ; <c>Échap</c> la ferme —
+/// avant la fenêtre, pour laquelle <c>Échap</c> désélectionnerait — et rend le focus au texte
+/// trouvé s'il en est un de sélectionné, la planche sinon (règle 13 de la phase N).
 /// </summary>
 public partial class BarreDeRecherche : UserControl
 {

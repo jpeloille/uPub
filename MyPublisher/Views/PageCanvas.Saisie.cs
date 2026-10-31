@@ -285,22 +285,41 @@ public partial class PageCanvas
 
     private void SuivreLaRecherche()
     {
-        if (_vmDeLaRecherche is not null) _vmDeLaRecherche.TexteTrouve -= OnTexteTrouve;
+        if (_vmDeLaRecherche is not null)
+        {
+            _vmDeLaRecherche.TexteTrouve -= OnTexteTrouve;
+            _vmDeLaRecherche.SaisieRendue -= OnSaisieRendue;
+        }
+
         _vmDeLaRecherche = DataContext as MainWindowViewModel;
-        if (_vmDeLaRecherche is not null) _vmDeLaRecherche.TexteTrouve += OnTexteTrouve;
+        if (_vmDeLaRecherche is not null)
+        {
+            _vmDeLaRecherche.TexteTrouve += OnTexteTrouve;
+            _vmDeLaRecherche.SaisieRendue += OnSaisieRendue;
+        }
     }
 
     /// <summary>
     /// La recherche a trouvé un texte dans un bloc de la page, que le modèle de vue a pris seul
     /// (poste N20) : la saisie s'ouvre — ou reste ouverte, sur le même bloc —, la plage trouvée
-    /// sélectionnée, le curseur à sa fin, comme après un glissé (N12). Le champ prend le focus, et
-    /// la sélection est dite au modèle de vue comme toute autre (N15). Après l'ouverture : le champ
-    /// n'existe qu'au passage de mise en page qui suit, et <see cref="BeginTextEdit"/> y pose son
-    /// curseur d'abord.
+    /// sélectionnée, le curseur à sa fin, comme après un glissé (N12), et dessinée sur la
+    /// composition (N21). Après l'ouverture : le champ n'existe qu'au passage de mise en page qui
+    /// suit, et <see cref="BeginTextEdit"/> y pose son curseur d'abord.
+    ///
+    /// Le focus reste dans la barre de recherche quand il y était — <c>Entrée</c>, Suivant, <c>F3</c>
+    /// dans l'un de ses champs —, comme dans le volet de Publisher : une seconde <c>Entrée</c> y
+    /// cherche le suivant (décision du propriétaire, 31 octobre 2026). La sélection qui compte est
+    /// alors celle du modèle de vue (N15), que les marques dessinent : le champ efface la sienne en
+    /// perdant le focus. Une saisie neuve prend le focus en s'ouvrant ; il revient aussitôt à la
+    /// barre, la transaction de la saisie refermée sans pas (Q25). Hors de la barre — <c>F3</c> dans
+    /// le texte ou sur la planche —, le champ du bloc prend le focus, comme avant.
     /// </summary>
     private void OnTexteTrouve(object? sender, SelectionDuTexte trouve)
     {
         if (trouve.Bloc is not TextFrame bloc) return;
+
+        var dansLaBarre = TopLevel.GetTopLevel(this)?.FocusManager?.GetFocusedElement() as InputElement;
+        if (dansLaBarre?.FindAncestorOfType<BarreDeRecherche>(includeSelf: true) is null) dansLaBarre = null;
 
         if (!ReferenceEquals(_editing, bloc))
         {
@@ -312,10 +331,34 @@ public partial class PageCanvas
         {
             if (!ReferenceEquals(_editing, bloc) || _zoneDeSaisie is not { } zone) return;
 
-            zone.Focus();
             var longueur = zone.Text?.Length ?? 0;
-            PoserLaSelection(zone, Math.Clamp(trouve.Debut, 0, longueur), Math.Clamp(trouve.Fin, 0, longueur));
+            var debut = Math.Clamp(trouve.Debut, 0, longueur);
+            var fin = Math.Clamp(trouve.Fin, 0, longueur);
+            if (dansLaBarre is null)
+            {
+                zone.Focus();
+                PoserLaSelection(zone, debut, fin);
+                return;
+            }
+
+            if (zone.IsFocused) PoserLaSelection(zone, debut, fin);
+            dansLaBarre.Focus();
+            _vm?.SuivreLaSelectionDuTexte(SelectionDuTexte.De(bloc, null, debut, fin, longueur));
         }, DispatcherPriority.Background);
+    }
+
+    /// <summary>
+    /// La barre de recherche se ferme sur une occurrence sélectionnée (poste N20) : le champ du bloc
+    /// reprend le focus, la sélection que le modèle de vue garde reposée dans le champ, et la frappe
+    /// la remplace, dans la transaction que le focus rouvre (Q25).
+    /// </summary>
+    private void OnSaisieRendue(object? sender, SelectionDuTexte selection)
+    {
+        if (!ReferenceEquals(selection.Bloc, _editing) || _zoneDeSaisie is not { } zone) return;
+
+        var longueur = zone.Text?.Length ?? 0;
+        zone.Focus();
+        PoserLaSelection(zone, Math.Clamp(selection.Ancre, 0, longueur), Math.Clamp(selection.Curseur, 0, longueur));
     }
 
     /// <summary>

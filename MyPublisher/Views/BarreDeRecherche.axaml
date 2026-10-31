@@ -8,9 +8,11 @@
     Le texte cherché, le texte de remplacement, « Respecter la casse », « Mot entier », puis
     Suivant, Remplacer, Remplacer tout, et la croix qui la ferme. Les deux champs sont des champs
     de texte : les lettres seules s'y écrivent et n'arment aucun outil (règle 9) ; Entrée y cherche
-    le suivant, Échap ferme la barre et rend la planche (règle 13). Les boutons ne prennent pas le
-    focus : Suivant laisse la saisie au texte qu'il trouve, et Remplacer fait son pas où que soit
-    le focus.
+    le suivant, et le focus y reste — le texte trouvé est sélectionné en saisie, dessiné sur la
+    composition (N21), comme dans le volet de Publisher : une seconde Entrée cherche le suivant.
+    Échap ferme la barre : sur une occurrence sélectionnée, le focus va au texte trouvé, où l'on
+    tape par-dessus ; sinon, il rend la planche (règle 13). Les boutons ne prennent pas le focus,
+    et Remplacer fait son pas où que soit le focus.
 
     Elle ne s'ouvre aucune transaction : chercher ne change pas le document ; un remplacement
     fait son propre pas (MainWindowViewModel.Rechercher.cs).

@@ -21,7 +21,9 @@ namespace MyPublisher.ViewModels;
 ///
 /// Le texte trouvé dans un bloc de texte est sélectionné en saisie (N12, N15) : le modèle de vue
 /// prend le bloc, change de page s'il le faut, et demande à la planche d'ouvrir sa saisie la plage
-/// sélectionnée (<see cref="TexteTrouve"/>). Trouvé dans un groupe, il sélectionne le groupe et le
+/// sélectionnée (<see cref="TexteTrouve"/>), dessinée sur la composition (N21). Cherché depuis la
+/// barre, le focus y reste, comme dans le volet de Publisher, et <c>Échap</c> le rend au texte
+/// trouvé (décision du propriétaire, 31 octobre 2026). Trouvé dans un groupe, il sélectionne le groupe et le
 /// dit, jusqu'à N26, qui entrera dans les groupes ; dans une case, il sélectionne le tableau et
 /// nomme la case, qui se règle au dock — la page n'a pas de saisie de case.
 ///
@@ -65,6 +67,13 @@ public partial class MainWindowViewModel
     /// sa fin. La planche l'écoute (<c>PageCanvas.Saisie.cs</c>).
     /// </summary>
     public event EventHandler<SelectionDuTexte>? TexteTrouve;
+
+    /// <summary>
+    /// La barre se ferme sur une occurrence sélectionnée en saisie : la planche rend le focus au
+    /// champ du bloc, sur la sélection que le modèle de vue garde (décision du propriétaire, 31
+    /// octobre 2026).
+    /// </summary>
+    public event EventHandler<SelectionDuTexte>? SaisieRendue;
 
     /// <summary>Ce qu'on cherche, tel que la barre le dit.</summary>
     public CriteresDeRecherche CriteresDeRecherche => new(TexteCherche ?? "", RespecterLaCasse, MotEntier);
@@ -156,9 +165,20 @@ public partial class MainWindowViewModel
         RechercheDemandee?.Invoke(this, remplacer);
     }
 
-    /// <summary><c>Échap</c> dans la barre, et sa croix : la barre se ferme.</summary>
+    /// <summary>
+    /// <c>Échap</c> dans la barre, et sa croix : la barre se ferme. Sur une occurrence sélectionnée
+    /// en saisie, la planche rend le focus au champ du bloc, la sélection gardée, et l'on tape
+    /// par-dessus (<see cref="SaisieRendue"/>) ; sinon, la barre rend la planche.
+    /// </summary>
     [RelayCommand]
-    private void FermerLaRecherche() => RechercheVisible = false;
+    private void FermerLaRecherche()
+    {
+        RechercheVisible = false;
+        if (OccurrenceSelectionnee() is { Cible.EnSaisie: true } && SelectionDuTexte is { } selection)
+        {
+            SaisieRendue?.Invoke(this, selection);
+        }
+    }
 
     /// <summary>
     /// <c>F3</c>, <c>Maj+F4</c>, <i>Suivant</i>, <c>Entrée</c> dans la barre : l'occurrence suivante,
