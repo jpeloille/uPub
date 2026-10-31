@@ -127,7 +127,10 @@ traitees = ({f"Ctrl+{k}" for k in interceptees_ctrl} | {f"Shift+{k}" for k in se
 noms = {"Shift": "Maj", "Back": "Retour arrière", "Delete": "Suppr", "Insert": "Inser", "Escape": "Échap", "Space": "Espace",
         "Left": "Flèches", "Right": "Flèches", "Up": "Flèches", "Down": "Flèches",
         # Comme les menus et les bulles les écrivent (GestesEnFrancais, N13) ; poste N18.
-        "PageDown": "Pg.Suiv", "PageUp": "Pg.Préc"}
+        "PageDown": "Pg.Suiv", "PageUp": "Pg.Préc",
+        # La touche « = », comme la fiche 24 et les menus l'écrivent : Ctrl+= l'indice, Ctrl+Maj+=
+        # l'exposant (poste N24).
+        "OemPlus": "="}
 def au_readme(geste):
     return "+".join(noms.get(partie, partie) for partie in geste.split("+"))
 
@@ -163,7 +166,8 @@ for c, commande in caracteres:
 # aussi cités dans la prose. Un contrôle qu'on n'a pas vu échouer ne prouve rien. Les
 # touches de zoom sont déclarées en double par nature — pavé numérique et rangée du haut —
 # et le tableau les résume d'une ligne ; on ne les confronte pas.
-zoom = {"Ctrl+OemPlus", "Ctrl+Add", "Ctrl+OemMinus", "Ctrl+Subtract", "Ctrl+D0", "Ctrl+NumPad0"}
+# Ctrl+OemPlus n'est plus du zoom depuis N24 : l'indice, que le tableau dit « Ctrl+= ».
+zoom = {"Ctrl+Add", "Ctrl+OemMinus", "Ctrl+Subtract", "Ctrl+D0", "Ctrl+NumPad0"}
 confrontes = [g for g in gestes if g not in zoom]
 manquants = [g for g in confrontes if au_readme(g) not in tableau]
 manquants += [f"OnKeyDown : {g}" for g in sorted(traitees)

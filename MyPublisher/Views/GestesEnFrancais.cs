@@ -69,8 +69,10 @@ public static class GestesEnFrancais
         [Key.Right] = "Droite",
         [Key.Up] = "Haut",
         [Key.Down] = "Bas",
-        // Le signe moins des bulles : « Zoom arrière (Ctrl+−) ».
-        [Key.OemPlus] = "+",
+        // Le signe moins des bulles : « Zoom arrière (Ctrl+−) ». La touche « = » se dit « = »,
+        // comme la fiche 24 l'écrit : « Ctrl+= » est l'indice, « Ctrl+Maj+= » l'exposant (poste
+        // N24) ; « Ctrl++ » faisait taper Maj+= sur l'AZERTY, donc l'exposant.
+        [Key.OemPlus] = "=",
         [Key.Add] = "+",
         [Key.OemMinus] = "−",
         [Key.Subtract] = "−",

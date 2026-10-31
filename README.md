@@ -268,6 +268,13 @@ Fenêtre masque aussi l'un ou l'autre.
   curseur. *Texte ▸ Effacer la mise en forme* (`Ctrl+Espace`) rend à la sélection le style
   du bloc ; *Copier* et *Coller la mise en forme* (`Ctrl+Maj+C`, `Ctrl+Maj+V`) la
   reproduisent ailleurs.
+  *Texte ▸ Exposant et majuscules* met les caractères visés en exposant (`Ctrl+Maj+=`), en
+  indice (`Ctrl+=`), en petites majuscules (`Ctrl+Maj+K`) ou en majuscules, et la même
+  commande les en retire ; le clic droit dans le texte y mène aussi. L'exposant et l'indice
+  sont ceux qu'un `.pub` importé apporte : la ligne de base décalée de la moitié du corps, le
+  corps ramené à 67 %. Les capitales ne changent pas le texte tapé — la recherche, la copie
+  le lisent tel qu'il est — : la composition le dessine en capitales, à l'écran comme au
+  PDF, et les petites majuscules en capitales à 70 % de la hauteur des autres.
   Ces styles suivent la frappe : un mot tapé dans un bloc importé laisse ses gras sur
   leurs mots, et un saut de ligne laisse chaque retrait à son paragraphe. Le texte tapé
   prend le style du caractère qui le précède ; en tête de texte ou de paragraphe, celui
@@ -526,6 +533,8 @@ comptés pour rien : sur un AZERTY, `Ctrl+]` se tape `Ctrl+AltGr+)`, `Ctrl+[` se
 | `Ctrl+G` / `Ctrl+I` / `Ctrl+U` | Gras / Italique / Souligné : en saisie, la sélection du texte, ou le mot du curseur ; hors saisie, tous les caractères du bloc, fragments compris. Une sélection mixte prend le gras |
 | `Ctrl+Espace` | Rend aux caractères visés le style du bloc : la sélection, ou le mot du curseur, en saisie ; tout le bloc hors saisie. La langue reste |
 | `Ctrl+Maj+C` / `Ctrl+Maj+V` | Copier la mise en forme des caractères visés / la poser sur d'autres, en un pas |
+| `Ctrl+=` / `Ctrl+Maj+=` | Indice / Exposant, sur les caractères visés : la ligne de base décalée de la moitié du corps, le corps à 67 %, comme l'import les lit ; la même touche les rend à la ligne de base. Sur l'AZERTY, la touche « = » ; le zoom avant n'a plus de touche |
+| `Ctrl+Maj+K` | Petites majuscules : les minuscules dessinées en capitales à 70 % de la hauteur des capitales, le texte tapé inchangé ; la même touche les retire. *Texte ▸ Exposant et majuscules ▸ Majuscules* met tout en capitales |
 | `Ctrl+L` / `Ctrl+E` / `Ctrl+R` / `Ctrl+J` | Aligner le texte à gauche / Centrer / Aligner à droite / Justifier : le bloc entier, ou, en saisie, les paragraphes que touche la sélection |
 | `Ctrl+]` / `Ctrl+[` | Le corps d'un point de plus / de moins, chaque caractère depuis le sien : la sélection ou le mot du curseur en saisie, tout le bloc hors saisie ; le tableau entier |
 | `Ctrl+Maj+>` / `Ctrl+Maj+<` | La taille suivante / précédente de la liste standard : 8, 9, 10, 10,5, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72 ; au-delà, de dix en dix ; en deçà, d'un point |
@@ -538,7 +547,7 @@ comptés pour rien : sur un AZERTY, `Ctrl+]` se tape `Ctrl+AltGr+)`, `Ctrl+[` se
 | Raccourci | Action |
 |---|---|
 | `Ctrl+F1` | Replier les panneaux, puis les rendre |
-| `Ctrl` + molette, `Ctrl` `+`/`-`/`0` | Zoom — à la molette, le point visé reste sous le pointeur |
+| `Ctrl` + molette, `Ctrl` `-`/`0` | Zoom — à la molette, le point visé reste sous le pointeur ; `Ctrl+−` le zoom arrière, `Ctrl+0` la taille réelle. Le zoom avant n'a plus de touche : `Ctrl+=` est l'indice (N24) |
 | `Espace` tenu | La main : un glissé fait défiler la planche, sans changer d'outil (hors saisie, et pas quand un bouton a le focus) |
 | Clic, `Alt` + clic de la loupe | Zoom avant, zoom arrière, autour du point visé |
 | `F9` | Bascule entre l'affichage courant et la taille réelle, autour de la sélection ; le second rend l'affichage d'avant |

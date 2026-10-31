@@ -409,7 +409,7 @@ public static class PubImporter
             Peser(langue, Math.Max(0, longueur));
             if (longueur <= 0) return;
 
-            var position = style.GetValueOrDefault("style:text-position");
+            var (decalage, echelle) = Position(style.GetValueOrDefault("style:text-position"));
 
             _fragments.Add(new StyleSpan
             {
@@ -419,12 +419,13 @@ public static class PubImporter
                 // même celle dont le nom aurait la forme d'une référence (poste C5b). Ses
                 // couleurs le sont par construction, « Couleur » ne rendant que de l'hexa.
                 FontFamily = ReferenceDuJeu.Liberer(style.GetValueOrDefault("style:font-name")),
-                FontSize = style.TryGetValue("fo:font-size", out var corps) ? Points(corps) : null,
+                FontSize = style.TryGetValue("fo:font-size", out var corps) ? Points(corps) * echelle : null,
                 Bold = style.GetValueOrDefault("fo:font-weight") == "bold",
                 Italic = style.GetValueOrDefault("fo:font-style") == "italic",
                 Underline = LireSouligne(style),
                 Foreground = Couleur(style.GetValueOrDefault("fo:color")),
-                BaselineShift = Decalage(position),
+                BaselineShift = decalage,
+                Capitales = LireCapitales(style),
                 Langue = langue,
             });
         }
@@ -566,17 +567,41 @@ public static class PubImporter
 
         /// <summary>
         /// « style:text-position: -50% 67% » : le premier nombre est le décalage de la
-        /// ligne de base en pourcentage du corps, le second la taille relative — que le
-        /// relevé a déjà répercutée dans fo:font-size, et qu'on ignore donc ici.
+        /// ligne de base en pourcentage du corps, le second la taille relative. libmspub
+        /// n'écrit que ces deux-là : « 50% 67% » pour un exposant de Publisher, « -50% 67% »
+        /// pour un indice, lus dans la bibliothèque même (poste N24).
+        ///
+        /// La taille relative s'applique au corps (poste N24). Ce commentaire disait jusque-là
+        /// que le relevé l'avait déjà répercutée dans <c>fo:font-size</c> : les Fiches le
+        /// démentent, dont les quatre indices portent le corps de leurs voisins, 10 pt. Ils se
+        /// dessinaient au corps plein, 5 pt sous la ligne ; ils se dessinent à 6,7 pt, et le
+        /// décalage, multiple du corps du fragment, les descend de 3,35 pt — ce que
+        /// <c>Ctrl+=</c> pose (N24).
         /// </summary>
-        private static double Decalage(string? position)
+        private static (double Decalage, double Echelle) Position(string? position)
         {
-            if (position is null) return 0;
-            var premier = position.Split(' ')[0].TrimEnd('%');
-            return double.TryParse(premier, NumberStyles.Float, CultureInfo.InvariantCulture, out var v)
-                ? v / 100
-                : 0;
+            if (position is null) return (0, 1);
+            var nombres = position.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                .Select(n => double.TryParse(n.TrimEnd('%'), NumberStyles.Float, CultureInfo.InvariantCulture, out var v)
+                    ? v / 100
+                    : (double?)null)
+                .ToArray();
+            var decalage = nombres.ElementAtOrDefault(0) ?? 0;
+            var echelle = nombres.ElementAtOrDefault(1) is { } e and > 0 ? e : 1;
+            return decalage == 0 ? (0, 1) : (decalage, echelle);
         }
+
+        /// <summary>
+        /// Les capitales d'un fragment (poste N24) : libmspub écrit
+        /// <c>fo:text-transform: uppercase</c> pour les majuscules de Publisher et
+        /// <c>fo:font-variant: small-caps</c> pour ses petites majuscules, l'un ou l'autre, lus
+        /// dans la bibliothèque même ; aucun des deux documents de <c>Books/</c> n'en porte.
+        /// Nulles sans l'un ni l'autre : le fragment s'en remet au bloc, qui n'en a pas.
+        /// </summary>
+        private static Capitales? LireCapitales(Dictionary<string, string> style) =>
+            style.GetValueOrDefault("fo:text-transform") == "uppercase" ? Capitales.Capitales
+            : style.GetValueOrDefault("fo:font-variant") == "small-caps" ? Capitales.PetitesCapitales
+            : null;
 
         private void FinTexte()
         {
@@ -670,9 +695,10 @@ public static class PubImporter
 
             // Un fragment qui répète le style du bloc n'apprend plus rien ; le garder
             // alourdirait le fichier et ferait croire à une exception là où il n'y en a
-            // pas. Le décalage de ligne de base, lui, n'est jamais celui du bloc.
+            // pas. Le décalage de ligne de base, lui, n'est jamais celui du bloc, ni les
+            // capitales (poste N24), que l'import laisse aux fragments.
             bool RepeteLeBloc(StyleSpan f) =>
-                f.BaselineShift == 0 && f.Underline is null &&
+                f.BaselineShift == 0 && f.Capitales is null && f.Underline is null &&
                 (f.FontFamily, f.FontSize, f.Bold, f.Italic, f.Foreground) ==
                 (dominant.FontFamily, dominant.FontSize, dominant.Bold, dominant.Italic, dominant.Foreground);
 

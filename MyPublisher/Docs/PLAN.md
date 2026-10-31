@@ -128,7 +128,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **N21** | La saisie montre le texte composé | **100 %** | Voie 2a. Pendant la saisie, la composition reste à l'écran : l'encre de la page est celle d'avant l'entrée, au pixel, sur l'exemple et ATA 21, et ce qu'on tape se voit tel que la page le montre hors saisie. Le champ reste, caché (opacité nulle) et hors du test de survol, pour la frappe, la méthode d'entrée, le presse-papiers et la navigation au clavier ; la couche garde le clic sur le texte en saisie (`PressionDansLaSaisie`, `PageCanvas.Saisie.cs`) : clic, `Maj`+clic, double-clic au mot, triple-clic au paragraphe, glissé par caractère, mot ou paragraphe, tout lu sur la composition ; le clic droit garde la saisie et laisse remonter sa demande de menu (A12). Le curseur, la sélection — celle que le modèle de vue garde (N15), qui survit au focus de la barre — et le pré-édit se dessinent dans l'`Overlay` (`MarquesDuTexte`), aux couleurs de l'apparence, tournés et mis à l'échelle avec le bloc. Le bord d'un caractère est lu dans le morceau façonné (`IMetriques.Bord`) : la reprise de N3 que la décision demandait, ligatures et crénages compris, au dessin à 0,0000 pt sur 5 441 bords. Un clic sur un caractère de chacun des sept blocs de texte d'ATA 21 y pose le curseur, dessiné sous lui. `PageCanvas.axaml.cs` n'est pas touché ; la navigation au clavier sur les lignes composées reste au champ, mesurée sur ATA 21, pour un poste à part. Dix tests sous `poste=N21` ; recette N5 reprise (règle 14) ; deux sabotages au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **N22** | Les caractères spéciaux | **100 %** | *Affichage ▸ Caractères spéciaux* et `Ctrl+Maj+Y` : une bascule de la session (`CaracteresSpeciauxVisibles`, `MainWindowViewModel.CaracteresSpeciaux.cs`), fermée à l'ouverture, hors du document et de l'historique, qui joue aussi en saisie sans la refermer. Sur chaque bloc de texte visible de la page, un point pour chaque espace, une flèche pour chaque tabulation, ¶ à chaque fin de paragraphe et au bout du texte, ↵ à chaque saut forcé, à l'accent de l'apparence et au corps du texte, aux places de N3 : ¶ au `PointDe` de son saut à 0,01 pt, sur le texte riche, l'exemple et ATA 21 ; une espace sur toute sa chasse, élargie par la justification ou pendante au bout d'une ligne renvoyée (`GeometrieDuTexte.AbscisseSur`, un accesseur ajouté à `TexteCompose.cs`). Le dessin (`Views/CaracteresSpeciaux.cs`, posé par `PageCanvas.CaracteresSpeciaux.cs`) vit dans l'`Overlay`, où il entre à la première ouverture de la bascule ; il est mené par la transformation des contrôles qui dessinent le bloc — tourné, mis à l'échelle — et découpé par la page et par le bloc ; un bloc ne se recompose que quand il change. L'encre de la page est identique, bascule ouverte ou fermée ; le PDF ne change pas ; `PageCanvas.axaml.cs` n'est pas touché. Pas de bouton ¶ : la maquette n'en a pas. Huit tests sous `poste=N22` ; un sabotage au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **N23** | Puces et numérotation | **100 %** | Une propriété de paragraphe, `Liste` — aucune, puces (« • » par défaut, ou le caractère tapé), numéros « 1. », « a) », « i. » avec leur premier numéro —, valeur immuable (`ListeDeParagraphe`) sur `TextFrame` et sur `ParagraphSpan`, clé additive : `FormatVersion` reste 5, Samples et Templates réenregistrés (`"Liste": null`, rien d'autre), l'import inchangé. Les paragraphes consécutifs d'une même liste se numérotent de proche en proche, un paragraphe hors liste interrompt la suite, le premier numéro la fait repartir. La composition pose la marque en tête de la première ligne, au retrait de première ligne et au style du premier caractère : un morceau sans position (`Morceau.SansPosition`), que le curseur, le clic (N3), le souligné et les caractères spéciaux (N22) sautent, et que l'écran, le PDF, les vignettes et le compte de I9 voient par la même composition. Poser une liste donne le retrait suspendu d'Office (18 pt) à un paragraphe sans retrait, l'ôter le rend. Au dock, section Paragraphe : « Puces et numéros », la puce, le premier numéro, sur les paragraphes du `ParagrapheVise` (R6) — le bloc hors saisie, la sélection en saisie ; *Texte ▸ Puces et numéros…* y mène (N18). En saisie, Entrée dans un élément continue la liste (Q1), Entrée dans un élément vide l'en sort. Trente-quatre tests (vingt-quatre du noyau, dix sur la fenêtre), dont le PDF lu par `pdftotext -bbox` à 0,05 pt de l'écran ; l'empreinte de la composition du corpus inchangée. Recette dans `Scripts/recettes/`, un sabotage au juge ; relecture et juge après fusion |
-| **N24** | Exposant, indice, capitales | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 9 |
+| **N24** | Exposant, indice, capitales | **100 %** | Une clé `Capitales` — aucune, capitales, petites capitales — sur `TextFrame` et `StyleSpan`, additive : `FormatVersion` reste 5, Samples et Templates réenregistrés (`"Capitales"`, rien d'autre). La composition dessine en capitales sans toucher à `Text`, caractère pour caractère (`char.ToUpperInvariant` : « ß » reste tel quel, les positions de N3 tiennent), et fabrique les petites capitales en dessinant les minuscules en capitales à 70 % du corps, la ligne de base d'un exposant gardée ; un mot en petites capitales ne se coupe pas entre ses deux tailles. L'exposant et l'indice d'Office tels que l'import les lit : la ligne de base décalée de la moitié du corps, le corps à 67 % — l'import applique désormais au corps la taille relative de libmspub, qu'il croyait déjà répercutée, et lit ses capitales. Sur la `MiseEnFormeVisee` de R7, en un pas : `Ctrl+Maj+=` l'exposant, `Ctrl+=` l'indice — le zoom avant n'a plus de touche, le « + » du pavé numérique compris —, `Ctrl+Maj+K` les petites majuscules, et *Texte ▸ Exposant et majuscules ▸* les quatre, au menu du texte aussi ; chacune bascule. Les documents sans exposant ni capitales se rendent à l'identique : l'empreinte de la composition de 18 des 19 documents du corpus est inchangée, les Fiches changent par leurs quatre indices. Quatorze tests (huit du noyau, six sur la fenêtre), dont le « 2 » de « x2 » au PDF au corps et à la ligne de base attendus, et les petites capitales à 0,1 pt de 70 % de la hauteur des capitales ; six tests voisins et les recettes A4, R5 et R7 repris (règle 14) ; deux sabotages au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **N25** | La vérification orthographique | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 9 ; dépendance neuve à éprouver d'abord |
 | **N26** | Taper dans le texte d'un groupe, et prendre un membre seul | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 10 |
 | **N27** | Taper dans une case, sur la page | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 11 ; revient sur un choix écrit en C9 |
@@ -9552,6 +9552,160 @@ lit désormais ; au juge : les petites capitales à la hauteur des capitales.
 Fichiers : `StyleSpan.cs`, `Frame.cs`, `Compositeur.cs`, `PubImporter.cs`,
 `MainWindowViewModel.Raccourcis.cs`, `MainWindow.axaml` (menu Texte), Samples, Templates. Dépend de
 R7. Effort : moyen.
+
+*Livré le 1er novembre 2026*, dans la salve Saisie 9 ; la relecture adversariale et le juge viennent
+après la fusion. **Le modèle.** `Capitales` (`StyleSpan.cs`), une énumération — `Aucune`,
+`Capitales`, `PetitesCapitales` — ; `TextFrame.Capitales`, aucune par défaut, et
+`StyleSpan.Capitales`, nulle — comme le bloc — ou explicite, `Aucune` retirant au fragment les
+capitales de son bloc. La copie du bloc et du fragment les garde. `StyleEffectif.Capitales`, hors des
+membres positionnels, comme la liste de `ParagrapheEffectif` (N23) : un style construit sans elles
+n'en a pas ; `StyleEffectif.Decouper` les prend au fragment, `Charte.StyleCommun` et
+`MiseEnForme.Commun` au bloc. `MiseEnForme` les lit, les pose, les normalise et les retire
+(`StyleDeLaPlage.Capitales`, les surcharges) : `Ctrl+Espace` les retire avec le reste.
+`FormatVersion` reste 5. **Samples et Templates sont réenregistrés par `--resave`**, pour la raison
+que N23 donnait : le sérialiseur écrit toutes les valeurs, `Scripts/controle.sh` relit et réécrit
+l'exemple, et la recette exige que chaque bloc et chaque fragment écrive la clé ; seize des 17
+documents changent — `recette-fonds` n'a pas de texte —, et leur diff ne porte que
+`"Capitales": "Aucune"` sur 189 blocs et `"Capitales": null` sur 22 fragments.
+
+**La composition** (`Compositeur.EnCapitales`) : chaque morceau de style se découpe dans ce qu'elle
+dessine. Sous des capitales, le texte mis en capitales caractère pour caractère
+(`char.ToUpperInvariant`), si bien qu'un morceau a toujours la longueur de sa plage : les positions
+de N3, le curseur, le clic, la sélection et les caractères spéciaux tiennent, et « ß », qui n'a pas
+de capitale d'un seul caractère, reste tel quel. `Morceau.Texte` est ce qui se dessine — la plage
+mise en capitales —, et l'écran, le PDF, les vignettes et le compte de I9 l'ont par la même
+composition ; aucun rendu ne met rien en capitales à part. Sous des petites capitales, une portion
+par suite de minuscules, dessinée en capitales à `ReductionDesPetitesCapitales` (0,7) du corps, donc
+à 70 % de la hauteur des capitales de la même police, son décalage de ligne de base divisé d'autant —
+la ligne de base d'un exposant ne bouge pas — ; les capitales tapées, les chiffres et les signes
+restent au corps plein, un blanc suit le caractère qui le précède. Une portion qui commence au milieu
+d'un mot y est collée (`Unite.Colle`) : le renvoi ne la sépare pas de ce qui la précède, et c'est le
+mot entier, mesuré à la règle de coupure (`SuiteCollee`), qui décide à sa première unité. Sans
+capitales, rien ne change : la même découpe, les mêmes unités, la même décision du renvoi (la
+chasse collée y vaut zéro, ajoutée en tête).
+
+**L'import** (`PubImporter`) lit ce que libmspub 0.1.4 écrit, relevé dans la bibliothèque même :
+`fo:text-transform: uppercase` pour les majuscules de Publisher, `fo:font-variant: small-caps` pour
+ses petites majuscules, sur le fragment ; « 50% 67% » pour un exposant et « -50% 67% » pour un indice,
+dont la taille relative s'applique désormais au corps. Le commentaire de `Decalage` la disait déjà
+répercutée dans `fo:font-size` : les Fiches le démentent, dont les quatre indices portent le corps de
+leurs voisins, 10 pt — ils se dessinaient au corps plein, 5 pt sous la ligne, et se dessinent à
+6,7 pt, 3,35 pt sous elle. **L'exposant et l'indice** (`MainWindowViewModel.ExposantEtCapitales.cs`,
+le partiel du poste) sont ceux-là : `MiseEnFormeVisee.BasculerLeDecalage` pose le décalage
+(`DecalageDOffice`, 0,5, multiple du corps du fragment) et 67 % du corps (`CorpsDOffice`), chaque
+caractère depuis le sien, sur le découpage de la composition ; si tous les caractères visés y sont
+déjà, il les rend à la ligne de base, le corps divisé de ce qu'il avait perdu, au centième de point —
+6,7 pt rendent 10 pt, qui se confond avec le corps du bloc ; un indice passé en exposant garde son
+corps, et une sélection mixte passe toute, sans rien réduire deux fois. Le décalage va aux fragments
+seuls, même hors saisie : il n'est pas une propriété du bloc (R7). `BasculerLesCapitales` pose les
+capitales ou les retire, au bloc quand les caractères visés sont tous les siens (R7). La
+`MiseEnFormeVisee` devient partielle, et montre `Exposant`, `Indice` et `Capitales`, nuls quand ils
+sont mixtes.
+
+**Les touches et les menus.** `Ctrl+=` (`Ctrl+OemPlus`) l'indice, `Ctrl+Maj+=` l'exposant,
+`Ctrl+Maj+K` les petites majuscules, liés dans la fenêtre, même en saisie ; les majuscules n'ont pas
+de touche dans la fiche 24. **Le zoom avant n'a plus de touche** : `Ctrl+=` est l'indice (règle 12),
+et `Ctrl+Add`, le « + » du pavé numérique, ne lui reste pas — Avalonia 11.3.9 confond `Add` et
+`OemPlus` en comparant un geste (`KeyGesture.ResolveNumPadOperationKey`), et une liaison de
+`Ctrl+Add` au zoom aurait zoomé sur une image et mis en indice sur un bloc de texte. Les deux entrées
+« Zoom avant » (Affichage et le menu de la planche) n'affichent plus de touche, et la bulle du bouton
+dit « Zoom avant » ; le zoom garde `Ctrl`+molette, la loupe, `F9`, `Ctrl+Maj+L`, `Ctrl+−` et `Ctrl+0`.
+Les menus écrivent la touche « = » « = » (`GestesEnFrancais`) : « Ctrl+= », « Ctrl+Maj+= ».
+*Texte ▸ Exposant et _majuscules ▸* *Exposant*, *Indice*, *Petites majuscules*, *Majuscules* — les
+libellés d'Office en français —, après *Coller la mise en forme* ; le même sous-menu au menu de la
+planche, « E_xposant et majuscules », en saisie et sur un bloc de texte seul (`saisie blocs
+siTexte`), chaque entrée sur la commande, le geste et le libellé de son pendant (A12). Le README (le
+texte riche, et deux lignes du sous-tableau Texte, la ligne du zoom reprise) et la fiche 24 (trois
+touches liées, le zoom) le disent.
+
+Le poste touche, hors des fichiers que le plan nomme, `Jeux.cs` (les capitales du style commun, la
+cible du juge de I7 gardée), `MiseEnForme.cs` (les capitales dans les surcharges, au précédent de la
+langue de N9), `MainWindowViewModel.MiseEnFormeVisee.cs` (la classe partielle, les capitales posées
+sur le bloc et suivies : quatre lignes), `MainWindowViewModel.Disposition.cs` (l'avis des quatre
+commandes : une ligne), `GestesEnFrancais.cs` (« = »), le README, la fiche 24, les recettes A4
+(`OemPlus` s'écrit « = » au tableau, et `Ctrl+OemPlus` n'est plus une touche de zoom, qu'elle ne
+confronte pas), R5 (le décalage et les capitales dans le style comparé, le corps à la taille
+relative) et R7 (la `MiseEnFormeVisee` qu'elle cherche, désormais partielle). `MainWindowViewModel.Raccourcis.cs` ne l'est pas : les trois touches sont des liaisons de la
+fenêtre, et non des caractères. Ni `PageCanvas.axaml.cs`, ni `PageCanvas.Saisie.cs`.
+
+*Recette jouée* : `Scripts/recettes/N24-exposant-indice-capitales.sh`. Les sources — la clé au bloc
+et au fragment, copiée, portée, `FormatVersion` à 5, les 189 blocs et 22 fragments réenregistrés ; les
+capitales et les petites capitales par le seul `Compositeur` ; l'import ; les trois touches liées une
+fois, le zoom avant sans touche, le README et la fiche 24 ; les deux sous-menus, le partiel, la planche
+intacte —, puis l'image : un document de la recette R1 dont le bloc des indices porte un exposant, un
+indice, des majuscules et des petites majuscules, réenregistré, exporté — le PDF dessine
+« AIR CONDITIONING » et « ATR AVION », le fichier garde le texte tapé — et `comparer-rendus.sh` sur sa
+page, 0,70 % sous le seuil de 3 % ; puis huit tests du noyau (`ExposantEtCapitalesTests`) : les
+capitales sans toucher au texte, « ß » et les positions ; un texte sans capitales composé comme
+avant ; les petites capitales à 70 % du corps, la ligne de base d'un exposant gardée ; le mot entier
+au renvoi ; le fragment qui donne ou retire les capitales du bloc ; la mise en forme ; la clé additive
+et l'aller-retour ; l'import — et six sur la fenêtre (`ExposantEtCapitalesSurLaFenetreTests`) : la
+recette du plan, le « 2 » de « x2 » sélectionné au pointeur, `Ctrl+Maj+=`, un seul fragment, au PDF
+(le flux de la page, opérateur par opérateur) au corps de 16,08 pt et 8,04 pt au-dessus de la ligne
+de base du « x », l'un et l'autre où l'écran les pose (0,0000 pt), un pas ; `Ctrl+=` qui met en indice
+et l'en retire, un indice passé en exposant, quatre gestes et quatre pas ; la sélection mixte ;
+`Ctrl+Maj+K` hors saisie, « H » à 24 pt et « ELLO » à 16,8 pt au PDF comme à l'écran, la hauteur des
+petites capitales — l'encre du glyphe, 12,2473 pt — à 0,0000 pt de 70 % de celle des capitales
+(17,4961 pt) ; le menu Texte, ses touches écrites « Ctrl+Maj+= », « Ctrl+= », « Ctrl+Maj+K », les
+majuscules sur le bloc, la copie qui lit le texte tapé, et l'indice pris au menu du texte sur le mot
+du curseur ; le zoom qui n'a plus `Ctrl+=`. Six tests voisins réécrits (règle 14) : celui du menu Texte de I2
+(`DispositionTests`) y compte *Exposant et majuscules*, après *Coller la mise en forme* ; celui de N13
+(`MenusDePublisherTests`) et celui de A12 (`MenuDuBlocTests`) qui lisaient « Ctrl++ » au zoom avant
+lisent une entrée sans touche, le second aussi « Ctrl+− » au zoom arrière ; celui de A12 sur le menu
+du texte en saisie y compte *Exposant et majuscules* ; celui de N10 (`RaccourcisFrancaisTests`) sur
+les touches voisines de la sonde : `Ctrl` + « = » ne zoome plus ; celui de N2 (`MiseEnFormeTests`) lit
+des capitales « aucune » au style d'un bloc. Deux sabotages au juge : celui du plan, les petites
+capitales à la hauteur des capitales, et l'exposant qui garde le corps plein. **Les documents sans
+exposant ni capitales se rendent à l'identique** : l'empreinte de la composition de N3
+(`Scripts/empreinte-composition.sh`), relevée sur la base (`2f1dcae`) puis sur la copie, est la même
+pour les 17 documents et ATA 21 ; les Fiches, réimportées, ne changent que par leurs quatre indices —
+deux lignes sur 304 changent de largeur, aucune coupure, et l'encre de la page qui les porte.
+
+*Ce que l'implémentation a appris.*
+- **L'import ne lisait que la moitié de l'exposant.** La section posait « le décalage et le corps que
+  l'import écrit pour ceux d'Office » ; l'import écrivait le décalage, et le corps du texte, ignorant
+  la taille relative que son commentaire croyait déjà répercutée. Le relevé des Fiches le dément. Le
+  poste l'applique — c'est ce que la section appelait « la recette R5 ajustée à ce que l'import lit
+  désormais » —, et les commandes posent la même chose que l'import.
+- **Une liaison de `Ctrl+Add` ne se distingue pas de `Ctrl+OemPlus`.** Avalonia ramène les touches
+  d'opération du pavé à leur pendant de la rangée (`KeyGesture.Matches`) : la première liaison dont la
+  commande s'exécute prend les deux. Le « + » du pavé est donc l'indice sur un bloc de texte, et rien
+  ailleurs ; le test du zoom le joue.
+- **Trois cibles du juge passaient par les lignes que le poste touche** — la copie du souligné du bloc
+  (`Frame.cs`), le style commun d'un bloc (`Jeux.cs`), la décision du renvoi (`Compositeur.cs`). Le
+  code est écrit pour qu'elles restent, une fois chacune : les capitales sur leur ligne dans la copie,
+  le style commun en deux temps, la chasse collée ajoutée en tête de la décision.
+- **La table `OS/2` de DejaVu Sans n'a pas de hauteur des capitales** : PDFsharp y rend la montée
+  (0,928 du corps). La hauteur des capitales que la recette compare se lit à l'encre du glyphe
+  « H » (0,729 du corps), tracé par Avalonia.
+
+*Choisi sans certitude.*
+- **Le corps et le décalage d'Office sont ceux de libmspub**, « ±50 % 67 % », que MyPublisher lit
+  comme un décalage de la moitié du corps du fragment — le corps réduit, soit 33,5 % du corps du
+  texte. OpenDocument compte ce pourcentage sur la hauteur de la police d'avant la réduction : lu
+  ainsi, l'indice descendrait de 5 pt et non de 3,35 pt. Ni l'un ni l'autre n'est mesuré sur
+  Publisher ; le choix garde le sens que le modèle donne à `BaselineShift` depuis R1, et l'import et
+  les commandes s'accordent. **Au propriétaire de trancher** s'il veut les valeurs de Publisher
+  lui-même.
+- **Retirer l'exposant divise le corps par 0,67**, au centième : exact pour ce que les commandes et
+  l'import posent ; un exposant écrit à la main à un autre rapport — la recette R1 en porte un de
+  8 pt dans 11 — reviendrait à 11,94 pt.
+- **`Ctrl+Maj+K` bascule les petites majuscules**, et ne fait pas tourner les trois états que
+  l'aide en français laisse deviner (« petites majuscules ou celles-ci en minuscules ou
+  majuscules ») ; les majuscules sont au menu. Les libellés sont ceux d'Office en français,
+  *Petites majuscules* et *Majuscules* ; le modèle dit « capitales », comme la section.
+- **En petites capitales, les chiffres et les signes restent au corps plein**, et un blanc suit le
+  caractère qui le précède — la règle de Word.
+
+*Relevé, non corrigé.*
+- Un mot que deux fragments se partagent reste deux unités que le renvoi peut séparer, comme avant
+  N24 ; seule la coupure que les petites capitales font dans un mot est collée.
+- La marque d'une liste (N23) prend le style de la première unité de son paragraphe : sous des
+  petites capitales, celui d'une minuscule réduite si le paragraphe commence par une minuscule.
+- Le relevé fabriqué d'un test de l'import (`ImportPubTests`, « H2O ») écrit déjà un corps de 67 % ;
+  le poste y applique la taille relative une seconde fois (4,5 pt). Le test ne lit que le décalage,
+  et reste tel quel.
+- Le zoom avant n'a plus de touche au clavier ; Publisher en français n'en donne pas d'autre.
 
 #### N25 — La vérification orthographique *(fiche 23, a26)*
 

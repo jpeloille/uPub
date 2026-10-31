@@ -75,6 +75,7 @@
           "Bold": false,
           "Italic": false,
           "Underline": false,
+          "Capitales": "Aucune",
           "Foreground": "#FF000000",
           "Langue": null,
           "Spans": [],

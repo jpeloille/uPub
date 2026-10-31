@@ -54,6 +54,7 @@
           "Bold": true,
           "Italic": false,
           "Underline": false,
+          "Capitales": "Aucune",
           "Foreground": "#FF1A1A1A",
           "Langue": null,
           "Spans": [],
@@ -566,6 +567,7 @@
                   "Underline": null,
                   "Foreground": null,
                   "BaselineShift": 0,
+                  "Capitales": null,
                   "Langue": null
                 }
               ],

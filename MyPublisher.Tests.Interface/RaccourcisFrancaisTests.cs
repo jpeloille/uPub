@@ -424,9 +424,10 @@ public class RaccourcisFrancaisTests
     /// <summary>
     /// Ce que la sonde a relevé des touches voisines, rejoué : la touche « à/0 » livre <c>D0</c>
     /// sans <c>Maj</c>, si bien que <c>Ctrl</c> + « à » est la taille réelle — et non
-    /// <c>Ctrl+Maj</c>+« à », comme le plan le croyait ; <c>Ctrl</c> + « = » zoome en avant et
-    /// <c>Ctrl</c> + « ) » en arrière — la sonde les a vus pris —, <c>Ctrl+Maj</c> + « = » ne fait
-    /// rien — la sonde l'a vu passer.
+    /// <c>Ctrl+Maj</c>+« à », comme le plan le croyait ; <c>Ctrl</c> + « ) » zoome en arrière — la
+    /// sonde l'a vu pris. <c>Ctrl</c> + « = » zoomait en avant, et <c>Ctrl+Maj</c> + « = » ne faisait
+    /// rien : depuis N24 (règle 12, règle 14), l'un est l'indice et l'autre l'exposant, et sans bloc
+    /// de texte ni l'un ni l'autre ne zoome.
     /// </summary>
     [AvaloniaFact]
     public void Les_touches_voisines_de_la_sonde_et_Ctrl_0()
@@ -439,6 +440,7 @@ public class RaccourcisFrancaisTests
         Rendu.ToucheAzerty(fenetre, PhysicalKey.Digit0, RawInputModifiers.Control);
         Assert.Equal(1, vm.Zoom);
 
+        vm.SetZoom(1.25);
         Rendu.ToucheAzerty(fenetre, PhysicalKey.Equal, RawInputModifiers.Control);
         Assert.Equal(1.25, vm.Zoom, 6);
         Rendu.ToucheAzerty(fenetre, PhysicalKey.Equal, RawInputModifiers.Control | RawInputModifiers.Shift);

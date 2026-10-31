@@ -76,8 +76,11 @@
              un raccourci qui ne peut pas arriver jusqu'à l'application ne sert à rien. -->
         <KeyBinding Gesture="Ctrl+Shift+F" Command="{Binding ToucheAuPremierPlanCommand}"/>
         <KeyBinding Gesture="Ctrl+Shift+B" Command="{Binding ToucheALArrierePlanCommand}"/>
-        <KeyBinding Gesture="Ctrl+OemPlus" Command="{Binding ZoomInCommand}"/>
-        <KeyBinding Gesture="Ctrl+Add" Command="{Binding ZoomInCommand}"/>
+        <!-- Le zoom avant n'a plus de touche (poste N24, règle 12) : Ctrl+= est l'indice de Publisher
+             en français. Ctrl++ du pavé numérique ne lui reste pas : Avalonia 11.3.9 confond Add et
+             OemPlus en comparant un geste (KeyGesture.ResolveNumPadOperationKey), et une liaison de
+             Ctrl+Add zoomerait sur un bloc de texte, mais non sur une image. Il garde Ctrl+molette,
+             la loupe, son bouton et son entrée de menu, F9 et Ctrl+Maj+L. -->
         <KeyBinding Gesture="Ctrl+OemMinus" Command="{Binding ZoomOutCommand}"/>
         <KeyBinding Gesture="Ctrl+Subtract" Command="{Binding ZoomOutCommand}"/>
         <KeyBinding Gesture="Ctrl+D0" Command="{Binding ZoomResetCommand}"/>
@@ -113,6 +116,14 @@
         <KeyBinding Gesture="Ctrl+Space" Command="{Binding RetirerLaMiseEnFormeCommand}"/>
         <KeyBinding Gesture="Ctrl+Shift+C" Command="{Binding CopierLaMiseEnFormeCommand}"/>
         <KeyBinding Gesture="Ctrl+Shift+V" Command="{Binding CollerLaMiseEnFormeCommand}"/>
+        <!-- L'indice, l'exposant et les petites majuscules aux touches de Publisher en français
+             (poste N24, fiche 24) : Ctrl+= et Ctrl+Maj+= — OemPlus sous Control, et sous Control et
+             Shift, sur l'AZERTY comme sur le QWERTY —, Ctrl+Maj+K. Même en saisie : la zone de
+             texte n'en prend aucune, OnKeyDown non plus, ni le bureau (GNOME, relevé le 1er
+             novembre 2026). Les majuscules n'ont pas de touche dans la fiche 24. -->
+        <KeyBinding Gesture="Ctrl+OemPlus" Command="{Binding BasculerLIndiceCommand}"/>
+        <KeyBinding Gesture="Ctrl+Shift+OemPlus" Command="{Binding BasculerLExposantCommand}"/>
+        <KeyBinding Gesture="Ctrl+Shift+K" Command="{Binding BasculerLesPetitesCapitalesCommand}"/>
         <!-- Les alignements du texte, aux touches de Publisher en français (poste N10) : Ctrl+L,
              Ctrl+E, Ctrl+R, Ctrl+J — sur le bloc entier aujourd'hui, sur le paragraphe avec R6.
              Ctrl+E n'exporte plus : l'export est passé à Ctrl+Maj+P. Le corps, Ctrl+] et Ctrl+[,
@@ -829,6 +840,18 @@
                                   Command="{Binding CopierLaMiseEnFormeCommand}"/>
                         <MenuItem Header="Co_ller la mise en forme" InputGesture="Ctrl+Shift+V"
                                   Command="{Binding CollerLaMiseEnFormeCommand}"/>
+                        <!-- Exposant, indice et capitales (poste N24, fiche 23, b14) : la barre
+                             Formatting de Publisher les porte absents par défaut (p. 10), et la maquette
+                             n'a pas de bouton pour eux ; ils sont ici et au menu contextuel du texte. -->
+                        <MenuItem x:Name="MenuExposantEtMajuscules" Header="Exposant et _majuscules">
+                            <MenuItem Header="_Exposant" InputGesture="Ctrl+Shift+OemPlus"
+                                      Command="{Binding BasculerLExposantCommand}"/>
+                            <MenuItem Header="_Indice" InputGesture="Ctrl+OemPlus"
+                                      Command="{Binding BasculerLIndiceCommand}"/>
+                            <MenuItem Header="_Petites majuscules" InputGesture="Ctrl+Shift+K"
+                                      Command="{Binding BasculerLesPetitesCapitalesCommand}"/>
+                            <MenuItem Header="_Majuscules" Command="{Binding BasculerLesCapitalesCommand}"/>
+                        </MenuItem>
                         <Separator/>
                         <MenuItem Header="_Aligner le texte à gauche" InputGesture="Ctrl+L" Command="{Binding AlignerLeTexteCommand}"
                                   CommandParameter="{x:Static models:TextAlign.Left}"/>
@@ -879,7 +902,7 @@
                                   ToggleType="CheckBox" IsChecked="{Binding CaracteresSpeciauxVisibles, Mode=TwoWay}"/>
                         <MenuItem Header="Rè_gles" ToggleType="CheckBox" IsChecked="{Binding ShowRulers, Mode=TwoWay}"/>
                         <Separator/>
-                        <MenuItem Header="Zoom _avant" InputGesture="Ctrl+OemPlus" Command="{Binding ZoomInCommand}"/>
+                        <MenuItem Header="Zoom _avant" Command="{Binding ZoomInCommand}"/>
                         <MenuItem Header="Zoom a_rrière" InputGesture="Ctrl+OemMinus" Command="{Binding ZoomOutCommand}"/>
                         <MenuItem Header="_Taille réelle" InputGesture="Ctrl+D0" Command="{Binding ZoomResetCommand}"/>
                         <MenuItem Name="MenuBasculerLaTailleReelle" Header="Bas_culer en taille réelle" InputGesture="F9"
@@ -967,7 +990,7 @@
                          comme un champ (poste N4) : un contrôle à part, hors de toute
                          transaction — la barre principale n'en ouvre pas. -->
                     <views:ChampDuZoom x:Name="ValeurDuZoom" VerticalAlignment="Center"/>
-                    <Button Classes="ib" ToolTip.Tip="Zoom avant (Ctrl++)" Command="{Binding ZoomInCommand}"
+                    <Button Classes="ib" ToolTip.Tip="Zoom avant" Command="{Binding ZoomInCommand}"
                             Content="{StaticResource IconeZoomAvant}"/>
                     <!-- Posé ici ; la page tenue dans la zone visible est le geste de I6,
                          qui écoute la demande du modèle de vue. -->
@@ -1173,6 +1196,17 @@
                         <Separator Classes="blocs saisie"/>
                         <!-- Change Text ▸ de Publisher (p. 34) : l'import de B2, au même gestionnaire
                              et sous la même garde que celui du menu Texte. -->
+                        <!-- Exposant, indice et capitales (poste N24) : le texte en saisie, ou le bloc de
+                             texte seul, comme au menu Texte. -->
+                        <MenuItem Classes="saisie blocs siTexte" Header="E_xposant et majuscules">
+                            <MenuItem Header="_Exposant" InputGesture="Ctrl+Shift+OemPlus"
+                                      Command="{Binding BasculerLExposantCommand}"/>
+                            <MenuItem Header="_Indice" InputGesture="Ctrl+OemPlus"
+                                      Command="{Binding BasculerLIndiceCommand}"/>
+                            <MenuItem Header="_Petites majuscules" InputGesture="Ctrl+Shift+K"
+                                      Command="{Binding BasculerLesPetitesCapitalesCommand}"/>
+                            <MenuItem Header="_Majuscules" Command="{Binding BasculerLesCapitalesCommand}"/>
+                        </MenuItem>
                         <MenuItem Classes="blocs siTexte" Header="_Modifier le texte">
                             <MenuItem Header="Importer un te_xte…" Click="OnImportText"
                                       IsEnabled="{Binding PeutImporterTexte}"/>
@@ -1186,7 +1220,7 @@
                         <MenuItem Classes="blocs saisie" Header="Format du _bloc…" Command="{Binding FormatDuBlocCommand}"/>
                         <Separator Classes="blocs"/>
                         <MenuItem Classes="blocs" Header="_Zoom">
-                            <MenuItem Header="Zoom _avant" InputGesture="Ctrl+OemPlus" Command="{Binding ZoomInCommand}"/>
+                            <MenuItem Header="Zoom _avant" Command="{Binding ZoomInCommand}"/>
                             <MenuItem Header="Zoom a_rrière" InputGesture="Ctrl+OemMinus" Command="{Binding ZoomOutCommand}"/>
                             <MenuItem Header="_Taille réelle" InputGesture="Ctrl+D0" Command="{Binding ZoomResetCommand}"/>
                             <MenuItem Header="Page _entière" InputGesture="Ctrl+Shift+L" Command="{Binding PageEntiereCommand}"/>

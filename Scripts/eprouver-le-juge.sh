@@ -3076,6 +3076,20 @@ saboter "le PDF pose une ligne centrée 2 pt trop à droite (Q13, repris par Q26
     'TextAlign.Center => gauche + (ligne.Disponible - ligne.Largeur) / 2,' \
     'TextAlign.Center => gauche + (ligne.Disponible - ligne.Largeur) / 2 + 2,' \
     'Q13-coupure'
+# N24 : exposant, indice et capitales. Le sabotage du plan : les petites capitales à la hauteur
+# des capitales — la composition met les minuscules en capitales, sans les réduire.
+saboter "les petites capitales à la hauteur des capitales (N24)" \
+    MyPublisher.Core/Models/Compositeur.cs \
+    'FontSize = style.FontSize * ReductionDesPetitesCapitales,' \
+    'FontSize = style.FontSize,' \
+    'N24-exposant-indice-capitales|ExposantEtCapitales'
+# L'exposant décale la ligne de base, mais garde le corps plein : ce que l'import écrivait avant le
+# poste, que la recette du plan mesure au PDF.
+saboter "l'exposant garde le corps plein (N24)" \
+    MyPublisher/ViewModels/MainWindowViewModel.ExposantEtCapitales.cs \
+    'FontSize = decalage == 0 ? corps * CorpsDOffice : corps,' \
+    'FontSize = corps,' \
+    'N24-exposant-indice-capitales|ExposantEtCapitales'
 
 # Un motif qui ne désigne aucun sabotage ne prouve rien. « eprouver-le-juge.sh I4 » sortait
 # en 0 sur « 0 sabotages, 0 attrapés », quand les intitulés de la planche ne portaient pas

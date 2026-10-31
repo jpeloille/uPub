@@ -46,12 +46,12 @@ public sealed record SouligneVise(Souligne? Sorte, bool? Actif);
 /// tableau garde sa mise en forme à lui, case par case dans le dock, la page n'ayant pas de saisie
 /// de case (N27).
 /// </summary>
-public sealed class MiseEnFormeVisee : ObservableObject
+public sealed partial class MiseEnFormeVisee : ObservableObject
 {
     private static readonly string[] Proprietes =
     [
         nameof(FontFamily), nameof(FontSize), nameof(Bold), nameof(Italic), nameof(Underline),
-        nameof(Foreground), nameof(EnSaisie),
+        nameof(Foreground), nameof(EnSaisie), nameof(Exposant), nameof(Indice), nameof(Capitales),
     ];
 
     private readonly MainWindowViewModel _vm;
@@ -277,6 +277,7 @@ public sealed class MiseEnFormeVisee : ObservableObject
         if (style.Italic is { } italique) bloc.Italic = italique;
         if (style.Underline is { } souligne) bloc.Underline = souligne;
         if (style.Foreground is { } couleur) bloc.Foreground = couleur;
+        if (style.Capitales is { } capitales) bloc.Capitales = capitales;
         var commun = MiseEnForme.Commun(bloc);
 
         var texte = bloc.Text ?? "";
@@ -374,7 +375,7 @@ public sealed class MiseEnFormeVisee : ObservableObject
         {
             case nameof(TextFrame.Text) or nameof(TextFrame.FontFamily) or nameof(TextFrame.FontSize)
                 or nameof(TextFrame.Bold) or nameof(TextFrame.Italic) or nameof(TextFrame.Underline)
-                or nameof(TextFrame.Foreground):
+                or nameof(TextFrame.Foreground) or nameof(TextFrame.Capitales):
                 Notifier();
                 break;
         }

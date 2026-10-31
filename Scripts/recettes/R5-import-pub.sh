@@ -97,7 +97,24 @@ for page in document["Pages"]:
 # et supprime les fragments qui n'en disent alors plus rien : compter les fragments
 # reprocherait à l'import d'avoir bien fait son travail. Ce qui doit se conserver, ce
 # sont les styles RÉELLEMENT employés — perdre un gras ou une police, voilà une perte.
+#
+# Le décalage de ligne de base et les capitales en sont depuis N24, et le corps se lit comme
+# l'import le lit désormais : « style:text-position: -50% 67% » décale de la moitié du corps et
+# ramène le corps à 67 % — libmspub écrit le corps du texte, les quatre indices des Fiches le
+# montrent —, « fo:text-transform: uppercase » et « fo:font-variant: small-caps » sont les
+# majuscules et les petites majuscules de Publisher.
 import re
+
+def position(args):
+    nombres = [float(n.rstrip("%")) / 100 for n in args.get("style:text-position", "").split()]
+    if not nombres or nombres[0] == 0:
+        return 0.0, 1.0
+    return nombres[0], (nombres[1] if len(nombres) > 1 and nombres[1] > 0 else 1.0)
+
+def capitales(args):
+    if args.get("fo:text-transform", "") == "uppercase":
+        return "Capitales"
+    return "PetitesCapitales" if args.get("fo:font-variant", "") == "small-caps" else "Aucune"
 
 def styles_source(chemin):
     styles, courant = set(), None
@@ -105,12 +122,15 @@ def styles_source(chemin):
         nu = ligne.strip()
         if nu.startswith("openSpan"):
             args = dict(re.findall(r"([a-z:-]+): ([^,)]+)", nu))
+            decalage, echelle = position(args)
             courant = (
                 args.get("style:font-name", ""),
-                round(float(args.get("fo:font-size", "0in").rstrip("in")) * 72, 1),
+                round(float(args.get("fo:font-size", "0in").rstrip("in")) * 72 * echelle, 1),
                 args.get("fo:font-weight", "") == "bold",
                 args.get("fo:font-style", "") == "italic",
                 (args.get("fo:color", "") or "").lower(),
+                decalage,
+                capitales(args),
             )
         elif nu.startswith("insertText (") and courant is not None:
             # Un fragment sans caractère ne recouvre rien : il n'a pas de style à perdre.
@@ -125,7 +145,8 @@ def styles_importes(document):
     def parcours(bloc):
         if bloc["$kind"] == "text":
             commun = (bloc["FontFamily"], round(bloc["FontSize"], 1), bloc["Bold"],
-                      bloc["Italic"], "#" + bloc["Foreground"][3:].lower())
+                      bloc["Italic"], "#" + bloc["Foreground"][3:].lower(), 0.0,
+                      bloc.get("Capitales") or "Aucune")
             styles.add(commun)
             for f in bloc.get("Spans", []):
                 styles.add((
@@ -134,6 +155,8 @@ def styles_importes(document):
                     commun[2] if f["Bold"] is None else f["Bold"],
                     commun[3] if f["Italic"] is None else f["Italic"],
                     ("#" + f["Foreground"][3:].lower()) if f["Foreground"] else commun[4],
+                    f.get("BaselineShift") or 0.0,
+                    f.get("Capitales") or commun[6],
                 ))
         for enfant in bloc.get("Children", []):
             parcours(enfant)

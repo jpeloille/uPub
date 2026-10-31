@@ -10,6 +10,10 @@ namespace MyPublisher.Models;
 /// est son <paramref name="Texte"/> (poste N3). C'est ce qui permet de passer d'un point de
 /// la ligne à un caractère du texte, et l'inverse — le curseur, le clic, la sélection.
 ///
+/// Sous des capitales (poste N24), <paramref name="Texte"/> est ce que la composition dessine : les
+/// caractères de cette même plage, mis en capitales un à un, si bien qu'il a toujours la longueur de
+/// la plage, et que les positions de N3 tiennent. Le texte du bloc, lui, ne change pas.
+///
 /// La marque d'un élément de liste — « • », « 3. » — est un morceau sans position (poste N23) : elle
 /// se dessine en tête de la première ligne de son paragraphe, mais n'est pas dans le texte.
 /// <paramref name="Debut"/> vaut alors <see cref="SansPosition"/>, et <paramref name="Largeur"/>
@@ -366,8 +370,10 @@ public static class Compositeur
         // Le style de la dernière unité : celui de la marque d'un paragraphe vide au bout du texte.
         var styleDuBout = commun;
 
-        foreach (var mot in mots)
+        for (var rang = 0; rang < mots.Count; rang++)
         {
+            var mot = mots[rang];
+
             // La première unité du paragraphe donne son style à la marque : son premier
             // caractère, ou le saut d'un paragraphe vide.
             PoserLaMarque(mot.Style);
@@ -414,7 +420,12 @@ public static class Compositeur
             // sa mesure : c'était le défaut du poste Q13.
             // Une ligne qui ne porte que la marque d'une liste est vide pour le renvoi : le mot reste
             // avec sa marque (poste N23).
-            if (!tabulation && courante.Exists(m => !m.EstUneMarque) &&
+            //
+            // Une unité collée à la précédente — la suite d'un mot que les petites capitales
+            // coupent en deux tailles (poste N24) — ne se renvoie jamais seule : c'est le mot
+            // entier, mesuré avec elle, qui décide à sa première unité.
+            if (!tabulation && !mot.Colle && courante.Exists(m => !m.EstUneMarque) &&
+                SuiteCollee(mots, rang, metriques) +
                 coupureCourante + metriques.LargeurDeCoupure(mot.Texte.TrimEnd(), mot.Style) > disponible)
             {
                 var debut = mot.Texte.TrimStart();
@@ -513,9 +524,101 @@ public static class Compositeur
     /// Une unité de la découpe : un mot avec les espaces qui le suivent, une tabulation, ou
     /// une fin de ligne ; sa place dans le texte d'origine, et sa longueur — celle du saut
     /// pour une fin de ligne, un ou deux caractères (poste N3).
+    /// <para>
+    /// <paramref name="Colle"/> dit qu'elle continue le mot de l'unité qui la précède, sans blanc
+    /// entre elles : seules les petites capitales en font (poste N24), quand elles coupent un mot
+    /// entre ses capitales pleines et ses minuscules réduites. Le renvoi ne les sépare pas.
+    /// </para>
     /// </summary>
     private readonly record struct Unite(string Texte, StyleEffectif Style, bool FinDeLigne, int Debut, int Longueur,
-                                         bool SautForce = false);
+                                         bool SautForce = false, bool Colle = false);
+
+    /// <summary>
+    /// La chasse, à la règle de coupure, des unités collées qui suivent l'unité
+    /// <paramref name="rang"/> : la fin du mot qu'elle commence, ses blancs de queue rognés. Zéro
+    /// quand rien n'y est collé — le cas de tout texte sans petites capitales, que rien ne mesure
+    /// de plus.
+    /// </summary>
+    private static double SuiteCollee(List<Unite> mots, int rang, IMetriques metriques)
+    {
+        var chasse = 0.0;
+        for (var j = rang + 1; j < mots.Count && mots[j].Colle; j++)
+        {
+            var derniere = j + 1 == mots.Count || !mots[j + 1].Colle;
+            chasse += metriques.LargeurDeCoupure(derniere ? mots[j].Texte.TrimEnd() : mots[j].Texte, mots[j].Style);
+        }
+
+        return chasse;
+    }
+
+    /// <summary>
+    /// Ce que les petites capitales font d'une minuscule : une capitale de 70 % du corps, donc à
+    /// 70 % de la hauteur des capitales de la même police (poste N24 ; T10 de l'étude de 98).
+    /// </summary>
+    public const double ReductionDesPetitesCapitales = 0.7;
+
+    /// <summary>
+    /// Les portions d'un morceau de style homogène telles que la composition les dessine, de
+    /// <paramref name="debut"/> à <paramref name="fin"/> du texte (poste N24). Sans capitales, le
+    /// morceau entier, tel quel. Sous des capitales, le même, en capitales. Sous des petites
+    /// capitales, une portion par suite de minuscules — en capitales, au corps réduit de
+    /// <see cref="ReductionDesPetitesCapitales"/>, la ligne de base au même décalage — et une
+    /// par suite d'autres caractères, au corps plein ; un blanc suit le caractère qui le précède,
+    /// si bien qu'une portion ne commence jamais par un blanc. Une portion qui commence au milieu
+    /// d'un mot y est collée.
+    ///
+    /// La capitale d'un caractère est celle que donne <see cref="char.ToUpperInvariant"/>, un
+    /// caractère pour un : un caractère dont la capitale changerait de longueur — « ß », « ﬁ » —
+    /// reste tel quel, et chaque caractère dessiné est à la position du caractère tapé (N3).
+    /// </summary>
+    private static IEnumerable<(int Debut, int Fin, string Dessin, StyleEffectif Style, bool Colle)> EnCapitales(
+        string texte, int debut, int fin, StyleEffectif style)
+    {
+        if (style.Capitales == Capitales.Aucune)
+        {
+            yield return (debut, fin, texte, style, false);
+            yield break;
+        }
+
+        var dessin = string.Create(texte.Length, texte, (cible, source) =>
+        {
+            source.AsSpan().CopyTo(cible);
+            for (var i = debut; i < fin; i++) cible[i] = char.ToUpperInvariant(source[i]);
+        });
+
+        if (style.Capitales == Capitales.Capitales)
+        {
+            yield return (debut, fin, dessin, style, false);
+            yield break;
+        }
+
+        var reduit = style with
+        {
+            FontSize = style.FontSize * ReductionDesPetitesCapitales,
+            BaselineShift = style.BaselineShift / ReductionDesPetitesCapitales,
+        };
+
+        // Réduite : une minuscule, ou un blanc qui suit un caractère réduit.
+        var reduites = new bool[fin - debut];
+        for (var i = debut; i < fin; i++)
+        {
+            reduites[i - debut] = char.IsWhiteSpace(texte[i])
+                ? i > debut && reduites[i - 1 - debut]
+                : char.ToUpperInvariant(texte[i]) != texte[i];
+        }
+
+        var portion = debut;
+        while (portion < fin)
+        {
+            var petite = reduites[portion - debut];
+            var bout = portion + 1;
+            while (bout < fin && reduites[bout - debut] == petite) bout++;
+
+            var colle = portion > debut && !char.IsWhiteSpace(texte[portion - 1]);
+            yield return (portion, bout, dessin, petite ? reduit : style, colle);
+            portion = bout;
+        }
+    }
 
     /// <summary>
     /// Le texte réduit à une suite d'unités : des mots avec les espaces qui les
@@ -535,20 +638,35 @@ public static class Compositeur
         var unites = new List<Unite>();
 
         // Les morceaux de style se suivent et couvrent le texte : chacun commence où
-        // finit le précédent.
+        // finit le précédent. Chacun se découpe dans ce que la composition dessine — le texte
+        // même, ou ses capitales, en portions de même taille (poste N24).
         var debutDuMorceau = 0;
-        foreach (var (morceau, style) in StyleEffectif.Decouper(texte, fragments, commun))
+        foreach (var (morceau, styleDuMorceau) in StyleEffectif.Decouper(texte, fragments, commun))
         {
             var finDuMorceau = debutDuMorceau + morceau.Length;
+            foreach (var portion in EnCapitales(texte, debutDuMorceau, finDuMorceau, styleDuMorceau))
+            {
+                Couper(portion.Debut, portion.Fin, portion.Dessin, portion.Style, portion.Colle);
+            }
+
+            debutDuMorceau = finDuMorceau;
+        }
+
+        return unites;
+
+        // Les unités d'une portion : ses mots, lus dans le dessin, et ses sauts, lus dans le
+        // texte. La première unité de la portion porte <colle>.
+        void Couper(int debutDuMorceau, int finDuMorceau, string dessin, StyleEffectif style, bool colle)
+        {
             var segment = debutDuMorceau;
 
             for (var i = debutDuMorceau; i < finDuMorceau; i++)
             {
                 if (texte[i] is not ('\n' or '\r' or SautDeLigne)) continue;
 
-                foreach (var (mot, debut) in Mots(texte, segment, i))
+                foreach (var (mot, debut) in Mots(dessin, segment, i))
                 {
-                    unites.Add(new Unite(mot, style, FinDeLigne: false, debut, mot.Length));
+                    unites.Add(new Unite(mot, style, FinDeLigne: false, debut, mot.Length, Colle: colle && debut == debutDuMorceau));
                 }
 
                 segment = i + 1;
@@ -566,15 +684,11 @@ public static class Compositeur
                 unites.Add(new Unite(string.Empty, style, FinDeLigne: true, saut, i + 1 - saut));
             }
 
-            foreach (var (mot, debut) in Mots(texte, segment, finDuMorceau))
+            foreach (var (mot, debut) in Mots(dessin, segment, finDuMorceau))
             {
-                unites.Add(new Unite(mot, style, FinDeLigne: false, debut, mot.Length));
+                unites.Add(new Unite(mot, style, FinDeLigne: false, debut, mot.Length, Colle: colle && debut == debutDuMorceau));
             }
-
-            debutDuMorceau = finDuMorceau;
         }
-
-        return unites;
     }
 
     /// <summary>

@@ -139,14 +139,14 @@ Les sections de l'aide, dans son ordre, sans celle du ruban.
 | Mettre le texte en gras | Ctrl+G | p. 10, *Bold* `Ctrl+B` | **lié** avant N10 : le gras du bloc ; depuis R7, en saisie, la sélection du texte ou le mot du curseur, et hors saisie tous les caractères du bloc |
 | Mettre le texte en italique | Ctrl+I | p. 10, *Italic* `Ctrl+I` | **lié** avant N10 |
 | Souligner le texte | Ctrl+U | p. 10, *Underline* `Ctrl+U` | **lié** (I3) |
-| Transformer le texte en petites majuscules ou celles-ci en minuscules ou majuscules | Ctrl+Maj+K | HR | **réservé** : N24 |
+| Transformer le texte en petites majuscules ou celles-ci en minuscules ou majuscules | Ctrl+Maj+K | HR | **lié** (N24) : les petites majuscules des caractères visés, ou le texte tel qu'il est tapé s'ils les portent tous ; *Texte ▸ Exposant et majuscules ▸ Petites majuscules*. Les majuscules, sans touche, sont au même menu |
 | Ouvrir la boîte de dialogue Police | Ctrl+Maj+F | HR | **gardé** : Premier plan (A4, règle 12), `Alt+F6` étant pris par le bureau ; la boîte Police n'existe pas, le dock en tient lieu |
 | Copier la mise en forme | Ctrl+Maj+C | HR | **lié** (R7) : la mise en forme des caractères visés, au menu Texte aussi |
 | Coller la mise en forme | Ctrl+Maj+V | HR | **lié** (R7) : posée sur les caractères visés, en un pas |
 | Activer ou désactiver l’option Caractères spéciaux | Ctrl+Maj+Y | p. 9, *Special Characters* `Ctrl+Shift+Y` | **lié** (N22) : *Affichage ▸ Caractères spéciaux*, une bascule de la session, même en saisie |
 | Appliquer à la mise en forme des caractères le style de texte actuel | Ctrl+Espace | HR | **lié** (R7) : *Texte ▸ Effacer la mise en forme* — les caractères visés reprennent le style du bloc, par `MiseEnForme.Retirer` (N2) ; la langue reste |
-| Appliquer ou supprimer la mise en indice | Ctrl+= | HR | **gardé** au zoom avant jusqu'à N24, qui le prend (règle 12). Sur l'AZERTY du propriétaire, `Ctrl` + « = » arrive en `OemPlus` sous `Control`, et le zoom le prend (sonde) |
-| Appliquer ou supprimer la mise en exposant | Ctrl+Maj+= | HR | **réservé** : N24. Sur l'AZERTY, `OemPlus` sous `Control, Shift`, symbole « + », que rien ne prend (sonde) |
+| Appliquer ou supprimer la mise en indice | Ctrl+= | HR | **lié** (N24, règle 12) : `Ctrl+OemPlus`, l'indice des caractères visés, en un pas ; le zoom avant n'a plus de touche. Sur l'AZERTY du propriétaire, `Ctrl` + « = » arrive en `OemPlus` sous `Control` (sonde) ; `Ctrl` + le « + » du pavé numérique aussi, Avalonia 11.3.9 confondant `Add` et `OemPlus` |
+| Appliquer ou supprimer la mise en exposant | Ctrl+Maj+= | HR | **lié** (N24) : `Ctrl+Shift+OemPlus`, l'exposant des caractères visés, en un pas. Sur l'AZERTY, `OemPlus` sous `Control, Shift`, symbole « + » (sonde) |
 | Augmenter l’espace entre les lettres d’un mot (crénage) | Ctrl+Maj+] | HR | **réservé**, aucun poste : MyPublisher n'a pas de crénage. La table du corps lit le caractère : sur un QWERTY, `Ctrl+Maj+]` produit « } », qu'elle ignore ; sur l'AZERTY, `Maj` + AltGr + « ) » n'a pas été relevé |
 | Réduire l’espace entre les lettres d’un mot (crénage) | Ctrl+Maj+[ | HR | **réservé**, aucun poste : MyPublisher n'a pas de crénage |
 | Augmenter la taille de police de 1.0 point | Ctrl+] | HR | **lié** (N10) : le corps d'un point de plus, sur le bloc de texte ou le tableau ; lu sur le caractère |
@@ -343,7 +343,7 @@ Les sections de l'aide, dans son ordre, sans celle du ruban.
 | `Ctrl+Maj+Z` | Rétablir | les autres applications du bureau |
 | `Ctrl+D` | Dupliquer la sélection | MyPublisher |
 | `Ctrl+F1` | Replier les panneaux | p. 9, *Task Pane* `Ctrl+F1` (B7) |
-| `Ctrl` + molette, `Ctrl` `+` / `-` / `0` | Zoom | MyPublisher ; `Ctrl+=` passera à l'indice avec N24 |
+| `Ctrl` + molette, `Ctrl` `-` / `0` | Zoom | MyPublisher ; `Ctrl+=` est passé à l'indice avec N24, et le zoom avant n'a plus de touche |
 | `V`, `T`, `H`, `R`, `E`, `L`, `B`, `Z` | Les outils du rail, hors saisie | MyPublisher |
 | `Espace` tenu | La main | MyPublisher (I6) |
 | Retour arrière | Supprimer la sélection, hors saisie | MyPublisher, comme Suppr |

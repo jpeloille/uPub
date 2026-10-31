@@ -73,6 +73,17 @@ public partial class StyleSpan : ObservableObject
     private double _baselineShift;
 
     /// <summary>
+    /// Les capitales de la portion (poste N24) : nulle, comme le bloc ;
+    /// <c>Aucune</c> dans le fichier, explicitement aucune — un mot
+    /// qu'on retire des capitales de son bloc. La composition dessine en capitales sans
+    /// toucher au texte (<see cref="Compositeur"/>). Une clé additive : un fichier qui ne
+    /// l'écrit pas se lit nul, et <c>FormatVersion</c> reste à 5 (règle 15).
+    /// </summary>
+    [ObservableProperty]
+    [property: JsonPropertyOrder(85)]
+    private Capitales? _capitales;
+
+    /// <summary>
     /// La langue de la portion, une étiquette BCP 47 (poste N9) ; nulle, celle du bloc. Elle
     /// n'entre pas dans <see cref="StyleEffectif"/> : la composition et les deux rendus ne la
     /// voient pas (<see cref="Langues"/>). L'import d'un <c>.pub</c> la lit sur chaque
@@ -86,8 +97,27 @@ public partial class StyleSpan : ObservableObject
     {
         Start = Start, Length = Length, FontFamily = FontFamily, FontSize = FontSize,
         Bold = Bold, Italic = Italic, Underline = Underline, Foreground = Foreground,
-        BaselineShift = BaselineShift, Langue = Langue,
+        BaselineShift = BaselineShift, Capitales = Capitales, Langue = Langue,
     };
+}
+
+/// <summary>
+/// Les capitales d'un texte (poste N24 ; fiche 23, b14) : <i>Majuscules</i> et <i>Petites
+/// majuscules</i> de la barre Formatting de Publisher (p. 10). Elles ne changent pas le texte —
+/// la recherche, la copie et l'orthographe le lisent tel qu'il est tapé — : la composition le
+/// dessine en capitales, et fabrique les petites capitales en dessinant les minuscules en
+/// capitales réduites (<see cref="Compositeur.ReductionDesPetitesCapitales"/>).
+/// </summary>
+public enum Capitales
+{
+    /// <summary>Le texte tel qu'il est tapé.</summary>
+    Aucune,
+
+    /// <summary>Tout en capitales, à la hauteur des capitales.</summary>
+    Capitales,
+
+    /// <summary>Les minuscules en capitales réduites ; les capitales tapées restent pleines.</summary>
+    PetitesCapitales,
 }
 
 /// <summary>
@@ -98,11 +128,18 @@ public partial class StyleSpan : ObservableObject
 /// Le souligné y entre comme le gras (poste I7) : il ne change aucune mesure, mais deux
 /// portions qui ne se soulignent pas pareil sont deux morceaux, et chaque rendu trace le
 /// trait de chacun (<see cref="Compositeur.Soulignes"/>).
+///
+/// Les capitales y entrent de même (poste N24), hors des membres positionnels : un style
+/// construit sans elles n'en a pas. Deux portions de capitales différentes sont deux morceaux,
+/// que la composition dessine chacun à sa façon.
 /// </summary>
 public readonly record struct StyleEffectif(
     string FontFamily, double FontSize, bool Bold, bool Italic, Souligne Underline,
     string Foreground, double BaselineShift)
 {
+    /// <summary>Les capitales de la portion (poste N24) ; aucune par défaut.</summary>
+    public Capitales Capitales { get; init; }
+
     /// <summary>
     /// Découpe le texte d'un bloc en portions de style homogène. Les fragments qui se
     /// chevauchent, débordent ou remontent le temps sont ramenés à quelque chose de
@@ -134,7 +171,10 @@ public readonly record struct StyleEffectif(
                     fragment.Italic ?? styles[i].Italic,
                     fragment.Underline ?? styles[i].Underline,
                     fragment.Foreground ?? styles[i].Foreground,
-                    fragment.BaselineShift != 0 ? fragment.BaselineShift : styles[i].BaselineShift);
+                    fragment.BaselineShift != 0 ? fragment.BaselineShift : styles[i].BaselineShift)
+                {
+                    Capitales = fragment.Capitales ?? styles[i].Capitales,
+                };
             }
         }
 

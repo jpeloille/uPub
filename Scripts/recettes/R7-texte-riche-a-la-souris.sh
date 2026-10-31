@@ -85,7 +85,8 @@ def code(texte):
 
 # a. le modèle de vue.
 partiel = code(lire("MyPublisher/ViewModels/MainWindowViewModel.MiseEnFormeVisee.cs"))
-exige("public sealed class MiseEnFormeVisee" in partiel and "public partial class MainWindowViewModel" in partiel,
+# La classe est partielle depuis N24, qui lui ajoute l'exposant et les capitales dans son partiel.
+exige(re.search(r"public sealed (partial )?class MiseEnFormeVisee", partiel) and "public partial class MainWindowViewModel" in partiel,
       "la MiseEnFormeVisee n'est pas dans le partiel de R7 (règle 10).")
 for appel in ("MiseEnForme.Lire(", "MiseEnForme.Allume(", "MiseEnForme.Poser(", "MiseEnForme.Basculer(", "MiseEnForme.Retirer("):
     exige(appel in partiel, f"la MiseEnFormeVisee n'appelle pas {appel}…) : elle doit lire et écrire par la mise en forme du noyau (N2).")

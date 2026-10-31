@@ -295,7 +295,7 @@ public class MenusDePublisherTests
 
     /// <summary>
     /// La recette : le menu Disposition affiche « Ctrl+Maj+G », comme les bulles, et non
-    /// « Ctrl+Shift+G » ; Edition « Suppr » et non « Delete », Affichage « Ctrl++ ». Le texte
+    /// « Ctrl+Shift+G » ; Edition « Suppr » et non « Delete », Affichage « Ctrl+− ». Le texte
     /// suit un geste qui change.
     /// </summary>
     [AvaloniaFact]
@@ -327,7 +327,9 @@ public class MenusDePublisherTests
         Rendu.Touche(fenetre, PhysicalKey.Escape);
 
         Rendu.Cliquer(Menu(fenetre, "_Affichage"));
-        Assert.Equal("Ctrl++", GesteAffiche(Menu(fenetre, "Zoom _avant")));
+        // Le zoom avant n'a plus de touche depuis N24 (règle 14) : « Ctrl+= » est l'indice, que le
+        // menu Texte écrit ainsi.
+        Assert.True(string.IsNullOrEmpty(GesteAffiche(Menu(fenetre, "Zoom _avant"))), "le zoom avant montre encore une touche");
         Assert.Equal("Ctrl+−", GesteAffiche(Menu(fenetre, "Zoom a_rrière")));
         Assert.Equal("Ctrl+0", GesteAffiche(Menu(fenetre, "_Taille réelle")));
         Assert.Equal("Ctrl+Maj+L", GesteAffiche(Menu(fenetre, "Page _entière")));
