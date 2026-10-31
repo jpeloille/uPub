@@ -132,7 +132,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **N26** | Taper dans le texte d'un groupe, et prendre un membre seul | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 10 |
 | **N27** | Taper dans une case, sur la page | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 11 ; revient sur un choix écrit en C9 |
 | **N28** | Lignes et colonnes à l'endroit choisi, et plusieurs cases à la fois | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 12 |
-| **N29** | Le clavier suit les lignes composées | 0 % | Décidé le 31 octobre 2026 par le propriétaire, sur la mesure de N21 ; salve Saisie 7 |
+| **N29** | Le clavier suit les lignes composées | **100 %** | En saisie, `Début`, `Fin`, `↑`, `↓`, `Pg.Préc` et `Pg.Suiv`, seules ou sous `Maj`, sont prises avant le champ caché et calculées sur les lignes de la composition (`PageCanvas.ClavierDuTexte.cs`, branché par trois lignes de `PageCanvas.Saisie.cs`) : début et bout de la ligne composée, ligne du dessus ou du dessous dans l'ordre du texte — d'une colonne à la suivante —, à l'abscisse visée, gardée d'une flèche à l'autre et perdue au premier autre déplacement ; bouts du texte depuis la première et la dernière ligne ; première et dernière ligne du bloc. `Fin` sur une ligne coupée en douceur dessine le curseur au bout d'elle (l'affinité du curseur). La géométrie (`TexteCompose.cs`) dit la coupure douce, la ligne du curseur, la colonne. La fenêtre de candidats de la méthode d'entrée se pose au curseur dessiné : le client du champ est enveloppé au passage montant de sa demande, sans le seuil D. La mesure de N21 rejouée sur ATA 21 (six blocs, 44 lignes) : aucun écart pour `Début`, `Fin`, `↑`, `↓`, contre 8, 10, 32 et 30 sans le poste. `PageCanvas.axaml.cs` et `MarquesDuTexte.cs` ne sont pas touchés. Six tests sous `poste=N29` ; un sabotage au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **D** | Moteur de composition | — | Décision non ouverte ; à rouvrir quand A, B et C sont livrées |
 
 **Par phase** — P : 4 sur 4 · A : 11 sur 15 · B : 4 sur 7 · C : 7 sur 9 · R : 5 sur 7 ·
@@ -9153,6 +9153,83 @@ navigue dans son repère ; `Ctrl+←` et `Ctrl+→` (le mot) restent au champ, q
 
 Fichiers : `PageCanvas.Saisie.cs`, `TexteCompose.cs`, `MarquesDuTexte.cs`, README (Clavier). Dépend
 de N15 et N21. Effort : moyen.
+
+*Livré le 31 octobre 2026*, dans la salve Saisie 7 ; la relecture adversariale vient après la
+fusion. **La planche.** La mécanique vit dans un partiel neuf, `PageCanvas.ClavierDuTexte.cs`, et
+non dans `PageCanvas.Saisie.cs`, qui ne reçoit que trois branchements : `ToucheDeLaSaisie`, prise
+en tunnel avant le champ (N16), passe d'abord par `ToucheDesLignes` ; `OnAttachedToVisualTree`
+appelle `BrancherLeClavierDesLignes` ; `PoserLesMarquesDuTexte` dessine le curseur sur la ligne que
+son affinité désigne et le dit à la méthode d'entrée. Le code de N20 n'est pas touché, ni
+`PageCanvas.axaml.cs`. `Début`, `Fin`, `↑`, `↓`, `Pg.Préc` et `Pg.Suiv`, seules ou sous `Maj`,
+sont calculées sur les lignes de la composition, posées au champ (`PoserLaSelection`) et marquées
+traitées : le champ ne fait plus sa propre navigation. `Début` et `Fin` mènent au début et au bout
+de la ligne composée du curseur, `Fin` après l'espace où la ligne se coupe ; les flèches à la ligne
+du dessus ou du dessous dans l'ordre du texte — de la dernière ligne d'une colonne à la première de
+la suivante —, à la position la plus proche de l'abscisse visée ; `↑` sur la première ligne au
+début du texte, `↓` sur la dernière à sa fin ; les pages à la première et à la dernière ligne du
+bloc. Sous `Maj`, l'ancre est `SelectionStart` du champ (N15), le bout déplacé `SelectionEnd`. La
+planche retient ce que la touche a laissé (`LigneVisee`) : l'abscisse visée, gardée dans la
+colonne de sa ligne, et l'affinité du curseur au bout d'une ligne renvoyée. Les deux ne valent que
+tant que le champ n'a pas bougé — même texte, même sélection —, et se perdent à toute autre touche
+qu'un modificateur seul et à toute pression. `Ctrl+Début`, `Ctrl+Fin`, `Ctrl+←`, `Ctrl+→`, les
+flèches de côté et `Alt`+flèches (N6) restent où ils étaient ; pendant un pré-édit, rien n'est pris.
+Un bloc tourné navigue dans son repère, qui est celui de la géométrie. **La géométrie**
+(`TexteCompose.cs`) gagne `LigneQueFinit` — la ligne qu'une coupure douce finit —,
+`RangDuCurseur`, `PointDe` et `CurseurDe` selon l'affinité, `DecalageDeColonne`, `SurLaLigne` et
+`FinDeLaLigne`. `MarquesDuTexte.cs` n'est pas touché. **La fenêtre de candidats.** Avalonia 11.3.9
+demande son client de méthode d'entrée au champ qui a le focus par un événement routé,
+`TextInputMethodClientRequestedEvent` (tunnel puis bulle), que le `TextBox` sert par un gestionnaire
+de classe ; le gestionnaire de la méthode d'entrée lit alors `CursorRectangle` dans le repère de ce
+champ, et non de `TextViewVisual` comme le dit sa documentation (`TextInputMethodManager.UpdateCursorRect`,
+lu décompilé). La planche prend la demande au passage montant et enveloppe le client du champ
+(`ClientAuCurseurDessine`, une fois par champ) : tout lui est rendu tel quel — texte autour,
+sélection, pré-édit, avis —, sauf le rectangle du curseur, pris au curseur dessiné, mené dans le
+repère du champ, et signalé à chaque pose des marques. Faisable sans le seuil D.
+
+Le poste écrit, outre les fichiers nommés, le partiel neuf, inscrit à la recette I1 ; le README a
+sa ligne au sous-tableau Texte, avec celle d'`Entrée` dans la saisie — il n'a pas de sous-tableau
+Clavier. Aucune aide de geste n'est ajoutée à `Rendu.cs`.
+
+*Recette jouée* : `Scripts/recettes/N29-clavier-sur-la-composition.sh`. Les sources — le partiel,
+la touche prise avant le champ, exactement les six touches, sans `Ctrl` ni `Alt` ; la géométrie et
+l'affinité des marques ; le client enveloppé ; la recette I1 et le README —, puis six tests sous
+`poste=N29` (`ClavierSurLaCompositionTests`) : la mesure de N21 rejouée sur ATA 21, depuis le
+milieu de chaque ligne composée des blocs non tournés qu'un clic ouvre, aucun écart pour `Fin`,
+`Début`, `↓` et `↑` — le test lit ce que la composition dessine, et non le calcul de la planche ;
+`↓ ↓ ↑ ↑` revient au caractère de départ, l'abscisse gardée sur un paragraphe court et perdue après
+`←`, `Maj+↓` qui étend d'une ligne composée, `Maj+Fin` et `Maj+Début` qui gardent l'ancre ; `Fin`
+sur une ligne coupée en douceur, dessiné au bout d'elle ; deux colonnes, les pages, les bouts du
+texte, `Ctrl+Début` et `Ctrl+Fin` ; un bloc tourné de 30° qui navigue comme à plat, ligne par ligne
+sur la composition ; la fenêtre de candidats au curseur dessiné, à un centième de pixel, quand le
+curseur du champ caché en est à 60 pt. Un sabotage au juge, celui du plan : `↓` rendu au champ.
+
+*Ce que l'implémentation a appris.*
+- **La mesure rejouée compte plus large que celle de N21** : six blocs et 44 lignes composées, et
+  non cinq et 33 — le test prend chaque bloc non tourné qu'un clic sur un de ses caractères ouvre.
+  Sans le poste (la touche rendue au champ, mesuré), il y trouve 10 écarts pour `Fin`, 8 pour
+  `Début`, 30 pour `↓`, 32 pour `↑` ; avec, aucun.
+- Sur un texte sans retrait ni fragment, le champ coupe ses lignes comme la composition et sa
+  navigation tombe juste : trois tests du poste passaient sans lui avant qu'on leur donne un
+  paragraphe en retrait. Le test d'un geste du clavier doit se jouer là où le champ et la
+  composition divergent.
+
+*Choisi sans certitude* :
+- l'abscisse visée est gardée dans la colonne de sa ligne, et non dans le bloc : la première ligne
+  de la colonne suivante est visée au même endroit de la sienne ;
+- `↑` sur la première ligne, `↓` sur la dernière et les pages gardent l'abscisse visée ; `Début` et
+  `Fin` la perdent ;
+- sans `Maj`, sur une sélection, la touche part du bout que le geste déplaçait (`SelectionEnd`), et
+  non du bord de la sélection dans le sens de la touche ;
+- la fenêtre de candidats se pose au curseur dessiné, qui suit le pré-édit ; sous une sélection, au
+  bout qui bouge, que les marques ne dessinent pas.
+
+*Relevé, non corrigé* :
+- un clic au-delà du bout d'une ligne renvoyée pose le curseur à sa fin, dessiné au début de la
+  ligne d'en dessous : le clic de N21 ne donne pas d'affinité, et `Fin` seul la donne ;
+- le texte autour du curseur et la sélection que la méthode d'entrée lit restent ceux des lignes du
+  champ caché (`SurroundingText`) : seule la place de la fenêtre suit la composition ;
+- la place de la fenêtre n'a pu être vue que par le client, sans méthode d'entrée réelle (le banc
+  n'en a pas) : à confirmer à l'écran, sous IBus ou Fcitx.
 
 A11 et A13 ferment la phase, chacun dans sa salve : leurs ajouts sont écrits dans leur section.
 
