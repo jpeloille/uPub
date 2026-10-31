@@ -449,6 +449,15 @@ public sealed class GeometrieDuTexte
     public Compositeur.IMetriques Metriques => _metriques;
 
     /// <summary>
+    /// L'abscisse, dans le repère du bloc, de la position <paramref name="index"/> sur la ligne
+    /// <paramref name="posee"/> elle-même — et non sur celle que <see cref="LigneDe"/> choisit :
+    /// le bout d'une ligne renvoyée, que <see cref="PointDe"/> rend au début de la suivante. C'est
+    /// le bord droit d'une espace qui pend au bout de sa ligne (poste N22).
+    /// </summary>
+    public double AbscisseSur(TexteCompose.LignePosee posee, int index) =>
+        posee.Origine + Compositeur.Abscisse(posee.Ligne, posee.Decalages, index, _texte, _commun, _metriques);
+
+    /// <summary>
     /// La bande verticale d'une ligne posée, dans le repère du bloc : de son sommet au bas de
     /// son avance, ligne de base comprise même quand un interligne serré l'en fait sortir —
     /// la même que celle où <see cref="IndexSous"/> cherche la ligne.

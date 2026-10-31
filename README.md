@@ -365,7 +365,11 @@ Fenêtre masque aussi l'un ou l'autre.
   repère ne s'imprime ; *Affichage ▸ Limites et repères* (`Ctrl+Maj+O`) et *Règles* les
   effacent de l'écran — et *Limites et repères* efface aussi les marges en pointillé, la
   grille et le marqueur de débordement, qui ne s'impriment pas davantage ; *Repères de
-  lignes de base* (`Ctrl+F7`) n'efface que les lignes de base.
+  lignes de base* (`Ctrl+F7`) n'efface que les lignes de base. *Affichage ▸ Caractères
+  spéciaux* (`Ctrl+Maj+Y`) montre sur le texte, comme Publisher, un point pour chaque espace,
+  une flèche pour chaque tabulation, ¶ à chaque fin de paragraphe et ↵ à chaque saut de ligne
+  forcé, à l'accent de l'interface, tournés et mis à l'échelle avec leur bloc, pendant la
+  saisie comme hors d'elle ; ils ne s'impriment pas.
 - Édition du texte directement sur la page : un clic dans le texte d'un bloc y pose le curseur, au caractère visé, et un glissé y sélectionne ; le bloc se prend et se déplace par son bord. Un bloc de texte neuf — tracé à l'outil, ou posé par *Insertion ▸ Bloc de texte* — est vide, le curseur dedans.
 - **Importer un texte** — *Texte ▸ Importer un texte…*, ou le bouton du même nom à la
   section Contenu d'un bloc de texte : un fichier texte remplit le bloc sélectionné, au style du
@@ -520,6 +524,7 @@ comptés pour rien : sur un AZERTY, `Ctrl+]` se tape `Ctrl+AltGr+)`, `Ctrl+[` se
 | `Ctrl+Maj+L` | Page entière |
 | `Ctrl+Maj+O` | Limites et repères : montre ou masque tout ce qui ne s'imprime pas |
 | `Ctrl+F7` | Repères de lignes de base : montre ou masque les seules lignes de base |
+| `Ctrl+Maj+Y` | Caractères spéciaux : montre ou masque, sur le texte de la page, un point pour chaque espace, une flèche pour chaque tabulation, ¶ à chaque fin de paragraphe, ↵ à chaque saut de ligne forcé ; même en saisie, rien ne s'imprime |
 | Dans le champ du zoom : `Entrée`, `Échap`, flèches | Applique le zoom tapé, y renonce en rendant la planche, parcourt la liste |
 
 ### Outils
