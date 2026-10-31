@@ -24,7 +24,7 @@ Où en est chaque poste. Une seule règle pour la colonne d'avancement : un post
 on écrit ce qui est fait plutôt qu'un pourcentage inventé — un poste à moitié écrit n'est
 pas un poste à moitié livré. La colonne se met à jour dans le commit qui clôt le poste.
 
-*Dernière mise à jour : 31 octobre 2026 (salve Saisie 6 livrée : A12, le clic droit prend le bloc et ouvre ses commandes, le menu de la page dans le vide, celui du texte en saisie, Maj+F10 et la touche Menu, Format du bloc… et le double-clic sur une image ou une forme vers le dock ; N20, rechercher et remplacer, la barre posée sur la planche, Ctrl+F, Ctrl+H, F3, Maj+F4, Remplacer tout en un pas ; N21, la saisie montre le texte composé en voie 2a, le curseur, la sélection et le pré-édit dessinés sur la composition, le triple-clic prend le paragraphe ; N19 repris le 30 octobre : un clic sur le nom de la police ouvre la liste.)*
+*Dernière mise à jour : 31 octobre 2026 (salve Saisie 7 livrée : R6, en saisie le panneau, la barre, le menu et le clavier règlent le paragraphe du curseur ou ceux de la sélection, l'état mixte n'allume rien, Diminuer et Augmenter le retrait au dock ; N22, Affichage ▸ Caractères spéciaux et Ctrl+Maj+Y ; N29, Début, Fin, ↑, ↓ et les touches de page suivent les lignes composées, la fenêtre de candidats au curseur dessiné ; N20 repris, le texte trouvé laisse le focus à la barre. Salve Saisie 6 livrée le même jour : A12, N20, N21.)*
 
 | Poste | Intitulé | Avancement | Où ça en est |
 |---|---|:---:|---|
@@ -135,10 +135,10 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **N29** | Le clavier suit les lignes composées | **100 %** | En saisie, `Début`, `Fin`, `↑`, `↓`, `Pg.Préc` et `Pg.Suiv`, seules ou sous `Maj`, sont prises avant le champ caché et calculées sur les lignes de la composition (`PageCanvas.ClavierDuTexte.cs`, branché par trois lignes de `PageCanvas.Saisie.cs`) : début et bout de la ligne composée, ligne du dessus ou du dessous dans l'ordre du texte — d'une colonne à la suivante —, à l'abscisse visée, gardée d'une flèche à l'autre et perdue au premier autre déplacement ; bouts du texte depuis la première et la dernière ligne ; première et dernière ligne du bloc. `Fin` sur une ligne coupée en douceur dessine le curseur au bout d'elle (l'affinité du curseur). La géométrie (`TexteCompose.cs`) dit la coupure douce, la ligne du curseur, la colonne. La fenêtre de candidats de la méthode d'entrée se pose au curseur dessiné : le client du champ est enveloppé au passage montant de sa demande, sans le seuil D. La mesure de N21 rejouée sur ATA 21 (six blocs, 44 lignes) : aucun écart pour `Début`, `Fin`, `↑`, `↓`, contre 8, 10, 32 et 30 sans le poste. `PageCanvas.axaml.cs` et `MarquesDuTexte.cs` ne sont pas touchés. Six tests sous `poste=N29` ; un sabotage au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **D** | Moteur de composition | — | Décision non ouverte ; à rouvrir quand A, B et C sont livrées |
 
-**Par phase** — P : 4 sur 4 · A : 11 sur 15 · B : 4 sur 7 · C : 7 sur 9 · R : 5 sur 7 ·
-Q : 22 sur 25 · I : 9 sur 9 · N : 21 sur 29 · D : non planifié.
+**Par phase** — P : 4 sur 4 · A : 11 sur 15 · B : 4 sur 7 · C : 7 sur 9 · R : 6 sur 7 ·
+Q : 22 sur 25 · I : 9 sur 9 · N : 23 sur 29 · D : non planifié.
 
-Soit **83 postes sur 105**. Le 31 octobre 2026, le propriétaire a ajouté N29, sur la mesure de N21. Le 25 octobre 2026, la phase N en a ajouté vingt-huit, et la phase Q
+Soit **86 postes sur 105**. Le 31 octobre 2026, le propriétaire a ajouté N29, sur la mesure de N21. Le 25 octobre 2026, la phase N en a ajouté vingt-huit, et la phase Q
 deux (Q24, Q25), tirés de la relecture du cours sous l'angle de la saisie (fiche 23). Le
 24 octobre 2026, la phase I en avait ajouté neuf, tirés de la
 maquette de la nouvelle interface. Le compte avait doublé le 11 octobre 2026 sans que rien ne
