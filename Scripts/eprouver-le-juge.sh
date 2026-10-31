@@ -2489,12 +2489,14 @@ saboter "le clic qui sort de la saisie (N5) ne fait rien d'autre" \
     'if (_editing is not null) { EndTextEdit(); return; }' \
     'N5-clic-de-sortie|ClicDeSortieTests'
 
-# La couche couvre aussi le texte en saisie : un clic dans le texte, au lieu d'y poser le
-# curseur, referme la saisie.
-saboter "la couche de saisie (N5) ne laisse plus le texte à son champ" \
-    MyPublisher/Views/CoucheDeSaisie.cs \
-    'new Rect(Bounds.Size).Contains(point) && Laisse?.Invoke(point) != true;' \
-    'new Rect(Bounds.Size).Contains(point);' \
+# Repris par A12 (règle 14), après la voie 2a : la couche ne laisse plus rien au champ caché, et
+# l'ancien sabotage — la couche qui couvre le texte en saisie — n'avait plus de prise. Celui-ci
+# lui fait laisser toute la planche pendant la saisie, comme avant N5 : un clic sur un autre bloc
+# ne le prend plus d'un seul geste.
+saboter "la couche de saisie (N5) se laisse traverser pendant la saisie" \
+    MyPublisher/Views/PageCanvas.Saisie.cs \
+    'InputLayer.Laisse = null;' \
+    'InputLayer.Laisse = _ => _editing is not null;' \
     'N5-clic-de-sortie|ClicDeSortieTests'
 
 # N6 : les raccourcis de la fenêtre laissent la touche au champ. Une liaison ne rend la touche
@@ -2911,6 +2913,36 @@ saboter "un clic sur le nom de la police n'ouvre plus la liste (N19)" \
     $'        Filtrer(null);\n        Ouvrir(true);\n        Marquer();' \
     $'        Filtrer(null);\n        Marquer();' \
     'N19-corps-et-police|CorpsEtPoliceTests'
+
+saboter "Remplacer tout empile un pas par occurrence (N20)" \
+    MyPublisher/ViewModels/MainWindowViewModel.Rechercher.cs \
+    'RemplacerLOccurrence(new Occurrence(cible, plage), par);' \
+    'RemplacerUneOccurrence(new Occurrence(cible, plage), par);' \
+    'N20-rechercher-remplacer|RechercherRemplacerTests'
+
+saboter "le remplacement déduit son édition au lieu de la dire : le style n'est plus celui du premier caractère (N20)" \
+    MyPublisher.Core/Models/Recherche.cs \
+    'Recalage.Appliquer(texte, apres, new Edition(plage.Start, plage.Length, par.Length), fragments, ecarts);' \
+    'Recalage.Appliquer(texte, apres, fragments, ecarts);' \
+    'N20-rechercher-remplacer|RechercheTests'
+
+# N21 : la saisie montre le texte composé. Le sabotage du plan : la composition de nouveau
+# masquée pendant la saisie — le champ, caché, ne dessine rien, et la page perd son texte dès
+# qu'on y entre.
+saboter "la composition (N21) de nouveau masquée pendant la saisie" \
+    MyPublisher/Views/PageCanvas.axaml \
+    '<views:TexteCompose Bloc="{Binding}">' \
+    '<views:TexteCompose IsVisible="{Binding !IsEditing}" Bloc="{Binding}">' \
+    'N21-saisie-sur-la-composition|SaisieSurLaCompositionTests'
+
+# Le bord d'un caractère mesuré hors du morceau façonné, comme avant le poste : la chasse du
+# préfixe seule passe 3,4 pt plus loin que le dessin dans une ligature, et quelques dixièmes dans
+# un crénage — le curseur se dessine à côté de son caractère.
+saboter "le bord d'un caractère (N21) mesuré hors du morceau façonné" \
+    MyPublisher.Core/Models/Compositeur.cs \
+    'var avant = dedans <= 0 ? 0 : metriques.Bord(morceau.Texte, morceau.Style, dedans);' \
+    'var avant = dedans <= 0 ? 0 : metriques.Largeur(morceau.Texte[..dedans], morceau.Style);' \
+    'N21-saisie-sur-la-composition|SaisieSurLaCompositionTests'
 
 # A12 : le clic droit sur un bloc hors de la sélection ne le prend plus — le menu s'ouvre sur la
 # sélection d'avant, et Couper emporterait un autre bloc que celui qu'on visait.

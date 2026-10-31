@@ -1,10 +1,12 @@
 using System;
+using System.ComponentModel;
 using System.Linq;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Presenters;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Threading;
 using Avalonia.VisualTree;
 using MyPublisher.Models;
 using MyPublisher.ViewModels;
@@ -29,13 +31,19 @@ namespace MyPublisher.Views;
 ///     déplace le bloc comme avant, et tout objet qui n'est pas du texte avec elle.
 ///
 /// <c>Ctrl</c>+clic et <c>Maj</c>+clic, eux, ajoutent ou retirent le bloc sans ouvrir la saisie.
-/// Dans le texte en saisie, le champ reçoit lui-même les clics (poste N5) : <c>Maj</c>+clic y
-/// étend la sélection, et le double-clic y prend un mot — il n'ouvre plus rien. Un bloc neuf est
-/// vide, le curseur dedans, qu'il vienne de l'outil ou du menu Insertion.
+/// Un bloc neuf est vide, le curseur dedans, qu'il vienne de l'outil ou du menu Insertion.
 ///
-/// Ce qu'on voit après l'entrée dépend de la voie de R7 (N21) : jusque-là, le champ en texte brut.
-/// Le curseur, lui, tombe au bon caractère dès ce poste ; le glissé suit le champ, qui est ce
-/// que l'écran montre pendant la saisie.
+/// **La saisie montre le texte composé** (poste N21, la voie 2a que le propriétaire a choisie le
+/// 26 octobre 2026 sur la mesure de N7 ; fiche 23, a10, a11, a20 et a21). Le champ en texte brut
+/// remplaçait la composition pendant la saisie : 471 pt d'écart au plus entre son curseur et le
+/// caractère composé. Désormais la composition reste à l'écran, et le champ, caché et hors du
+/// test de survol, ne fait plus que la frappe, la méthode d'entrée, le presse-papiers et la
+/// navigation au clavier. La couche de saisie garde tous les clics, texte en saisie compris
+/// (<see cref="PressionDansLaSaisie"/>) : un clic y pose le curseur, <c>Maj</c>+clic étend la
+/// sélection, le double-clic prend un mot, le triple-clic le paragraphe, et le glissé étend par
+/// caractère, par mot ou par paragraphe — tout lu sur la composition (<see cref="GeometrieDuTexte"/>).
+/// Le curseur, la sélection et le pré-édit se dessinent sur elle, dans l'<c>Overlay</c>
+/// (<see cref="MarquesDuTexte"/>, <see cref="PoserLesMarquesDuTexte"/>).
 ///
 /// La planche dit aussi au modèle de vue ce qui est sélectionné dans le texte en saisie (poste
 /// N15 ; fiche 23, b1 et b4) : <see cref="MainWindowViewModel.SelectionDuTexte"/>, que R6, R7,
@@ -56,6 +64,24 @@ public partial class PageCanvas
     /// glissé étend.
     /// </summary>
     private int _ancreDuTexte;
+
+    /// <summary>Ce que le glissé dans le texte étend : des caractères, des mots ou des paragraphes (N21).</summary>
+    private enum UniteDuTexte { Caractere, Mot, Paragraphe }
+
+    private UniteDuTexte _uniteDuGlisse;
+
+    /// <summary>
+    /// Le mot ou le paragraphe que le double ou le triple clic a pris : le glissé qui suit l'étend
+    /// sans jamais le perdre, comme dans un traitement de texte (N21).
+    /// </summary>
+    private (int Debut, int Fin) _priseDuTexte;
+
+    /// <summary>
+    /// La géométrie du texte pendant un glissé, prise à la pression : le texte ne change pas
+    /// sous un glissé, et la recomposer à chaque mouvement du pointeur coûterait jusqu'à 15 ms
+    /// sur un bloc d'ATA 21 (relevé de N3).
+    /// </summary>
+    private GeometrieDuTexte? _geometrieDuGlisse;
 
     /// <summary>
     /// Le point de la page, en points, tombe-t-il dans le texte du bloc — son intérieur moins la
@@ -97,9 +123,14 @@ public partial class PageCanvas
         return dansLeCadre && !dansLeBloc;
     }
 
-    /// <summary>Le curseur sur un bloc : le I sur son texte, les quatre flèches sur son bord.</summary>
+    /// <summary>
+    /// Le curseur sur un bloc : le I sur son texte, les quatre flèches sur son bord. Sur le bloc en
+    /// saisie, le I partout où la couche garde le clic pour le texte, bord compris (N21) : c'est là
+    /// qu'un clic pose le curseur.
+    /// </summary>
     private Cursor CurseurSur(Frame? bloc, Point page) =>
-        bloc is null ? ArrowCursor : DansLeTexte(bloc, page) ? TexteCursor : MoveCursor;
+        DansLeTexteEnSaisie(new Point(page.X * Scale, page.Y * Scale)) ? TexteCursor
+        : bloc is null ? ArrowCursor : DansLeTexte(bloc, page) ? TexteCursor : MoveCursor;
 
     /// <summary>
     /// Une pression sans <c>Ctrl</c> ni <c>Maj</c> dans le texte d'un bloc : elle prend ce bloc
@@ -123,6 +154,8 @@ public partial class PageCanvas
         if (!ReferenceEquals(_editing, texte)) return true;
 
         _ancreDuTexte = curseur;
+        _uniteDuGlisse = UniteDuTexte.Caractere;
+        _geometrieDuGlisse = null;
         _mode = DragMode.Texte;
         e.Pointer.Capture(InputLayer);
         return true;
@@ -131,8 +164,7 @@ public partial class PageCanvas
     /// <summary>La position du texte sous le pointeur, sur la composition à l'écran.</summary>
     private int PositionVisee(TextFrame texte, PointerEventArgs e)
     {
-        var compose = Scaler.GetVisualDescendants().OfType<TexteCompose>()
-            .FirstOrDefault(controle => ReferenceEquals(controle.Bloc, texte) && controle.IsEffectivelyVisible);
+        var compose = TexteComposeDe(texte);
         var longueur = texte.Text?.Length ?? 0;
 
         return compose?.Geometrie() is { } geometrie
@@ -140,23 +172,39 @@ public partial class PageCanvas
             : longueur;
     }
 
+    /// <summary>Le contrôle qui dessine la composition du bloc sur la page, s'il est à l'écran.</summary>
+    private TexteCompose? TexteComposeDe(TextFrame bloc) =>
+        Scaler.GetVisualDescendants().OfType<TexteCompose>()
+            .FirstOrDefault(controle => ReferenceEquals(controle.Bloc, bloc) && controle.IsEffectivelyVisible);
+
     /// <summary>
     /// Le glissé dans le texte, passé le seuil : la sélection du champ suit le pointeur depuis
-    /// l'ancre. La position est lue dans la mise en page du champ, comme le champ la lirait
-    /// lui-même (<c>TextBox.OnPointerMoved</c>) : c'est lui que l'écran montre pendant la saisie.
-    /// Tant que la mise en page ne l'a pas posé, le pointeur n'a rien à sélectionner.
+    /// l'ancre. La position est lue sur la composition, qui est ce que l'écran montre pendant la
+    /// saisie (poste N21) : par caractère après un clic, par mot après un double-clic, par
+    /// paragraphe après un triple-clic, la prise de départ toujours gardée. Le champ la lisait
+    /// dans sa propre mise en page, tant qu'il était à l'écran (N12).
     /// </summary>
     private void EtendreLaSelectionDuTexte(PointerEventArgs e)
     {
-        if (_editing is null || _zoneDeSaisie is not { } zone) return;
+        if (_editing is not { } bloc || _zoneDeSaisie is not { } zone || TexteComposeDe(bloc) is not { } compose) return;
 
-        var presentation = zone.GetVisualDescendants().OfType<TextPresenter>().FirstOrDefault();
-        if (presentation is null) return;
+        var geometrie = _geometrieDuGlisse ??= compose.Geometrie();
+        if (geometrie is null) return;
 
-        var point = e.GetPosition(presentation);
-        var atteint = presentation.TextLayout.HitTestPoint(point).CharacterHit;
-        var position = Math.Clamp(atteint.FirstCharacterIndex + atteint.TrailingLength, 0, zone.Text?.Length ?? 0);
-        PoserLaSelection(zone, Math.Clamp(_ancreDuTexte, 0, zone.Text?.Length ?? 0), position);
+        var texte = zone.Text ?? "";
+        var point = e.GetPosition(compose);
+        if (_uniteDuGlisse == UniteDuTexte.Caractere)
+        {
+            var position = Math.Clamp(geometrie.IndexSous(point), 0, texte.Length);
+            PoserLaSelection(zone, Math.Clamp(_ancreDuTexte, 0, texte.Length), position);
+            return;
+        }
+
+        var caractere = geometrie.CaractereSous(point);
+        var atteinte = _uniteDuGlisse == UniteDuTexte.Mot ? MotDe(texte, caractere) : ParagrapheDe(texte, caractere);
+        var (debut, fin) = _priseDuTexte;
+        if (atteinte.Debut < debut) PoserLaSelection(zone, fin, atteinte.Debut);
+        else PoserLaSelection(zone, debut, Math.Max(fin, atteinte.Fin));
     }
 
     /// <summary>
@@ -167,6 +215,7 @@ public partial class PageCanvas
     private void FinirLeGlisseDansLeTexte(PointerReleasedEventArgs e)
     {
         if (_aGlisse) EtendreLaSelectionDuTexte(e);
+        _geometrieDuGlisse = null;
     }
 
     /// <summary>
@@ -209,6 +258,64 @@ public partial class PageCanvas
         AddHandler(GotFocusEvent, (_, args) => SuivreLaZoneDeSaisie(args.Source as TextBox),
             RoutingStrategies.Bubble, handledEventsToo: true);
         AddHandler(KeyDownEvent, ToucheDeLaSaisie, RoutingStrategies.Tunnel);
+
+        // La saisie sur le texte composé (poste N21). La couche ne laisse plus rien au champ,
+        // caché : elle garde le clic dans le texte en saisie, que la pression ci-dessous prend
+        // avant qu'OnPointerPressed ne referme la saisie. Ce que la couche laissait au champ, du
+        // poste N5 à la voie 2a, a quitté la planche (A12, après la fusion de N21).
+        InputLayer.Laisse = null;
+        AddHandler(PointerPressedEvent, PressionDansLaSaisie, RoutingStrategies.Tunnel);
+
+        // Les marques suivent la mise en page — le zoom, la place et la taille du bloc —, et la
+        // sélection que le modèle de vue garde.
+        LayoutUpdated += (_, _) => SuivreLaMiseEnPage();
+        DataContextChanged += (_, _) => SuivreLeModeleDesMarques();
+        SuivreLeModeleDesMarques();
+
+        // Le texte trouvé par la recherche (N20) : l'écoute suit le modèle de vue, comme celle
+        // qu'AttachViewModel pose, sans toucher au fichier principal de la planche (règle 16).
+        DataContextChanged += (_, _) => SuivreLaRecherche();
+        SuivreLaRecherche();
+    }
+
+    // ------------------------------------------------------- le texte trouvé (N20)
+
+    /// <summary>Le modèle de vue dont la planche écoute la recherche.</summary>
+    private MainWindowViewModel? _vmDeLaRecherche;
+
+    private void SuivreLaRecherche()
+    {
+        if (_vmDeLaRecherche is not null) _vmDeLaRecherche.TexteTrouve -= OnTexteTrouve;
+        _vmDeLaRecherche = DataContext as MainWindowViewModel;
+        if (_vmDeLaRecherche is not null) _vmDeLaRecherche.TexteTrouve += OnTexteTrouve;
+    }
+
+    /// <summary>
+    /// La recherche a trouvé un texte dans un bloc de la page, que le modèle de vue a pris seul
+    /// (poste N20) : la saisie s'ouvre — ou reste ouverte, sur le même bloc —, la plage trouvée
+    /// sélectionnée, le curseur à sa fin, comme après un glissé (N12). Le champ prend le focus, et
+    /// la sélection est dite au modèle de vue comme toute autre (N15). Après l'ouverture : le champ
+    /// n'existe qu'au passage de mise en page qui suit, et <see cref="BeginTextEdit"/> y pose son
+    /// curseur d'abord.
+    /// </summary>
+    private void OnTexteTrouve(object? sender, SelectionDuTexte trouve)
+    {
+        if (trouve.Bloc is not TextFrame bloc) return;
+
+        if (!ReferenceEquals(_editing, bloc))
+        {
+            EndTextEdit();
+            BeginTextEdit(bloc, trouve.Fin);
+        }
+
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (!ReferenceEquals(_editing, bloc) || _zoneDeSaisie is not { } zone) return;
+
+            zone.Focus();
+            var longueur = zone.Text?.Length ?? 0;
+            PoserLaSelection(zone, Math.Clamp(trouve.Debut, 0, longueur), Math.Clamp(trouve.Fin, 0, longueur));
+        }, DispatcherPriority.Background);
     }
 
     /// <summary>
@@ -293,7 +400,9 @@ public partial class PageCanvas
             zone.PropertyChanged += OnZoneSuivieChangee;
         }
 
+        SuivreLeTexteDesMarques(_editing, zone);
         DireLaSelectionDuTexte(zone);
+        DemanderLesMarques();
     }
 
     private void OnZoneSuivieChangee(object? sender, AvaloniaPropertyChangedEventArgs e)
@@ -307,6 +416,9 @@ public partial class PageCanvas
             OublierLaSelectionDuTexte(zone);
             return;
         }
+
+        // Le curseur ne se montre que quand le champ a le focus, comme celui d'un champ (N21).
+        if (e.Property == IsFocusedProperty) DemanderLesMarques();
 
         if (e.Property != TextBox.SelectionStartProperty && e.Property != TextBox.SelectionEndProperty &&
             e.Property != TextBox.TextProperty)
@@ -356,5 +468,327 @@ public partial class PageCanvas
         {
             _vm.SuivreLaSelectionDuTexte(null);
         }
+
+        if (ReferenceEquals(_texteDesMarques, zone.DataContext)) SuivreLeTexteDesMarques(null, null);
+        DemanderLesMarques();
+    }
+
+    // ------------------------------------------------- la saisie sur le texte composé (N21)
+
+    /// <summary>
+    /// Le point de la planche, en pixels d'écran (le repère de <c>Surface</c>), tombe-t-il sur le
+    /// texte en saisie, là où la couche garde le clic pour lui ? Tout le bloc, bord compris, lu dans
+    /// le repère du contrôle qui dessine sa composition — mise en page et rotation comprises —, sur
+    /// la page, et hors des poignées, qui passent avant lui. C'est la zone que le champ prenait
+    /// quand il était à l'écran (N5) : le cadre de sélection, autour, prend et déplace le bloc.
+    /// </summary>
+    private bool DansLeTexteEnSaisie(Point surfacePoint)
+    {
+        if (_editing is not { } bloc || !DansLaPage(ToPageCoordinates(surfacePoint)) ||
+            HitHandle(bloc, surfacePoint) is not null || TexteComposeDe(bloc) is not { } compose)
+        {
+            return false;
+        }
+
+        return Surface.TranslatePoint(surfacePoint, compose) is { } dedans && new Rect(compose.Bounds.Size).Contains(dedans);
+    }
+
+    /// <summary>
+    /// Une pression dans le texte en saisie (poste N21), prise au passage descendant, avant
+    /// qu'<c>OnPointerPressed</c> ne referme la saisie (N5). Le champ, caché, ne la reçoit plus :
+    /// la planche fait ce qu'il faisait, sur la composition.
+    ///
+    ///   - le bouton gauche pose le curseur au caractère visé ; avec <c>Maj</c>, il étend la
+    ///     sélection depuis son ancre ; au deuxième clic, il prend le mot, au troisième le
+    ///     paragraphe — le champ prenait tout le texte (fiche 23, a11). Le glissé qui suit étend
+    ///     par la même unité ;
+    ///   - le bouton droit garde la saisie et la sélection : le relâché lève la demande du menu
+    ///     contextuel, qui remonte de la couche à la planche (A12) ;
+    ///   - le bouton du milieu, comme hors du texte.
+    ///
+    /// Le compte des clics est celui que la plate-forme donne à la pression : rien n'est rejoué,
+    /// rien n'est fabriqué (recette N5).
+    /// </summary>
+    private void PressionDansLaSaisie(object? sender, PointerPressedEventArgs e)
+    {
+        if (_editing is not { } bloc || _zoneDeSaisie is not { } zone || !ReferenceEquals(e.Source, InputLayer) ||
+            TexteComposeDe(bloc) is not { } compose)
+        {
+            return;
+        }
+
+        var pointeur = e.GetCurrentPoint(Surface);
+        if (!DansLeTexteEnSaisie(pointeur.Position)) return;
+
+        switch (pointeur.Properties.PointerUpdateKind)
+        {
+            case PointerUpdateKind.RightButtonPressed:
+                e.Handled = true;
+                return;
+            case PointerUpdateKind.LeftButtonPressed:
+                break;
+            default:
+                return;
+        }
+
+        e.Handled = true;
+        if (compose.Geometrie() is not { } geometrie) return;
+        if (!zone.IsFocused) zone.Focus();
+
+        var texte = zone.Text ?? "";
+        var point = e.GetPosition(compose);
+        var position = Math.Clamp(geometrie.IndexSous(point), 0, texte.Length);
+
+        if (e.ClickCount >= 2)
+        {
+            var caractere = geometrie.CaractereSous(point);
+            _uniteDuGlisse = e.ClickCount == 2 ? UniteDuTexte.Mot : UniteDuTexte.Paragraphe;
+            _priseDuTexte = _uniteDuGlisse == UniteDuTexte.Mot ? MotDe(texte, caractere) : ParagrapheDe(texte, caractere);
+            PoserLaSelection(zone, _priseDuTexte.Debut, _priseDuTexte.Fin);
+        }
+        else
+        {
+            // Maj étend depuis l'ancre de la sélection du champ : SelectionStart, le bout que le
+            // geste ne déplace pas (N15).
+            _ancreDuTexte = e.KeyModifiers.HasFlag(KeyModifiers.Shift)
+                ? Math.Clamp(zone.SelectionStart, 0, texte.Length)
+                : position;
+            _uniteDuGlisse = UniteDuTexte.Caractere;
+            PoserLaSelection(zone, _ancreDuTexte, position);
+        }
+
+        _geometrieDuGlisse = geometrie;
+        _priseALEcran = pointeur.Position;
+        _aGlisse = false;
+        _mode = DragMode.Texte;
+        e.Pointer.Capture(InputLayer);
+    }
+
+    /// <summary>
+    /// Le mot qui porte le caractère <paramref name="caractere"/> : la suite de lettres et de
+    /// chiffres qui le contient ; une suite de blancs, si c'est un blanc ; le signe seul, si c'est
+    /// une ponctuation. Un saut de paragraphe ou de ligne n'est pas un mot : le double-clic au bout
+    /// d'une ligne prend le mot qui le précède. Le mot seul, sans le blanc qui le suit — le champ
+    /// en prenait tantôt un, tantôt non (mesuré : « monde, » au clic sur la virgule, « entier »
+    /// au clic sur la première espace qui suit, « entier  » sur la seconde).
+    /// </summary>
+    internal static (int Debut, int Fin) MotDe(string texte, int caractere)
+    {
+        if (texte.Length == 0) return (0, 0);
+
+        var c = Math.Clamp(caractere, 0, texte.Length - 1);
+        if (EstUnSaut(texte[c]))
+        {
+            if (c == 0 || EstUnSaut(texte[c - 1])) return (c, c);
+            c--;
+        }
+
+        var sorte = SorteDe(texte[c]);
+        if (sorte == SorteDeCaractere.Signe)
+        {
+            var fin = c + 1 < texte.Length && char.IsSurrogatePair(texte[c], texte[c + 1]) ? c + 2 : c + 1;
+            return (c, fin);
+        }
+
+        var debut = c;
+        while (debut > 0 && SorteDe(texte[debut - 1]) == sorte) debut--;
+        var bout = c + 1;
+        while (bout < texte.Length && SorteDe(texte[bout]) == sorte) bout++;
+        return (debut, bout);
+    }
+
+    /// <summary>
+    /// Le paragraphe qui porte le caractère <paramref name="caractere"/>, sans le saut qui le
+    /// ferme : du caractère qui suit le saut précédent jusqu'au saut suivant. Un saut de ligne
+    /// forcé (U+2028) est dans le paragraphe, comme le compte des paragraphes le veut (N16). Le
+    /// saut lui-même appartient au paragraphe qu'il ferme. Le saut reste hors de la sélection : la
+    /// frappe qui la remplace garde le paragraphe et son écart (Q1).
+    /// </summary>
+    internal static (int Debut, int Fin) ParagrapheDe(string texte, int caractere)
+    {
+        var c = Math.Clamp(caractere, 0, texte.Length);
+        var debut = c;
+        while (debut > 0 && texte[debut - 1] is not ('\n' or '\r')) debut--;
+        var fin = c;
+        while (fin < texte.Length && texte[fin] is not ('\n' or '\r')) fin++;
+        return (debut, fin);
+    }
+
+    private enum SorteDeCaractere { Mot, Blanc, Signe }
+
+    private static bool EstUnSaut(char c) => c is '\n' or '\r' || c == Compositeur.SautDeLigne;
+
+    private static SorteDeCaractere SorteDe(char c) =>
+        char.IsLetterOrDigit(c) || c == '_' || char.IsSurrogate(c) || char.GetUnicodeCategory(c) is
+            System.Globalization.UnicodeCategory.NonSpacingMark or System.Globalization.UnicodeCategory.SpacingCombiningMark
+            ? SorteDeCaractere.Mot
+            : char.IsWhiteSpace(c) && !EstUnSaut(c) ? SorteDeCaractere.Blanc : SorteDeCaractere.Signe;
+
+    // ------------------------------------------------------------------ les marques (N21)
+
+    /// <summary>Le bloc dont les marques suivent les changements : celui de la saisie suivie.</summary>
+    private TextFrame? _texteDesMarques;
+
+    /// <summary>Le présentateur du champ de la saisie suivie, dont le pré-édit se dessine.</summary>
+    private TextPresenter? _presentationSuivie;
+
+    /// <summary>Le modèle de vue dont les marques suivent la sélection du texte.</summary>
+    private MainWindowViewModel? _modeleDesMarques;
+
+    /// <summary>Une pose des marques attend : les demandes d'un même geste n'en font qu'une.</summary>
+    private bool _marquesDemandees;
+
+    /// <summary>
+    /// Les marques suivent la sélection que le modèle de vue garde (N15), et non celle du champ :
+    /// quand la barre prend le focus, le champ réduit la sienne à un curseur, et c'est la sélection
+    /// gardée, celle que la barre mettra en forme (R7), qui reste surlignée.
+    /// </summary>
+    private void SuivreLeModeleDesMarques()
+    {
+        if (_modeleDesMarques is not null) _modeleDesMarques.PropertyChanged -= OnModeleDesMarquesChange;
+        _modeleDesMarques = DataContext as MainWindowViewModel;
+        if (_modeleDesMarques is not null) _modeleDesMarques.PropertyChanged += OnModeleDesMarquesChange;
+        DemanderLesMarques();
+    }
+
+    private void OnModeleDesMarquesChange(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(MainWindowViewModel.SelectionDuTexte)) DemanderLesMarques();
+    }
+
+    /// <summary>
+    /// Les marques suivent le bloc en saisie — un réglage de la barre change sa composition sans
+    /// toucher à la mise en page — et le pré-édit du champ. Nul, plus rien.
+    /// </summary>
+    private void SuivreLeTexteDesMarques(TextFrame? bloc, TextBox? zone)
+    {
+        if (!ReferenceEquals(_texteDesMarques, bloc))
+        {
+            if (_texteDesMarques is { } ancien)
+            {
+                ancien.PropertyChanged -= OnTexteDesMarquesChange;
+                ancien.Spans.CollectionChanged -= OnTexteDesMarquesChange;
+                ancien.Paragraphs.CollectionChanged -= OnTexteDesMarquesChange;
+            }
+
+            _texteDesMarques = bloc;
+            if (bloc is not null)
+            {
+                bloc.PropertyChanged += OnTexteDesMarquesChange;
+                bloc.Spans.CollectionChanged += OnTexteDesMarquesChange;
+                bloc.Paragraphs.CollectionChanged += OnTexteDesMarquesChange;
+            }
+        }
+
+        var presentation = zone?.GetVisualDescendants().OfType<TextPresenter>().FirstOrDefault();
+        if (ReferenceEquals(_presentationSuivie, presentation)) return;
+
+        if (_presentationSuivie is not null) _presentationSuivie.PropertyChanged -= OnPresentationSuivieChangee;
+        _presentationSuivie = presentation;
+        if (presentation is not null) presentation.PropertyChanged += OnPresentationSuivieChangee;
+    }
+
+    private void OnTexteDesMarquesChange(object? sender, EventArgs e) => DemanderLesMarques();
+
+    private void OnPresentationSuivieChangee(object? sender, AvaloniaPropertyChangedEventArgs e)
+    {
+        if (e.Property == TextPresenter.PreeditTextProperty || e.Property == TextPresenter.PreeditTextCursorPositionProperty)
+        {
+            DemanderLesMarques();
+        }
+    }
+
+    /// <summary>
+    /// Une passe de mise en page vient de finir, n'importe où dans la fenêtre : les marques ne se
+    /// reposent que si le texte en saisie a bougé à l'écran — zoom, place, taille, rotation —, ou
+    /// si la saisie s'est refermée sans qu'elles le sachent. Le reste — la frappe, la sélection, un
+    /// réglage du bloc — les demande lui-même (<see cref="DemanderLesMarques"/>) : recomposer le
+    /// bloc à chaque passe, pour un champ du dock qui se remet en page, coûterait jusqu'à 15 ms
+    /// sur ATA 21.
+    /// </summary>
+    private void SuivreLaMiseEnPage()
+    {
+        if (_editing is not { } bloc)
+        {
+            if (MarquesDeLaSaisie.Visibles) MarquesDeLaSaisie.Effacer();
+            return;
+        }
+
+        if (!MarquesDeLaSaisie.Visibles || TexteComposeDe(bloc) is not { } compose ||
+            compose.TransformToVisual(MarquesDeLaSaisie) != MarquesDeLaSaisie.Transformation)
+        {
+            PoserLesMarquesDuTexte();
+        }
+    }
+
+    /// <summary>
+    /// Demande une pose des marques, une fois le geste en cours fini : le texte tapé passe par la
+    /// liaison du champ, puis par la saisie du bloc, avant que la composition ne le voie.
+    /// </summary>
+    private void DemanderLesMarques()
+    {
+        if (_marquesDemandees) return;
+
+        _marquesDemandees = true;
+        Dispatcher.UIThread.Post(() =>
+        {
+            _marquesDemandees = false;
+            PoserLesMarquesDuTexte();
+        });
+    }
+
+    /// <summary>
+    /// Pose les marques de la saisie sur la composition (poste N21) : la sélection que le modèle
+    /// de vue garde, surlignée ligne par ligne ; le curseur, quand elle est vide et que le champ a
+    /// le focus ; le pré-édit de la méthode d'entrée au curseur. Tout est lu sur la géométrie du
+    /// texte tel qu'il est dessiné (<see cref="GeometrieDuTexte"/>, N3), et mené dans l'<c>Overlay</c>
+    /// par la transformation du contrôle même qui le dessine — zoom, place et rotation du bloc
+    /// comprises. Hors saisie, rien.
+    /// </summary>
+    private void PoserLesMarquesDuTexte()
+    {
+        var marques = MarquesDeLaSaisie;
+        var focus = _zoneSuivie is { IsFocused: true } zone && ReferenceEquals(zone.DataContext, _editing);
+
+        // Un curseur seul, sans le focus, ne se montre pas : rien à composer.
+        if (_editing is not { } bloc || _vm?.SelectionDuTexte is not { Case: null } selection ||
+            !ReferenceEquals(selection.Bloc, bloc) || (selection.EstVide && !focus) ||
+            TexteComposeDe(bloc) is not { } compose || compose.TransformToVisual(marques) is not { } transformation ||
+            compose.Geometrie() is not { } geometrie)
+        {
+            marques.Effacer();
+            return;
+        }
+
+        var preEdit = focus ? PreEditDe(geometrie, selection.Curseur) : null;
+        var curseur = focus && selection.EstVide ? geometrie.CurseurDe(selection.Curseur) : (Rect?)null;
+        if (preEdit is not null && curseur is { } avant)
+        {
+            // Le curseur suit le pré-édit, à la place que la méthode d'entrée lui donne dedans.
+            var dedans = _presentationSuivie?.PreeditTextCursorPosition ?? preEdit.Chaine.Length;
+            var decalage = dedans <= 0 ? 0 : geometrie.Metriques.Largeur(
+                preEdit.Chaine[..Math.Min(dedans, preEdit.Chaine.Length)], geometrie.StyleDe(selection.Curseur));
+            curseur = avant.Translate(new Vector(decalage, 0));
+        }
+
+        marques.Poser(transformation, geometrie.RectanglesDe(selection.Debut, selection.Fin), curseur, preEdit);
+    }
+
+    /// <summary>
+    /// Le pré-édit de la méthode d'entrée, posé au curseur : mis en forme au style où il entrera,
+    /// sur la ligne de base de la ligne du curseur, sur un fond qui couvre la composition sous lui
+    /// — un pré-édit ne repousse pas le texte composé, qui ne le connaît pas encore.
+    /// </summary>
+    private PreEditPose? PreEditDe(GeometrieDuTexte geometrie, int curseur)
+    {
+        if (_presentationSuivie?.PreeditText is not { Length: > 0 } chaine) return null;
+
+        var style = geometrie.StyleDe(curseur);
+        var texte = new MetriquesAvalonia().Composer(chaine, style);
+        var point = geometrie.PointDe(curseur);
+        var bande = geometrie.CurseurDe(curseur);
+        var origine = new Point(point.X, point.Y - texte.Baseline);
+        var fond = new Rect(point.X, bande.Top, texte.WidthIncludingTrailingWhitespace, bande.Height);
+        return new PreEditPose(texte, origine, fond, chaine);
     }
 }

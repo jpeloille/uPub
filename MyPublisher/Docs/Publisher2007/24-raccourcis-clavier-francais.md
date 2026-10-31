@@ -15,7 +15,9 @@ MyPublisher en lie 31, dont 15 touchées par N10 ; il en garde 2 à un autre usa
 six de plus, le 29 octobre 2026 — Ctrl+Maj+N, Ctrl+Maj+U, Ctrl+Pg. suiv, Ctrl+Pg. préc, et F5 ou
 Ctrl+B deux fois —, dont quatre étaient à venir et deux réservées. Les secondes touches
 du presse-papiers, `Ctrl+Inser`, `Maj+Suppr` et `Maj+Inser`, d'abord relevées sans être liées,
-le sont depuis le 28 octobre 2026, à la demande du propriétaire.
+le sont depuis le 28 octobre 2026, à la demande du propriétaire. Le poste N20 en a lié deux de
+plus, le 31 octobre 2026, réservées jusque-là : F3, Ctrl+F ou Maj+F4, et Ctrl+H — rechercher et
+remplacer.
 
 ## Pourquoi une fiche de plus
 
@@ -125,8 +127,8 @@ Les sections de l'aide, dans son ordre, sans celle du ruban.
 
 | Fonction (aide, mot pour mot) | Touche (aide) | Livre de 2007 | Sort |
 |---|---|---|---|
-| Afficher le volet Office Rechercher et remplacer, dans lequel l’option Rechercher est sélectionnée | F3, Ctrl+F ou Maj+F4 | HR | **réservé** : N20 |
-| Afficher le volet Office Rechercher et remplacer , avec l’option Remplacer sélectionnée | Ctrl+H | HR | **réservé** : N20 |
+| Afficher le volet Office Rechercher et remplacer, dans lequel l’option Rechercher est sélectionnée | F3, Ctrl+F ou Maj+F4 | HR | **lié** (N20) : `Ctrl+F` ouvre la barre de recherche, le focus au texte cherché ; `F3` et `Maj+F4` cherchent le suivant, et ouvrent la barre s'il n'y a rien à chercher |
+| Afficher le volet Office Rechercher et remplacer , avec l’option Remplacer sélectionnée | Ctrl+H | HR | **lié** (N20) : la barre de recherche, le focus au texte de remplacement |
 | Vérifier l’orthographe | F7 | HR | **réservé** : N25 |
 | Afficher le volet Office Dictionnaire des synonymes | Maj+F7 | HR | **réservé**, aucun poste : MyPublisher n'a pas de dictionnaire des synonymes |
 | Afficher le volet Office Rechercher | Maintenez la touche Alt enfoncée et cliquez sur un mot | HR | **écarté** : un clic, vers un volet de recherche documentaire que rien ne prévoit |
@@ -362,3 +364,7 @@ unicode-hotkey ['<Control><Shift>u']`), et Avalonia 11.3.9 lui passe les touches
 `QT_IM_MODULE` ou `XMODIFIERS`, ici `ibus`. La touche est liée comme Publisher la donne ; qu'elle
 arrive à la fenêtre sur ce bureau n'est pas mesuré — la sonde du clavier
 (`MYPUBLISHER_SONDE_CLAVIER`) le dira.
+
+Relevé de nouveau le 31 octobre 2026 pour le poste N20, par `gsettings list-recursively` : ni
+`Ctrl+F`, ni `Ctrl+H`, ni `F3`, ni `Maj+F4` ne sont pris par le bureau ; seul le terminal Ptyxis
+prend `Ctrl+Maj+F`, chez lui.

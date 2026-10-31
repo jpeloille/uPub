@@ -585,11 +585,16 @@ public class MenuDuBlocTests
 
     // ------------------------------------------------------------ en saisie
 
+    /// <summary>La sélection du texte en saisie, telle que la composition la surligne (N21) : ses plages.</summary>
+    private static int PlagesSurlignees(Window fenetre) =>
+        fenetre.GetVisualDescendants().OfType<MarquesDuTexte>().Single(m => m.Name == "MarquesDeLaSaisie").Plages.Count;
+
     /// <summary>
-    /// La recette : en saisie, un clic droit dans le texte ouvre le menu du texte — Couper, Copier,
-    /// Coller et Format du bloc… —, la saisie ouverte et la sélection du texte gardée. Copier y met le
-    /// texte sélectionné au presse-papiers, sans changer le document ; la frappe reprend dans la zone.
-    /// Couper l'emporte.
+    /// La recette : en saisie, un clic droit dans le texte — sur le caractère vu, celui de la
+    /// composition (N21) — ouvre le menu du texte : Couper, Copier, Coller et Format du bloc…, la
+    /// saisie ouverte, la sélection du texte gardée et toujours surlignée sur la composition. Copier
+    /// y met le texte sélectionné au presse-papiers, sans changer le document ; Couper l'emporte ;
+    /// Coller le rend au curseur ; la frappe reprend dans la saisie.
     /// </summary>
     [AvaloniaFact]
     public void En_saisie_le_menu_du_texte_garde_Couper_Copier_Coller_et_ajoute_Format_du_bloc()
@@ -601,12 +606,16 @@ public class MenuDuBlocTests
         Assert.Equal("Bonjour", zone.SelectedText);
         var avant = Etat(vm);
 
+        Assert.True(PlagesSurlignees(fenetre) > 0, "la sélection n'est pas surlignée sur la composition");
+
         var menu = Rendu.CliquerDroit(fenetre, Rendu.BordDuCaractere(zone, 3));
 
         Assert.True(bloc.IsEditing, "le clic droit dans le texte a refermé la saisie");
         Assert.Equal(new[] { "Co_uper", "_Copier", "C_oller", "Format du _bloc…" }, Visibles(menu));
         SeparateursAuJuste(menu);
         Assert.Equal("Bonjour", zone.SelectedText);
+        Assert.Equal((0, 7), (vm.SelectionDuTexte?.Debut, vm.SelectionDuTexte?.Fin));
+        Assert.True(PlagesSurlignees(fenetre) > 0, "le menu ouvert a effacé la sélection surlignée");
 
         Rendu.Cliquer(Entree(menu, "_Copier"));
         Rendu.Battre(8);
@@ -615,6 +624,7 @@ public class MenuDuBlocTests
         Assert.True(bloc.IsEditing);
         Assert.True(zone.IsFocused, "la zone n'a pas repris le focus");
         Assert.Equal("Bonjour", zone.SelectedText);
+        Assert.True(PlagesSurlignees(fenetre) > 0, "la sélection n'est plus surlignée après le menu");
         Assert.Equal(avant, Etat(vm));
 
         menu = Rendu.CliquerDroit(fenetre, Rendu.BordDuCaractere(zone, 3));
@@ -622,9 +632,18 @@ public class MenuDuBlocTests
         Rendu.Battre(8);
 
         Assert.Equal(" le monde", bloc.Text);
+        Assert.Equal("Bonjour", Rendu.TexteCopie(fenetre));
         Assert.True(bloc.IsEditing);
-        Rendu.Taper(fenetre, "Salut");
-        Assert.Equal("Salut le monde", bloc.Text);
+
+        // Le curseur est au début, où était la sélection : Coller y rend le mot.
+        menu = Rendu.CliquerDroit(fenetre, Rendu.BordDuCaractere(zone, 4));
+        Rendu.Cliquer(Entree(menu, "C_oller"));
+        Rendu.Battre(8);
+
+        Assert.Equal("Bonjour le monde", bloc.Text);
+        Assert.True(bloc.IsEditing);
+        Rendu.Taper(fenetre, "!");
+        Assert.Equal("Bonjour! le monde", bloc.Text);
     }
 
     /// <summary>
@@ -637,6 +656,7 @@ public class MenuDuBlocTests
         var bloc = Texte("T", 60, 60);
         var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(bloc));
         var zone = Rendu.EntrerEnSaisie(fenetre, vm, bloc);
+        var curseur = zone.CaretIndex;
 
         var menu = Rendu.CliquerDroit(fenetre, Rendu.BordDuCaractere(zone, 5));
         Rendu.Touche(fenetre, PhysicalKey.Escape);
@@ -645,7 +665,7 @@ public class MenuDuBlocTests
         Assert.True(bloc.IsEditing, "Échap au menu a refermé la saisie");
         Assert.True(zone.IsFocused, "la zone n'a pas repris le focus");
         Rendu.Taper(fenetre, "X");
-        Assert.Equal("BonjoXur le monde", bloc.Text);
+        Assert.Equal("Bonjour le monde".Insert(curseur, "X"), bloc.Text);
 
         vm.SectionCadreOuverte = false;
         menu = Rendu.CliquerDroit(fenetre, Rendu.BordDuCaractere(zone, 5));

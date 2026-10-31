@@ -139,6 +139,15 @@
         <KeyBinding Gesture="Ctrl+PageUp" Command="{Binding PagePrecedenteCommand}"/>
         <KeyBinding Gesture="F5" Command="{Binding AtteindreLaPageCommand}"/>
         <KeyBinding Gesture="Ctrl+B" Command="{Binding AtteindreLaPageCommand}"/>
+        <!-- Rechercher et remplacer (poste N20), aux touches de Publisher en français (fiche 24) :
+             Ctrl+F ouvre la barre de recherche, Ctrl+H aussi, le focus au remplacement ; F3 et
+             Maj+F4 cherchent le suivant, et ouvrent la barre s'il n'y a rien à chercher. Même en
+             saisie : la zone de texte ne prend aucune de ces touches. Ni GNOME ni la fenêtre ne
+             les prennent (relevé le 31 octobre 2026). -->
+        <KeyBinding Gesture="Ctrl+F" Command="{Binding OuvrirLaRechercheCommand}"/>
+        <KeyBinding Gesture="Ctrl+H" Command="{Binding OuvrirLeRemplacementCommand}"/>
+        <KeyBinding Gesture="F3" Command="{Binding RechercherLeSuivantCommand}"/>
+        <KeyBinding Gesture="Shift+F4" Command="{Binding RechercherLeSuivantCommand}"/>
     </Window.KeyBindings>
 
     <Window.Styles>
@@ -678,6 +687,13 @@
                         <Separator/>
                         <MenuItem Header="_Tout sélectionner" InputGesture="Ctrl+A" Command="{Binding SelectAllCommand}"/>
                         <Separator/>
+                        <!-- Find… et Replace… du menu Edit de Publisher (p. 16 ; poste N20) : la barre
+                             de recherche, posée sur la planche. -->
+                        <MenuItem x:Name="MenuRechercher" Header="Rec_hercher…" InputGesture="Ctrl+F"
+                                  Command="{Binding OuvrirLaRechercheCommand}"/>
+                        <MenuItem x:Name="MenuRemplacer" Header="Re_mplacer…" InputGesture="Ctrl+H"
+                                  Command="{Binding OuvrirLeRemplacementCommand}"/>
+                        <Separator/>
                         <MenuItem Header="_Informations professionnelles…" Click="OnEditBusinessInfo"/>
                     </MenuItem>
 
@@ -1156,6 +1172,13 @@
                     </ContextMenu>
                 </views:PageCanvas.ContextMenu>
             </views:PageCanvas>
+
+            <!-- La barre de recherche (poste N20), sur la planche, en haut à droite : sous la règle
+                 du haut (21 px) et à gauche de l'ascenseur. Posée par-dessus, dans la même case, elle
+                 ne déplace pas la planche (règle 3) et n'est pas dans PageRoot (règle 4). -->
+            <views:BarreDeRecherche Grid.Column="2" x:Name="BarreDeRecherche"
+                                    HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,29,22,0"
+                                    IsVisible="{Binding RechercheVisible}"/>
 
             <!-- Le dock, 292 px et un filet, à quatre onglets. C'est l'utilisateur qui choisit
                  l'onglet ; le premier suit la sélection comme le panneau d'avant. -->

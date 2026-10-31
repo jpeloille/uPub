@@ -655,6 +655,23 @@ public static class Rendu
     }
 
     /// <summary>
+    /// Trois clics au même point, l'image de chacun entre eux : le triple-clic, qu'Avalonia compte
+    /// comme le double (<see cref="DoubleCliquer"/>), à l'horloge et à la distance. Dans un texte,
+    /// il prend le paragraphe (poste N21).
+    /// </summary>
+    public static void TripleCliquer(TopLevel racine, Point point)
+    {
+        for (var clic = 0; clic < 3; clic++)
+        {
+            racine.MouseDown(point, MouseButton.Left);
+            racine.MouseUp(point, MouseButton.Left);
+            if (clic < 2) UneImage();
+        }
+
+        Battre(8);
+    }
+
+    /// <summary>
     /// Mène le pointeur en <paramref name="point"/>, sans bouton : le survol, qui fait choisir
     /// son curseur à la planche. Repris de la relecture de I8, dont le test du curseur au survol
     /// le jouait en copie.
@@ -926,13 +943,27 @@ public static class Rendu
 
     /// <summary>
     /// Le bord avant d'un caractère d'une zone de texte, à mi-hauteur de sa ligne, dans la
-    /// racine qui la porte : là où une pression pose le curseur devant lui. Lu dans la mise
-    /// en page du texte (<c>TextLayout.HitTestTextPosition</c>), non recalculé. L'indice
-    /// qui suit le dernier caractère est le bout du texte.
+    /// racine qui la porte : là où une pression pose le curseur devant lui. L'indice qui suit le
+    /// dernier caractère est le bout du texte.
+    ///
+    /// Pour le champ de la saisie d'un bloc sur la page, c'est la composition qu'on voit depuis
+    /// la voie 2a (poste N21), et c'est sur elle que la planche lit le clic : le bord est lu sur
+    /// sa géométrie (<see cref="GeometrieDuTexte.CurseurDe"/>, N3), à mi-hauteur de la bande de sa
+    /// ligne, puis mené dans la racine par le contrôle même qui la dessine — zoom et rotation
+    /// compris. Pour tout autre champ, dans la mise en page de son texte
+    /// (<c>TextLayout.HitTestTextPosition</c>). Lu, non recalculé.
     /// </summary>
     public static Point BordDuCaractere(TextBox zone, int indice)
     {
         var racine = zone.GetVisualRoot() as Visual ?? throw new InvalidOperationException("hors de l'arbre");
+        if (CompositionDuChamp(zone) is { } compose)
+        {
+            var geometrie = compose.Geometrie() ?? throw new InvalidOperationException("la composition du champ n'a pas de géométrie");
+            var curseur = geometrie.CurseurDe(indice);
+            return compose.TranslatePoint(new Point(curseur.X, curseur.Y + curseur.Height / 2), racine)
+                   ?? throw new InvalidOperationException("la composition n'est pas dans sa racine");
+        }
+
         var presentation = zone.GetVisualDescendants().OfType<TextPresenter>().Single();
         var case_ = presentation.TextLayout.HitTestTextPosition(indice);
         return presentation.TranslatePoint(new Point(case_.X, case_.Y + case_.Height / 2), racine)
@@ -940,17 +971,29 @@ public static class Rendu
     }
 
     /// <summary>
+    /// La composition qu'un champ de la saisie sur la page tient à jour, et que l'écran montre à
+    /// sa place (poste N21) ; rien pour un autre champ.
+    /// </summary>
+    private static TexteCompose? CompositionDuChamp(TextBox zone) =>
+        zone.DataContext is TextFrame bloc && zone.GetVisualAncestors().OfType<Panel>().Any(p => p.Name == "PageRoot")
+            ? (zone.GetVisualRoot() as Visual)?.GetVisualDescendants().OfType<TexteCompose>()
+                .FirstOrDefault(c => ReferenceEquals(c.Bloc, bloc) && c.IsEffectivelyVisible)
+            : null;
+
+    /// <summary>
     /// Sélectionne au pointeur les caractères [<paramref name="debut"/>, <paramref name="fin"/>)
-    /// d'une zone de texte : un glissé, bouton tenu, du bord avant du caractère
+    /// du texte en saisie : un glissé, bouton tenu, du bord avant du caractère
     /// <paramref name="debut"/> au bord avant du caractère <paramref name="fin"/>
-    /// (<see cref="BordDuCaractere"/>), une fois que l'image montre la zone. La pression y
-    /// pose le curseur (<c>TextBox.OnPointerPressed</c>, qui demande le bouton gauche), le
-    /// mouvement l'étend — si le bouton est dit tenu (<c>TextBox.OnPointerMoved</c>).
+    /// (<see cref="BordDuCaractere"/>), une fois l'image rendue. La pression y pose le curseur,
+    /// le mouvement l'étend — si le bouton est dit tenu (<c>TextBox.OnPointerMoved</c>). Pour le
+    /// champ de la saisie sur la page, c'est la couche de la planche qui reçoit le geste depuis
+    /// N21, et non le champ, caché : on ne le vise pas, on attend l'image.
     /// </summary>
     public static void SelectionnerDuTexte(TextBox zone, int debut, int fin)
     {
         var racine = zone.GetVisualRoot() as TopLevel ?? throw new InvalidOperationException("hors de l'arbre");
-        Viser(zone, racine);
+        if (CompositionDuChamp(zone) is null) Viser(zone, racine);
+        else UneImage();
         Glisser(racine, BordDuCaractere(zone, debut), BordDuCaractere(zone, fin));
     }
 

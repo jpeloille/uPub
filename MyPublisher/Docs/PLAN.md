@@ -123,8 +123,8 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **N17** | Les modificateurs du glisser, et le rectangle de sélection | **100 %** | Sur un bloc, `Ctrl` et `Maj` ne basculent plus la sélection à la pression mais au relâché ; passé le seuil de Q21, le bloc s'ajoute et le geste devient un déplacement : sous `Ctrl`, des copies posées à la place des originaux, qui restent, en un pas ; sous `Maj`, tenu sur l'axe dominant, que l'aimantation ne fait pas bouger. Au tracé, `Maj` donne un carré ou un cercle, `Ctrl` trace depuis le centre, à l'aperçu comme au bloc ; `Ctrl` sur une poignée redimensionne depuis le centre, bloc tourné compris. Un rectangle tiré dans le vide ou depuis le gris prend, au relâché, les blocs visibles dont l'emprise est tout entière dedans, `Maj` ou `Ctrl` les ajoutant ; il se dessine dans l'`Overlay`, à l'accent et à la projection de l'apparence lus par le code. `Échap` annule le glissé en cours — déplacement, copie, poignée, rotation, extrémité, repère, rectangle — sans pas. Le curseur de rotation est le tracé de `IconeRotation`, dessiné comme la main et la loupe. La mécanique vit dans `PageCanvas.Gestes.cs` ; les trois cibles du piège restent, une fois chacune, et restent attrapées. Dix-sept tests sous `poste=N17`, aucun test réécrit ; deux aides au banc, `Tenir` et `Lacher` ; quatre sabotages au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **N18** | Les menus vers le dock, et les pages, avec A8 et A9 | **100 %** | Le chemin vers le dock (décision 5) : `MainWindowViewModel.VersLeDock.cs` ouvre la section et lève une `DockDemande`, que la fenêtre traite — le dock rouvert s'il est replié, l'onglet choisi, le focus dans le champ visé ou le premier de la section, cherché après la mise en page, les gabarits gardés ne montrant la section qu'au passage suivant —, sans pas d'annulation. Sept entrées « … » : *Fichier ▸ Mise en page…* (Format), *Disposition ▸ Repères de mise en page…* (Marges et Grille), *Repères de règle ▸ Format…*, *Page ▸ Arrière-plan…* (Fond de page), *Texte ▸ Paragraphe…*, *Rotation personnalisée…* (l'angle), et *Texte ▸ Police…*, qui mène à la liste des polices de la barre contextuelle, la police ayant quitté le dock (règle 1) ; Police et Paragraphe grisés sans texte, comme chez Publisher. Les pages au clavier, aux touches de la fiche 24 : `Ctrl+Maj+N` (le dialogue de A8 ; `OnKeyDown` n'y prend plus Maj pour Nouveau), `Ctrl+Maj+U` (dupliquer la page, en un pas, même en saisie), `Ctrl+Pg.Suiv` et `Ctrl+Pg.Préc`, `F5` et `Ctrl+B`, qui mènent au numéro de page de la barre d'état, devenu un champ (`Views/ChampDeLaPage.axaml`) : « 3 » puis `Entrée` mène à la page 3, « 99 » est refusé avec un message, `Échap` renonce. *Insertion ▸ Numéro de page, Date, Coordonnées ▸* posent un bloc à champ (C4). Disposition rangé comme Publisher : *Repères de mise en page…* en tête, *Faire pivoter ou retourner ▸* après l'alignement. Sept tests sous `poste=N18` ; trois tests voisins réécrits (règle 14) ; deux sabotages au juge. **`Ctrl+Maj+U` est pris par ibus** sur la machine du propriétaire : lié comme Publisher, non mesuré à l'écran (voir la section). Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **N19** | Le corps et la police : une liste, et une frappe | **100 %** | La police de la barre se tape, au texte et au tableau : `ListeDesPolices` (`Views/ListeDesPolices.cs`), une `ComboBox` éditable sous son apparence, dont la frappe ne passe plus par la recherche d'Avalonia 11.3.9 — qui prenait, à chaque lettre, l'entrée de même texte : « DejaVu Sans Mono » tapé posait DejaVu Sans au onzième caractère. La liste s'ouvre sur les familles dont le libellé commence par la frappe, sans la casse, la première marquée — « Geo » propose Georgia —, `↑` et `↓` promènent la marque, `Entrée` la pose en un pas et rend la planche, `Tab` la pose et passe au corps, `Échap` renonce ; une police que rien ne commence est refusée, et la barre d'état le dit (`Status`, N14) ; la zone montre le libellé, « Corps du jeu — DejaVu Sans », « Georgia (absente) » ; Q20 et la règle 1 tiennent. Repris le 30 octobre 2026, à la demande du propriétaire : un clic sur le nom ouvre la liste entière, la police du bloc marquée, le nom tout pris, et un second clic la referme, sans rien poser. Le corps garde son champ (N14 : « 10,5 » tapé donne 10,5 pt) et reçoit « Tailles du corps », un menu volant des dix-sept tailles du noyau (`CorpsStandard`, N10), la taille du bloc cochée, en un pas (`PoserLeCorps`, `MainWindowViewModel.CorpsEtPolice.cs`). Vingt tests sur la fenêtre ; deux tests voisins réécrits (règle 14) ; trois sabotages au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
-| **N20** | Rechercher et remplacer | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 6 |
-| **N21** | La saisie montre le texte composé | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 6 ; attend la décision de voie |
+| **N20** | Rechercher et remplacer | **100 %** | La barre de recherche (`Views/BarreDeRecherche.axaml`), posée par la fenêtre sur la planche, en haut à droite, sous la règle, par-dessus — la planche ne bouge pas (règle 3), rien n'entre dans `PageRoot` (règle 4) : le texte cherché, le texte de remplacement, *Respecter la casse*, *Mot entier*, Suivant, Remplacer, Remplacer tout, et sa croix. `Ctrl+F` et *Edition ▸ Rechercher…* l'ouvrent, le focus au texte cherché ; `Ctrl+H` et *Remplacer…*, au texte de remplacement ; `F3` et `Maj+F4` cherchent le suivant, et ouvrent la barre quand il n'y a rien à chercher ; `Entrée` y cherche le suivant, `Échap` la ferme et rend la planche — les quatre touches, réservées par la fiche 24, y sont liées. Le parcours (`MainWindowViewModel.Rechercher.cs`) va de page en page, puis de haut en bas et de gauche à droite, dans les blocs de texte visibles et sans champ, les cases des tableaux et ce que portent les groupes, et reprend au début en le disant ; le texte trouvé est sélectionné en saisie, la page suivant (`TexteTrouve`, que la planche sert depuis `PageCanvas.Saisie.cs`) ; dans un groupe, le groupe est sélectionné, dans une case, le tableau, et la barre d'état dit où. Le remplacement passe par le noyau (`Models/Recherche.cs`, et `Recalage.Appliquer` pour une édition dite et non déduite) : le texte remplacé prend le style de son premier caractère (Q1) ; *Remplacer* fait un pas, *Remplacer tout* un seul pour le document. Neuf tests du noyau et dix sur la fenêtre sous `poste=N20` ; deux sabotages au juge. **Le texte trouvé prend le focus** : une seconde `Entrée` l'écrirait par-dessus (voir la section). Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
+| **N21** | La saisie montre le texte composé | **100 %** | Voie 2a. Pendant la saisie, la composition reste à l'écran : l'encre de la page est celle d'avant l'entrée, au pixel, sur l'exemple et ATA 21, et ce qu'on tape se voit tel que la page le montre hors saisie. Le champ reste, caché (opacité nulle) et hors du test de survol, pour la frappe, la méthode d'entrée, le presse-papiers et la navigation au clavier ; la couche garde le clic sur le texte en saisie (`PressionDansLaSaisie`, `PageCanvas.Saisie.cs`) : clic, `Maj`+clic, double-clic au mot, triple-clic au paragraphe, glissé par caractère, mot ou paragraphe, tout lu sur la composition ; le clic droit garde la saisie et laisse remonter sa demande de menu (A12). Le curseur, la sélection — celle que le modèle de vue garde (N15), qui survit au focus de la barre — et le pré-édit se dessinent dans l'`Overlay` (`MarquesDuTexte`), aux couleurs de l'apparence, tournés et mis à l'échelle avec le bloc. Le bord d'un caractère est lu dans le morceau façonné (`IMetriques.Bord`) : la reprise de N3 que la décision demandait, ligatures et crénages compris, au dessin à 0,0000 pt sur 5 441 bords. Un clic sur un caractère de chacun des sept blocs de texte d'ATA 21 y pose le curseur, dessiné sous lui. `PageCanvas.axaml.cs` n'est pas touché ; la navigation au clavier sur les lignes composées reste au champ, mesurée sur ATA 21, pour un poste à part. Dix tests sous `poste=N21` ; recette N5 reprise (règle 14) ; deux sabotages au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **N22** | Les caractères spéciaux | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 7 |
 | **N23** | Puces et numérotation | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 8 |
 | **N24** | Exposant, indice, capitales | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 9 |
@@ -1658,6 +1658,27 @@ ou par `MenuDuBlocTests`.
   ou dans la barre n'ouvre rien, la planche ne le lisant que quand elle ou son texte a le focus ;
 - la fiche 23 dit encore c3, c16, c25, e1, e2 et f16 manquants ou partiels : le poste ne la touche
   pas, comme ceux qui l'ont précédé.
+
+*Repris le 31 octobre 2026, à la fusion de N20 et N21* (`ebc12ae`), à la demande de l'intégrateur.
+Cinq conflits, résolus en gardant les deux côtés : le champ caché de la voie 2a garde aussi
+`ContextFlyout="{x:Null}"`, pour que la touche Menu, qu'il reçoit puisqu'il a le focus, ouvre le menu
+de la planche et non celui du thème ; au README, le double-clic de N21 et celui de l'image, le
+triple-clic et le clic droit ; au juge et à I1, les entrées des trois postes. Pour la recette N5, la
+règle de N21 : la planche lit le compte des clics — le double et le triple clic du texte (N21), le
+double-clic sur une image ou une forme (A12) — et ne l'écrit jamais, ne lève aucun événement et
+n'écoute pas `DoubleTapped`. Le ménage que N21 avait laissé : `LaisseAuTexteEnSaisie` et son
+affectation quittent `PageCanvas.axaml.cs`, la couche ne laissant plus rien au champ caché ; le
+contrôle b de la recette N5 exige désormais l'affectation à nul, une fois, dans `PageCanvas.Saisie.cs`,
+et l'absence de la méthode. Le sabotage de N5 qui la visait — la couche qui couvre le texte en
+saisie — n'avait plus de prise : il fait désormais laisser à la couche toute la planche pendant la
+saisie, comme avant N5 (règle 14). Deux voisins réécrits : la recette N20 accepte une planche qui
+porte son menu ; le test de N21 `Maj_clic_etend_la_selection_et_le_clic_droit_la_garde` compte la
+demande du menu traitée ou non, le menu la marquant traitée, et voit le menu de la planche s'ouvrir.
+Les quatre points de la rencontre sont vérifiés par `MenuDuBlocTests` : le clic droit dans le texte en
+saisie arrive par la couche, que `PressionDansLaSaisie` laisse sans rien poser, et ouvre le menu du
+texte ; la saisie et sa sélection survivent au menu, surlignée sur la composition (`MarquesDeLaSaisie`)
+pendant et après lui ; Couper, Copier et Coller du menu agissent sur la sélection du texte, puis au
+curseur ; le test vise le caractère vu, `Rendu.BordDuCaractere` lisant la composition depuis N21.
 
 #### A13 — Rognage manuel de l'image *(fiche 14)*
 
@@ -8616,6 +8637,105 @@ Fichiers : `Views/BarreDeRecherche.axaml` (neuve), `MainWindowViewModel.Recherch
 `MainWindow.axaml` (menu Edition, liaisons), README (Édition), la recette I1. Dépend de N15.
 Effort : moyen.
 
+*Livré le 31 octobre 2026*, dans la salve Saisie 6 ; la relecture adversariale vient après la
+fusion. **La barre** (`Views/BarreDeRecherche.axaml` et son code) est posée par la fenêtre dans la
+case de la planche, par-dessus, en haut à droite, sous la règle du haut et à gauche de
+l'ascenseur : la planche ne bouge pas quand elle paraît (règle 3), et elle n'est ni dans la planche
+ni dans `PageRoot` (règle 4). Le texte cherché, le texte de remplacement, *Respecter la casse*,
+*Mot entier*, Suivant — le bouton principal, plein d'accent —, Remplacer, Remplacer tout, et une
+croix ; les boutons ne prennent pas le focus, les couleurs sont celles de l'apparence, et la barre
+est une vue de la phase (I1). Ses deux champs sont des champs de texte : les lettres seules s'y
+écrivent (règle 9) ; `Entrée` y cherche le suivant ; `Échap`, pris avant la fenêtre, ferme la barre
+et rend la planche (règle 13), après quoi « T » arme de nouveau l'outil texte. **Les touches**,
+réservées jusqu'ici par la fiche 24 seule — ni le README ni la liste de la recette A4 ne les
+nommaient — : `Ctrl+F` et *Edition ▸ Rec_hercher…* ouvrent la barre, le focus au texte cherché,
+tout pris ; `Ctrl+H` et *Re_mplacer…*, au texte de remplacement — au texte cherché tant qu'il est
+vide ; `F3` et `Maj+F4` cherchent le suivant, même en saisie, et ouvrent la barre quand il n'y a
+rien à chercher, en le disant. Le bureau n'en prend aucune (`gsettings`, relevé dans la fiche 24),
+qui les dit liées. **Le parcours** (`MainWindowViewModel.Rechercher.cs`) : les pages dans leur
+ordre ; sur la page, les blocs visibles par le haut de leur empreinte, puis par sa gauche ; dans
+un tableau, ses cases ligne après ligne ; dans un groupe, ses blocs visibles de même ; les blocs
+de texte à champ sont sautés. La recherche part de la fin de la sélection du texte en saisie
+(N15) — du curseur —, sinon de l'occurrence montrée dans un groupe ou une case, du début du bloc
+sélectionné, ou du début de la page courante ; au bout du document, elle reprend au début, et la
+barre d'état le dit. Le texte trouvé dans un bloc de texte : le modèle de vue change de page,
+prend le bloc seul et lève `TexteTrouve` ; la planche, depuis `PageCanvas.Saisie.cs` (l'écoute
+suit le contexte, posée au premier attachement), ouvre la saisie si elle ne l'est pas sur ce bloc
+— `BeginTextEdit` —, puis donne le focus au champ et y pose la plage, le curseur à sa fin, comme
+le glissé de N12 : la sélection est dite au modèle de vue comme toute autre. Dans un groupe, le
+groupe est sélectionné et la barre d'état le dit, jusqu'à N26 ; dans une case, le tableau, et la
+case est nommée (« L1 · C2 ») — la page n'a pas de saisie de case. **Le remplacement**, par le
+noyau : `Recherche` (`MyPublisher.Core/Models/Recherche.cs`) trouve les occurrences, sans
+chevauchement, et remplace une plage dans un bloc ou une case en recalant ses fragments et ses
+écarts par `Recalage.Appliquer`, qui reçoit désormais une édition dite ; *Remplacer* remplace la
+sélection si c'en est une occurrence, en un pas (`UnGesteUnPas`), puis trouve la suivante ;
+*Remplacer tout* remplace les occurrences de chaque texte de la dernière à la première, dans un
+seul geste pour tout le document. Chercher n'empile aucun pas. Le README le dit (le sous-tableau
+« Édition », ce que l'application sait faire) ; la fiche 24 aussi.
+
+*Recette jouée* : `Scripts/recettes/N20-rechercher-remplacer.sh`. Les sources d'abord : la barre,
+vue à elle, posée dans la case de la planche, par-dessus, en haut à droite, hors de la planche,
+dans les vues de I1 ; les quatre touches liées une fois sur les commandes du partiel, le menu
+Edition, le README et la fiche 24 ; le remplacement par une édition dite, jamais par la propriété
+`Saisie`, et *Remplacer tout* en un seul `UnGesteUnPas` ; le texte trouvé servi par le partiel de
+la saisie, `PageCanvas.axaml.cs` intact ; `Échap` pris avant la fenêtre. Puis neuf tests du noyau
+(`RechercheTests`) — les occurrences sans chevauchement, la casse et les accents, le mot entier,
+une plage qui est une occurrence, la suivante depuis une position, le texte remplacé au style de
+son premier caractère, un remplacement qui raccourcit sans toucher les écarts, une case, et un
+remplacement qui contient ce qu'on cherche — et dix sur la fenêtre (`RechercherRemplacerTests`) :
+sur l'exemple, « texte » trouvé à chaque `F3`, sélectionné en saisie à la bonne plage, page 1
+puis page 2, puis `Maj+F4` qui repart du début, sans aucun pas ; « bulletin » cherché depuis la
+page 2, trouvé au sous-titre de la page 1 à chaque `F3` ; *Remplacer tout* « bulletin » par
+« journal » sur deux pages, quatre remplacements, le gras et l'italique gardés, un seul pas qu'une
+annulation défait ; sur ATA 21, les « air » que `F3` parcourt avant de repartir du début, autant
+qu'une recherche sur le texte des blocs en compte, puis « Air » remplacé par « Gaz » à la casse,
+le gras du titre « Air Production » gardé, en un pas ; la casse, le mot entier et l'ordre de la
+page ; *Remplacer*, qui trouve d'abord, puis remplace en un pas et trouve la suivante ; un groupe
+et une case ; `F3` sans rien à chercher, « T » écrit dans la barre, `Échap` ; la barre qui ne
+déplace pas la planche, et le menu Edition ; la recherche qui part du curseur. Au juge, le
+sabotage du plan — *Remplacer tout* qui empile un pas par occurrence, chaque remplacement passant
+par le pas de *Remplacer* — et le remplacement dont l'édition est déduite au lieu d'être dite.
+
+*Ce que l'implémentation a appris.*
+- **« bulletin » n'est qu'une fois dans le texte de l'exemple**, au sous-titre (« Bulletin
+  trimestriel de mise en page — n° 1 ») ; le titre, « Le Petit Composeur », ne le porte pas, et
+  l'exemple n'a aucun fragment — le gras du titre est celui du bloc. La recette du plan supposait
+  plusieurs « bulletin » et un titre gras par fragment : elle est jouée sur « texte », qui est sur
+  les deux pages, pour la page qui suit, sur « bulletin » depuis la page 2, et, pour les
+  fragments gardés, sur un document bâti par le test et sur ATA 21.
+- **L'édition que Q1 déduit des deux textes ne vaut pas pour un remplacement** : « bulletin »
+  remplacé par « bulletins » se lit comme un « s » tapé au bout du mot, qui prend le style du
+  caractère d'avant. `Recalage` reçoit donc l'édition elle-même — le mot entier remplacé —, et le
+  texte qui le remplace prend le style de son premier caractère, la règle de Q1.
+- Une vue cachée n'a pas d'enfants dans l'arbre visuel : le contenu d'un `UserControl` n'est posé
+  qu'à la mesure. Les tests cherchent les boutons de la barre une fois qu'elle paraît.
+
+*Choisi sans certitude* :
+- **`F3` et `Maj+F4` cherchent le suivant** : l'aide les donne, avec `Ctrl+F`, pour « afficher le
+  volet Rechercher », et la recette du plan veut un texte « trouvé à chaque `F3` ». Ils cherchent,
+  et n'ouvrent la barre que s'il n'y a rien à chercher ;
+- **le texte trouvé prend le focus**, puisqu'il est sélectionné en saisie : le champ oublie sa
+  sélection en perdant le focus (N15), et l'écran ne la montrerait pas. Il s'ensuit qu'après
+  `Entrée` dans la barre, le focus est dans le texte, et qu'une seconde `Entrée` écrirait un saut
+  de paragraphe à la place du texte trouvé (un `Ctrl+Z` le défait) ; `F3` continue. Le volet de
+  Publisher garde le focus ; la voie 2a de R7 (N21), qui dessinera la sélection sur la
+  composition, permettrait de le laisser à la barre — au propriétaire de dire s'il le veut ;
+- la barre montre toujours ses deux champs ; `Ctrl+H` ne change que le champ qui prend le focus ;
+- l'ordre de la page se lit sur l'empreinte des blocs, le haut d'abord, sans tolérance — deux
+  blocs dont le haut diffère d'un centième de point se rangent par lui, non par leur gauche ; dans
+  un groupe, sur l'empreinte de ses blocs dans son repère ;
+- la comparaison est ordinale, sans la casse par `OrdinalIgnoreCase` : les accents comptent ; un
+  mot entier n'a ni lettre ni chiffre de part et d'autre — l'apostrophe et le trait d'union le
+  bornent ;
+- *Remplacer* sur une sélection qui n'est pas une occurrence ne remplace rien et trouve la
+  suivante ; *Remplacer tout* ne demande pas de confirmation, et dit son compte ;
+- `Échap` rend la planche comme la barre contextuelle le fait (N14), en ôtant le focus, et non à la
+  saisie qui resterait ouverte.
+
+*Relevé, non corrigé* : la barre ne dit pas le rang de l'occurrence (« 3 sur 12 ») ; le texte
+d'un groupe se remplace mais ne se sélectionne pas, jusqu'à N26 ; la fiche 23 garde sa ligne e23
+telle quelle, comme pour N8.
+
 #### N21 — La saisie montre le texte composé *(fiche 23, a10, a11, a20, a21)*
 
 *Spécifié le 25 octobre 2026 ; sa forme dépend de la voie que le propriétaire choisit sur la
@@ -8643,6 +8763,132 @@ masqué de nouveau pendant la saisie.
 
 Fichiers : `PageCanvas.axaml`, `PageCanvas.Saisie.cs`, `TexteCompose.cs`, l'apparence. Dépend de N7
 et de la décision, et de N15. Effort : moyen en voie 1, lourd en voie 2.
+
+*Livré le 31 octobre 2026*, dans la salve Saisie 6, en **voie 2a** ; la relecture adversariale
+vient après la fusion. **La vue.** Dans le gabarit du bloc de texte, `TexteCompose` n'est plus
+masqué pendant la saisie ; le champ y reste, caché (`Opacity="0"`) et hors du test de survol
+(`IsHitTestVisible="False"`), lié à `Saisie` comme avant, de la taille du bloc : il fait la frappe,
+la méthode d'entrée, le presse-papiers et la navigation au clavier. Les marques de la saisie sont un
+contrôle neuf, `MarquesDuTexte` (`Views/MarquesDuTexte.cs`), posé dans l'`Overlay`, hors de
+`PageRoot`, et habillé par la planche aux couleurs de l'apparence — le curseur au `Texte`, la
+sélection à la `Projection` (l'accent à 14 %), le fond du pré-édit au `Blanc`. La planche lui donne,
+dans le repère du bloc non tourné, la sélection ligne par ligne, le curseur et le pré-édit, et la
+transformation du contrôle même qui dessine la composition vers l'`Overlay` — zoom, place et rotation
+comprises ; le curseur et le soulignement du pré-édit y gardent un pixel d'écran, et le curseur
+clignote à la demi-seconde. **La planche** (`PageCanvas.Saisie.cs`) : au premier attachement, elle
+remet `InputLayer.Laisse` à nul — la couche ne laisse plus rien au champ — et prend au passage
+descendant la pression dans le texte en saisie (`PressionDansLaSaisie`), avant
+qu'`OnPointerPressed` ne referme la saisie (N5). Le texte en saisie est tout le bloc, bord compris,
+lu dans le repère du contrôle de la composition, hors des poignées : la zone que le champ prenait
+quand il était à l'écran. Le bouton gauche y pose le curseur sur `IndexSous`, l'étend sous `Maj`
+depuis l'ancre du champ (`SelectionStart`), prend au deuxième clic le mot et au troisième le
+paragraphe — le compte des clics est celui que la plate-forme donne à la pression —, et le glissé
+qui suit étend par caractère, par mot ou par paragraphe, la prise de départ gardée ; le glissé lit la
+composition, et non plus la mise en page du champ. Le bouton droit garde la saisie et la sélection ;
+sa demande de menu remonte de la couche à la planche, où A12 posera le menu du texte. Le curseur de
+la souris est le I sur tout le texte en saisie. Les marques se posent sur la sélection que le modèle
+de vue garde (N15), et non sur celle du champ : elle survit au focus de la barre, et c'est elle que R7
+mettra en forme ; le curseur ne se montre que le champ au focus, et sans sélection. Elles suivent le
+modèle de vue, le bloc (propriétés, fragments, écarts), le focus et le pré-édit du champ
+(`TextPresenter.PreeditText`), et, après chaque passe de mise en page, la transformation du bloc à
+l'écran. **La géométrie** (`TexteCompose.cs`) gagne `CaractereSous` — le caractère dont la chasse
+contient le point, que le double et le triple clic étendent —, `CurseurDe`, `RectanglesDe` — un
+rectangle par ligne, la fin de ligne sélectionnée marquée d'une chasse d'espace — et `StyleDe`, le
+style du pré-édit. **Le noyau** : `Compositeur.IMetriques.Bord`, le bord avant une position dans le
+morceau façonné d'un tenant, qu'`Abscisse` demande au lieu de la chasse du préfixe mesurée seule —
+la reprise de N3 que la décision du 26 octobre 2026 demandait avant la voie 2a. Par défaut, la chasse
+du préfixe : c'est le bord d'un rendu qui ne façonne pas, comme le PDF. `MetriquesAvalonia` le lit
+dans la mise en page d'Avalonia (`TextLayout.HitTestTextPosition`), une fois par morceau et par style.
+La composition, l'écran et le PDF ne changent pas ; seuls le curseur, le clic et la sélection sont
+reposés.
+
+Le poste écrit, outre les fichiers nommés, `Views/MarquesDuTexte.cs` (la vue neuve, inscrite à la
+recette I1), `ControleDeBloc.cs` (`MetriquesAvalonia.Bord`) et `Compositeur.cs` (le bord façonné),
+pour la reprise de N3 ; le README (Interface, et la ligne Triple-clic du sous-tableau Souris). Au
+banc, `Rendu.BordDuCaractere` et `Rendu.SelectionnerDuTexte` visent la composition pour le champ de
+la saisie sur la page, et le champ lui-même pour tout autre ; `Rendu.TripleCliquer` est neuf.
+`PageCanvas.axaml.cs` n'est pas touché (règle 16).
+
+*Recette jouée* : `Scripts/recettes/N21-saisie-sur-la-composition.sh`. Les sources — la composition
+jamais masquée, le champ caché et hors du test de survol, les marques dans l'`Overlay` et hors de
+`PageRoot`, leurs couleurs prises à l'apparence ; la mécanique dans le partiel, la couche qui ne
+laisse plus rien, le glissé lu sur la composition ; `Bord` dans le noyau ; la recette I1 et le
+README —, puis dix tests sous `poste=N21` (`SaisieSurLaCompositionTests`) : l'encre de la page
+pendant la saisie égale celle d'avant l'entrée, au pixel, sur l'exemple (« Chapeau ») et ATA 21
+(« Air Production »), puis celle de la page hors saisie après une frappe ; un clic sur un caractère de
+chacun des sept blocs de texte d'ATA 21, repéré sur ce que la composition dessine
+(`FormattedText.BuildHighlightGeometry` des morceaux posés), y pose le curseur, dessiné à moins de
+0,75 pt du bord du caractère, puis un second clic, en saisie, sur une autre ligne ; chaque bord des
+deux documents au dessin à 0,01 pt, et `IndexSous(PointDe(i)) == i` partout ; le glissé sur un
+paragraphe en retrait de 60 pt avec un mot de 24 pt ; le mot, la virgule seule, le paragraphe par le
+triple-clic, saut forcé compris ; le glissé par mots après un double-clic ; `Maj`+clic et le clic
+droit ; la sélection gardée quand le corps prend le focus ; le curseur d'un bloc tourné de 30° à
+200 % ; le pré-édit. Deux sabotages au juge : celui du plan, la composition de nouveau masquée pendant
+la saisie, et le bord mesuré hors du morceau façonné. Règle 14 : la recette N5 refusait toute mention
+de `ClickCount` dans la planche ; elle ne refuse plus que de l'écrire, et dit pourquoi la couche ne
+laisse plus rien au champ.
+
+**Mesuré : la navigation au clavier suit le champ, et non la composition.** Sur ATA 21, les cinq
+blocs non tournés qu'un clic au milieu ouvre, depuis le milieu de chacune de leurs 33 lignes
+composées : `Fin` et `Début` tombent ailleurs que sur le bout de la ligne composée 4 fois chacune, `↓`
+21 fois, `↑` 23 fois ; 22 fois, le curseur arrive sur une autre ligne composée que celle qu'on
+attend. Par exemple, dans « Air Distribution », dont les lignes composées commencent en retrait, à 16,8 pt : le curseur au milieu de
+la deuxième ligne composée (position 43), `Fin` le mène à 98, au bout du paragraphe, sur la ligne
+composée suivante, quand la sienne finit à 68 ; `Début` depuis la troisième (83) le mène à 18, sur
+celle d'au-dessus. Dans « Air Production », `↓` depuis la position 47 de la deuxième ligne le mène à
+131, 89 pt à droite du point où la composition le poserait (111). Le champ coupe ses lignes à sa
+mesure, sur la largeur du bloc, sans les retraits ni les fragments. C'est le poste à part que le plan
+ouvre à la décision du propriétaire.
+
+*Ce que l'implémentation a appris.*
+- **Avalonia rend, pour une position prise dans une grappe, le bord de la grappe** : dans la
+  ligature « fl » de « butterfly », la position du « l » est au bord du « f ». Deux positions au même
+  point, le clic ne les distinguait plus, et `IndexSous(PointDe(i)) == i` tombait. Dans une grappe,
+  les positions se répartissent à parts égales d'un bord à l'autre, comme un traitement de texte pose
+  le curseur dans une ligature. Mesuré avant le poste, la chasse du préfixe s'écartait du dessin de
+  plus de 0,75 pt en 22 positions d'ATA 21 (3,44 pt au plus, « butterfly ») et 9 de l'exemple
+  (3,87 pt, « fontconfig ») ; après, chaque bord de grappe est au dessin à 0,0000 pt — 3 105 sur ATA
+  21, 2 336 sur l'exemple.
+- **Le double-clic du champ ne prenait pas toujours le mot** (mesuré sur « Bonjour le monde, entier
+  ici. ») : la virgule donnait « monde, », la première espace après « entier » « entier », la seconde
+  « entier  ». La planche prend le mot seul, la ponctuation seule, une suite de blancs entière.
+- Le champ caché garde ce qu'il faisait : focus, transaction de la saisie (Q25), `Maj+Entrée`,
+  `Maj+Tab`, presse-papiers. Aucun test d'avant n'a changé d'issue : 559 tests sur la suite
+  d'interface, les dix du poste compris, 614 sur celle du noyau.
+
+*Choisi sans certitude* :
+- **le champ reste dans le gabarit du bloc, donc dans `PageRoot`**, et non unique hors de lui, comme
+  la spécification le préférait : `BeginTextEdit` cherche le champ du bloc sous `Scaler`, et la
+  transaction de la saisie suit son focus (Q24, Q25), dans `PageCanvas.axaml.cs`, que la règle 16
+  ferme à ce poste. Un champ unique garderait le focus d'un bloc à l'autre, sans rouvrir de
+  transaction. Caché, il n'y dessine rien : l'encre de la page est identique au pixel. Placé sur le
+  bloc, il donne à la méthode d'entrée une fenêtre de candidats proche du texte. Le champ unique
+  revient à N26 et N27, qui touchent la planche ;
+- la couche ne laisse plus rien au champ par `InputLayer.Laisse = null`, posé depuis le partiel :
+  `LaisseAuTexteEnSaisie` et son affectation restent dans le fichier principal, sans effet ;
+- la sélection est une teinte, l'accent à 14 % de la projection, et non la vidéo inverse de
+  Publisher (fiche 23, a20) : la vidéo inverse redessinerait les glyphes ; l'apparence n'a pas d'autre
+  transparence que la maquette ne peigne ;
+- le curseur est à la couleur du texte de l'interface, et ne se voit pas sur un bloc à fond sombre ;
+  il clignote à la demi-seconde et se rallume à chaque déplacement ; il disparaît sous une sélection ;
+- le triple-clic prend le paragraphe sans le saut qui le ferme : la frappe qui le remplace garde
+  l'écart du paragraphe (Q1) ; Word prend la marque de paragraphe ;
+- le double-clic prend le mot sans le blanc qui le suit, et un double-clic sur une fin de ligne le mot
+  qui la précède ;
+- le clic droit dans le texte en saisie garde la saisie et la sélection, sans déplacer le curseur ; le
+  bouton du milieu fait ce qu'il fait hors du texte ;
+- le pré-édit se pose au curseur, au style du caractère qui le précède, sur un fond blanc qui couvre
+  la composition sous lui : la composition ne le connaît pas avant qu'il entre au texte, et ne le
+  repousse pas ; le curseur le suit, à la place que la méthode d'entrée lui donne.
+
+*Relevé, non corrigé* :
+- la navigation au clavier sur les lignes composées, mesurée ci-dessus : le poste à part ;
+- la fenêtre de candidats de la méthode d'entrée se pose au curseur du champ caché, sur ses lignes, et
+  non au curseur dessiné : elle suivra la navigation, avec le poste à part ;
+- le menu contextuel du champ (Couper, Copier, Coller) ne s'ouvre plus en saisie, le champ ne
+  recevant plus le clic droit : A12, dans la même salve, pose le menu du texte sur la planche ;
+- `LaisseAuTexteEnSaisie` (N5) est mort : à retirer de `PageCanvas.axaml.cs` après la fusion d'A12,
+  avec son affectation, la recette N5 reprise (son contrôle b).
 
 #### N22 — Les caractères spéciaux *(fiche 23, a27, d14)*
 

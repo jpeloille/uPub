@@ -220,7 +220,7 @@ tableau = tableau.group(1) if tableau else ""
 souris = re.search(r"^### Souris$(.*?)(^### |\Z)", tableau, re.S | re.M)
 objets = re.search(r"^### Objets$(.*?)^### ", tableau, re.S | re.M)
 exige(souris is not None and "| Clic droit |" in souris.group(1), "le sous-tableau « Souris » du README ne dit pas le clic droit.")
-exige(souris is not None and "sur une image ou une forme, ouvre sa section du dock" in souris.group(1),
+exige(souris is not None and "une image ou une forme, ouvre sa section du dock" in souris.group(1).lower(),
       "le sous-tableau « Souris » du README ne dit pas le double-clic sur une image.")
 exige(objets is not None and "| `Maj+F10` ou `Menu` |" in objets.group(1), "le sous-tableau « Objets » du README ne dit pas Maj+F10.")
 i1 = lire("Scripts/recettes/I1-apparence.sh")

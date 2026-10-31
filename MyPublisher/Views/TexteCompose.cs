@@ -26,8 +26,10 @@ namespace MyPublisher.Views;
 /// couche intermédiaire susceptible de diverger ».
 ///
 /// La saisie, elle, reste au <c>TextBox</c> posé par-dessus : ce contrôle-ci ne fait
-/// qu'afficher. Le bloc, le contenu et l'abonnement viennent de
-/// <see cref="ControleDeBloc"/>.
+/// qu'afficher. Depuis la voie 2a (poste N21), il reste à l'écran pendant la saisie, et le
+/// champ, caché, ne fait plus que la frappe : le curseur et la sélection se dessinent sur ce
+/// texte-ci (<see cref="MarquesDuTexte"/>), aux places que <see cref="Geometrie"/> donne. Le
+/// bloc, le contenu et l'abonnement viennent de <see cref="ControleDeBloc"/>.
 /// </summary>
 public sealed class TexteCompose : ControleDeBloc
 {
@@ -358,6 +360,17 @@ public sealed class GeometrieDuTexte
     /// </summary>
     public int IndexSous(Point point)
     {
+        var choisie = LigneSous(point);
+        return Compositeur.PositionLaPlusProche(
+            choisie.Ligne, choisie.Decalages, point.X - choisie.Origine, _texte, _commun, _metriques);
+    }
+
+    /// <summary>
+    /// La ligne où tombe <paramref name="point"/>, comme <see cref="IndexSous"/> la choisit :
+    /// la colonne la plus proche, puis la ligne la plus proche dans cette colonne.
+    /// </summary>
+    private TexteCompose.LignePosee LigneSous(Point point)
+    {
         // La colonne : la plus proche du point en abscisse.
         var colonne = -1;
         var meilleure = double.PositiveInfinity;
@@ -387,8 +400,112 @@ public sealed class GeometrieDuTexte
             }
         }
 
-        return Compositeur.PositionLaPlusProche(
-            choisie.Ligne, choisie.Decalages, point.X - choisie.Origine, _texte, _commun, _metriques);
+        return choisie;
+    }
+
+    /// <summary>
+    /// Le caractère sous <paramref name="point"/>, et non la position la plus proche : celui
+    /// dont la chasse contient l'abscisse, sur la ligne que <see cref="IndexSous"/> choisit
+    /// (poste N21). C'est ce que le double et le triple clic étendent au mot et au
+    /// paragraphe : un clic sur la moitié droite du « e » de « monde, » vise le « e », quand
+    /// la position la plus proche est celle de la virgule. Au bout d'une ligne, le dernier
+    /// caractère qu'elle porte ; le texte vide n'en a pas, et rend 0.
+    /// </summary>
+    public int CaractereSous(Point point)
+    {
+        var choisie = LigneSous(point);
+        var ligne = choisie.Ligne;
+        var position = Compositeur.PositionLaPlusProche(
+            ligne, choisie.Decalages, point.X - choisie.Origine, _texte, _commun, _metriques);
+        if (position <= ligne.Debut) return position;
+
+        var avant = position - 1;
+        if (avant > ligne.Debut && char.IsLowSurrogate(_texte[avant]) && char.IsHighSurrogate(_texte[avant - 1])) avant--;
+        var bord = choisie.Origine + Compositeur.Abscisse(
+            ligne, choisie.Decalages, position, _texte, _commun, _metriques);
+        return point.X < bord || position >= ligne.Fin ? avant : position;
+    }
+
+    /// <summary>
+    /// Le style où se pose ce qu'on tape avant le caractère <paramref name="index"/> : celui du
+    /// morceau qui porte le caractère précédent sur sa ligne, sinon celui du morceau qui suit,
+    /// sinon le style commun — à peu près la règle du recalage (Q1), pour le pré-édit de la
+    /// méthode d'entrée, qui n'est pas encore dans le texte (poste N21).
+    /// </summary>
+    public StyleEffectif StyleDe(int index)
+    {
+        var posee = LigneDe(index);
+        Morceau? suivant = null;
+        foreach (var morceau in posee.Ligne.Morceaux)
+        {
+            if (morceau.Debut < index && index <= morceau.Debut + morceau.Texte.Length) return morceau.Style;
+            if (morceau.Debut >= index) suivant ??= morceau;
+        }
+
+        return suivant?.Style ?? _commun;
+    }
+
+    /// <summary>La règle à mesurer de cette géométrie : celle du dessin.</summary>
+    public Compositeur.IMetriques Metriques => _metriques;
+
+    /// <summary>
+    /// La bande verticale d'une ligne posée, dans le repère du bloc : de son sommet au bas de
+    /// son avance, ligne de base comprise même quand un interligne serré l'en fait sortir —
+    /// la même que celle où <see cref="IndexSous"/> cherche la ligne.
+    /// </summary>
+    private static (double Haut, double Bas) Bande(TexteCompose.LignePosee posee) =>
+        (Math.Min(posee.Haut, posee.LigneDeBase), Math.Max(posee.Haut + posee.Ligne.Avance, posee.LigneDeBase));
+
+    /// <summary>
+    /// Le curseur placé avant le caractère <paramref name="index"/>, tel que la saisie le
+    /// dessine sur le texte composé (poste N21) : un trait vertical à <see cref="PointDe"/>,
+    /// de la hauteur de la bande de sa ligne. Un rectangle de largeur nulle, dans le repère du
+    /// bloc non tourné.
+    /// </summary>
+    public Rect CurseurDe(int index)
+    {
+        var posee = LigneDe(index);
+        var (haut, bas) = Bande(posee);
+        return new Rect(PointDe(index).X, haut, 0, bas - haut);
+    }
+
+    /// <summary>
+    /// La sélection [<paramref name="debut"/>, <paramref name="fin"/>) telle que la saisie la
+    /// surligne sur le texte composé (poste N21) : un rectangle par ligne qu'elle touche, de
+    /// la bande de la ligne, du bord de son premier caractère sélectionné au bord après le
+    /// dernier — blancs pendants compris. Une ligne dont la fin est prise dans la sélection —
+    /// un saut de paragraphe, un saut forcé — y ajoute la chasse d'une espace, pour que la
+    /// marque de fin sélectionnée se voie, comme dans Publisher. Rien pour une sélection vide.
+    /// </summary>
+    public IReadOnlyList<Rect> RectanglesDe(int debut, int fin)
+    {
+        var rectangles = new List<Rect>();
+        debut = Math.Clamp(debut, 0, _texte.Length);
+        fin = Math.Clamp(fin, 0, _texte.Length);
+        if (fin <= debut) return rectangles;
+
+        for (var rang = 0; rang < Lignes.Count; rang++)
+        {
+            var posee = Lignes[rang];
+            var ligne = posee.Ligne;
+            var suivante = rang + 1 < Lignes.Count ? Lignes[rang + 1].Ligne.Debut : _texte.Length;
+            if (fin <= ligne.Debut || debut > ligne.Fin || (debut == ligne.Fin && suivante <= ligne.Fin)) continue;
+
+            var a = Math.Max(debut, ligne.Debut);
+            var b = Math.Min(fin, ligne.Fin);
+            var gauche = posee.Origine + Compositeur.Abscisse(ligne, posee.Decalages, a, _texte, _commun, _metriques);
+            var droite = posee.Origine + Compositeur.Abscisse(ligne, posee.Decalages, b, _texte, _commun, _metriques);
+
+            // La fin de la ligne est sélectionnée quand la sélection va au-delà : un saut, que
+            // la ligne n'affiche pas, et qui sépare sa fin du début de la suivante.
+            if (fin > ligne.Fin && suivante > ligne.Fin) droite += _metriques.Largeur(" ", _commun);
+            if (droite <= gauche) continue;
+
+            var (haut, bas) = Bande(posee);
+            rectangles.Add(new Rect(gauche, haut, droite - gauche, bas - haut));
+        }
+
+        return rectangles;
     }
 
     /// <summary>

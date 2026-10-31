@@ -14,8 +14,11 @@
 #      a. « InputLayer » est une CoucheDeSaisie, une fois, sous son nom (règle 6) ; elle dérive
 #         de Border — NavigationTests la cherche par Trouver<Border>(…, "InputLayer") — et
 #         répond elle-même au test de survol (ICustomHitTest) ;
-#      b. la planche ne l'éteint plus : aucun « InputLayer.IsHitTestVisible » ; elle lui dit ce
-#         qu'elle laisse au champ, le texte en saisie et lui seul ;
+#      b. la planche ne l'éteint plus : aucun « InputLayer.IsHitTestVisible ». Elle lui disait ce
+#         qu'elle laissait au champ, le texte en saisie et lui seul ; depuis la voie 2a (N21), plus
+#         rien : « Laisse » est nul, posé une fois, dans PageCanvas.Saisie.cs, et la couche prend le
+#         clic sur le texte en saisie, que le champ caché ne reçoit plus — ce qu'elle laissait
+#         (LaisseAuTexteEnSaisie) a quitté la planche avec A12 ;
 #      c. OnPointerPressed referme la saisie avant toute chose, avant même le choix du bouton
 #         (la pression du bouton droit en sort aussi, et A12 la prendra là), puis agit comme
 #         d'habitude ; rien n'est rejoué : la planche ne lève aucun événement de pointeur ;
@@ -93,14 +96,12 @@ print("    a. « InputLayer » est une CoucheDeSaisie, un Border qui répond lui
 
 # b. la couche n'est plus éteinte ; la planche lui dit ce qu'elle laisse.
 exige("IsHitTestVisible" not in planche, "la planche éteint encore la couche de saisie (IsHitTestVisible).")
-exige(planche.count("InputLayer.Laisse = LaisseAuTexteEnSaisie;") == 1,
-      "la planche ne dit pas à la couche ce qu'elle laisse au champ, une fois.")
-laisse = re.search(r"private bool LaisseAuTexteEnSaisie\(Point surLaCouche\)(.*?)\n    }\n", planche, re.S)
-exige(laisse is not None, "LaisseAuTexteEnSaisie n'est plus dans la planche.")
-if laisse:
-    exige("_zoneDeSaisie" in laisse.group(1) and "InputLayer.TranslatePoint(surLaCouche, zone)" in laisse.group(1),
-          "ce que la couche laisse n'est pas le texte en saisie, lu dans le repère de la couche.")
-print("    b. la couche reste atteignable ; elle laisse au champ le texte en saisie")
+saisie = lire("MyPublisher/Views/PageCanvas.Saisie.cs")
+toute = "".join(f.read_text(encoding="utf-8") for f in sorted((racine / "MyPublisher/Views").glob("PageCanvas*.cs")))
+exige(len(re.findall(r"InputLayer\.Laisse\s*=", toute)) == 1 and "InputLayer.Laisse = null;" in saisie,
+      "la couche se fait dire ce qu'elle laisse ailleurs qu'une fois, à nul, dans PageCanvas.Saisie.cs : le texte en saisie ne lui revient plus.")
+exige("LaisseAuTexteEnSaisie" not in toute, "LaisseAuTexteEnSaisie, qui ne sert plus depuis la voie 2a, est encore dans la planche.")
+print("    b. la couche reste atteignable, le texte en saisie compris : elle ne laisse rien au champ caché")
 
 # c. la pression qui sort de la saisie agit.
 presse = re.search(r"private void OnPointerPressed\(object\? sender, PointerPressedEventArgs e\)\n    \{(.*?)\n    }\n", planche, re.S)
@@ -112,13 +113,14 @@ if presse:
     exige(instructions.count("if (_editing is not null) EndTextEdit();") == 1
           and not re.search(r"EndTextEdit\(\);\s*\}?\s*return;", presse.group(1)),
           "OnPointerPressed rend la main après avoir refermé la saisie.")
-# Le double-clic sur une image ou une forme, depuis A12, se lit — une fois, la pression comptée
-# par Avalonia, dans PageCanvas.MenuDuBloc.cs — et ne se fabrique pas : toute autre mention du
-# compte des clics reste refusée.
+# Le compte des clics, la planche le lit sur la pression, telle que la plate-forme la donne : le
+# double et le triple clic dans le texte en saisie, que le champ caché ne reçoit plus (poste N21,
+# règle 14), et le double-clic sur une image ou une forme, qui ouvre sa section du dock (poste
+# A12). Elle n'en fabrique aucun : elle n'écrit jamais le compte, ne lève aucun événement et
+# n'écoute pas DoubleTapped.
 for fichier in sorted((racine / "MyPublisher/Views").glob("PageCanvas*.cs")):
     texte = fichier.read_text(encoding="utf-8")
-    lus = re.findall(r"\be\.ClickCount != 2\b", texte) if fichier.name == "PageCanvas.MenuDuBloc.cs" else []
-    exige(not re.search(r"RaiseEvent\s*\(|DoubleTappedEvent", texte) and texte.count("ClickCount") == len(lus) <= 1,
+    exige(not re.search(r"RaiseEvent\s*\(|DoubleTappedEvent|ClickCount\s*=[^=]", texte),
           f"{fichier.name} rejoue un geste ou fabrique un double-clic.")
 print("    c. OnPointerPressed referme la saisie avant toute chose, puis agit ; rien n'est rejoué")
 

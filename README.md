@@ -115,6 +115,13 @@ désarme tout seul après usage, pour qu'on puisse ajuster immédiatement ce qu'
 poser ; un bloc de texte passe même directement en saisie. L'image y est rangée parmi les
 outils, mais ne se trace pas : elle demande d'abord un fichier.
 
+Pendant la **saisie** d'un bloc de texte, la page montre le texte tel qu'il s'imprime —
+fragments, retraits, taquets, colonnes et coupure compris — : le curseur, la sélection et ce
+que la méthode d'entrée compose se dessinent dessus, et le clic, le glissé, le double et le
+triple clic visent les caractères qu'on voit. Les flèches, `Début`, `Fin` et les touches de
+page suivent encore les lignes d'un champ de texte caché, qui ne coupe pas toujours au même
+endroit : le curseur peut y sauter d'une ligne de plus ou de moins que la ligne affichée.
+
 Deux outils du rail ne posent rien : ils naviguent. La **main** fait glisser la planche,
 sans toucher à aucun bloc ; `Espace` tenu la prête sans changer d'outil. La **loupe**
 zoome d'un pas au clic, en arrière sous `Alt`, et le point visé reste sous le pointeur —
@@ -266,6 +273,15 @@ Fenêtre masque aussi l'un ou l'autre.
   L'interligne s'exprime en multiple de la hauteur **naturelle** de la police — « 1,25 »
   veut dire une fois et quart ce que la police demande, jamais une fois et quart le
   corps.
+- **Rechercher et remplacer** (*Edition ▸ Rechercher…*, `Ctrl+F` ; *Remplacer…*, `Ctrl+H`) : une
+  barre posée sur la planche, en haut à droite — le texte cherché, le texte de remplacement,
+  *Respecter la casse*, *Mot entier*, Suivant, Remplacer, Remplacer tout. La recherche va de
+  page en page, puis, sur la page, de haut en bas et de gauche à droite, dans les blocs de texte
+  visibles et sans champ, les cases des tableaux et les groupes ; au bout du document, elle
+  reprend au début, et le dit. Le texte trouvé est sélectionné en saisie, la page suivant ; dans
+  un groupe, le groupe est sélectionné, dans une case, le tableau, et la barre d'état dit où.
+  *Remplacer tout* fait un seul pas d'annulation, et le texte remplacé prend le style de son
+  premier caractère : un mot gras remplacé reste gras.
 - **Le souligné** a les dix-sept sortes de Publisher, rangées en quatre réglages comme
   dans OpenDocument : le trait — plein, pointillé, tirets, tirets longs, tiret-point,
   tiret-point-point, vague —, simple ou double, de l'épaisseur de la police ou deux fois
@@ -453,6 +469,9 @@ comptés pour rien : sur un AZERTY, `Ctrl+]` se tape `Ctrl+AltGr+)`, `Ctrl+[` se
 | `Ctrl+X` / `Ctrl+C` / `Ctrl+V` | Couper / Copier / Coller les blocs sélectionnés, à leur place ou 12 pt plus loin si l'original y est encore ; un texte venu d'ailleurs devient un bloc. En saisie et dans un champ, le texte |
 | `Maj+Suppr` / `Ctrl+Inser` / `Maj+Inser` | Couper / Copier / Coller, comme `Ctrl+X`, `Ctrl+C` et `Ctrl+V` — les secondes touches de Publisher en français ; `Maj+Suppr` coupe, et ne supprime pas |
 | `Ctrl+A` | Sélectionner tous les blocs de la page ; dans la saisie d'un bloc ou dans un champ, tout le texte du champ |
+| `Ctrl+F` / `Ctrl+H` | Rechercher / Remplacer : la barre de recherche, en haut à droite de la planche, le focus au texte cherché / au texte de remplacement |
+| `F3` ou `Maj+F4` | Rechercher le suivant : le texte trouvé est sélectionné en saisie, la page suivant ; sans rien à chercher, la barre s'ouvre. Même en saisie |
+| Dans la barre de recherche : `Entrée`, `Échap` | Cherche le suivant ; ferme la barre et rend la planche |
 | `Échap` | Désarme l'outil, sinon désélectionne ; dans un champ, du dock ou de la barre contextuelle, renonce à ce qui est tapé et le quitte |
 | Dans un champ numérique : `Entrée`, `Tab`, `↑` / `↓` | Valide ce qui est tapé — dans la barre contextuelle, `Entrée` rend aussi la planche — ; passe au champ suivant ; un pas de plus ou de moins |
 
@@ -506,7 +525,8 @@ comptés pour rien : sur un AZERTY, `Ctrl+]` se tape `Ctrl+AltGr+)`, `Ctrl+[` se
 |---|---|
 | Clic | Dans le texte d'un bloc, y entre, le curseur au caractère visé ; sur son bord, le prend |
 | Glisser | Dans le texte, sélectionne du texte ; par le bord, déplace le bloc |
-| Double-clic | Dans le texte, sélectionne un mot ; sur une image ou une forme, ouvre sa section du dock |
+| Double-clic | Dans le texte, sélectionne un mot ; glissé ensuite, étend la sélection par mots. Sur une image ou une forme, ouvre sa section du dock |
+| Triple-clic | Dans le texte en saisie, sélectionne le paragraphe ; glissé ensuite, étend la sélection par paragraphes |
 | Clic droit | Sur un bloc, le prend — seul s'il n'était pas pris — et ouvre son menu ; dans le vide, vide la sélection et ouvre celui de la page ; dans le texte en saisie, celui du texte ; rien sur les règles |
 | `Maj` + clic dans le texte en saisie | Étend la sélection du texte |
 | `Ctrl` ou `Maj` + clic | Ajoute un bloc à la sélection, ou l'en retire, au relâché, sans entrer dans son texte |

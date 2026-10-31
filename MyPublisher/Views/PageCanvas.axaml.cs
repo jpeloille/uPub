@@ -230,10 +230,10 @@ public partial class PageCanvas : UserControl
         InputLayer.PointerPressed += OnPointerPressed;
         InputLayer.PointerMoved += OnPointerMoved;
         InputLayer.PointerReleased += OnPointerReleased;
-        // Le double-clic n'ouvre plus la saisie : le premier clic l'a ouverte, et le second
-        // atteint le champ, qui prend le mot (poste N12).
-        // Pendant la saisie, la couche laisse le texte à son champ, et à lui seul (poste N5).
-        InputLayer.Laisse = LaisseAuTexteEnSaisie;
+        // Le double-clic n'ouvre plus la saisie : le premier clic l'a ouverte, et le second y
+        // prend le mot (postes N12 et N21). La couche ne laisse rien au champ de la saisie,
+        // caché depuis la voie 2a : c'est elle qui prend le clic dans le texte en saisie, au
+        // passage descendant (poste N21, PageCanvas.Saisie.cs).
         // Au passage descendant : la zone qui défile consommerait la molette avant nous
         // (poste I6, voir PageCanvas.Navigation.cs).
         Scroller.AddHandler(PointerWheelChangedEvent, OnPointerWheelChanged, RoutingStrategies.Tunnel);
@@ -1350,8 +1350,8 @@ public partial class PageCanvas : UserControl
 
         // La transaction ne s'ouvre pas ici : elle s'ouvrira quand la zone prendra le focus, et
         // se refermera chaque fois qu'elle le perdra (poste Q25, SuivreLeFocusDeLaSaisie).
-        // La couche de saisie reste atteignable : elle laisse au champ le seul texte en saisie,
-        // dès qu'il existe (poste N5, LaisseAuTexteEnSaisie).
+        // La couche de saisie reste atteignable partout, le texte en saisie compris (postes N5
+        // et N21).
         _editing = frame;
         frame.IsEditing = true;
         RefreshOverlay();
@@ -1386,26 +1386,6 @@ public partial class PageCanvas : UserControl
 
     /// <summary>Le champ du texte en saisie, une fois que la mise en page l'a posé.</summary>
     private TextBox? _zoneDeSaisie;
-
-    /// <summary>
-    /// Ce que la couche de saisie laisse au champ du texte en saisie, le point lu dans son
-    /// repère à elle (poste N5) : le texte, et rien d'autre. Ce que <c>PageRoot</c> rogne d'un
-    /// bloc qui déborde de la page ne se voit pas, et ne se tape pas : la couche le garde, comme
-    /// elle garde les poignées du bloc, qui débordent un peu sur son texte et passent avant lui.
-    /// </summary>
-    private bool LaisseAuTexteEnSaisie(Point surLaCouche)
-    {
-        if (_editing is null || _zoneDeSaisie is not { IsEffectivelyVisible: true } zone) return false;
-
-        if (InputLayer.TranslatePoint(surLaCouche, zone) is not { } dansLaZone ||
-            !new Rect(zone.Bounds.Size).Contains(dansLaZone))
-        {
-            return false;
-        }
-
-        if (InputLayer.TranslatePoint(surLaCouche, Surface) is not { } surfacePoint) return false;
-        return DansLaPage(ToPageCoordinates(surfacePoint)) && HitHandle(_editing, surfacePoint) is null;
-    }
 
     /// <summary>
     /// La saisie tient sa transaction d'édition (poste Q25). Elle suit le focus de sa zone sur

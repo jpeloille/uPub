@@ -13,12 +13,22 @@
         <!-- Le thème repeint le fond du champ de saisie au survol et pendant la frappe, et
              il le fait sur l'élément de gabarit, pas sur le contrôle : le fond transparent
              posé sur le TextBox est donc perdu dès qu'on entre dans le bloc. On le rétablit
-             pour chacun de ces états. Un fond blanc n'est pas un fond transparent : ce qui
-             passe sous le bloc doit rester visible pendant la saisie comme en dehors. -->
+             pour chacun de ces états. Le champ est caché depuis la voie 2a (poste N21) : le
+             fond n'y change plus rien à l'écran, mais un champ qu'on rendrait visible pour
+             l'observer ne doit pas couvrir la page. -->
         <Style Selector="TextBox.frameEditor /template/ Border#PART_BorderElement, TextBox.frameEditor:pointerover /template/ Border#PART_BorderElement, TextBox.frameEditor:focus /template/ Border#PART_BorderElement, TextBox.frameEditor:focus-within /template/ Border#PART_BorderElement">
-            <!-- « Transparent » et non « nul » : un fond nul ne reçoit pas le clic,
-                 et on ne pourrait plus poser le curseur dans le texte. -->
             <Setter Property="Background" Value="Transparent"/>
+        </Style>
+
+        <!-- Les marques de la saisie sur le texte composé (poste N21, voie 2a) : le curseur
+             à la couleur du texte de l'interface, la sélection de l'accent à 14 %, la teinte
+             de la projection sur les règles — le texte composé reste lisible dessous —, et le
+             fond du pré-édit de la méthode d'entrée en blanc. Dans l'Overlay, hors de
+             PageRoot : rien ne s'en imprime. -->
+        <Style Selector="views|MarquesDuTexte">
+            <Setter Property="Curseur" Value="{StaticResource Texte}"/>
+            <Setter Property="Selection" Value="{StaticResource Projection}"/>
+            <Setter Property="FondDuPreEdit" Value="{StaticResource Blanc}"/>
         </Style>
 
         <!-- ItemsControl place ses éléments via un ContentPresenter : c'est lui qui porte
@@ -245,20 +255,23 @@
                    RenderTransform="{Binding Rotation, Converter={x:Static conv:Conv.Rotate}}">
                 <!-- Le fond est un rectangle sous les deux contrôles, pas une propriété
                      de l'un d'eux : il reste donc identique à l'affichage et pendant la
-                     saisie, le TextBox se contentant d'être transparent. -->
+                     saisie. -->
                 <views:FondBloc Classes="frameFill"/>
                 <!-- Seul le texte est découpé au bloc. Le contour, lui, est centré sur le
                      bord et déborde de moitié, comme à l'export : le découper le
                      réduirait à l'écran à la moitié de son épaisseur. -->
                 <Panel ClipToBounds="True">
-                    <!-- Affichage et saisie sont deux contrôles distincts : le TextBlock
-                         donne le contrôle typographique, le TextBox l'édition et le caret. -->
+                    <!-- Affichage et saisie sont deux contrôles distincts : la composition
+                         donne le texte tel qu'il s'imprime, le TextBox la frappe. Depuis la
+                         voie 2a (poste N21), la composition reste à l'écran pendant la saisie :
+                         ce qu'on édite est ce qui s'imprime. Le champ est caché, et le curseur,
+                         la sélection et le pré-édit se dessinent sur la composition, dans
+                         l'Overlay de la planche (PageCanvas.Saisie.cs, MarquesDuTexte). -->
                     <!-- Le texte affiché passe par le résolveur de champs : littéral tant
                          qu'aucun champ n'est posé, calculé sinon. Le contexte vient du
                          contrôle et non du bloc — un bloc ignore sur quelle page il est,
                          et c'est très bien ainsi. -->
-                    <views:TexteCompose IsVisible="{Binding !IsEditing}"
-                                        Bloc="{Binding}">
+                    <views:TexteCompose Bloc="{Binding}">
                         <!-- Le contenu passe par le résolveur de champs ; la composition,
                              elle, est celle du noyau — la même fonction que l'export
                              appelle, donc les mêmes lignes, par construction. -->
@@ -280,10 +293,19 @@
                          écrit « \n », et non Environment.NewLine, « \r\n » sous Windows ; Maj+Entrée,
                          le saut de ligne forcé, est posé par la planche (poste N16,
                          PageCanvas.Saisie.cs). -->
-                    <!-- Sans le menu du thème, Couper, Copier, Coller : la demande du clic droit monte
-                         à la planche, dont le menu garde ces trois entrées en saisie et y ajoute
-                         Format du bloc… (poste A12). -->
+                    <!-- Caché, et hors du test de survol (poste N21, voie 2a) : il garde la
+                         frappe, la méthode d'entrée, le presse-papiers et la navigation au
+                         clavier, et la planche lui dit où poser le curseur et la sélection,
+                         qu'elle lit sur la composition. Il reste à la place du texte, de sa
+                         taille, pour deux raisons : la méthode d'entrée ouvre sa fenêtre près
+                         de son curseur, et ses flèches, Début, Fin et les pages suivent ses
+                         lignes — qu'un poste à part rendra à la composition. Opacité nulle et
+                         non masqué : un contrôle masqué ne prend pas le focus. Sans le menu du
+                         thème, Couper, Copier, Coller (poste A12) : la touche Menu, que le champ
+                         reçoit puisqu'il a le focus, ouvre le menu de la planche, qui garde ces
+                         trois entrées en saisie et y ajoute Format du bloc…. -->
                     <TextBox IsVisible="{Binding IsEditing}"
+                             Opacity="0" IsHitTestVisible="False"
                              ContextFlyout="{x:Null}"
                              Text="{Binding Saisie, Mode=TwoWay}"
                              FontSize="{Binding FontSize}"
@@ -565,8 +587,14 @@
                             IsVisible="{Binding ShowGuides}"/>
 
                     <!-- Hors de la mise à l'échelle : les poignées gardent une taille constante
-                         quel que soit le zoom. Leurs positions sont calculées en code-behind. -->
-                    <Canvas Name="Overlay" IsHitTestVisible="False"/>
+                         quel que soit le zoom. Leurs positions sont calculées en code-behind.
+                         Les marques de la saisie y sont aussi, sous les poignées (poste N21) :
+                         elles couvrent toute la planche, et dessinent dans son repère. -->
+                    <Canvas Name="Overlay" IsHitTestVisible="False">
+                        <views:MarquesDuTexte Name="MarquesDeLaSaisie"
+                                              Width="{Binding #Overlay.Bounds.Width}"
+                                              Height="{Binding #Overlay.Bounds.Height}"/>
+                    </Canvas>
                 </Panel>
             </Border>
 
