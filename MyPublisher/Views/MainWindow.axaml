@@ -1409,9 +1409,11 @@
                                                     <!-- Paragraphe : les retraits et les espacements.
                                                          L'alignement et l'interligne sont montés dans la
                                                          barre contextuelle (I3), et ont quitté le dock
-                                                         (règle 1). Ils valent pour tout le bloc ; les écarts
-                                                         paragraphe par paragraphe se lisent et s'écrivent
-                                                         dans le fichier, mais ne se règlent pas encore ici. -->
+                                                         (règle 1). Les champs se lient au paragraphe visé
+                                                         (R6) : hors saisie, le bloc entier ; en saisie, les
+                                                         paragraphes de la sélection, ou celui du curseur, en
+                                                         écarts de paragraphe ; un réglage où ils diffèrent
+                                                         laisse son champ vide. L'interligne reste au bloc. -->
                                                     <ToggleButton Classes="titreSection"
                                                                   IsChecked="{Binding #Root.((vm:MainWindowViewModel)DataContext).SectionParagrapheOuverte}">
                                                         <StackPanel Orientation="Horizontal" Spacing="6">
@@ -1422,42 +1424,58 @@
                                                             <TextBlock Text="Paragraphe"/>
                                                         </StackPanel>
                                                     </ToggleButton>
-                                                    <Grid x:Name="ContenuParagraphe" Classes="contenuDeSection" ColumnDefinitions="*,8,*" RowDefinitions="Auto,8,Auto,8,Auto"
+                                                    <Grid x:Name="ContenuParagraphe" Classes="contenuDeSection" ColumnDefinitions="*,8,*" RowDefinitions="Auto,8,Auto,8,Auto,8,Auto"
+                                                          x:DataType="vm:ParagrapheVise"
+                                                          DataContext="{Binding #Root.((vm:MainWindowViewModel)DataContext).ParagrapheVise}"
                                                           IsVisible="{Binding #Root.((vm:MainWindowViewModel)DataContext).SectionParagrapheOuverte}">
                                                         <StackPanel Grid.Row="0" Grid.Column="0">
                                                             <TextBlock Classes="libelle libelleAuDessus" Text="Retrait à gauche"/>
-                                                            <views:ChampNumerique Classes="champ" TextConverter="{x:Static conv:Unite.MillimetresCourts}"
+                                                            <views:ChampNumerique x:Name="RetraitAGauche" Classes="champ" TextConverter="{x:Static conv:Unite.MillimetresCourts}"
                                                                            Increment="1" Minimum="-350"
                                                                            Value="{Binding IndentLeft, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
                                                         </StackPanel>
                                                         <StackPanel Grid.Row="0" Grid.Column="2">
                                                             <TextBlock Classes="libelle libelleAuDessus" Text="Retrait à droite"/>
-                                                            <views:ChampNumerique Classes="champ" TextConverter="{x:Static conv:Unite.MillimetresCourts}"
+                                                            <views:ChampNumerique x:Name="RetraitADroite" Classes="champ" TextConverter="{x:Static conv:Unite.MillimetresCourts}"
                                                                            Increment="1" Minimum="-350"
                                                                            Value="{Binding IndentRight, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
+                                                        </StackPanel>
+                                                        <!-- Diminuer et Augmenter le retrait (R6 ; fiche 23, b11) : le
+                                                             retrait gauche au taquet précédent ou suivant, de 36 pt
+                                                             en 36 pt, en un pas. La maquette ne les montre pas ; ils
+                                                             vont à côté des retraits, sans icône — la recette I1
+                                                             n'admet que celles de la maquette. Ils ne prennent pas le
+                                                             focus : en saisie, la frappe continue au curseur. -->
+                                                        <StackPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3" Orientation="Horizontal" Spacing="4">
+                                                            <Button x:Name="DiminuerLeRetrait" Classes="boutonDuDock" Content="Diminuer le retrait"
+                                                                    Focusable="False" ToolTip.Tip="Le retrait gauche au taquet précédent (36 pt)"
+                                                                    Command="{Binding #Root.((vm:MainWindowViewModel)DataContext).DiminuerLeRetraitCommand}"/>
+                                                            <Button x:Name="AugmenterLeRetrait" Classes="boutonDuDock" Content="Augmenter le retrait"
+                                                                    Focusable="False" ToolTip.Tip="Le retrait gauche au taquet suivant (36 pt)"
+                                                                    Command="{Binding #Root.((vm:MainWindowViewModel)DataContext).AugmenterLeRetraitCommand}"/>
                                                         </StackPanel>
                                                         <!-- Minimum négatif, et ce n'est pas un détail : le retrait de
                                                              première ligne négatif est la seule façon de composer une
                                                              liste à puces, et un minimum à zéro le rendrait
                                                              inatteignable au dock tout en marchant dans le fichier. -->
-                                                        <StackPanel Grid.Row="2" Grid.Column="0">
+                                                        <StackPanel Grid.Row="4" Grid.Column="0">
                                                             <TextBlock Classes="libelle libelleAuDessus" Text="Première ligne"/>
                                                             <views:ChampNumerique x:Name="RetraitPremiereLigne" Classes="champ"
                                                                            TextConverter="{x:Static conv:Unite.MillimetresCourts}"
                                                                            Increment="1" Minimum="-350"
                                                                            Value="{Binding IndentFirstLine, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
                                                         </StackPanel>
-                                                        <TextBlock Grid.Row="2" Grid.Column="2" Classes="aide" VerticalAlignment="Bottom"
+                                                        <TextBlock Grid.Row="4" Grid.Column="2" Classes="aide" VerticalAlignment="Bottom"
                                                                    Text="Négative, elle pend : une liste à puces."/>
-                                                        <StackPanel Grid.Row="4" Grid.Column="0">
+                                                        <StackPanel Grid.Row="6" Grid.Column="0">
                                                             <TextBlock Classes="libelle libelleAuDessus" Text="Espace avant"/>
-                                                            <views:ChampNumerique Classes="champ" TextConverter="{x:Static conv:Unite.MillimetresCourts}"
+                                                            <views:ChampNumerique x:Name="EspaceAvant" Classes="champ" TextConverter="{x:Static conv:Unite.MillimetresCourts}"
                                                                            Increment="1" Minimum="0"
                                                                            Value="{Binding SpaceBefore, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
                                                         </StackPanel>
-                                                        <StackPanel Grid.Row="4" Grid.Column="2">
+                                                        <StackPanel Grid.Row="6" Grid.Column="2">
                                                             <TextBlock Classes="libelle libelleAuDessus" Text="Espace après"/>
-                                                            <views:ChampNumerique Classes="champ" TextConverter="{x:Static conv:Unite.MillimetresCourts}"
+                                                            <views:ChampNumerique x:Name="EspaceApres" Classes="champ" TextConverter="{x:Static conv:Unite.MillimetresCourts}"
                                                                            Increment="1" Minimum="0"
                                                                            Value="{Binding SpaceAfter, Converter={x:Static conv:PointsToMillimetres.Instance}}"/>
                                                         </StackPanel>

@@ -68,7 +68,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **R3** | Colonnes à l'intérieur d'un bloc | **100 %** | Nombre et gouttière sur le bloc ; la ligne composée porte sa colonne et son ordonnée. Autre chose que C2a |
 | **R4** | Interligne : une seule mesure | **100 %** | Multiple de la hauteur naturelle ; écran et PDF concordent à 0,05 pt près ; recette dans `Scripts/recettes/` |
 | **R5** | **Ouvrir un `.pub`** | **100 %** | Lecture déléguée à libmspub. Les deux documents ATR s'ouvrent objet pour objet, sans perdre un style |
-| **R6** | Alignement par paragraphe | 0 % | Spécifié le 11 octobre 2026 ; repris en phase N (salve Saisie 7), sur N2, N15 et N21 |
+| **R6** | Alignement par paragraphe | **100 %** | Le panneau règle le paragraphe du curseur : un `ParagrapheVise` (`MainWindowViewModel.ParagrapheVise.cs`), contexte des quatre alignements de la barre et des cinq champs de la section Paragraphe du dock, sous les liaisons d'avant — les comptes de I3 tiennent. Hors saisie, le bloc, comme avant ; en saisie, les paragraphes que touche la sélection, ou celui du curseur, lus par `MiseEnForme.Lire` — un réglage mixte est nul, aucun bouton n'est allumé, le champ est vide — et posés en écarts par `MiseEnForme.Poser`, les voisins identiques fusionnés, l'écart qui ne dit plus rien retiré. La barre, le menu Texte et `Ctrl+L`, `Ctrl+E`, `Ctrl+R`, `Ctrl+J` posent le fer en un pas ; un retrait saisi au dock fait le sien (Q25). « Diminuer » et « Augmenter le retrait », au dock sous les retraits, sans focus : de 36 pt en 36 pt, chaque paragraphe depuis le sien. L'interligne reste au bloc. Quinze tests sous `poste=R6` ; deux tests réécrits (Q25, N10 : l'écart au lieu du bloc, règle 14) ; deux sabotages au juge. **La recette des Fiches ne se joue pas** : leurs 16 centrés sont en cases de tableau, que l'import ramène à gauche — rejouée sur ATA 21, relevé pour le propriétaire (voir la section). Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **R7** | Éditer le texte riche à la souris | 0 % | Spécifié le 11 octobre 2026 ; repris en phase N (salve Saisie 8) : la mesure est N7, le gras `Ctrl+G` ; **voie 2a**, choisie par le propriétaire le 26 octobre 2026 sur la mesure de N7 |
 | **Q1** | Les styles suivent la frappe | **100 %** | Fragments et écarts recalés à la saisie par une fonction pure du noyau (`Recalage`), à la règle de Publisher : le style qui précède, celui qui suit en tête de paragraphe, le premier remplacé pour une sélection retapée. Seules les zones de saisie s'y lient ; lecture, import, copie et annulation ne recalent rien. `FormatVersion` reste à 4 ; recette dans `Scripts/recettes/` |
 | **Q2** | Le texte composé se détache de son bloc | **100 %** | `ControleDeBloc` suit l'attachement, comme `FondBloc`, et lâche l'ancien bloc quand on lui en donne un autre. Mesuré : le changement de page ne fuyait pas ; la fuite ne frappait qu'un contrôle sorti de l'arbre avec son bloc. Recette dans `Scripts/recettes/` |
@@ -3080,6 +3080,95 @@ ajoute (b8, b9, b11) :
 
 *Recette*, en plus : le curseur posé au clic ; l'état mixte n'allume aucun bouton ; un retrait
 saisi au dock fait un pas à lui (Q25). Dépend de N2, N15, N21 et Q25.
+
+*Livré le 31 octobre 2026*, dans la salve Saisie 7 ; la relecture adversariale et le juge viennent
+après la fusion. **Le modèle de vue** (`MainWindowViewModel.ParagrapheVise.cs`, le partiel du poste) :
+`ParagrapheVise`, un objet observable que le modèle de vue crée une fois et que la barre et le dock
+prennent pour contexte. Il vise le bloc de texte seul hors saisie, et en saisie les paragraphes que
+touche la sélection du texte (`ParagraphesDeLaSelection`, N15) quand elle est celle du bloc seul ;
+il lit par `MiseEnForme.Lire` (N2) — un réglage où les paragraphes visés diffèrent est nul — et pose
+par `MiseEnForme.Poser`, en écarts : deux voisins identiques fusionnent, un écart qui ne s'écarte plus
+de rien disparaît. Hors saisie, il lit et écrit les six réglages du bloc, comme avant. Une valeur
+nulle — un champ vidé, l'état mixte que le champ renvoie — n'écrit rien. Il suit le bloc seul (ses
+réglages, son texte, ses écarts) et la sélection du texte, et tient ses avis le temps de ses propres
+écritures : la collection passe par plusieurs états, qu'aucun champ ne doit lire et renvoyer.
+`AlignerLeTexte` (menu Texte, barre, `Ctrl+L`, `Ctrl+E`, `Ctrl+R`, `Ctrl+J`) passe par lui, en un pas
+où que soit le focus (`UnGesteUnPas`), et dit dans la barre d'état « Paragraphe aligné » ou « 2
+paragraphes alignés » en saisie. Deux commandes neuves, `DiminuerLeRetrait` et `AugmenterLeRetrait` :
+le retrait gauche au taquet précédent ou suivant, de 36 pt en 36 pt, jamais sous zéro, chaque
+paragraphe visé depuis le sien — 0, 10 et 40 pt passent à 36, 36 et 72. **La barre** : les quatre
+boutons d'alignement sont rangés sous `AlignementsDuParagraphe`, dont le contexte est le
+`ParagrapheVise` ; leurs liaisons sont celles d'avant (`{Binding Align, Mode=OneWay…}`), si bien que
+les comptes de la recette I3 tiennent. L'interligne reste lié au bloc. **Le dock** : la section
+Paragraphe (`ContenuParagraphe`) prend le `ParagrapheVise` pour contexte, ses cinq champs gardent
+leurs liaisons et reçoivent un nom (`RetraitAGauche`, `RetraitADroite`, `EspaceAvant`, `EspaceApres`,
+à côté de `RetraitPremiereLigne`) ; « Diminuer le retrait » et « Augmenter le retrait » sont posés
+sous les retraits, à libellé — la recette I1 n'admet que les icônes de la maquette —, sans prendre le
+focus : en saisie, la frappe continue au curseur. Le README dit la portée des quatre touches et des
+champs, et ne range plus que l'interligne parmi les limites. Aucun raccourci neuf : `Ctrl+M`, qui
+augmente le retrait dans Word, est la page maître dans Publisher (fiche 24).
+
+Le poste touche, hors de son partiel, `MainWindowViewModel.Disposition.cs` (le corps
+d'`AlignerLeTexte`, et l'avis des deux commandes neuves quand la sélection change),
+`BarreContextuelle.axaml`, `MainWindow.axaml` (la section Paragraphe du dock seule) et le README.
+`PageCanvas.axaml.cs` et `PageCanvas.Saisie.cs` ne sont pas touchés.
+
+*Recette jouée* : `Scripts/recettes/R6-paragraphe-du-curseur.sh`. Les sources — le partiel, la pose
+en écarts par `MiseEnForme`, les alignements par le `ParagrapheVise`, l'interligne hors de lui ; la
+barre et le dock liés à lui sous les noms d'avant ; les deux boutons sans focus ; le README —, puis
+quinze tests sous `poste=R6` (`ParagrapheDuCurseurTests`) : la recette du plan — le curseur posé au
+clic dans le deuxième de trois paragraphes, « Centrer le texte », un seul écart `{Start 1, Length 1,
+Align Center}`, l'écran centrant « Milieu » à 0,0000 pt et laissant « Alpha » et « Omega » au fer, le
+PDF les posant au même point à 0,05 pt, la saisie ouverte et la zone au focus, un pas d'annulation ;
+le bloc hors saisie, ses écarts laissés ; l'état mixte, aucun bouton allumé et le champ vide ; la
+fusion de deux écarts voisins et l'écart qui disparaît, un pas chacun ; `Ctrl+E`, `Ctrl+R`, `Ctrl+J`,
+`Ctrl+L` et le menu Texte sur deux paragraphes sélectionnés ; un retrait de première ligne saisi au
+dock pendant la saisie, en écart, trois pas défaits un à un (Q25) ; Diminuer et Augmenter, hors
+saisie et sur trois paragraphes ; les taquets ; les paragraphes justifiés d'ATA 21 parcourus au
+curseur, chacun allumant son fer et lui seul, le document intact et relu. Deux tests existants
+jouaient l'ancien sens et sont réécrits (règle 14) : le retrait saisi au dock de Q25
+(`TransactionsDeSaisieTests`) et les alignements au clavier en saisie de N10
+(`RaccourcisFrancaisTests`) attendaient le réglage du bloc, ils attendent l'écart du paragraphe ; leur
+pas ne change pas. Deux sabotages au juge : le `ParagrapheVise` qui vise le bloc pendant la saisie,
+et celui qui n'écoute plus la sélection du texte.
+
+*Ce que l'implémentation a appris.* **La recette des Fiches ne se joue pas sur le code.** Les 16
+paragraphes centrés des Fiches sont tous dans des cases de tableau — la colonne du milieu des
+bandes, « DC GEN 1+2 FAULT » —, qu'une case n'ayant pas de paragraphes le panneau ne vise pas ; et
+l'import les ramène au fer à gauche : une case dont le bloc de texte n'est pas ouvert dans la source
+reçoit son texte dans `FinCellule`, sans le fer de son paragraphe (`PubImporter.cs`). L'épreuve
+d'aller-retour se joue donc sur les paragraphes justifiés d'ATA 21, qui sont dans des blocs de texte,
+mêlés au fer à gauche — voir *Choisi sans certitude*. Le PDF ne pose pas « Milieu » plus loin que
+l'écran — 0,0001 pt —, mais le mesure 0,10 pt plus court, sur les chasses de sa police, qui ne
+façonne pas : le milieu de son encre est à 0,052 pt du milieu du bloc. C'est l'écart des deux mesures
+que le README range dans ses limites ; le test tient le début du mot à 0,05 pt et le milieu à 0,05 pt
+plus la moitié de cet écart.
+
+*Choisi sans certitude* :
+- « nul quand les paragraphes visés diffèrent » est lu réglage par réglage, et non pour le
+  `ParagrapheVise` entier : deux paragraphes de fers différents et de même retrait éteignent les
+  quatre boutons et montrent leur retrait, qu'on peut alors régler pour les deux ;
+- les quatre touches et les boutons **posent** le fer, sans basculer : `Ctrl+E` sur un paragraphe
+  centré le laisse centré, comme le faisait `Ctrl+E` sur le bloc depuis N10. `MiseEnForme.Basculer`
+  (le retour au fer à gauche de Word) reste sans appelant ;
+- « Diminuer le retrait » ne descend pas sous zéro, et laisse tel quel un retrait gauche déjà nul ou
+  négatif ; un retrait à un millième de point d'un taquet est au taquet ;
+- les deux boutons de retrait ne prennent pas le focus, comme ceux de la barre : un champ du dock
+  qui l'aurait garde sa frappe non validée, que le changement de valeur remplace ;
+- l'aller-retour des Fiches est remplacé par celui d'ATA 21 : 36 paragraphes justifiés à l'import —
+  31 dans la source —, tous parcourus au curseur ;
+- la barre d'état dit « Paragraphe aligné » ou « n paragraphes alignés » en saisie, « Texte
+  aligné » hors saisie.
+
+*Relevé, non corrigé* :
+- **l'import perd le fer des cases** : les 16 paragraphes centrés des Fiches, en cases de tableau,
+  arrivent au fer à gauche. À décider par le propriétaire : un correctif d'import (le fer du premier
+  paragraphe de la case donné à `TableCell.Align` dans `FinCellule`), et la recette de R6 qui
+  nommait les Fiches ;
+- **l'import donne le fer du bloc à des paragraphes à gauche** : un paragraphe au fer à gauche sans
+  autre réglage ne reçoit pas d'écart, et le fer le plus répandu devient celui du bloc
+  (`FinTexte`) — dans un bloc justifié en majorité, il passe justifié. ATA 21 en compte 36 à l'import
+  pour 31 dans la source ; quatre au moins viennent de là (relevé sur `pub2raw`).
 
 ### R7 — Éditer le texte riche à la souris
 

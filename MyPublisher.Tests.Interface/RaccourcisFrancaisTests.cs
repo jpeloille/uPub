@@ -163,8 +163,8 @@ public class RaccourcisFrancaisTests
 
     /// <summary>
     /// <c>Ctrl+L</c>, <c>Ctrl+E</c>, <c>Ctrl+R</c> et <c>Ctrl+J</c> alignent le texte du bloc, en un
-    /// pas ; en saisie, la frappe d'avant garde le sien, et la saisie continue. Le menu Texte
-    /// montre les quatre touches.
+    /// pas ; en saisie, le paragraphe du curseur (R6), la frappe d'avant garde son pas, et la saisie
+    /// continue. Le menu Texte montre les quatre touches.
     /// </summary>
     [AvaloniaFact]
     public void Les_alignements_au_clavier_hors_saisie_et_en_saisie()
@@ -197,7 +197,10 @@ public class RaccourcisFrancaisTests
             zone.SelectAll();
             Rendu.Taper(fenetre, "abc");
             Rendu.ToucheAzerty(fenetre, touche, RawInputModifiers.Control);
-            Assert.Equal(alignement, bloc.Align);
+            // Depuis R6, la touche aligne en saisie le paragraphe du curseur, en écart ; le bloc
+            // garde son fer.
+            Assert.Equal(alignement, Assert.Single(bloc.Paragraphs).Align);
+            Assert.NotEqual(alignement, bloc.Align);
             Assert.True(bloc.IsEditing, $"Ctrl+{touche} a refermé la saisie");
             Assert.True(zone.IsFocused, $"Ctrl+{touche} a pris le focus à la zone de saisie");
             Assert.Equal("abc", bloc.Text);

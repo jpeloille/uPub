@@ -2976,6 +2976,23 @@ saboter "le texte en saisie perd sa sélection sous le menu (A12)" \
     '            zone.ClearSelectionOnLostFocus = true;' \
     'A12-menu-contextuel|MenuDuBlocTests'
 
+# R6 : le panneau qui vise le bloc pendant la saisie — « Centrer le texte », le curseur dans le
+# deuxième paragraphe, centre tout le bloc, et le dock règle le bloc entier : ce qu'était l'interface
+# avant le poste.
+saboter "le panneau règle le bloc entier pendant la saisie (R6)" \
+    MyPublisher/ViewModels/MainWindowViewModel.ParagrapheVise.cs \
+    '            ? _vm.ParagraphesDeLaSelection' \
+    '            ? (Plage?)null' \
+    'R6-paragraphe-du-curseur|ParagrapheDuCurseurTests'
+
+# R6 : le panneau qui n'écoute plus la sélection du texte — le curseur passe d'un paragraphe centré
+# à un paragraphe au fer à gauche, et la barre allume encore « Centrer le texte ».
+saboter "le panneau montre le paragraphe d'avant le curseur (R6)" \
+    MyPublisher/ViewModels/MainWindowViewModel.ParagrapheVise.cs \
+    $'            case nameof(MainWindowViewModel.SelectionDuTexte):\n                Notifier();\n' \
+    $'            case nameof(MainWindowViewModel.SelectionDuTexte):\n' \
+    'R6-paragraphe-du-curseur|ParagrapheDuCurseurTests'
+
 # Un motif qui ne désigne aucun sabotage ne prouve rien. « eprouver-le-juge.sh I4 » sortait
 # en 0 sur « 0 sabotages, 0 attrapés », quand les intitulés de la planche ne portaient pas
 # encore le code du poste : le filet passait pour éprouvé sans qu'on l'ait troué.
