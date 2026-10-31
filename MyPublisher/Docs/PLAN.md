@@ -24,7 +24,7 @@ Où en est chaque poste. Une seule règle pour la colonne d'avancement : un post
 on écrit ce qui est fait plutôt qu'un pourcentage inventé — un poste à moitié écrit n'est
 pas un poste à moitié livré. La colonne se met à jour dans le commit qui clôt le poste.
 
-*Dernière mise à jour : 1er novembre 2026 (salve Saisie 8 livrée : R7, en saisie la police, le corps, le gras, l'italique, le souligné et la couleur vont à la sélection ou au mot du curseur, en un pas, la barre montre l'état mixte, Ctrl+Espace, Ctrl+Maj+C et Ctrl+Maj+V ; N23, puces et numéros au dock et au menu Texte, Entrée continue la liste et sort d'un élément vide ; Q26, l'import garde le fer des cases et des paragraphes à gauche, et le contrôle de Q13 tient une ligne centrée par son milieu, une ligne au fer à droite par son bout. Salve Saisie 7 livrée le 31 octobre 2026 : R6, N22, N29, N20 repris.)*
+*Dernière mise à jour : 1er novembre 2026 (salve Saisie 9 livrée : N24, Ctrl+Maj+= et Ctrl+= mettent en exposant et en indice au corps de 67 %, que l'import lit désormais, petites majuscules et majuscules dessinées sans toucher au texte, Ctrl+Maj+K, le zoom avant sans touche ; N25, le trait ondulé sous les fautes, F7 et la barre en mode orthographe, les suggestions au clic droit, le dictionnaire de l'utilisateur, WeCantSpell.Hunspell 7.0.1 sous MPL 1.1. Salve Saisie 8 livrée le même jour : R7, en saisie la police, le corps, le gras, l'italique, le souligné et la couleur vont à la sélection ou au mot du curseur, en un pas, la barre montre l'état mixte, Ctrl+Espace, Ctrl+Maj+C et Ctrl+Maj+V ; N23, puces et numéros au dock et au menu Texte, Entrée continue la liste et sort d'un élément vide ; Q26, l'import garde le fer des cases et des paragraphes à gauche, et le contrôle de Q13 tient une ligne centrée par son milieu, une ligne au fer à droite par son bout. Salve Saisie 7 livrée le 31 octobre 2026 : R6, N22, N29, N20 repris.)*
 
 | Poste | Intitulé | Avancement | Où ça en est |
 |---|---|:---:|---|
@@ -137,9 +137,9 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **D** | Moteur de composition | — | Décision non ouverte ; à rouvrir quand A, B et C sont livrées |
 
 **Par phase** — P : 4 sur 4 · A : 11 sur 15 · B : 4 sur 7 · C : 7 sur 9 · R : 7 sur 7 ·
-Q : 23 sur 26 · I : 9 sur 9 · N : 24 sur 29 · D : non planifié.
+Q : 23 sur 26 · I : 9 sur 9 · N : 26 sur 29 · D : non planifié.
 
-Soit **89 postes sur 106**. Le 31 octobre 2026, le propriétaire a ajouté N29, sur la mesure de N21, et Q26, sur le relevé de R6. Le 25 octobre 2026, la phase N en a ajouté vingt-huit, et la phase Q
+Soit **91 postes sur 106**. Le 31 octobre 2026, le propriétaire a ajouté N29, sur la mesure de N21, et Q26, sur le relevé de R6. Le 25 octobre 2026, la phase N en a ajouté vingt-huit, et la phase Q
 deux (Q24, Q25), tirés de la relecture du cours sous l'angle de la saisie (fiche 23). Le
 24 octobre 2026, la phase I en avait ajouté neuf, tirés de la
 maquette de la nouvelle interface. Le compte avait doublé le 11 octobre 2026 sans que rien ne
