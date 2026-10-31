@@ -60,17 +60,37 @@ public class RechercherRemplacerTests
         Assert.Equal(texte, champ.Text);
     }
 
-    /// <summary>Le texte sélectionné en saisie, tel que le modèle de vue le connaît (N15), et le champ le montre.</summary>
-    private static (TextFrame Bloc, int Debut, int Fin) EnSaisie(Window fenetre, MainWindowViewModel vm)
+    /// <summary>Les marques de la saisie, que la planche pose sur la composition (N21).</summary>
+    private static MarquesDuTexte Marques(Window fenetre) => Trouver<MarquesDuTexte>(fenetre, "MarquesDeLaSaisie");
+
+    /// <summary>
+    /// Le texte sélectionné en saisie, tel que le modèle de vue le connaît (N15) et que les marques
+    /// le dessinent sur la composition (N21). Le focus est où il doit être : dans la barre de
+    /// recherche quand on y cherchait (décision du propriétaire, 31 octobre 2026), le champ du bloc
+    /// n'ayant plus de sélection à lui ; dans le champ du bloc, <paramref name="focusAuTexte"/>, et sa
+    /// sélection est la même.
+    /// </summary>
+    private static (TextFrame Bloc, int Debut, int Fin) EnSaisie(Window fenetre, MainWindowViewModel vm, bool focusAuTexte = false)
     {
         var selection = vm.SelectionDuTexte ?? throw new InvalidOperationException("rien n'est sélectionné en saisie");
         var bloc = Assert.IsType<TextFrame>(selection.Bloc);
         Assert.True(bloc.IsEditing, $"« {bloc.Name} » n'est pas en saisie");
         Assert.Same(bloc, vm.SingleSelected);
         var zone = Rendu.ZoneDeSaisie(fenetre, bloc) ?? throw new InvalidOperationException("aucune zone de saisie ne se voit");
-        Assert.True(zone.IsFocused, "la zone de saisie n'a pas le focus");
-        Assert.Equal((selection.Debut, selection.Fin), (Math.Min(zone.SelectionStart, zone.SelectionEnd),
-            Math.Max(zone.SelectionStart, zone.SelectionEnd)));
+        if (focusAuTexte)
+        {
+            Assert.True(zone.IsFocused, "la zone de saisie n'a pas le focus");
+            Assert.Equal((selection.Debut, selection.Fin), (Math.Min(zone.SelectionStart, zone.SelectionEnd),
+                Math.Max(zone.SelectionStart, zone.SelectionEnd)));
+        }
+        else
+        {
+            Assert.False(zone.IsFocused, "le texte trouvé a pris le focus à la barre");
+            var focus = fenetre.FocusManager!.GetFocusedElement() as Visual;
+            Assert.True(focus is not null && Barre(fenetre).IsVisualAncestorOf(focus), "le focus n'est plus dans la barre");
+        }
+
+        if (!selection.EstVide) Assert.NotEmpty(Marques(fenetre).Plages);
         return (bloc, selection.Debut, selection.Fin);
     }
 
@@ -175,7 +195,7 @@ public class RechercherRemplacerTests
             Rendu.Touche(fenetre, PhysicalKey.F3);
             Assert.Same(document.Pages[0], vm.CurrentPage);
             Assert.Equal((sousTitre, 0, 8), EnSaisie(fenetre, vm));
-            Assert.Equal("Bulletin", Rendu.ZoneDeSaisie(fenetre, sousTitre)!.SelectedText);
+            Assert.Equal("Bulletin", vm.SelectionDuTexte!.Texte[..8]);
         }
     }
 
@@ -476,9 +496,83 @@ public class RechercherRemplacerTests
         Assert.Equal(4, vm.SelectionDuTexte!.Fin);
 
         Rendu.Touche(fenetre, PhysicalKey.F3);
-        Assert.Equal((bloc, 6, 8), EnSaisie(fenetre, vm));
+        Assert.Equal((bloc, 6, 8), EnSaisie(fenetre, vm, focusAuTexte: true));
         Rendu.Touche(fenetre, PhysicalKey.F3);
-        Assert.Equal((bloc, 0, 2), EnSaisie(fenetre, vm));
+        Assert.Equal((bloc, 0, 2), EnSaisie(fenetre, vm, focusAuTexte: true));
         Assert.Contains("repris au début", vm.Status);
+    }
+
+    // ------------------------------------------- repris le 31 octobre 2026 : le focus reste à la barre
+
+    /// <summary>
+    /// Décision du propriétaire, 31 octobre 2026 : le texte trouvé ne prend plus le focus, qui reste
+    /// dans la barre, comme dans le volet de Publisher. Une seconde <c>Entrée</c> cherche le
+    /// suivant, d'un bloc à l'autre, sans rien écrire ; la sélection est dessinée sur la composition
+    /// pendant que la barre a le focus ; aucune transaction ne reste ouverte — une commande qui
+    /// suit fait son pas. La garde du juge : le texte trouvé qui reprend le focus.
+    /// </summary>
+    [AvaloniaFact]
+    [Trait("poste", "N20")]
+    public void Une_seconde_Entree_cherche_le_suivant_la_selection_dessinee_le_focus_dans_la_barre()
+    {
+        var premier = Texte("Premier", 60, 60, "Un bulletin.");
+        var second = Texte("Second", 60, 200, "Le bulletin du mois.");
+        var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(premier, second));
+        var avant = DocumentSerializer.ToJson(vm.Document);
+
+        Chercher(fenetre, "bulletin");
+        var champ = Champ(fenetre, "TexteCherche");
+        Rendu.Touche(fenetre, PhysicalKey.Enter);
+        Assert.Equal((premier, 3, 11), EnSaisie(fenetre, vm));
+        Assert.True(champ.IsFocused);
+        var marques = Marques(fenetre).Plages;
+        Assert.Single(marques);
+        Assert.InRange(marques[0].Width, 20, 120);
+
+        Rendu.Touche(fenetre, PhysicalKey.Enter);
+        Assert.Equal((second, 3, 11), EnSaisie(fenetre, vm));
+        Assert.True(champ.IsFocused);
+        Assert.Equal("bulletin", champ.Text);
+
+        // Rien n'est écrit, rien n'est empilé.
+        Assert.Equal(avant, DocumentSerializer.ToJson(vm.Document));
+        Assert.False(vm.CanUndo);
+
+        // Aucune transaction ouverte : la commande qui suit fait son pas, aussitôt.
+        vm.DuplicateSelectedCommand.Execute(null);
+        Rendu.Battre();
+        Assert.True(vm.CanUndo, "une transaction restée ouverte a avalé le pas de la commande");
+    }
+
+    /// <summary>
+    /// <c>Échap</c> ferme la barre sur une occurrence sélectionnée : le focus va au champ du bloc,
+    /// la sélection gardée, et une lettre remplace l'occurrence, en un pas.
+    /// </summary>
+    [AvaloniaFact]
+    [Trait("poste", "N20")]
+    public void Echap_rend_le_focus_au_texte_trouve_et_une_lettre_le_remplace_en_un_pas()
+    {
+        var bloc = Texte("Texte", 60, 60, "un bulletin ici");
+        var (fenetre, vm) = Rendu.Ouvrir(Rendu.Feuille(bloc));
+        var avant = DocumentSerializer.ToJson(vm.Document);
+
+        Chercher(fenetre, "bulletin");
+        Rendu.Touche(fenetre, PhysicalKey.Enter);
+        Assert.Equal((bloc, 3, 11), EnSaisie(fenetre, vm));
+
+        Rendu.Touche(fenetre, PhysicalKey.Escape);
+        Assert.False(vm.RechercheVisible);
+        Assert.Equal((bloc, 3, 11), EnSaisie(fenetre, vm, focusAuTexte: true));
+        Assert.NotEmpty(Marques(fenetre).Plages);
+        Assert.False(vm.CanUndo);
+
+        Rendu.Taper(fenetre, "x");
+        Assert.Equal("un x ici", bloc.Text);
+        Assert.Equal(EditorTool.Select, vm.ActiveTool);
+
+        // Échap, dans le texte, referme la saisie et sa transaction : la frappe a fait un pas, un seul.
+        Rendu.Touche(fenetre, PhysicalKey.Escape);
+        Assert.False(bloc.IsEditing);
+        Rendu.UnSeulPas(vm, avant, "la lettre tapée après Échap");
     }
 }

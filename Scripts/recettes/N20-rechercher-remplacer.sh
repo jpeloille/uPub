@@ -20,8 +20,10 @@
 #         dite (Recalage) —, jamais par la propriété Saisie que l'écran lie ; Remplacer tout
 #         remplace tout dans UN geste, sans pas par occurrence ; le noyau n'a pas Avalonia ;
 #      d. la planche ouvre la saisie du texte trouvé depuis son partiel de la saisie, et
-#         PageCanvas.axaml.cs n'est pas touché (règle 16) ; la barre ferme à Échap et rend la
-#         planche.
+#         PageCanvas.axaml.cs n'est pas touché (règle 16) ; repris le 31 octobre 2026, sur la
+#         décision du propriétaire : le focus reste dans la barre quand on y cherchait, la
+#         sélection dite au modèle de vue, que les marques de N21 dessinent ; Échap ferme la barre,
+#         et rend le focus au texte trouvé (SaisieRendue), la planche sinon.
 #
 # 2. LES TESTS :
 #
@@ -38,7 +40,10 @@
 #        à la casse, le gras du titre gardé, en un pas ; la casse, le mot entier, l'ordre de la
 #        page ; Remplacer, un pas puis la suivante ; un groupe et une case ; Échap qui ferme la
 #        barre et rend les lettres aux outils ; la barre qui ne déplace pas la planche ; la
-#        recherche qui part du curseur.
+#        recherche qui part du curseur ; repris le 31 octobre 2026 : une seconde Entrée cherche
+#        le suivant sans rien écrire, la sélection dessinée et le focus dans la barre, aucune
+#        transaction ouverte — la garde du juge, le texte trouvé qui reprend le focus ; Échap,
+#        puis une lettre qui remplace l'occurrence, en un pas.
 #
 #    Le compte des tests joués est vérifié : un filtre qui ne désigne plus rien sort en 0.
 #
@@ -160,12 +165,19 @@ exige("TexteTrouve" not in planche, "PageCanvas.axaml.cs est touché (règle 16)
 trouve = corps(saisie, "private void OnTexteTrouve(object? sender, SelectionDuTexte trouve)") or ""
 exige("BeginTextEdit(bloc, trouve.Fin);" in trouve and "PoserLaSelection(zone," in trouve,
       "la planche n'ouvre pas la saisie du texte trouvé, la plage sélectionnée.")
+exige("FindAncestorOfType<BarreDeRecherche>(includeSelf: true)" in trouve and "dansLaBarre.Focus();" in trouve
+      and "_vm?.SuivreLaSelectionDuTexte(SelectionDuTexte.De(bloc, null, debut, fin, longueur));" in trouve,
+      "le focus ne reste pas dans la barre, la sélection dite au modèle de vue (décision du 31 octobre 2026).")
+rendue = corps(saisie, "private void OnSaisieRendue(object? sender, SelectionDuTexte selection)") or ""
+exige("zone.Focus();" in rendue and "PoserLaSelection(zone," in rendue, "Échap ne rend pas le focus au texte trouvé.")
+fermer = corps(partiel, "private void FermerLaRecherche()") or ""
+exige("SaisieRendue?.Invoke(this, selection);" in fermer, "fermer la barre ne rend pas la saisie sur l'occurrence sélectionnée.")
 touche = corps(barre_code, "private void SurTouche(object? sender, KeyEventArgs e)") or ""
 exige(re.search(r"case Key\.Escape:\s*_vm\.FermerLaRechercheCommand\.Execute\(null\);\s*RendreLaPlanche\(\);", touche),
       "Échap ne ferme pas la barre en rendant la planche.")
 exige("AddHandler(KeyDownEvent, SurTouche, RoutingStrategies.Tunnel);" in barre_code,
       "la barre ne prend pas Échap avant la fenêtre.")
-print("    d. la planche ouvre la saisie du texte trouvé depuis son partiel ; Échap ferme la barre et rend la planche")
+print("    d. la planche ouvre la saisie du texte trouvé depuis son partiel, le focus gardé à la barre ; Échap le rend au texte trouvé")
 
 if echecs:
     for message in echecs:
@@ -195,7 +207,7 @@ jouer() {
 
 jouer MyPublisher.Tests/MyPublisher.Tests.csproj "poste=N20" 9 \
     "2. le noyau : les occurrences, la casse, le mot entier, le texte remplacé au style de son premier caractère"
-jouer MyPublisher.Tests.Interface/MyPublisher.Tests.Interface.csproj "poste=N20" 10 \
-    "   la vraie fenêtre : F3 la page suivant, Remplacer tout en un pas, le compte d'ATA 21, la casse et le mot entier, Échap"
+jouer MyPublisher.Tests.Interface/MyPublisher.Tests.Interface.csproj "poste=N20" 12 \
+    "   la vraie fenêtre : F3 la page suivant, Remplacer tout en un pas, le compte d'ATA 21, la casse et le mot entier, le focus à la barre, Échap"
 
 echo "N20 : la barre de recherche trouve, sélectionne en saisie et remplace par le noyau ; Remplacer tout fait un seul pas."

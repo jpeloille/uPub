@@ -278,8 +278,10 @@ Fenêtre masque aussi l'un ou l'autre.
   *Respecter la casse*, *Mot entier*, Suivant, Remplacer, Remplacer tout. La recherche va de
   page en page, puis, sur la page, de haut en bas et de gauche à droite, dans les blocs de texte
   visibles et sans champ, les cases des tableaux et les groupes ; au bout du document, elle
-  reprend au début, et le dit. Le texte trouvé est sélectionné en saisie, la page suivant ; dans
-  un groupe, le groupe est sélectionné, dans une case, le tableau, et la barre d'état dit où.
+  reprend au début, et le dit. Le texte trouvé est sélectionné en saisie, la page suivant, et le
+  focus reste dans la barre, comme dans le volet de Publisher : `Entrée` cherche encore le suivant,
+  `Échap` ferme la barre et laisse taper par-dessus le texte trouvé. Dans un groupe, le groupe est
+  sélectionné, dans une case, le tableau, et la barre d'état dit où.
   *Remplacer tout* fait un seul pas d'annulation, et le texte remplacé prend le style de son
   premier caractère : un mot gras remplacé reste gras.
 - **Le souligné** a les dix-sept sortes de Publisher, rangées en quatre réglages comme
@@ -470,8 +472,8 @@ comptés pour rien : sur un AZERTY, `Ctrl+]` se tape `Ctrl+AltGr+)`, `Ctrl+[` se
 | `Maj+Suppr` / `Ctrl+Inser` / `Maj+Inser` | Couper / Copier / Coller, comme `Ctrl+X`, `Ctrl+C` et `Ctrl+V` — les secondes touches de Publisher en français ; `Maj+Suppr` coupe, et ne supprime pas |
 | `Ctrl+A` | Sélectionner tous les blocs de la page ; dans la saisie d'un bloc ou dans un champ, tout le texte du champ |
 | `Ctrl+F` / `Ctrl+H` | Rechercher / Remplacer : la barre de recherche, en haut à droite de la planche, le focus au texte cherché / au texte de remplacement |
-| `F3` ou `Maj+F4` | Rechercher le suivant : le texte trouvé est sélectionné en saisie, la page suivant ; sans rien à chercher, la barre s'ouvre. Même en saisie |
-| Dans la barre de recherche : `Entrée`, `Échap` | Cherche le suivant ; ferme la barre et rend la planche |
+| `F3` ou `Maj+F4` | Rechercher le suivant : le texte trouvé est sélectionné en saisie, la page suivant ; le focus reste dans la barre s'il y était, et va au texte trouvé sinon ; sans rien à chercher, la barre s'ouvre. Même en saisie |
+| Dans la barre de recherche : `Entrée`, `Échap` | Cherche le suivant, le focus restant dans la barre ; ferme la barre, et rend le focus au texte trouvé, où l'on tape par-dessus — à la planche s'il n'y en a pas |
 | `Échap` | Désarme l'outil, sinon désélectionne ; dans un champ, du dock ou de la barre contextuelle, renonce à ce qui est tapé et le quitte |
 | Dans un champ numérique : `Entrée`, `Tab`, `↑` / `↓` | Valide ce qui est tapé — dans la barre contextuelle, `Entrée` rend aussi la planche — ; passe au champ suivant ; un pas de plus ou de moins |
 

@@ -2976,6 +2976,12 @@ saboter "le texte en saisie perd sa sélection sous le menu (A12)" \
     '            zone.ClearSelectionOnLostFocus = true;' \
     'A12-menu-contextuel|MenuDuBlocTests'
 
+saboter "le texte trouvé reprend le focus à la barre de recherche (N20, repris)" \
+    MyPublisher/Views/PageCanvas.Saisie.cs \
+    '        if (dansLaBarre?.FindAncestorOfType<BarreDeRecherche>(includeSelf: true) is null) dansLaBarre = null;' \
+    '        dansLaBarre = null;' \
+    'N20-rechercher-remplacer|RechercherRemplacerTests'
+
 # Un motif qui ne désigne aucun sabotage ne prouve rien. « eprouver-le-juge.sh I4 » sortait
 # en 0 sur « 0 sabotages, 0 attrapés », quand les intitulés de la planche ne portaient pas
 # encore le code du poste : le filet passait pour éprouvé sans qu'on l'ait troué.
