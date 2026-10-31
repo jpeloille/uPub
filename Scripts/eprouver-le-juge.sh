@@ -3107,6 +3107,15 @@ saboter "un mot ajouté au dictionnaire (N25) ne survit pas au redémarrage" \
     '        Preferences.AjouterAuDictionnaire(faute.Langue, faute.Mot);' \
     'N25-orthographe|VerificationOrthographiqueTests'
 
+# Q27 : la référence directe qu'aucun code n'appelle, et qu'on serait tenté de retirer au premier
+# ménage. Sans elle, PdfSharp ramène System.Security.Cryptography.Pkcs 8.0.1 ; le relevé compilé le
+# montre, sans réseau — la base des vulnérabilités, elle, reste à verifier-dependances.sh.
+saboter "l'épinglage de Pkcs (Q27) retiré du noyau : PdfSharp ramène la 8.0.1" \
+    MyPublisher.Core/MyPublisher.Core.csproj \
+    '<PackageReference Include="System.Security.Cryptography.Pkcs" Version="8.0.2"/>' \
+    '' \
+    'Q27-pkcs|DependanceDePdfSharpTests'
+
 # Un motif qui ne désigne aucun sabotage ne prouve rien. « eprouver-le-juge.sh I4 » sortait
 # en 0 sur « 0 sabotages, 0 attrapés », quand les intitulés de la planche ne portaient pas
 # encore le code du poste : le filet passait pour éprouvé sans qu'on l'ait troué.

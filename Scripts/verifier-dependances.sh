@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 #
-# Recette du poste Q12 — aucune dépendance vulnérable connue.
+# Recette du poste Q12 — aucune dépendance vulnérable connue. Q27 l'a étendue au second
+# paquet épinglé, System.Security.Cryptography.Pkcs, que tire PdfSharp.
 #
 #   Scripts/verifier-dependances.sh
 #
@@ -18,15 +19,22 @@
 #      conclut jamais « rien à signaler » d'une base qu'elle n'a pas lue ;
 #   2. sur tous les projets de la solution, paquets directs ET transitifs, aucun paquet
 #      n'est affecté d'une vulnérabilité connue ;
-#   3. contre-épreuve — un projet jetable qui tire Tmds.DBus.Protocol 0.21.2, la version
-#      fautive, y est bien signalé, avancée GHSA-xrw6-gwf8-vvr9 comprise. C'est ce qui
+#   3. contre-épreuve — un projet jetable qui tire les deux versions fautives que le dépôt
+#      a fermées, Tmds.DBus.Protocol 0.21.2 (Q12) et System.Security.Cryptography.Pkcs
+#      8.0.1 (Q27), y voit chacune signalée, avec ses avancées : GHSA-xrw6-gwf8-vvr9 pour
+#      la première, GHSA-846f-f764-76mx et GHSA-2fmv-rv2c-59x7 pour la seconde. C'est ce qui
 #      prouve que le silence du point 2 vient de la base, et non d'une commande qui ne
 #      sait plus rien signaler — un format de sortie qui change, une source qui
 #      n'expose plus ses avancées, un cache vide qu'on prendrait pour une base vide ;
 #   4. l'application compilée embarque bien ce qui vient d'être relu : son relevé de
 #      dépendances (« MyPublisher.deps.json ») porte, paquet par paquet, les versions
-#      que la restauration a résolues — Tmds.DBus.Protocol 0.21.3 et non plus 0.21.2.
-#      Ce qui part chez l'utilisateur est ce qui compte.
+#      que la restauration a résolues — Tmds.DBus.Protocol 0.21.3 et non plus 0.21.2,
+#      System.Security.Cryptography.Pkcs 8.0.2 et non plus 8.0.1. Ce qui part chez
+#      l'utilisateur est ce qui compte.
+#
+# Ce qui ne demande pas le réseau est ailleurs : Scripts/recettes/Q27-pkcs.sh, jouée par
+# verifier.sh, lit dans les relevés compilés des cinq projets qu'aucun n'embarque plus la
+# 8.0.1, et prouve que l'export est resté le même. Le juge l'éprouve par elle.
 #
 # Pourquoi le relevé JSON (« --format json ») et non la sortie en clair : la sortie en
 # clair dit « has no vulnerable packages » aussi bien quand la base est vide que quand
@@ -156,6 +164,7 @@ cat > "$travail/temoin/Temoin.csproj" <<'XML'
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="Tmds.DBus.Protocol" Version="0.21.2"/>
+        <PackageReference Include="System.Security.Cryptography.Pkcs" Version="8.0.1"/>
     </ItemGroup>
 </Project>
 XML
@@ -163,14 +172,20 @@ XML
 relever "$travail/temoin/Temoin.csproj" "$travail/temoin.json"
 temoin="$(lire_releve "$travail/temoin.json" contre-épreuve)"
 
-if ! grep -q 'Tmds.DBus.Protocol  0.21.2  .*GHSA-xrw6-gwf8-vvr9' <<< "$temoin"; then
-    echo "ÉCHEC : la version fautive n'est pas signalée sur le projet témoin." >&2
-    echo "Le silence du point 2 ne prouve donc rien. Relevé du témoin :" >&2
-    sed 's/^/    /' "$travail/temoin.json" >&2
-    exit 1
-fi
+for attendu in 'Tmds.DBus.Protocol  0.21.2  .*GHSA-xrw6-gwf8-vvr9' \
+               'System.Security.Cryptography.Pkcs  8.0.1  .*GHSA-846f-f764-76mx' \
+               'System.Security.Cryptography.Pkcs  8.0.1  .*GHSA-2fmv-rv2c-59x7'; do
+    if ! grep -q "$attendu" <<< "$temoin"; then
+        echo "ÉCHEC : une version fautive n'est pas signalée sur le projet témoin" >&2
+        echo "(attendu : « $attendu »)." >&2
+        echo "Le silence du point 2 ne prouve donc rien. Relevé du témoin :" >&2
+        sed 's/^/    /' "$travail/temoin.json" >&2
+        exit 1
+    fi
+done
 
-echo "  3. contre-épreuve : la 0.21.2 est bien signalée sur un projet témoin."
+echo "  3. contre-épreuve : Tmds.DBus.Protocol 0.21.2 et System.Security.Cryptography.Pkcs 8.0.1"
+echo "     sont bien signalés sur un projet témoin, chacun avec ses avancées."
 
 # ------------------------------------------------------------------------------- 4
 
@@ -178,7 +193,7 @@ echo "  3. contre-épreuve : la 0.21.2 est bien signalée sur un projet témoin.
 # binaire : une compilation antérieure à la correction embarquerait encore l'ancienne
 # version. On compare donc, paquet par paquet, ce que la compilation a copié
 # (« MyPublisher.deps.json ») à ce que la restauration a résolu (« project.assets.json »).
-# Aucune version n'est écrite en dur : le jour où Avalonia tirera de lui-même une
+# Aucune version n'est écrite en dur : le jour où Avalonia, ou PdfSharp, tirera de lui-même une
 # version corrigée et que la référence directe partira, ce point n'aura rien à changer.
 # Jouée à part, elle compile elle-même : un binaire d'avant la correction ferait mentir
 # ce point.
@@ -198,7 +213,8 @@ def paquets(chemin):
 
 compile, resolu = paquets(sys.argv[1]), paquets(sys.argv[2])
 ecarts = sorted(nom for nom in compile if resolu.get(nom) != compile[nom])
-if ecarts or "Tmds.DBus.Protocol" not in compile:
+epingles = ("Tmds.DBus.Protocol", "System.Security.Cryptography.Pkcs")
+if ecarts or any(nom not in compile for nom in epingles):
     print("ÉCHEC : l'application compilée n'embarque pas ce que la restauration a résolu :",
           file=sys.stderr)
     for nom in ecarts:
@@ -207,8 +223,8 @@ if ecarts or "Tmds.DBus.Protocol" not in compile:
     print("La compilation est-elle à jour ?", file=sys.stderr)
     sys.exit(1)
 
-print(f"  4. l'application compilée embarque les {len(compile)} paquets relus, "
-      f"dont Tmds.DBus.Protocol {compile['Tmds.DBus.Protocol']}.")
+print(f"  4. l'application compilée embarque les {len(compile)} paquets relus, dont "
+      + " et ".join(f"{nom} {compile[nom]}" for nom in epingles) + ".")
 PY
 
 echo "Q12 : aucune dépendance vulnérable connue, et le témoin prouve que la base répond."
