@@ -705,6 +705,17 @@ bibliothèque est disponible sous les termes de la MPL 1.1 à
 sur nuget.org. Les dictionnaires ne sont pas distribués avec l'application : chaque paquet du
 système porte sa licence.
 
+**Deux dépendances transitives sont relevées à la main**, par une référence directe qu'aucun
+code n'appelle : `Tmds.DBus.Protocol` 0.21.3 dans l'application (Q12, tirée par Avalonia), et
+`System.Security.Cryptography.Pkcs` 8.0.2 dans le noyau (Q27, tirée par PDFsharp 6.2.1, qui
+demande la 8.0.1, visée par GHSA-846f-f764-76mx et GHSA-2fmv-rv2c-59x7). Chaque fois, c'est le
+correctif de la même série, aux dépendances identiques : le plus petit pas. Aucune version
+publiée de PDFsharp, jusqu'à la 6.5.0, ne tire d'elle-même une version corrigée, et la monter
+aurait changé le moteur de l'export ; PDFsharp ne se sert de ce paquet que pour signer un PDF.
+L'export est resté le même à l'octet, hors des champs que PDFsharp tire au hasard ou date :
+`Scripts/recettes/Q27-pkcs.sh` le rejoue sur le corpus. Ces références partiront quand Avalonia
+et PDFsharp demanderont d'eux-mêmes une version corrigée.
+
 **Les interactions passent par une couche de saisie transparente** posée sur la page,
 et non par le test de survol des blocs. Les contrôles internes (image, zone de texte)
 n'interceptent donc jamais le pointeur, et les blocs sont testés dans l'ordre de

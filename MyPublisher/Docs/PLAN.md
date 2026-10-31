@@ -96,7 +96,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **Q24** | Annuler ou Rétablir ne laisse plus une saisie hors de toute transaction | **100 %** | `Undo` et `Redo` referment ce qui est ouvert, comme avant, puis lèvent un avis sur chaque chemin, rien à défaire compris (`MainWindowViewModel.Transactions.cs`), sans rien rouvrir eux-mêmes : chaque propriétaire encore actif rouvre sa propre transaction, et lui seul — la saisie sur la page si elle l'est toujours, le champ du dock ou de la barre s'il a toujours le focus, et deux que le plan ne nommait pas, le glissé dont le bouton est tenu et le sélecteur de couleur resté ouvert. Une annulation qui relit le document referme la saisie, et rien ne se rouvre pour elle. Les trois cas du plan se montraient, le déduit compris : un champ de la barre sous un `Ctrl+Z` sans rien à annuler, une marge de l'onglet Document sous une vraie annulation ; les champs du bloc, eux, perdent le focus à une annulation, la sélection se vidant en passant. Neuf tests, dont sept tombaient sur le code d'avant ; le test du double-clic de Q14 n'est plus joué à froid par la recette, où il tombait sous la charge de la machine, avant Q24 comme après ; relecture et juge après fusion. Recette dans `Scripts/recettes/` |
 | **Q25** | Un réglage fait pendant une saisie a son propre pas | **100 %** | Confirmé d'abord par un test : la transaction de la saisie s'ouvrait au double-clic et ne se refermait qu'à Échap, et le corps réglé à la barre, le retrait saisi au dock ou la couleur prise au sélecteur pendant la frappe se fondaient dans son pas. Elle suit désormais le focus de la zone de saisie sur la page — ouverte quand la zone le prend, refermée quand elle le perd, et à `EndTextEdit` ; la saisie reste ouverte quand on clique dans la barre ou le dock, et les boutons G, I et S, qui ne prennent pas le focus, gardent `UnGesteUnPas`. La réponse de la planche à l'avis de Q24 suit le même focus : sous un `Ctrl+Z` sans rien à annuler, seul le champ qui a le focus rouvre sa transaction. Le sélecteur de couleur referme la sienne dès que son volet commence à se refermer, avant de rendre le focus à la zone, qui rouvrait la sienne dedans. Cinq tests, dont quatre tombaient sur le code d'avant ; relecture et juge après fusion. Recette dans `Scripts/recettes/` |
 | **Q26** | L'import garde le fer des cases et des paragraphes à gauche | **100 %** | Décidé le 31 octobre 2026 par le propriétaire, sur le relevé de R6. `PubImporter.cs` retient le fer de chaque paragraphe ouvert : une case dont le bloc de texte n'est pas ouvert dans la source prend dans `FinCellule` le fer de son premier paragraphe — les 16 valeurs centrées des Fiches le sont, à l'import, à l'écran (0,0000 pt) et au PDF (0,022 pt au plus) — ; dans `FinTexte`, le fer du bloc est le plus répandu de tous ses paragraphes, et tout paragraphe d'un autre fer reçoit son écart, le fer à gauche compris — ATA 21 lu paragraphe par paragraphe au fer de `pub2raw`, 31 justifiés et 21 à gauche. Avant et après, bloc par bloc, les deux documents ne diffèrent que par ces 20 fers. `FormatVersion` reste 5 : un document déjà importé se réimporte. L'aller-retour de R6 sur les Fiches joué : chaque bande prise d'un clic, le dock montre « Centré » sans rien écrire. Huit tests sous `poste=Q26` (cinq du noyau, trois d'interface) ; règle 14 : un test de Q1 réécrit (l'écart du titre d'ATA 21 reste au titre sous un saut tapé), le commentaire d'un test de R6 ; deux sabotages au juge. Décidé par le propriétaire le 31 octobre 2026 : `comparer-mots.sh` (Q13) tient une ligne centrée par son milieu, une ligne au fer à droite par son bout, les autres par leur premier mot, toujours à 1 pt — l'écran crénèle et le PDF non ; le banc donne le fer de chaque ligne composée ; un sabotage de plus au juge, une ligne centrée posée 2 pt trop à droite au PDF. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
-| **Q27** | La faille de la dépendance de PdfSharp | 0 % | Décidé le 1er novembre 2026 par le propriétaire, sur le relevé de N25 ; salve Saisie 10 |
+| **Q27** | La faille de la dépendance de PdfSharp | **100 %** | Décidé le 1er novembre 2026 par le propriétaire, sur le relevé de N25. Le plus petit pas, relevé dans la base NuGet et les `.nuspec` : `System.Security.Cryptography.Pkcs` **8.0.2** épinglé au noyau, correctif de la série 8.0 que les deux avancées (GHSA-846f-f764-76mx, haute ; GHSA-2fmv-rv2c-59x7, moyenne) visent jusqu'à la 8.0.1, sans dépendance pour net8.0 et au-delà ; aucune version de PdfSharp publiée (6.2.2, 6.2.3, 6.2.4, 6.5.0) ne tire autre chose que la 8.0.1, et PdfSharp reste en 6.2.1. Le pourquoi en commentaire dans le `.csproj`, et au README (*Choix techniques*). Les cinq projets la reçoivent par leur référence au noyau ; l'avant et l'après ne diffèrent que de ce paquet, sur 34. `verifier-dependances.sh` passe : son témoin tire aussi la 8.0.1 et l'exige signalée, ses deux avancées comprises, et son point 4 nomme `Pkcs`. L'export n'a pas bougé : les 19 documents du corpus (Samples, Templates, ATA 21 et les Fiches importés de leur `.pub`), 30 pages, exportés par l'application compilée sans l'épinglage et avec, sont identiques à l'octet une fois retirés le préfixe des sous-ensembles, `/ID`, l'identifiant XMP et les dates — rien d'autre. Deux tests sous `poste=Q27`, au noyau, sans réseau ni horloge ; un sabotage au juge (l'épinglage retiré). Recette dans `Scripts/recettes/` (hors réseau ; la base reste à `verifier-dependances.sh`) ; relecture et juge après fusion |
 | **I1** | Apparence de l'interface | **100 %** | `Views/Apparence.axaml` — pas « charte », qui nomme le jeu du document —, chargée par `App.axaml` : les 26 couleurs de l'interface de la maquette, une fois chacune et sous leur nom ; cinq classes aux tailles et aux couleurs de la feuille de style de la maquette, dont le bouton-icône de 30 × 30 plein d'accent quand il est actif ; 35 icônes au tracé de la maquette, à la couleur courante, une par emploi. L'écran d'aujourd'hui ne change pas d'un pixel. La recette tient la liste des vues de la phase et le poste de chaque icône, que les postes suivants complètent ; une vue qui cite l'apparence ou écrit en dur une de ses couleurs sans être dans la liste la fait échouer. Recette dans `Scripts/recettes/` |
 | **I2** | Disposition de la fenêtre | **100 %** | La fenêtre de la maquette, de haut en bas. Barre de menus : la marque, le titre du document centré, deux menus neufs — Texte (gras `Ctrl+G`, italique `Ctrl+I`, les quatre alignements, « Importer un te_xte… ») et Fenêtre (les deux panneaux, et B7). Barre principale à icônes : Annuler et Rétablir grisés sur un historique vide, mais pas pendant une saisie qui a déjà changé le bloc ; « Page entière » posé pour I6. La place de la barre contextuelle, de hauteur constante, et sa pastille, dans son propre fichier pour I3. Rail d'outils, sans Main, Zoom ni Ligne avant leur geste. Panneau Pages, dont l'entrée est un contrôle à part pour I5. Dock à quatre onglets, sections repliables retenues le temps de la session, longueurs en millimètres, vignettes de Fond et contour, « Blocs de la page » l'avant en tête. Barre d'état : la page, le format, le zoom en échelle logarithmique. Chaque champ, chaque onglet et chaque geste de la fenêtre fait un seul pas d'annulation ; les vingt-six icônes du poste servent. Repris après relecture : quatorze défauts, tous refermés ; jugé le 26 octobre 2026, sur la fenêtre de I3, I5 et I6 : vingt-cinq sabotages, vingt-cinq pris par leur garde-fou. Recette dans `Scripts/recettes/` |
 | **I3** | Barre contextuelle | **100 %** | La barre suit la sélection, à la suite de la pastille de I2. Pour un bloc de texte : la police avec la garde de Q20, le corps, le gras, l'italique, le souligné — bouton S, `Ctrl+U` et « Souligné » au menu Texte sur la commande de I7, qui retire le souligné quelle qu'en soit la sorte ou pose le trait simple, et un chevron qui propose le double, l'épais et « mots seuls » —, les quatre alignements, la droite comprise, l'interligne en multiple, et la couleur du texte, dont la vignette ouvre le sélecteur du jeu ; un tableau a la même mise en forme, sans l'alignement ni le souligné ; un groupe se dissocie, plusieurs blocs s'alignent et se répartissent ; une image, une forme ou la page n'ont que la pastille. Ce que la barre porte a quitté le dock : la section Caractère, l'alignement et l'interligne de Paragraphe, la mise en forme du tableau. Chaque bouton joue la commande du menu Texte sans prendre le focus et ne se coche que par le bloc, si bien que chaque clic fait son pas, même pendant une saisie ; le sélecteur de couleur, ouvert hors de la barre, tient sa propre transaction ; `Échap` quitte un champ de la barre et rend les lettres seules aux outils. Un clic sur « Centrer le texte » centre le bloc à l'écran et au PDF en un pas. Treize tests ; relu et jugé le 26 octobre 2026 : les commandes de la barre — Aligner, Répartir, Dissocier — ne prennent plus le focus et font leur pas au clic, au lieu de l'attendre et d'y fondre la flèche suivante ; « Souligné » ne s'offre plus sans bloc de texte ; neuf sabotages au juge, le poste n'en avait aucun. Repris après le contrôle indépendant : deux de ces tests tombaient trois fois sur quatorze en suite entière — un clic dans un menu tout juste ouvert, ou sur un bouton que la barre venait d'échanger, cherchait sa cible dans la dernière image rendue, où elle n'était pas encore ; le banc, pas le produit. Le clic au centre d'un contrôle n'a plus qu'une aide, `Rendu.Cliquer`, pour les trois classes qui en avaient chacune une copie : elle attend que l'image montre le contrôle sous son centre, et échoue en nommant ce qui le couvre. Recette dans `Scripts/recettes/` |
@@ -5459,6 +5459,72 @@ projet jetable qui tire `Pkcs` 8.0.1 y est signalé.
 
 Fichiers : `MyPublisher.Core/MyPublisher.Core.csproj`, `Scripts/verifier-dependances.sh` si son
 point 4 doit nommer le paquet, README (*Choix techniques*). Effort : léger.
+
+*Livré le 1er novembre 2026* — une référence directe dans `MyPublisher.Core/MyPublisher.Core.csproj` :
+`System.Security.Cryptography.Pkcs` **8.0.2**, avec son pourquoi en commentaire. PdfSharp n'a pas bougé.
+
+**Le relevé.** La base de NuGet (`vulnerability.base.json` du 28 octobre 2026) borne les deux avancées
+de la même façon : `[8.0.0, 8.0.1]`, `[9.0.0, 9.0.20]`, `[10.0.0, 10.0.12]` et les préversions de la
+11. La 8.0.2 est donc corrigée, comme la 9.0.21 et la 10.0.13. Son `.nuspec` porte les mêmes cadres
+et, pour net8.0 et au-delà, aucune dépendance, comme la 8.0.1 ; pour les autres cadres, `System.Formats.Asn1`
+passe de 8.0.1 à 8.0.2, qu'un projet en net10.0 ne tire pas. Côté PdfSharp, les quatre versions publiées
+après la 6.2.1 — 6.2.2, 6.2.3, 6.2.4 et 6.5.0 — demandent **toutes** encore `Pkcs` 8.0.1 ; la 6.2.4
+change en plus `Microsoft.Extensions.Logging` pour ses seules abstractions, et dès la 6.2.3 net6.0
+n'est plus ciblé. Monter PdfSharp ne fermait rien et changeait le moteur de l'export : l'épinglage est le seul
+pas, et le plus petit. La 8.0.2 tient dans la contrainte « au moins 8.0.1 » de PdfSharp sans rien
+forcer, et aucune version majeure ne bouge.
+
+**Un projet la tire, cinq la reçoivent.** `dotnet nuget why` la montrait au noyau, par PdfSharp ; la
+référence y va, et la règle « la dépendance la plus proche l'emporte » la transmet à l'application,
+au banc et aux deux suites de tests, par leur référence au noyau : les cinq `.deps.json` portent la
+8.0.2. Les avertissements NU1902 et NU1903 que la compilation émettait sur les cinq projets ont
+disparu.
+
+**L'export est celui d'avant.** La recette recopie les sources de l'application et du noyau, retire
+l'épinglage de la copie et la compile : c'est l'« avant ». Les deux relevés ne diffèrent que d'un
+paquet sur 34, `Pkcs`, de 8.0.1 à 8.0.2. Les 19 documents du corpus — les treize de `Samples`, les
+quatre modèles, ATA 21 et les Fiches importés de leur `.pub`, 30 pages — sont exportés par les deux
+binaires, à date et coordonnées fixées, et comparés à l'octet, ces champs retirés et rien d'autre :
+le préfixe de chaque sous-ensemble de police (87 fois), l'identifiant du fichier `/ID` (19),
+`xmpMM:DocumentID` et `xmpMM:InstanceID` (38), `/CreationDate` (19) et les dates XMP (38). Les comptes
+de pages et les avertissements sont les mêmes. Deux contre-épreuves : deux exports du même binaire
+diffèrent bien à l'octet, et pas au-delà de ces champs ; le modèle de bulletin, qui porte un champ de
+date, exporté à un autre jour, se voit. PdfSharp ne se sert de `Pkcs` que pour signer un PDF, ce que
+l'export ne fait pas : la bibliothèque n'est sans doute même pas chargée, mais c'est l'export qu'on
+compare, non ce raisonnement.
+
+**Ce qui demande le réseau, et ce qui ne le demande pas.** `Scripts/verifier-dependances.sh` reste la
+seule à lire la base : elle passe, sur les cinq projets ; son témoin tire désormais
+`Tmds.DBus.Protocol` 0.21.2 **et** `Pkcs` 8.0.1, et exige chacune signalée avec ses avancées (les trois
+GHSA) ; son point 4 nomme les deux paquets épinglés. Tout le reste est hors réseau, dans
+`Scripts/recettes/Q27-pkcs.sh`, que `verifier.sh` joue : les sources (l'épinglage au noyau seul, une
+version corrigée, son commentaire ; PdfSharp en 6.2.1), les cinq relevés compilés, la bibliothèque
+copiée à côté de l'application (son numéro de fichier, celui du relevé), la comparaison des exports,
+et deux tests. La recette sait quelles versions sont corrigées parce que ce relevé le dit ; elle ne
+lit pas la base. Elle dit aussi, à chaque passage, si PdfSharp demande encore une version fautive —
+le jour où non, l'épinglage pourra partir. Elle prend une vingtaine de secondes, la copie compilée
+comprise.
+
+**Le juge l'éprouve, contrairement à Q12.** Le sabotage retire l'épinglage du noyau : la restauration
+ramène la 8.0.1, que le relevé compilé du processus de test montre, sans réseau.
+`DependanceDePdfSharpTests` (deux tests, au noyau) lisent `MyPublisher.Tests.deps.json` : une version
+corrigée de `Pkcs`, et l'assemblage chargé dont le numéro de fichier est celui que le relevé lui
+donne ; PdfSharp en 6.2.1.
+
+*Choisi sans certitude* :
+- la comparaison des exports reste dans la recette, jouée à chaque `verifier.sh`, plutôt que faite
+  une fois : elle prouve que l'épinglage ne change rien tant qu'il est là, pour une vingtaine de
+  secondes. Elle restaure l'« avant » sur le cache NuGet de la machine, où la 8.0.1 est depuis que
+  PdfSharp y a été restauré ; sur une machine neuve et hors ligne, la recette le dit et saute ce
+  temps, sans conclure ;
+- le test qui fige PdfSharp en 6.2.1 tombera le jour où on le montera exprès : il le dit, et renvoie
+  à la comparaison des exports ;
+- l'export qu'on compare est celui du mode sans fenêtre de l'application (`--export`, celui de
+  `controle.sh`) : le banc ne sait pas exporter.
+
+*Relevé, non corrigé* : le commentaire de l'épinglage de Q12, dans `MyPublisher/MyPublisher.csproj`,
+renvoie encore à `Scripts/recettes/Q12-dependances.sh`, qui s'appelle `Scripts/verifier-dependances.sh`
+depuis le 11 octobre 2026. Hors du poste.
 
 ---
 

@@ -27,4 +27,21 @@
         <PackageReference Include="WeCantSpell.Hunspell" Version="7.0.1"/>
     </ItemGroup>
 
+    <ItemGroup>
+        <!-- Référence directe à un paquet que MyPublisher n'appelle jamais (Q27) : elle ne
+             sert qu'à relever la version que tire PdfSharp. PdfSharp 6.2.1 demande « au
+             moins 8.0.1 », et la 8.0.1 est affectée de GHSA-846f-f764-76mx (haute) et de
+             GHSA-2fmv-rv2c-59x7 (moyenne), qui visent la série 8.0 jusqu'à la 8.0.1. La
+             8.0.2 est le correctif de la même série, aux dépendances identiques (aucune pour
+             net8.0 et au-delà) : c'est le plus petit pas qui ferme les deux avancées. Monter
+             PdfSharp n'aurait rien fermé — 6.2.2, 6.2.3, 6.2.4 et 6.5.0 demandent toutes
+             encore la 8.0.1 — et aurait changé le moteur de l'export. PdfSharp ne se sert de
+             ce paquet que pour signer un PDF, ce que l'export ne fait pas : l'export reste
+             identique, ce que prouve Scripts/recettes/Q27-pkcs.sh. L'application, le banc
+             et les tests la reçoivent par leur référence au noyau. Quand PdfSharp demandera
+             de lui-même une version corrigée, cette ligne pourra partir ; la recette dira si
+             elle part trop tôt. -->
+        <PackageReference Include="System.Security.Cryptography.Pkcs" Version="8.0.2"/>
+    </ItemGroup>
+
 </Project>
