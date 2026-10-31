@@ -128,9 +128,11 @@
                            Foreground="{StaticResource AccentSurvol}"/>
             </Border>
 
-            <!-- Ce que porte le bloc seul : chaque gabarit se lie au bloc, et il est gardé d'une
-                 sélection à l'autre, comme ceux du dock (poste Q23). -->
-            <views:GabaritsGardes x:Name="ReglagesDuBloc" Bloc="{Binding SingleSelected}" VerticalAlignment="Center">
+            <!-- Ce que porte le bloc visé : chaque gabarit se lie au bloc, et il est gardé d'une
+                 sélection à l'autre, comme ceux du dock (poste Q23). Le bloc visé est le bloc seul,
+                 ou le membre d'un groupe dont le texte est en saisie ou qu'un clic a pris seul, le
+                 groupe restant la sélection (poste N26). -->
+            <views:GabaritsGardes x:Name="ReglagesDuBloc" Bloc="{Binding BlocVise}" VerticalAlignment="Center">
                 <views:GabaritsGardes.DataTemplates>
 
                     <DataTemplate DataType="models:TextFrame">

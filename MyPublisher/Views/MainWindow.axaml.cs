@@ -1051,9 +1051,9 @@ public partial class MainWindow : Window
                 return;
             case Key.Escape:
                 // Échap désarme l'outil s'il y en a un — la main et la loupe comprises —, et ne
-                // libère la sélection qu'ensuite.
+                // libère la sélection qu'ensuite. Un membre pris seul rend d'abord son groupe (N26).
                 if (vm.ActiveTool != EditorTool.Select) vm.ActiveTool = EditorTool.Select;
-                else vm.Selected = null;
+                else if (!vm.RendreLeGroupe()) vm.Selected = null;
                 e.Handled = true;
                 return;
         }

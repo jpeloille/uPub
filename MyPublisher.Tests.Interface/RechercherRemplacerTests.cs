@@ -377,8 +377,10 @@ public class RechercherRemplacerTests
     }
 
     /// <summary>
-    /// Un texte trouvé dans un groupe sélectionne le groupe et le dit, jusqu'à N26 ; dans une case,
-    /// le tableau, et la case est nommée. <i>Remplacer</i> y remplace l'occurrence montrée, en un pas.
+    /// Un texte trouvé dans un groupe sélectionne le groupe et ouvre la saisie du bloc qui le porte,
+    /// la plage sélectionnée — depuis N26, qui entre dans les groupes (règle 14 : le groupe était
+    /// sélectionné, la barre d'état le disait) ; dans une case, le tableau, et la case est nommée.
+    /// <i>Remplacer</i> y remplace l'occurrence montrée, en un pas.
     /// </summary>
     [AvaloniaFact]
     [Trait("poste", "N20")]
@@ -397,8 +399,10 @@ public class RechercherRemplacerTests
         Chercher(fenetre, "bulletin");
         Rendu.Touche(fenetre, PhysicalKey.Enter);
         Assert.Same(groupe, vm.SingleSelected);
-        Assert.Null(vm.SelectionDuTexte);
-        Assert.Contains("dans le groupe « Encart »", vm.Status);
+        var legende = groupe.Children[0];
+        Assert.Same(legende, vm.TexteEnSaisie);
+        Assert.Equal((legende, 3, 11), (vm.SelectionDuTexte?.Bloc, vm.SelectionDuTexte?.Debut, vm.SelectionDuTexte?.Fin));
+        Assert.DoesNotContain("dissociez", vm.Status);
 
         Rendu.Touche(fenetre, PhysicalKey.F3);
         Assert.Same(tableau, vm.SingleSelected);

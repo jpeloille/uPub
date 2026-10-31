@@ -141,7 +141,7 @@ public partial class BarreContextuelle : UserControl
 
         RendreLeFocusDeLaBarre();
         // Le corps des caractères visés d'un bloc de texte (R7) : mixte, aucune taille n'est cochée.
-        var corps = vm.SingleSelected switch
+        var corps = vm.BlocVise switch
         {
             TextFrame => vm.MiseEnFormeVisee.FontSize ?? double.NaN,
             TableFrame tableau => tableau.FontSize,

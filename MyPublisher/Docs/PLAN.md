@@ -131,7 +131,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **N23** | Puces et numérotation | **100 %** | Une propriété de paragraphe, `Liste` — aucune, puces (« • » par défaut, ou le caractère tapé), numéros « 1. », « a) », « i. » avec leur premier numéro —, valeur immuable (`ListeDeParagraphe`) sur `TextFrame` et sur `ParagraphSpan`, clé additive : `FormatVersion` reste 5, Samples et Templates réenregistrés (`"Liste": null`, rien d'autre), l'import inchangé. Les paragraphes consécutifs d'une même liste se numérotent de proche en proche, un paragraphe hors liste interrompt la suite, le premier numéro la fait repartir. La composition pose la marque en tête de la première ligne, au retrait de première ligne et au style du premier caractère : un morceau sans position (`Morceau.SansPosition`), que le curseur, le clic (N3), le souligné et les caractères spéciaux (N22) sautent, et que l'écran, le PDF, les vignettes et le compte de I9 voient par la même composition. Poser une liste donne le retrait suspendu d'Office (18 pt) à un paragraphe sans retrait, l'ôter le rend. Au dock, section Paragraphe : « Puces et numéros », la puce, le premier numéro, sur les paragraphes du `ParagrapheVise` (R6) — le bloc hors saisie, la sélection en saisie ; *Texte ▸ Puces et numéros…* y mène (N18). En saisie, Entrée dans un élément continue la liste (Q1), Entrée dans un élément vide l'en sort. Trente-quatre tests (vingt-quatre du noyau, dix sur la fenêtre), dont le PDF lu par `pdftotext -bbox` à 0,05 pt de l'écran ; l'empreinte de la composition du corpus inchangée. Recette dans `Scripts/recettes/`, un sabotage au juge ; relecture et juge après fusion |
 | **N24** | Exposant, indice, capitales | **100 %** | Une clé `Capitales` — aucune, capitales, petites capitales — sur `TextFrame` et `StyleSpan`, additive : `FormatVersion` reste 5, Samples et Templates réenregistrés (`"Capitales"`, rien d'autre). La composition dessine en capitales sans toucher à `Text`, caractère pour caractère (`char.ToUpperInvariant` : « ß » reste tel quel, les positions de N3 tiennent), et fabrique les petites capitales en dessinant les minuscules en capitales à 70 % du corps, la ligne de base d'un exposant gardée ; un mot en petites capitales ne se coupe pas entre ses deux tailles. L'exposant et l'indice d'Office tels que l'import les lit : la ligne de base décalée de la moitié du corps, le corps à 67 % — l'import applique désormais au corps la taille relative de libmspub, qu'il croyait déjà répercutée, et lit ses capitales. Sur la `MiseEnFormeVisee` de R7, en un pas : `Ctrl+Maj+=` l'exposant, `Ctrl+=` l'indice — le zoom avant n'a plus de touche, le « + » du pavé numérique compris —, `Ctrl+Maj+K` les petites majuscules, et *Texte ▸ Exposant et majuscules ▸* les quatre, au menu du texte aussi ; chacune bascule. Les documents sans exposant ni capitales se rendent à l'identique : l'empreinte de la composition de 18 des 19 documents du corpus est inchangée, les Fiches changent par leurs quatre indices. Quatorze tests (huit du noyau, six sur la fenêtre), dont le « 2 » de « x2 » au PDF au corps et à la ligne de base attendus, et les petites capitales à 0,1 pt de 70 % de la hauteur des capitales ; six tests voisins et les recettes A4, R5 et R7 repris (règle 14) ; deux sabotages au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **N25** | La vérification orthographique | **100 %** | La dépendance éprouvée d'abord : WeCantSpell.Hunspell 7.0.1, un portage de Hunspell en code géré, au noyau seul, sous la triple licence de Hunspell (MPL 1.1, GPL 2.0, LGPL 2.1, lue dans le paquet et le dépôt), prise sous MPL 1.1 sans modification — la mention et la source au README ; `verifier-dependances.sh` ne la signale pas (il échoue, sur la base aussi, sur `System.Security.Cryptography.Pkcs` 8.0.1, tiré par PdfSharp). Un service du noyau, `Orthographe` : les dictionnaires de Hunspell du système (`/usr/share/hunspell`), chargés à la première demande, une langue de N9 menant à son fichier (`fr-FR` → `fr_FR`, puis `fr`) ; les fautes d'un texte mot par mot, chaque mot dans la langue de son premier caractère, avec un cache par mot ; sigles et mots à chiffre hors vérification ; un dictionnaire absent le dit une fois à la barre d'état, et rien n'est souligné dans cette langue. Donné par `App.axaml.cs` seul, comme les préférences. Un trait ondulé, au rouge de l'apparence, sous chaque faute des blocs visibles de la page, aux abscisses de N3, sur chaque ligne qu'elle occupe, dans l'`Overlay` (`FautesSoulignees`), par le suivi des blocs de N22, désormais partagé — tourné, mis à l'échelle et découpé avec le bloc ; le mot qu'on tape ne se souligne qu'une fois quitté ; l'encre de la page et le PDF identiques, vérification ouverte ou fermée ; `PageCanvas.axaml.cs` n'est pas touché. `F7` et *Edition ▸ Vérifier l'orthographe…* : la barre de N20 en mode orthographe, la faute suivante dans l'ordre de lecture de N20, sélectionnée en saisie, ses suggestions dans une liste qui prend le focus — Ignorer, Ignorer tout (la session), Remplacer (un pas, `Entrée`), Ajouter au dictionnaire ; `Échap` rend le mot. Au clic droit sur une faute en saisie, ses suggestions en tête du menu du texte (A12), puis Ignorer tout et Ajouter au dictionnaire. Le dictionnaire de l'utilisateur, par langue, et la case *Vérifier pendant la frappe* (menu Edition) dans les préférences de N11. Le banc relève les fautes d'un document (`orthographe`) : ATA 21 en `en-US`, 8 mots signalés sur 521, stable. Vingt tests sous `poste=N25`, dix du noyau et dix sur la fenêtre, sur un dictionnaire de test (`Scripts/fixtures/orthographe/`) ; deux sabotages au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
-| **N26** | Taper dans le texte d'un groupe, et prendre un membre seul | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 10 |
+| **N26** | Taper dans le texte d'un groupe, et prendre un membre seul | **100 %** | La sélection garde son modèle — les blocs de la page, `SingleSelected` inchangé — et s'augmente de deux états, au partiel du poste (`MainWindowViewModel.MembreDuGroupe.cs`) : `TexteEnSaisie`, que la planche dit, et `MembreSeul` ; `BlocVise` les rassemble, et la barre, les trois sections du dock, la pastille, R6, R7, N24, l'excédent, le fond, le contour, le menu du bloc le suivent (quatre liaisons, trente-cinq lectures ; la recette Q23 lit `BlocVise`). Un clic dans le texte d'un membre traverse le groupe — ses blocs, puis `ToLocal` à chaque niveau — et ouvre sa saisie, le curseur au caractère visé, **le groupe restant la sélection** ; la frappe fait un pas, rien ne se dissocie ; sur un groupe tourné qui porte un texte tourné, le curseur, la sélection, les caractères de N22 et le trait de N25 tombent à moins d'un demi-pixel de la place du modèle. La recherche de N20 entre de même dans un groupe. Un clic sur un membre d'un groupe sélectionné le prend seul au relâché — un glissé déplace toujours le groupe entier, sauf parti du membre pris, qui bouge dans son groupe ; un clic de plus descend dans un groupe imbriqué ; double-clic sur une image ou une forme : sa section du dock ; `Échap` rend le groupe — : son cadre et huit poignées grises qui ne se prennent pas, « Position et taille » grisé, le redimensionnement réservé à la dissociation. `Suppr`, les flèches (dans le sens de l'écran, rotations retirées), l'alignement (sur le cadre du groupe), `Alt`+flèche et Couper le gardent dans son groupe, retenu à son cadre ; `MainWindowViewModel.cs` touché de trois lignes, dans `DeleteSelected`, `NudgeSelection` et `AlignEach`. La découpe de Q5 suit désormais les blocs du groupe et le filet d'un membre réglé. Douze tests sous `poste=N26` ; deux tests réécrits (C3, N20 ; règle 14) ; cinq sabotages au juge, dont la saisie qui dissocie le groupe. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **N27** | Taper dans une case, sur la page | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 11 ; revient sur un choix écrit en C9 |
 | **N28** | Lignes et colonnes à l'endroit choisi, et plusieurs cases à la fois | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 12 |
 | **N29** | Le clavier suit les lignes composées | **100 %** | En saisie, `Début`, `Fin`, `↑`, `↓`, `Pg.Préc` et `Pg.Suiv`, seules ou sous `Maj`, sont prises avant le champ caché et calculées sur les lignes de la composition (`PageCanvas.ClavierDuTexte.cs`, branché par trois lignes de `PageCanvas.Saisie.cs`) : début et bout de la ligne composée, ligne du dessus ou du dessous dans l'ordre du texte — d'une colonne à la suivante —, à l'abscisse visée, gardée d'une flèche à l'autre et perdue au premier autre déplacement ; bouts du texte depuis la première et la dernière ligne ; première et dernière ligne du bloc. `Fin` sur une ligne coupée en douceur dessine le curseur au bout d'elle (l'affinité du curseur). La géométrie (`TexteCompose.cs`) dit la coupure douce, la ligne du curseur, la colonne. La fenêtre de candidats de la méthode d'entrée se pose au curseur dessiné : le client du champ est enveloppé au passage montant de sa demande, sans le seuil D. La mesure de N21 rejouée sur ATA 21 (six blocs, 44 lignes) : aucun écart pour `Début`, `Fin`, `↑`, `↓`, contre 8, 10, 32 et 30 sans le poste. `PageCanvas.axaml.cs` et `MarquesDuTexte.cs` ne sont pas touchés. Six tests sous `poste=N29` ; un sabotage au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
@@ -9952,6 +9952,91 @@ le groupe.
 
 Fichiers : `PageCanvas.axaml.cs`, `PageCanvas.Saisie.cs`, `MainWindowViewModel.cs` (la sélection),
 la barre, la recette Q23. Dépend de N12, N21 et R7. Effort : lourd.
+
+*Livré le 1er novembre 2026*, dans la salve Saisie 10 ; la relecture adversariale et le juge viennent
+après la fusion. **La sélection garde son modèle** : elle reste faite des blocs de la page, et
+`SingleSelected` ne change pas. Deux états s'y ajoutent, au partiel du poste
+(`MainWindowViewModel.MembreDuGroupe.cs`, règle 10) : `TexteEnSaisie`, le bloc de texte dont la
+planche a ouvert la saisie — un bloc de la page, ou le membre d'un groupe —, et `MembreSeul`, le membre
+du groupe sélectionné qu'un clic a pris seul. `BlocVise` les rassemble — le texte en saisie, sinon le
+membre pris seul, sinon le bloc seul — et c'est lui que suivent la barre (`ReglagesDuBloc`), les trois
+sections du dock, la pastille (« Bloc de texte du groupe »), la `MiseEnFormeVisee` de R7 et de N24, le
+`ParagrapheVise` de R6, l'alerte d'excédent, le fond, le contour, les marges intérieures, le trait de
+A10, le menu du bloc et *Format du bloc…* : quatre liaisons et trente-cinq lectures de `SingleSelected` passent à `BlocVise`,
+dans les partiels qui les portaient. Tant qu'aucun membre n'est visé, `BlocVise` est `SingleSelected`,
+et rien ne change : l'avis part avec celui de la sélection, et la saisie d'un bloc de la page ne
+l'émet pas. La recette Q23 lit désormais `GabaritsGardes Bloc="{Binding BlocVise}"`.
+
+**Le clic dans le texte d'un groupe** (`PageCanvas.Saisie.cs`, `PageCanvas.MembreDuGroupe.cs`, neuf).
+`CheminSous` traverse le groupe sous le pointeur — `GroupFrame.Children`, le bloc visible le plus en
+avant, puis `ToLocal` à chaque niveau — et `DansLeTexte` lit la bande de bord dans le repère du membre
+(`MainWindowViewModel.VersLeBloc`). La pression prend le groupe, racine du chemin, s'il ne l'était pas
+seul, et ouvre la saisie du membre, le curseur au caractère visé, lu comme avant sur la composition
+qui était à l'écran : le contrôle qui la dessine porte les deux rotations. Le curseur, la sélection,
+le pré-édit (N21), les caractères spéciaux (N22) et le trait ondulé (N25) se posaient déjà par la
+transformation de ce contrôle : sur un groupe tourné de 30° portant un texte tourné de 20°, ils
+tombent à moins d'un demi-pixel de la place que le modèle calcule, et le cadre du membre en saisie,
+dessiné dans l'`Overlay` en plus de celui du groupe, aussi. La frappe fait son pas, dans la
+transaction de la saisie (Q24, Q25) : le champ caché du membre est dans le gabarit du groupe, et
+`BeginTextEdit` le trouve comme celui d'un bloc de la page. Le champ unique hors de la page que N21
+renvoyait à N26 et N27 n'a pas été nécessaire ici. La recherche de N20 entre de même dans le texte
+d'un groupe : le groupe sélectionné, la plage trouvée en saisie — le message « dissociez-le pour
+entrer dans son texte » n'a plus lieu d'être.
+
+**Prendre un membre seul.** Une pression sans `Ctrl` ni `Maj` sur le groupe sélectionné seul, hors
+du texte de ses membres, prend le groupe comme avant ; le relâché, si elle n'a pas glissé, prend seul
+le membre visé (`PrendreLeMembre`), ou rend le groupe sur son fond. Un glissé déplace donc toujours le
+groupe entier — et le rend visé —, sauf parti du membre pris seul, qui se déplace alors dans son
+groupe, retenu à son cadre. Un clic de plus sur un groupe membre pris seul descend d'un niveau ; un
+double-clic sur une image ou une forme du groupe la prend seule et ouvre sa section du dock (A12) ;
+le bouton droit, un membre étant pris, prend celui qu'il vise ; `Échap` rend le groupe avant de vider
+la sélection ; un clic hors du groupe rend la sélection ordinaire. Le membre a son cadre, et huit
+poignées grises (`Rectangle.poignee.inerte`, le gris des graduations), sans tige ni disque : elles ne
+se prennent pas (`HitHandle`), « Position et taille » est grisé au dock (`PositionReglable`), la largeur,
+la hauteur et les bouts d'un trait n'y écrivent rien — le redimensionnement reste réservé à la
+dissociation, comme dans Publisher.
+
+**Dans son groupe.** `Suppr`, Édition ▸ Supprimer et `Ctrl+Maj+X` retirent le membre visé de son
+groupe, et lui seul, en un pas ; un groupe qu'il laisse vide s'en va avec lui. Les flèches le
+déplacent du pas de la planche dans le sens de l'écran, les rotations des groupes retirées, et
+l'alignement le pose sur le cadre de son groupe, non sur la page ; l'un et l'autre le retiennent au
+cadre du groupe, que la découpe de Q5 rognerait au-delà. `Alt`+flèche, en saisie, mène de même le
+membre dont le texte a le curseur (N6). Copier et Couper mettent au presse-papiers le membre visé, posé
+où il se voit sur la page, son angle et celui de ses groupes ajoutés. **La découpe de Q5 suit les
+membres** : sa liaison, à l'écran, lit aussi le nombre des blocs du groupe et une révision
+(`PageCanvas.RevisionDeLaDecoupe`) que la planche avance quand le filet, la rotation ou la visibilité
+d'un membre visé change — ce que Q5 avait laissé tel quel, faute d'un geste qui le fasse.
+
+`MainWindowViewModel.cs` est touché de trois lignes, et de rien d'autre : `DeleteSelected`,
+`NudgeSelection` et `AlignEach` consultent d'abord le partiel du poste. La ligne de `PolicesDuSysteme`
+que le propriétaire a modifiée dans le dépôt principal n'en est pas.
+
+Douze tests sous `poste=N26` (`SaisieDansUnGroupeTests`, la vraie fenêtre) : la recette du plan, en
+deux tests ; la barre, le dock, R6, R7 et N24 sur le texte d'un groupe, trois pas ; les rotations
+imbriquées, le curseur, N22 et N25 ; les flèches et l'alignement, groupe tourné compris ; couper et
+recoller ; le redimensionnement réservé, `Échap` et le clic hors du groupe ; le glissé ; le
+double-clic et le groupe imbriqué ; la découpe ; `Alt`+flèche en saisie et le passage de la saisie d'un
+membre à un autre. Deux
+tests réécrits (règle 14) : celui de C3 prenait le groupe par le texte d'un de ses blocs, il le prend
+par sa bande de bord ; celui de N20 voyait le groupe sélectionné sans saisie, il voit la saisie du
+membre. Cinq sabotages au juge, dont celui du plan, la saisie qui dissocie le groupe.
+
+*Choisi sans certitude* :
+- le membre pris seul ne survit qu'à une sélection qui reste son groupe, seul ; entrer dans le texte
+  d'un membre l'oublie, et `Échap` ne le rend pas après la saisie : c'est le groupe qui reste pris ;
+- un glissé parti d'un membre non pris déplace le groupe entier, et le prend au relâché seulement
+  s'il n'a pas glissé : le geste d'avant — saisir un groupe par n'importe lequel de ses blocs — reste
+  entier ; seul le membre déjà pris se déplace seul ;
+- les flèches, l'alignement et le glissé retiennent le membre au cadre de son groupe, que Publisher
+  agrandirait : la découpe de Q5, décidée avec le propriétaire, couperait ce qui en sortirait ;
+- « Position et taille » est grisé pour un membre visé, plutôt que de montrer ses coordonnées dans le
+  repère du groupe ;
+- Dupliquer, l'ordre de superposition, Grouper et Dissocier visent toujours la sélection, le groupe
+  entier.
+
+*Relevé, non corrigé* : le rectangle de sélection de N17 ne prend toujours que des blocs de la page,
+un groupe entier et non ses membres ; un groupe dont on retire un membre garde son cadre, sans se
+resserrer sur ce qui reste.
 
 #### N27 — Taper dans une case, sur la page *(fiche 23, g2 à g4)*
 
