@@ -105,6 +105,14 @@
         <!-- Le souligné, Ctrl+U comme dans Publisher (poste I3, sur la commande de I7) : U
              n'est pris ni par OnKeyDown ni par un autre geste. -->
         <KeyBinding Gesture="Ctrl+U" Command="{Binding SoulignerCommand}"/>
+        <!-- La mise en forme des caractères (poste R7, fiche 24) : Ctrl+Espace rend aux caractères
+             visés le style du bloc, Ctrl+Maj+C copie leur mise en forme, Ctrl+Maj+V la pose. Même en
+             saisie : la zone de texte ne prend aucune de ces touches. Le bureau n'en prend aucune
+             (GNOME change de méthode d'entrée à Super+Espace, relevé le 31 octobre 2026) ; OnKeyDown
+             ne prend ni C ni V sous Ctrl+Maj, ni Espace sous Ctrl. -->
+        <KeyBinding Gesture="Ctrl+Space" Command="{Binding RetirerLaMiseEnFormeCommand}"/>
+        <KeyBinding Gesture="Ctrl+Shift+C" Command="{Binding CopierLaMiseEnFormeCommand}"/>
+        <KeyBinding Gesture="Ctrl+Shift+V" Command="{Binding CollerLaMiseEnFormeCommand}"/>
         <!-- Les alignements du texte, aux touches de Publisher en français (poste N10) : Ctrl+L,
              Ctrl+E, Ctrl+R, Ctrl+J — sur le bloc entier aujourd'hui, sur le paragraphe avec R6.
              Ctrl+E n'exporte plus : l'export est passé à Ctrl+Maj+P. Le corps, Ctrl+] et Ctrl+[,
@@ -813,6 +821,14 @@
                         <MenuItem Header="_Gras" InputGesture="Ctrl+G" Command="{Binding BasculerGrasCommand}"/>
                         <MenuItem Header="_Italique" InputGesture="Ctrl+I" Command="{Binding BasculerItaliqueCommand}"/>
                         <MenuItem Header="_Souligné" InputGesture="Ctrl+U" Command="{Binding SoulignerCommand}"/>
+                        <!-- La mise en forme des caractères (poste R7) : sur la sélection du texte ou le
+                             mot du curseur en saisie, sur tout le bloc hors saisie. -->
+                        <MenuItem Header="_Effacer la mise en forme" InputGesture="Ctrl+Space"
+                                  Command="{Binding RetirerLaMiseEnFormeCommand}"/>
+                        <MenuItem Header="C_opier la mise en forme" InputGesture="Ctrl+Shift+C"
+                                  Command="{Binding CopierLaMiseEnFormeCommand}"/>
+                        <MenuItem Header="Co_ller la mise en forme" InputGesture="Ctrl+Shift+V"
+                                  Command="{Binding CollerLaMiseEnFormeCommand}"/>
                         <Separator/>
                         <MenuItem Header="_Aligner le texte à gauche" InputGesture="Ctrl+L" Command="{Binding AlignerLeTexteCommand}"
                                   CommandParameter="{x:Static models:TextAlign.Left}"/>

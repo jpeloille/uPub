@@ -22,7 +22,7 @@ public class PolicesAbsentesTests
 {
     private static ComboBox ListeDesPolices(Window fenetre, MainWindowViewModel vm, Frame bloc) =>
         fenetre.GetVisualDescendants().OfType<ComboBox>()
-            .Single(c => ReferenceEquals(c.DataContext, bloc) && c.SelectedItem is string
+            .Single(c => ReferenceEquals(Rendu.BlocRegle(c), bloc) && c.SelectedItem is string
                          && c.ItemsSource is System.Collections.Generic.IEnumerable<string> polices
                          && polices.Contains(vm.FontFamilies[2]));
 

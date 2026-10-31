@@ -69,7 +69,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **R4** | Interligne : une seule mesure | **100 %** | Multiple de la hauteur naturelle ; écran et PDF concordent à 0,05 pt près ; recette dans `Scripts/recettes/` |
 | **R5** | **Ouvrir un `.pub`** | **100 %** | Lecture déléguée à libmspub. Les deux documents ATR s'ouvrent objet pour objet, sans perdre un style |
 | **R6** | Alignement par paragraphe | **100 %** | Le panneau règle le paragraphe du curseur : un `ParagrapheVise` (`MainWindowViewModel.ParagrapheVise.cs`), contexte des quatre alignements de la barre et des cinq champs de la section Paragraphe du dock, sous les liaisons d'avant — les comptes de I3 tiennent. Hors saisie, le bloc, comme avant ; en saisie, les paragraphes que touche la sélection, ou celui du curseur, lus par `MiseEnForme.Lire` — un réglage mixte est nul, aucun bouton n'est allumé, le champ est vide — et posés en écarts par `MiseEnForme.Poser`, les voisins identiques fusionnés, l'écart qui ne dit plus rien retiré. La barre, le menu Texte et `Ctrl+L`, `Ctrl+E`, `Ctrl+R`, `Ctrl+J` posent le fer en un pas ; un retrait saisi au dock fait le sien (Q25). « Diminuer » et « Augmenter le retrait », au dock sous les retraits, sans focus : de 36 pt en 36 pt, chaque paragraphe depuis le sien. L'interligne reste au bloc. Quinze tests sous `poste=R6` ; deux tests réécrits (Q25, N10 : l'écart au lieu du bloc, règle 14) ; deux sabotages au juge. **La recette des Fiches ne se joue pas** : leurs 16 centrés sont en cases de tableau, que l'import ramène à gauche — rejouée sur ATA 21, relevé pour le propriétaire (voir la section). Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
-| **R7** | Éditer le texte riche à la souris | 0 % | Spécifié le 11 octobre 2026 ; repris en phase N (salve Saisie 8) : la mesure est N7, le gras `Ctrl+G` ; **voie 2a**, choisie par le propriétaire le 26 octobre 2026 sur la mesure de N7 |
+| **R7** | Éditer le texte riche à la souris | **100 %** | Voie 2a. Un mot sélectionné, `Ctrl+G`, et lui seul passe en gras, en un pas, la frappe continuant. Une `MiseEnFormeVisee` (`MainWindowViewModel.MiseEnFormeVisee.cs`), contexte de la police, du corps, de G, I, S et de la couleur de la barre, sous les liaisons d'avant — les comptes de I3 tiennent : en saisie, la sélection du texte (N15), ou, sans sélection, le mot du curseur, lue par `MiseEnForme.Lire` et écrite en fragments par `Poser`, `Basculer` et `Retirer` (N2) ; hors saisie, et pour une sélection de tout le texte, le bloc et tous ses caractères, fragments compris — `Ctrl+G` atteint le gras d'un fragment importé. La barre montre l'état des caractères visés : champ vide, vignette blanche, bouton à moitié allumé (`IsChecked` nul, sur la teinte de la projection) ; la valeur montrée ne s'écrit pas. Le gras, l'italique, `Ctrl+U` et ses sortes, les touches du corps de N10 — chaque caractère depuis le sien — et la liste des tailles passent par elle ; `Ctrl+Espace`, `Ctrl+Maj+C` et `Ctrl+Maj+V` liés, au menu Texte aussi. La mémoire de Q14 se vide quand le champ ne montre rien ; la liste des polices compte celles des fragments (Q20). Un tableau garde sa mise en forme de tableau. Quatorze tests sous `poste=R7` (24 cas), dont le gras seul au PDF relevé dans le flux ; treize tests réécrits (règle 14) ; trois sabotages au juge, un repris. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **Q1** | Les styles suivent la frappe | **100 %** | Fragments et écarts recalés à la saisie par une fonction pure du noyau (`Recalage`), à la règle de Publisher : le style qui précède, celui qui suit en tête de paragraphe, le premier remplacé pour une sélection retapée. Seules les zones de saisie s'y lient ; lecture, import, copie et annulation ne recalent rien. `FormatVersion` reste à 4 ; recette dans `Scripts/recettes/` |
 | **Q2** | Le texte composé se détache de son bloc | **100 %** | `ControleDeBloc` suit l'attachement, comme `FondBloc`, et lâche l'ancien bloc quand on lui en donne un autre. Mesuré : le changement de page ne fuyait pas ; la fuite ne frappait qu'un contrôle sorti de l'arbre avec son bloc. Recette dans `Scripts/recettes/` |
 | **Q3** | Le cache d'images oublie ses échecs | **100 %** | L'ouverture d'un document (fichier ou modèle) oublie les échecs du cache, et eux seuls ; insérer une image ou la choisir pour un fond relit le fichier. L'annulation ne relit pas le disque. Recette dans `Scripts/recettes/` |
@@ -3332,6 +3332,123 @@ sélection, la souris et la navigation qui dépend de la mise en page se calcule
 et se dessinent dans l'`Overlay`. L'écart de `PointDe` au dessin de la composition dans un crénage
 ou une ligature (jusqu'à 3,9 pt) se reprend dans N3 avant elle. N21, R6, R7 et N22 à N28 partent
 dans leurs salves.
+
+*Livré le 31 octobre 2026*, dans la salve Saisie 8, en voie 2a ; la relecture adversariale et le juge
+viennent après la fusion. **Le modèle de vue** (`MainWindowViewModel.MiseEnFormeVisee.cs`, le partiel
+du poste) : `MiseEnFormeVisee`, le pendant à l'échelle du caractère du `ParagrapheVise` de R6, que le
+modèle de vue crée une fois et que la barre prend pour contexte. Elle vise, en saisie, la sélection du
+texte (`SelectionDuTexte`, N15) quand elle est celle du bloc seul ; sans sélection, le mot du curseur
+(`MotDuCurseur` : une lettre de chaque côté du curseur, la suite de lettres et de chiffres qu'il
+coupe) ; hors d'un mot, le curseur seul, qui se lit au style de la frappe et ne se met pas en forme —
+la barre d'état le dit. Hors saisie, le bloc et tous ses caractères. Elle lit par `MiseEnForme.Lire`
+et `Allume` (N2) — une propriété mixte est nulle — et écrit par `Poser`, `Basculer` et `Retirer`, en
+fragments ; quand les caractères visés sont tous ceux du bloc — hors saisie, ou une sélection de tout
+le texte —, la valeur va au bloc, et `MiseEnForme.Poser` sur tout le texte la retire des fragments qui
+en disaient une autre. Une valeur nulle n'écrit rien, ni la valeur qu'elle montre. Elle suit le bloc
+seul (son style, son texte, ses fragments), la sélection du texte et le jeu du document, et tient ses
+avis le temps de ses écritures. Le gras et l'italique (`Disposition.cs`), le souligné (`Souligne.cs`),
+ses sortes (`MainWindowViewModel.BarreContextuelle.cs`) et le corps (`Raccourcis.cs`, donc `Ctrl+]`,
+`Ctrl+[`, `Ctrl+Maj+>`, `Ctrl+Maj+<` et la liste des tailles de N19) passent par elle pour un bloc de
+texte, en un pas où que soit le focus (`UnGesteUnPas`) ; un tableau garde son chemin d'avant. Le corps
+change chaque caractère depuis le sien, sur le découpage même de la composition : 24 et 30 pt donnent
+25 et 31. Trois commandes neuves, `RetirerLaMiseEnForme` (`Ctrl+Espace`), `CopierLaMiseEnForme`
+(`Ctrl+Maj+C`) et `CollerLaMiseEnForme` (`Ctrl+Maj+V`), liées et posées au menu Texte (*Effacer la mise
+en forme*, *Copier* et *Coller la mise en forme*) ; la mise en forme copiée est un état de la session,
+sans ce qu'elle a de mixte ni la langue. **La barre** : la police, le corps, son chevron, G, I, S et
+les sortes sont rangés sous `MiseEnFormeDuTexte`, dont le contexte est la `MiseEnFormeVisee`, la
+couleur aussi ; leurs liaisons sont celles d'avant (`{Binding FontFamily, Converter={x:Static
+conv:JamaisNul.Instance}}`, `{Binding Bold, Mode=OneWay}`, `{Binding Underline.Actif, Mode=OneWay}`…),
+si bien que les comptes de la recette I3 tiennent ; le souligné vu est un `SouligneVise` — la sorte
+commune et l'état du bouton S. L'interligne reste lié au bloc. **L'apparence** dessine le bouton à
+moitié allumé (`ToggleButton.ib:indeterminate`) sur la teinte de la projection, l'accent à 14 %. **Les
+pièges** : la garde `JamaisNul` de Q20 tient face à une police mixte — la liste vide ne renvoie rien —,
+et la liste des polices compte aussi celles des fragments (`PolicesProposees`), qu'une sélection peut
+montrer ; la mémoire d'une case de Q14 (`Affiches.Oublier`) se vide quand le champ ne montre rien ; la
+liste des polices qui refuse une frappe sur une sélection mixte ne nomme pas de police (`ListeDesPolices`).
+
+Le poste touche, hors de son partiel, `MainWindowViewModel.Disposition.cs` (le gras, l'italique,
+l'avis des trois commandes neuves), `MainWindowViewModel.Souligne.cs`,
+`MainWindowViewModel.BarreContextuelle.cs`, `MainWindowViewModel.Raccourcis.cs`,
+`MainWindowViewModel.cs` (`PolicesProposees`), `BarreContextuelle.axaml` et son code (la coche de la
+liste des tailles), `Apparence.axaml`, `MainWindow.axaml` (trois liaisons, trois entrées du menu
+Texte), `ListeDesPolices.cs`, `UnitConverters.cs`, le README et la fiche 24. Ni le noyau, ni
+`PageCanvas.axaml.cs`, ni `PageCanvas.Saisie.cs`, ni `Recalage.cs`, ni `MiseEnForme.cs`.
+
+*Recette jouée* : `Scripts/recettes/R7-texte-riche-a-la-souris.sh`. Les sources — le partiel, qui lit
+et écrit par `MiseEnForme` ; les commandes qui passent par lui ; la barre liée à lui sous les noms
+d'avant, la police sous `JamaisNul`, l'interligne au bloc ; le bouton à moitié allumé ; les trois
+touches liées, au menu Texte, au README et à la fiche 24 ; la mémoire de Q14 —, puis quatorze tests
+sous `poste=R7` (`TexteRicheALaSourisTests`, 24 cas) : la recette du plan — les caractères 4 à 7
+sélectionnés au pointeur, `Ctrl+G`, un seul fragment `{Start 4, Length 3, Bold}`, la saisie ouverte et
+la zone au focus, le bouton G allumé, le PDF qui dessine « def » seul dans la fonte grasse (relevé du
+flux de la page, opérateur par opérateur, la fonte nommée par sa `/BaseFont`), un pas — ; `Ctrl+G` sur
+une sélection grasse qui retire le fragment, un pas par commande ; la sélection mixte, le bouton G à
+moitié allumé sur la projection, qui prend le gras partout ; le corps 14 tapé à la barre, puis 18 de la
+liste, sur la sélection, un pas chacun ; le mot du curseur, et rien au bout d'un mot ; hors saisie, le
+gras d'un fragment atteint et le corps de chacun depuis le sien ; les sept blocs d'ATA 21 dont un
+fragment dit le gras, tout gras puis tout maigre ; la barre vide sur une sélection mixte, sans rien
+écrire ; la police tapée et la couleur ; le souligné et ses sortes ; `Ctrl+Espace`, la langue gardée ;
+`Ctrl+Maj+C` et `Ctrl+Maj+V`, et le menu Texte ; les touches du corps sur une sélection mixte ; la
+mémoire du corps face à une valeur nulle, et dix cas du mot du curseur. Treize tests existants sont
+réécrits (règle 14). Cinq jouaient l'ancien sens : quatre de Q24 et Q25 (`TransactionsDeSaisieTests` : le
+corps, la couleur et le gras pris à la barre pendant la saisie, le curseur au bout de « abc ») et celui
+de N10 sur les touches du corps (`RaccourcisFrancaisTests`) sélectionnent d'abord tout le texte, ce qui
+vise le bloc, comme avant ; leur pas ne change pas. Sept cherchaient un contrôle de la barre par son
+bloc (`ReferenceEquals(c.DataContext, bloc)`) : les deux de `PolicesAbsentesTests` (Q20), par leur aide
+commune, un de `JeuxTests`, trois de `BarreContextuelleTests` (I3) et un de `PressionTests` (Q23 : les
+champs gardés d'une sélection à l'autre) le cherchent par `Rendu.BlocRegle`,
+une aide neuve du banc, hors de la région des gestes ; leur sens ne change pas. Celui du menu Texte de
+I2 (`DispositionTests`) compte les trois entrées neuves. Trois sabotages au juge : une sélection mise en forme sur tout le bloc, les
+fragments laissés tels quels hors saisie, la mémoire du corps gardée sous l'état mixte ; et le
+sabotage de I7 « « Souligné » s'emboîte dans la saisie ouverte », dont la cible a quitté
+`Souligne.cs`, reprend sa prise dans `MettreEnFormeLeTexte` (règle 14).
+
+*Ce que l'implémentation a appris.*
+- **La section ne nomme pas de sabotage.** Les trois du poste sont choisis sur la recette du plan,
+  sur le défaut que la fiche 23 relevait hors saisie et sur le piège de Q14.
+- **Hors saisie, un fragment qui redit la valeur du bloc reste.** `MiseEnForme.Poser` n'écrit rien
+  sans changement à l'œil (N2) : sur « Air Distribution » d'ATA 21, le premier `Ctrl+G` met le bloc en
+  gras, et le fragment « gras » de son titre, qui ne change plus rien, demeure ; le second le retire
+  avec le reste. Rien ne s'en voit, et les tests l'admettent.
+- **Les contrôles de la barre ont changé de contexte**, comme les alignements de R6 : les tests qui les
+  trouvaient par leur bloc les trouvent par la `MiseEnFormeVisee` (règle 14). Les liaisons, elles, ne
+  changent pas d'un caractère.
+- **Le curseur au bout d'un mot ne vise rien.** Quatre tests de Q24 et Q25, et un de N10, tapaient
+  « abc » puis réglaient le corps, la couleur ou le gras : avant le poste, le bloc changeait ;
+  désormais, rien — le curseur est au bout du mot. Ils sélectionnent tout le texte d'abord.
+- **Le PDF écrit ses fontes en WinAnsi** : une chaîne du flux est le texte même, et le relevé lit
+  « def » sous la fonte grasse et « abc », « ghi » sous la maigre, sans table de glyphes.
+
+*Choisi sans certitude* :
+- **le mot du curseur** est la règle de Word : une lettre de chaque côté. Au bord d'un mot ou dans un
+  blanc, rien ne se met en forme ; Word et Publisher gardent alors un style en attente pour la frappe
+  qui suit, que MyPublisher n'a pas — la frappe prend le style du caractère qui précède (Q1). Le
+  double-clic de N21 prend aussi un blanc ou un signe ; on ne met pas une espace en gras parce que le
+  curseur la touche ;
+- **une sélection de tout le texte vaut le bloc** : `Ctrl+A` puis `Ctrl+G` met le bloc en gras, et non
+  un fragment qui le couvrirait entier ;
+- **la valeur que la barre montre ne s'écrit pas** : une liste ou un champ qui renvoie ce qu'il vient
+  de lire ne change rien. Hors saisie, renvoyer la police résolue d'un bloc dont les caractères
+  mêlent `scheme:body` et la police qu'il désigne aurait remplacé la référence au jeu — lu dans le
+  code, non provoqué ;
+- `Ctrl+G` hors saisie lit l'état de tous les caractères : un bloc maigre dont un mot est gras passe
+  tout en gras, comme une sélection mixte ;
+- la mise en forme copiée garde ce que les caractères visés ont en commun, sans la langue ;
+  `Ctrl+Maj+V` sans rien de copié ne fait rien et le dit ; copier ne fait pas de pas ;
+- le bouton à moitié allumé prend la teinte de la projection, l'accent à 14 % : la maquette ne dessine
+  pas cet état ; la vignette d'une couleur mixte reste blanche ;
+- les trois commandes ont une entrée au menu Texte, *Effacer la mise en forme*, *Copier* et *Coller
+  la mise en forme*, à côté de *Souligné* — Publisher n'en a pas, la fiche 24 seule les donne ;
+- après un réglage du corps sur une sélection mixte, la barre d'état dit « Corps changé ».
+
+*Relevé, non corrigé* :
+- **un tableau garde sa mise en forme de tableau** : ses cases ne se saisissent pas sur la page
+  (N27), et `Ctrl+G` sur un tableau bascule le gras du tableau sans atteindre celui que les fragments
+  d'une case écrivent — le défaut que la fiche 23 relevait pour le bloc de texte, resté pour le
+  tableau ;
+- **pas de style en attente** : sans sélection ni mot au curseur, la mise en forme ne s'applique pas
+  au texte qu'on va taper (voir *Choisi sans certitude*) ; c'est une décision du propriétaire s'il
+  le veut.
 
 ---
 

@@ -231,7 +231,9 @@ public class PressionTests(ITestOutputHelper sortie)
         Assert.Same(a, vm.SingleSelected);
         var premiers = Champs();
         Assert.All(premiers, champ => Assert.True(champ.IsEffectivelyVisible));
-        Assert.All(premiers, champ => Assert.Same(a, champ.DataContext));
+        // La police de la barre a pour contexte la mise en forme des caractères visés depuis R7 :
+        // son bloc est celui de la mise en forme (règle 14).
+        Assert.All(premiers, champ => Assert.Same(a, Rendu.BlocRegle(champ)));
 
         // Rien de sélectionné : les champs restent, masqués.
         Rendu.Cliquer(fenetre, vide);
@@ -262,7 +264,7 @@ public class PressionTests(ITestOutputHelper sortie)
         {
             Assert.True(ReferenceEquals(premiers[i], seconds[i]), $"« {noms[i]} » a été reconstruit d'une sélection à l'autre");
             Assert.True(seconds[i].IsEffectivelyVisible, $"« {noms[i]} » ne se montre pas pour le second bloc");
-            Assert.Same(b, seconds[i].DataContext);
+            Assert.Same(b, Rendu.BlocRegle(seconds[i]));
         }
 
         Assert.Equal(Units.PointsToMm(b.X), (double)((NumericUpDown)seconds[0]).Value!.Value, precision: 6);

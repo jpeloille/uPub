@@ -135,79 +135,88 @@
 
                     <DataTemplate DataType="models:TextFrame">
                         <StackPanel Orientation="Horizontal" Spacing="6">
-                            <!-- La police, avec la garde de Q20 : la police du bloc est toujours
-                                 dans la liste, même absente de la machine, et la liste ne lui
-                                 renvoie jamais null ; les deux premières entrées sont le titre et
-                                 le corps du jeu de polices, et le libellé dit la police qu'elles
-                                 désignent aujourd'hui. -->
-                            <views:ListeDesPolices x:Name="PoliceDuBloc" Classes="champ" Width="150" MaxDropDownHeight="320"
-                                      ToolTip.Tip="Police"
-                                      ItemsSource="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).FontFamilies}"
-                                      Jeu="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).Document.FontScheme}"
-                                      Machine="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).PolicesDeLaMachine}"
-                                      SelectedItem="{Binding FontFamily, Converter={x:Static conv:JamaisNul.Instance}}">
-                                <views:ListeDesPolices.ItemTemplate>
-                                    <DataTemplate DataType="x:String">
-                                        <TextBlock>
-                                            <TextBlock.Text>
-                                                <MultiBinding Converter="{x:Static conv:LibelleDePolice.Instance}">
-                                                    <Binding/>
-                                                    <Binding Path="$parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).Document.FontScheme"/>
-                                                    <Binding Path="$parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).PolicesDeLaMachine"/>
-                                                </MultiBinding>
-                                            </TextBlock.Text>
-                                        </TextBlock>
-                                    </DataTemplate>
-                                </views:ListeDesPolices.ItemTemplate>
-                            </views:ListeDesPolices>
-                            <!-- Le corps : « 10,5 pt », un champ où l'on tape (N14), et le chevron qui
-                                 le suit, la liste des tailles standard (N19). -->
-                            <views:ChampNumerique x:Name="CorpsDuBloc" Classes="champ" Width="58" ToolTip.Tip="Corps"
-                                           TextConverter="{x:Static conv:Unite.Points}" Increment="0.5" Minimum="1"
-                                           Value="{Binding FontSize, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
-                            <Button x:Name="TaillesDuCorps" Classes="ib sortes" Focusable="False" AttachedToVisualTree="SurTaillesAttachees"
-                                    ToolTip.Tip="Tailles du corps" Content="{StaticResource IconeSectionOuverte}">
-                                <Button.Flyout>
-                                    <MenuFlyout Placement="BottomEdgeAlignedLeft" Opening="SurTaillesQuiSOuvrent" Closed="SurTaillesFermees"/>
-                                </Button.Flyout>
-                            </Button>
-                            <views:BoutonDEtat Classes="ib" Content="G" FontWeight="Bold" FontSize="14" Focusable="False"
-                                               ToolTip.Tip="Gras (Ctrl+G)" IsChecked="{Binding Bold, Mode=OneWay}"
-                                               Command="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).BasculerGrasCommand}"/>
-                            <views:BoutonDEtat Classes="ib italique" Content="I" Focusable="False"
-                                               ToolTip.Tip="Italique (Ctrl+I)" IsChecked="{Binding Italic, Mode=OneWay}"
-                                               Command="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).BasculerItaliqueCommand}"/>
-                            <!-- Le souligné : le bouton bascule — il retire le souligné quelle qu'en
-                                 soit la sorte, ou pose le trait simple, comme Ctrl+U —, et le
-                                 chevron qui le suit propose les sortes que le plan nomme. -->
-                            <views:BoutonDEtat x:Name="BoutonSouligne" Classes="ib" Focusable="False"
-                                               ToolTip.Tip="Souligné (Ctrl+U)" IsChecked="{Binding Underline.Actif, Mode=OneWay}"
-                                               Command="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).SoulignerCommand}">
-                                <TextBlock Text="S" FontSize="14" TextDecorations="Underline"/>
-                            </views:BoutonDEtat>
-                            <Button x:Name="SortesDuSouligne" Classes="ib sortes" Focusable="False"
-                                    ToolTip.Tip="Sortes de souligné" Content="{StaticResource IconeSectionOuverte}">
-                                <Button.Flyout>
-                                    <MenuFlyout Placement="BottomEdgeAlignedLeft">
-                                        <MenuItem Header="Trait simple" ToggleType="Radio"
-                                                  IsChecked="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).((models:TextFrame)SingleSelected).Underline, Mode=OneWay, Converter={x:Static conv:SorteDuSouligne.Instance}, ConverterParameter={x:Static vm:SorteDeSouligne.Simple}}"
-                                                  Command="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).SoulignerEnCommand}"
-                                                  CommandParameter="{x:Static vm:SorteDeSouligne.Simple}"/>
-                                        <MenuItem Header="Double" ToggleType="Radio"
-                                                  IsChecked="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).((models:TextFrame)SingleSelected).Underline, Mode=OneWay, Converter={x:Static conv:SorteDuSouligne.Instance}, ConverterParameter={x:Static vm:SorteDeSouligne.Double}}"
-                                                  Command="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).SoulignerEnCommand}"
-                                                  CommandParameter="{x:Static vm:SorteDeSouligne.Double}"/>
-                                        <MenuItem Header="Épais" ToggleType="Radio"
-                                                  IsChecked="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).((models:TextFrame)SingleSelected).Underline, Mode=OneWay, Converter={x:Static conv:SorteDuSouligne.Instance}, ConverterParameter={x:Static vm:SorteDeSouligne.Epais}}"
-                                                  Command="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).SoulignerEnCommand}"
-                                                  CommandParameter="{x:Static vm:SorteDeSouligne.Epais}"/>
-                                        <MenuItem Header="Mots seuls" ToggleType="Radio"
-                                                  IsChecked="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).((models:TextFrame)SingleSelected).Underline, Mode=OneWay, Converter={x:Static conv:SorteDuSouligne.Instance}, ConverterParameter={x:Static vm:SorteDeSouligne.MotsSeuls}}"
-                                                  Command="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).SoulignerEnCommand}"
-                                                  CommandParameter="{x:Static vm:SorteDeSouligne.MotsSeuls}"/>
-                                    </MenuFlyout>
-                                </Button.Flyout>
-                            </Button>
+                            <!-- La mise en forme des caractères (R7) : la police, le corps, le gras,
+                                 l'italique et le souligné se lient aux caractères visés — la
+                                 sélection du texte ou le mot du curseur en saisie, tous les
+                                 caractères du bloc hors saisie —, sous les noms du bloc. Mixtes, le
+                                 champ est vide et le bouton à moitié allumé (IsChecked nul). -->
+                            <StackPanel x:Name="MiseEnFormeDuTexte" Orientation="Horizontal" Spacing="6"
+                                        x:DataType="vm:MiseEnFormeVisee"
+                                        DataContext="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).MiseEnFormeVisee}">
+                                <!-- La police, avec la garde de Q20 : la police du bloc est toujours
+                                     dans la liste, même absente de la machine, et la liste ne lui
+                                     renvoie jamais null ; les deux premières entrées sont le titre et
+                                     le corps du jeu de polices, et le libellé dit la police qu'elles
+                                     désignent aujourd'hui. -->
+                                <views:ListeDesPolices x:Name="PoliceDuBloc" Classes="champ" Width="150" MaxDropDownHeight="320"
+                                          ToolTip.Tip="Police"
+                                          ItemsSource="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).FontFamilies}"
+                                          Jeu="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).Document.FontScheme}"
+                                          Machine="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).PolicesDeLaMachine}"
+                                          SelectedItem="{Binding FontFamily, Converter={x:Static conv:JamaisNul.Instance}}">
+                                    <views:ListeDesPolices.ItemTemplate>
+                                        <DataTemplate DataType="x:String">
+                                            <TextBlock>
+                                                <TextBlock.Text>
+                                                    <MultiBinding Converter="{x:Static conv:LibelleDePolice.Instance}">
+                                                        <Binding/>
+                                                        <Binding Path="$parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).Document.FontScheme"/>
+                                                        <Binding Path="$parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).PolicesDeLaMachine"/>
+                                                    </MultiBinding>
+                                                </TextBlock.Text>
+                                            </TextBlock>
+                                        </DataTemplate>
+                                    </views:ListeDesPolices.ItemTemplate>
+                                </views:ListeDesPolices>
+                                <!-- Le corps : « 10,5 pt », un champ où l'on tape (N14), et le chevron qui
+                                     le suit, la liste des tailles standard (N19). -->
+                                <views:ChampNumerique x:Name="CorpsDuBloc" Classes="champ" Width="58" ToolTip.Tip="Corps"
+                                               TextConverter="{x:Static conv:Unite.Points}" Increment="0.5" Minimum="1"
+                                               Value="{Binding FontSize, Converter={x:Static conv:DoubleToDecimal.Instance}}"/>
+                                <Button x:Name="TaillesDuCorps" Classes="ib sortes" Focusable="False" AttachedToVisualTree="SurTaillesAttachees"
+                                        ToolTip.Tip="Tailles du corps" Content="{StaticResource IconeSectionOuverte}">
+                                    <Button.Flyout>
+                                        <MenuFlyout Placement="BottomEdgeAlignedLeft" Opening="SurTaillesQuiSOuvrent" Closed="SurTaillesFermees"/>
+                                    </Button.Flyout>
+                                </Button>
+                                <views:BoutonDEtat Classes="ib" Content="G" FontWeight="Bold" FontSize="14" Focusable="False"
+                                                   ToolTip.Tip="Gras (Ctrl+G)" IsChecked="{Binding Bold, Mode=OneWay}"
+                                                   Command="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).BasculerGrasCommand}"/>
+                                <views:BoutonDEtat Classes="ib italique" Content="I" Focusable="False"
+                                                   ToolTip.Tip="Italique (Ctrl+I)" IsChecked="{Binding Italic, Mode=OneWay}"
+                                                   Command="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).BasculerItaliqueCommand}"/>
+                                <!-- Le souligné : le bouton bascule — il retire le souligné quelle qu'en
+                                     soit la sorte, ou pose le trait simple, comme Ctrl+U —, et le
+                                     chevron qui le suit propose les sortes que le plan nomme. -->
+                                <views:BoutonDEtat x:Name="BoutonSouligne" Classes="ib" Focusable="False"
+                                                   ToolTip.Tip="Souligné (Ctrl+U)" IsChecked="{Binding Underline.Actif, Mode=OneWay}"
+                                                   Command="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).SoulignerCommand}">
+                                    <TextBlock Text="S" FontSize="14" TextDecorations="Underline"/>
+                                </views:BoutonDEtat>
+                                <Button x:Name="SortesDuSouligne" Classes="ib sortes" Focusable="False"
+                                        ToolTip.Tip="Sortes de souligné" Content="{StaticResource IconeSectionOuverte}">
+                                    <Button.Flyout>
+                                        <MenuFlyout Placement="BottomEdgeAlignedLeft">
+                                            <MenuItem Header="Trait simple" ToggleType="Radio"
+                                                      IsChecked="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).MiseEnFormeVisee.Underline.Sorte, Mode=OneWay, Converter={x:Static conv:SorteDuSouligne.Instance}, ConverterParameter={x:Static vm:SorteDeSouligne.Simple}}"
+                                                      Command="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).SoulignerEnCommand}"
+                                                      CommandParameter="{x:Static vm:SorteDeSouligne.Simple}"/>
+                                            <MenuItem Header="Double" ToggleType="Radio"
+                                                      IsChecked="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).MiseEnFormeVisee.Underline.Sorte, Mode=OneWay, Converter={x:Static conv:SorteDuSouligne.Instance}, ConverterParameter={x:Static vm:SorteDeSouligne.Double}}"
+                                                      Command="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).SoulignerEnCommand}"
+                                                      CommandParameter="{x:Static vm:SorteDeSouligne.Double}"/>
+                                            <MenuItem Header="Épais" ToggleType="Radio"
+                                                      IsChecked="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).MiseEnFormeVisee.Underline.Sorte, Mode=OneWay, Converter={x:Static conv:SorteDuSouligne.Instance}, ConverterParameter={x:Static vm:SorteDeSouligne.Epais}}"
+                                                      Command="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).SoulignerEnCommand}"
+                                                      CommandParameter="{x:Static vm:SorteDeSouligne.Epais}"/>
+                                            <MenuItem Header="Mots seuls" ToggleType="Radio"
+                                                      IsChecked="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).MiseEnFormeVisee.Underline.Sorte, Mode=OneWay, Converter={x:Static conv:SorteDuSouligne.Instance}, ConverterParameter={x:Static vm:SorteDeSouligne.MotsSeuls}}"
+                                                      Command="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).SoulignerEnCommand}"
+                                                      CommandParameter="{x:Static vm:SorteDeSouligne.MotsSeuls}"/>
+                                        </MenuFlyout>
+                                    </Button.Flyout>
+                                </Button>
+                            </StackPanel>
                             <Border Classes="separateur"/>
                             <!-- Les quatre alignements : la maquette omet la droite, que le modèle
                                  a, et Publisher aussi ; elle se range entre le centre et la
@@ -249,7 +258,11 @@
                             <TextBlock Classes="libelle apresUnChamp" Text="Couleur"/>
                             <!-- La vignette montre la couleur ; le sélecteur du dock d'avant — les
                                  cinq pastilles du jeu et le sélecteur libre — s'ouvre dessous. -->
-                            <Button x:Name="CouleurDuTexte" Classes="couleur" Focusable="False" ToolTip.Tip="Couleur du texte">
+                            <!-- La couleur des caractères visés (R7), comme la police : mixte, la
+                                 vignette reste blanche. -->
+                            <Button x:Name="CouleurDuTexte" Classes="couleur" Focusable="False" ToolTip.Tip="Couleur du texte"
+                                    x:DataType="vm:MiseEnFormeVisee"
+                                    DataContext="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).MiseEnFormeVisee}">
                                 <Border CornerRadius="3">
                                     <Border.Background>
                                         <MultiBinding Converter="{x:Static conv:CouleurDuJeu.Pinceau}">

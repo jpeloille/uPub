@@ -457,6 +457,14 @@
         <Setter Property="Background" Value="{StaticResource Accent}"/>
         <Setter Property="Foreground" Value="{StaticResource Blanc}"/>
     </Style>
+    <!-- À moitié : le gras, l'italique ou le souligné d'une sélection dont une partie seulement
+         les porte (poste R7 ; IsChecked nul). La maquette ne dessine pas cet état ; il prend la
+         teinte de la projection, l'accent à 14 %, l'icône restant sombre — ni plein comme un
+         bouton allumé, ni nu comme un bouton éteint. Après le survol, qu'il remplace. -->
+    <Style Selector="ToggleButton.ib:indeterminate /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{StaticResource Projection}"/>
+        <Setter Property="Foreground" Value="{StaticResource Commande}"/>
+    </Style>
 
     <!-- Champ : 26 px, rayon 5, corps 12, bord gris clair ; au focus, le bord passe à
          l'accent plutôt qu'au bleu de Fluent. Le thème donne aux trois contrôles une hauteur

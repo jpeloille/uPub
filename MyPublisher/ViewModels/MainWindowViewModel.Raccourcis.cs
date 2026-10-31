@@ -75,16 +75,18 @@ public partial class MainWindowViewModel
     private void CorpsPrecedent() => ChangerLeCorps(CorpsStandard.Precedent);
 
     /// <summary>
-    /// Le corps du bloc entier, faute d'une sélection dans le texte (R7) — un bloc de texte ou un
-    /// tableau, comme le gras —, en un pas d'annulation, où que soit le focus (règle 2).
+    /// Le corps, en un pas d'annulation, où que soit le focus (règle 2) : sur un bloc de texte, celui
+    /// des caractères visés (poste R7, <c>MiseEnFormeVisee</c>) — la sélection ou le mot du curseur
+    /// en saisie, tous les caractères du bloc hors saisie, chacun depuis le sien ; sur un tableau, le
+    /// tableau, comme le gras.
     /// </summary>
     private void ChangerLeCorps(Func<double, double> nouveau)
     {
         switch (SingleSelected)
         {
-            case TextFrame texte:
-                var corps = nouveau(texte.FontSize);
-                Retoucher(t => t.FontSize = corps, null, $"Corps : {corps} pt");
+            case TextFrame:
+                MettreEnFormeLeTexte(visee => visee.ChangerLeCorps(nouveau),
+                    _ => MiseEnFormeVisee.FontSize is { } corps ? $"Corps : {corps} pt" : "Corps changé");
                 break;
             case TableFrame tableau:
                 var duTableau = nouveau(tableau.FontSize);
