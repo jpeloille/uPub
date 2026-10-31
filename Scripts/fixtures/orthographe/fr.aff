@@ -1,0 +1,7 @@
+# Un petit dictionnaire français, écrit pour les tests du poste N25 : « fr-FR » le trouve sous
+# le nom « fr », faute de « fr_FR » — le repli que suit le service. Au format de Hunspell ;
+# S fait le pluriel.
+SET UTF-8
+TRY esianrtolcdugmphbyfvkwzESIANRTOLCDUGMPHBYFVKWZéèêàç
+SFX S Y 1
+SFX S 0 s .

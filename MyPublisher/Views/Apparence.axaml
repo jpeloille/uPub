@@ -88,7 +88,7 @@
         <Color x:Key="CouleurFondPlanche">#DCDFE4</Color>           <!-- planche (I4) -->
         <Color x:Key="CouleurRepere">#12A4C4</Color>                <!-- repères (I4) -->
         <Color x:Key="CouleurMargeDePage">#E3A6D6</Color>           <!-- marges de la page, en pointillé (I4) -->
-        <Color x:Key="CouleurAucun">#D23B3B</Color>                 <!-- diagonale de « Aucun » dans un sélecteur de couleur -->
+        <Color x:Key="CouleurAucun">#D23B3B</Color>                 <!-- diagonale de « Aucun » dans un sélecteur de couleur ; trait ondulé des fautes d'orthographe (N25) -->
 
         <!-- Les pinceaux, un par couleur, du même nom sans « Couleur ». -->
         <SolidColorBrush x:Key="Accent" Color="{StaticResource CouleurAccent}"/>

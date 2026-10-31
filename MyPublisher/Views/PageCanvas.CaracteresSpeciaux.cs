@@ -39,6 +39,15 @@ namespace MyPublisher.Views;
 ///
 /// Le branchement se fait au premier chargement de la planche (<see cref="OnLoaded"/>), et non dans
 /// son constructeur, qu'un seul poste d'une salve retouche (règle 16 de la phase N).
+///
+/// **Les fautes d'orthographe suivent les mêmes blocs** (poste N25). Quand la vérification pendant
+/// la frappe est active (<see cref="MainWindowViewModel.VerificationActive"/>), le même suivi
+/// recompose les blocs de la page et pose, pour chaque faute que le modèle de vue rend, un trait
+/// ondulé aux abscisses de N3, sur chaque ligne qu'elle occupe, dans un second contrôle de
+/// l'<c>Overlay</c> (<see cref="FautesSoulignees"/>), mené et découpé comme les caractères. Le mot
+/// qu'on est en train de taper — le curseur à son bout, sans sélection — n'est pas souligné : il
+/// le sera quand on l'aura quitté. Un mot ignoré, un mot ajouté, la langue du document : tout se
+/// souligne de nouveau. Ni caractères ni vérification, rien n'est suivi.
 /// </summary>
 public partial class PageCanvas
 {
@@ -54,6 +63,14 @@ public partial class PageCanvas
         public IReadOnlyList<CaracterePose> Caracteres = [];
 
         public IReadOnlyList<CoucheDeDecoupe> Couches = [];
+
+        /// <summary>La géométrie de la dernière composition, gardée pour souligner sans recomposer (N25).</summary>
+        public GeometrieDuTexte? Geometrie;
+
+        /// <summary>Les traits des fautes sont à reprendre, sur la même composition (N25).</summary>
+        public bool FautesPerimees = true;
+
+        public IReadOnlyList<TraitDeFaute> Traits = [];
     }
 
     /// <summary>
@@ -76,6 +93,18 @@ public partial class PageCanvas
     private MainWindowViewModel? _vmDesCaracteres;
 
     private bool CaracteresVisibles => _vmDesCaracteres?.CaracteresSpeciauxVisibles == true;
+
+    /// <summary>
+    /// Le contrôle qui souligne les fautes (N25), posé dans l'<c>Overlay</c> à la première
+    /// vérification active, pour la même raison que celui des caractères.
+    /// </summary>
+    private readonly FautesSoulignees _fautesSoulignees = new() { Name = "FautesSoulignees" };
+
+    /// <summary>Les fautes se soulignent (N25).</summary>
+    private bool FautesVisibles => _vmDesCaracteres?.VerificationActive == true;
+
+    /// <summary>Les blocs de la page sont suivis : pour leurs caractères, ou pour leurs fautes.</summary>
+    private bool BlocsSuivis => CaracteresVisibles || FautesVisibles;
 
     protected override void OnLoaded(RoutedEventArgs e)
     {
@@ -105,7 +134,25 @@ public partial class PageCanvas
 
     private void OnModeleDesCaracteres(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(MainWindowViewModel.CaracteresSpeciauxVisibles)) ToutRecomposer();
+        switch (e.PropertyName)
+        {
+            case nameof(MainWindowViewModel.CaracteresSpeciauxVisibles):
+            case nameof(MainWindowViewModel.VerificationActive):
+                ToutRecomposer();
+                break;
+            // Ce qui est une faute a changé sans qu'un texte change : un mot ignoré ou ajouté, la
+            // langue du document, un autre document (N25).
+            case nameof(MainWindowViewModel.VersionDeLOrthographe):
+            case nameof(MainWindowViewModel.LangueDuDocument):
+                if (FautesVisibles) PerimerLesFautes(_ => true);
+                break;
+            // Le curseur a bougé dans le texte, ou la saisie s'est refermée : le mot qu'on tape
+            // change, et celui qu'on vient de quitter se souligne (N25). Sans recomposer : les
+            // fautes se relisent sur la composition gardée, chaque mot dans le cache du correcteur.
+            case nameof(MainWindowViewModel.SelectionDuTexte):
+                if (FautesVisibles) PerimerLesFautes(_ => true);
+                break;
+        }
     }
 
     /// <summary>
@@ -114,14 +161,16 @@ public partial class PageCanvas
     /// </summary>
     private void ToutRecomposer()
     {
-        if (!CaracteresVisibles)
+        if (!CaracteresVisibles) _caracteresSpeciaux.Effacer();
+        if (!FautesVisibles) _fautesSoulignees.Effacer();
+        if (!BlocsSuivis)
         {
             foreach (var compose in _ordreDesCaracteres.ToList()) LacherLesCaracteres(compose);
-            _caracteresSpeciaux.Effacer();
             return;
         }
 
-        PoserLesCaracteresDansLOverlay();
+        if (CaracteresVisibles) PoserLesCaracteresDansLOverlay();
+        if (FautesVisibles) PoserLesFautesDansLOverlay();
         foreach (var suivi in _caracteresSuivis.Values) suivi.Perime = true;
         SuivreLesCaracteres();
         DemanderLesCaracteres();
@@ -147,13 +196,26 @@ public partial class PageCanvas
     }
 
     /// <summary>
+    /// Pose le contrôle des fautes dans l'<c>Overlay</c>, sous les marques de la saisie et les
+    /// poignées, sur toute la planche — une fois, à la première vérification active (N25).
+    /// </summary>
+    private void PoserLesFautesDansLOverlay()
+    {
+        if (_fautesSoulignees.Parent is not null) return;
+
+        _fautesSoulignees.Bind(WidthProperty, new Binding("Bounds.Width") { Source = Overlay });
+        _fautesSoulignees.Bind(HeightProperty, new Binding("Bounds.Height") { Source = Overlay });
+        Overlay.Children.Insert(0, _fautesSoulignees);
+    }
+
+    /// <summary>
     /// Une passe de mise en page vient de finir : les blocs de la page ont pu venir ou s'en aller —
     /// une autre page, un bloc ajouté, masqué ou retiré —, ou bouger à l'écran — zoom, place, taille.
     /// On relit les blocs visibles et leur place ; seuls ceux qui sont nouveaux se recomposent.
     /// </summary>
     private void SuivreLesCaracteres()
     {
-        if (!CaracteresVisibles) return;
+        if (!BlocsSuivis) return;
 
         var presents = PageRoot.GetVisualDescendants().OfType<TexteCompose>()
             .Where(compose => compose.Bloc is not null && compose.IsEffectivelyVisible)
@@ -187,7 +249,7 @@ public partial class PageCanvas
             }
         }
 
-        if (_caracteresSuivis.Values.Any(suivi => suivi.Perime)) DemanderLesCaracteres();
+        if (_caracteresSuivis.Values.Any(suivi => suivi.Perime || suivi.FautesPerimees)) DemanderLesCaracteres();
         else if (change) PublierLesCaracteres();
     }
 
@@ -209,27 +271,84 @@ public partial class PageCanvas
 
     private void RecomposerLesCaracteres()
     {
-        if (!CaracteresVisibles) return;
+        if (!BlocsSuivis) return;
 
         foreach (var compose in _ordreDesCaracteres)
         {
             var suivi = _caracteresSuivis[compose];
-            if (!suivi.Perime) continue;
+            if (suivi.Perime)
+            {
+                suivi.Geometrie = compose.Geometrie();
+                suivi.Caracteres = CaracteresVisibles ? CaracteresDe(suivi.Geometrie, compose) : [];
+                suivi.Couches = CouchesDe(compose);
+                suivi.Perime = false;
+                suivi.FautesPerimees = true;
+            }
 
-            suivi.Caracteres = CaracteresDe(compose);
-            suivi.Couches = CouchesDe(compose);
-            suivi.Perime = false;
+            if (suivi.FautesPerimees)
+            {
+                suivi.Traits = FautesVisibles ? TraitsDesFautes(suivi.Geometrie, suivi.Bloc) : [];
+                suivi.FautesPerimees = false;
+            }
         }
 
         PublierLesCaracteres();
     }
 
-    private void PublierLesCaracteres() =>
-        _caracteresSpeciaux.Poser(_ordreDesCaracteres
-            .Select(compose => (Compose: compose, Suivi: _caracteresSuivis[compose]))
-            .Where(bloc => bloc.Suivi.Caracteres.Count > 0 && bloc.Suivi.Couches.Count > 0)
-            .Select(bloc => new CaracteresDuBloc(bloc.Compose, bloc.Suivi.Couches, bloc.Suivi.Caracteres))
-            .ToList());
+    private void PublierLesCaracteres()
+    {
+        if (CaracteresVisibles)
+        {
+            _caracteresSpeciaux.Poser(_ordreDesCaracteres
+                .Select(compose => (Compose: compose, Suivi: _caracteresSuivis[compose]))
+                .Where(bloc => bloc.Suivi.Caracteres.Count > 0 && bloc.Suivi.Couches.Count > 0)
+                .Select(bloc => new CaracteresDuBloc(bloc.Compose, bloc.Suivi.Couches, bloc.Suivi.Caracteres))
+                .ToList());
+        }
+
+        if (FautesVisibles)
+        {
+            _fautesSoulignees.Poser(_ordreDesCaracteres
+                .Select(compose => (Compose: compose, Suivi: _caracteresSuivis[compose]))
+                .Where(bloc => bloc.Suivi.Traits.Count > 0 && bloc.Suivi.Couches.Count > 0)
+                .Select(bloc => new FautesDuBloc(bloc.Compose, bloc.Suivi.Couches, bloc.Suivi.Traits))
+                .ToList());
+        }
+    }
+
+    /// <summary>
+    /// Les traits des fautes d'un bloc (N25), lus sur la géométrie de sa composition : une faute
+    /// se souligne sur chaque ligne qu'elle occupe, des abscisses de N3 de ses deux bouts sur cette
+    /// ligne — un mot coupé par un trait d'union à la fin d'une ligne y a deux traits. Le mot qu'on
+    /// tape, le curseur à son bout et rien de sélectionné, ne se souligne pas encore. Rien pour un
+    /// bloc à champ, qui n'a pas de géométrie.
+    /// </summary>
+    private IReadOnlyList<TraitDeFaute> TraitsDesFautes(GeometrieDuTexte? geometrie, TextFrame? bloc)
+    {
+        if (geometrie is null || bloc is null || _vmDesCaracteres is not { } vm) return [];
+
+        var tape = ReferenceEquals(bloc, _editing) && vm.SelectionDuTexte is { EstVide: true } curseur && ReferenceEquals(curseur.Bloc, bloc)
+            ? curseur.Curseur
+            : -1;
+        var traits = new List<TraitDeFaute>();
+        foreach (var faute in vm.FautesDuBloc(bloc))
+        {
+            if (faute.Fin == tape) continue;
+
+            for (var rang = 0; rang < geometrie.Lignes.Count; rang++)
+            {
+                var posee = geometrie.Lignes[rang];
+                var debut = Math.Max(faute.Debut, posee.Ligne.Debut);
+                var fin = Math.Min(faute.Fin, posee.Ligne.Fin);
+                if (fin <= debut) continue;
+
+                traits.Add(new TraitDeFaute(faute, rang, geometrie.AbscisseSur(posee, debut),
+                    geometrie.AbscisseSur(posee, fin), posee.LigneDeBase, geometrie.StyleDe(debut + 1).FontSize));
+            }
+        }
+
+        return traits;
+    }
 
     /// <summary>
     /// Les caractères spéciaux d'un bloc, lus sur la géométrie de sa composition. Chaque caractère
@@ -239,9 +358,9 @@ public partial class PageCanvas
     /// — ¶ pour une fin de paragraphe, ↵ pour un saut de ligne forcé —, et le bout du texte ferme le
     /// dernier paragraphe. Rien pour un bloc à champ, qui n'a pas de géométrie.
     /// </summary>
-    private static IReadOnlyList<CaracterePose> CaracteresDe(TexteCompose compose)
+    private static IReadOnlyList<CaracterePose> CaracteresDe(GeometrieDuTexte? geometrie, TexteCompose compose)
     {
-        if (compose.Geometrie() is not { } geometrie) return [];
+        if (geometrie is null) return [];
 
         var texte = compose.Contenu ?? string.Empty;
         var caracteres = new List<CaracterePose>();
@@ -301,7 +420,9 @@ public partial class PageCanvas
 
         chaine.Reverse();
         var couches = new List<CoucheDeDecoupe>(chaine.Count);
-        Visual precedent = _caracteresSpeciaux;
+        // Le repère des deux contrôles de l'Overlay, posés au même endroit sur toute la planche :
+        // celui des caractères s'il y est, sinon celui des fautes (N25).
+        Visual precedent = _caracteresSpeciaux.Parent is not null ? _caracteresSpeciaux : _fautesSoulignees;
         foreach (var niveau in chaine)
         {
             if (niveau.TransformToVisual(precedent) is not { } transformation) return [];
@@ -363,6 +484,19 @@ public partial class PageCanvas
             suivi.Perime = true;
             DemanderLesCaracteres();
         }
+    }
+
+    /// <summary>Les traits des fautes des blocs concernés sont à reprendre, sur leur composition (N25).</summary>
+    private void PerimerLesFautes(Func<SuiviDesCaracteres, bool> concerne)
+    {
+        var aucun = true;
+        foreach (var suivi in _caracteresSuivis.Values.Where(concerne))
+        {
+            suivi.FautesPerimees = true;
+            aucun = false;
+        }
+
+        if (!aucun) DemanderLesCaracteres();
     }
 
     private void Perimer(Func<SuiviDesCaracteres, bool> concerne)

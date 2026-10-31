@@ -19,6 +19,12 @@
         <!-- L'export PDF est un service du noyau : l'écran et le PDF partagent le
              même modèle, sans couche intermédiaire susceptible de diverger. -->
         <PackageReference Include="PdfSharp" Version="6.2.1"/>
+        <!-- La vérification orthographique (N25) : un portage de Hunspell en code géré,
+             sans bibliothèque native. Licence héritée de Hunspell, au choix MPL 1.1,
+             GPL 2.0 ou LGPL 2.1 ; MyPublisher la prend sous MPL 1.1, sans modifier le
+             code : l'obligation est une mention, au README. Les dictionnaires sont ceux
+             du système (/usr/share/hunspell). -->
+        <PackageReference Include="WeCantSpell.Hunspell" Version="7.0.1"/>
     </ItemGroup>
 
 </Project>

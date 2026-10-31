@@ -11,8 +11,8 @@ namespace MyPublisher.Services;
 /// <summary>
 /// Les réglages de l'utilisateur, rangés hors du document — dans sa configuration, parce qu'ils
 /// le suivent d'un document à l'autre et d'une session à la suivante (poste N11). Le poste y
-/// range les six derniers documents ouverts ou enregistrés ; A11 y rangera l'aimantation, N25 le
-/// dictionnaire de l'utilisateur. Ce que ce fichier ne connaît pas encore — une clé qu'une
+/// range les six derniers documents ouverts ou enregistrés ; A11 y rangera l'aimantation ; N25 y
+/// range « Vérifier pendant la frappe » et le dictionnaire de l'utilisateur, par langue. Ce que ce fichier ne connaît pas encore — une clé qu'une
 /// version plus récente y aurait écrite — est relu et réécrit tel quel, sans être perdu.
 ///
 /// Un magasin chargé sans chemin (<see cref="EnMemoire"/>) ne s'écrit jamais : c'est celui que
@@ -37,6 +37,18 @@ public sealed class Preferences
 
     /// <summary>Les derniers documents ouverts ou enregistrés, chemins complets, le plus récent en tête.</summary>
     public List<string> DocumentsRecents { get; set; } = [];
+
+    /// <summary>
+    /// « Vérifier pendant la frappe » (poste N25) : les fautes se soulignent sur la page. Ouvert
+    /// d'emblée, comme dans Publisher.
+    /// </summary>
+    public bool VerifierPendantLaFrappe { get; set; } = true;
+
+    /// <summary>
+    /// Le dictionnaire de l'utilisateur (poste N25) : les mots qu'il a ajoutés, par langue — une
+    /// étiquette de N9, « fr-FR » —, dans l'ordre alphabétique, chacun une fois.
+    /// </summary>
+    public Dictionary<string, List<string>> DictionnaireDeLUtilisateur { get; set; } = [];
 
     /// <summary>Les clés que cette version ne connaît pas : relues, puis réécrites telles quelles.</summary>
     [JsonExtensionData]
@@ -100,6 +112,10 @@ public sealed class Preferences
 
         preferences.Chemin = chemin;
         preferences.DocumentsRecents = Nettoyer(preferences.DocumentsRecents ?? []);
+        preferences.DictionnaireDeLUtilisateur = (preferences.DictionnaireDeLUtilisateur ?? [])
+            .Where(langue => !string.IsNullOrWhiteSpace(langue.Key) && langue.Value is not null)
+            .ToDictionary(langue => langue.Key, langue => langue.Value.Where(mot => !string.IsNullOrWhiteSpace(mot))
+                .Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToList());
         return preferences;
     }
 
@@ -127,6 +143,21 @@ public sealed class Preferences
     {
         var complet = Path.GetFullPath(chemin);
         DocumentsRecents = Nettoyer([complet, .. DocumentsRecents]);
+    }
+
+    /// <summary>
+    /// Ajoute un mot au dictionnaire de l'utilisateur pour une langue (poste N25), une fois, à son
+    /// rang alphabétique. Vrai s'il n'y était pas.
+    /// </summary>
+    public bool AjouterAuDictionnaire(string langue, string mot)
+    {
+        if (string.IsNullOrWhiteSpace(langue) || string.IsNullOrWhiteSpace(mot)) return false;
+        if (!DictionnaireDeLUtilisateur.TryGetValue(langue, out var mots)) DictionnaireDeLUtilisateur[langue] = mots = [];
+        if (mots.Contains(mot, StringComparer.Ordinal)) return false;
+
+        var rang = mots.BinarySearch(mot, StringComparer.Ordinal);
+        mots.Insert(rang < 0 ? ~rang : rang, mot);
+        return true;
     }
 
     /// <summary>Retire un document des récents — celui qu'on n'a pas pu rouvrir.</summary>

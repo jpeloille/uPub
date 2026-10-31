@@ -18,6 +18,12 @@
     fait son propre pas (MainWindowViewModel.Rechercher.cs).
 
     Une vue de la phase : elle ne cite que l'apparence (Apparence.axaml), aucune couleur en dur.
+
+    La vérification orthographique (poste N25) : F7 met la barre en mode orthographe
+    (ModeOrthographe) — le mot que le dictionnaire ne connaît pas, sélectionné en saisie comme un
+    texte trouvé, ses suggestions, et Ignorer, Ignorer tout, Remplacer, Ajouter au dictionnaire,
+    comme le dialogue Orthographe de Publisher. Ctrl+F et Ctrl+H la rendent à la recherche ; Échap
+    la ferme et rend le focus au mot sélectionné. Remplacer fait un pas.
 -->
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -67,7 +73,9 @@
 
     <Border x:Name="CadreDeLaRecherche" Background="{StaticResource Blanc}" BorderBrush="{StaticResource FiletFort}"
             BorderThickness="1" CornerRadius="6" Padding="10,8">
-        <Grid ColumnDefinitions="Auto,8,Auto,6,Auto,6,Auto" RowDefinitions="Auto,6,Auto,6,Auto">
+        <Panel>
+        <Grid x:Name="Recherche" IsVisible="{Binding !ModeOrthographe}"
+              ColumnDefinitions="Auto,8,Auto,6,Auto,6,Auto" RowDefinitions="Auto,6,Auto,6,Auto">
             <TextBox Grid.Row="0" Grid.Column="0" x:Name="TexteCherche" Classes="champ"
                      Watermark="Rechercher" Text="{Binding TexteCherche}"
                      ToolTip.Tip="Le texte cherché (Ctrl+F) — Entrée cherche le suivant (F3)"/>
@@ -100,5 +108,45 @@
                 <CheckBox x:Name="MotEntier" Classes="case" Content="Mot entier" IsChecked="{Binding MotEntier}"/>
             </StackPanel>
         </Grid>
+
+        <!-- Le mode orthographe (N25) : le mot fautif, ses suggestions, les quatre commandes. -->
+        <Grid x:Name="Orthographe" IsVisible="{Binding ModeOrthographe}"
+              ColumnDefinitions="190,8,Auto,6,Auto" RowDefinitions="Auto,6,Auto,6,Auto">
+            <TextBlock Grid.Row="0" Grid.Column="0" x:Name="MotFautif" FontSize="12" VerticalAlignment="Center"
+                       Foreground="{StaticResource Texte}" TextTrimming="CharacterEllipsis"
+                       Text="{Binding MotFautif, StringFormat='Absent du dictionnaire : « {0} »'}"
+                       IsVisible="{Binding UneFauteEstMontree}"/>
+            <TextBlock Grid.Row="0" Grid.Column="0" FontSize="12" VerticalAlignment="Center"
+                       Foreground="{StaticResource Libelle}" Text="Vérification terminée."
+                       IsVisible="{Binding !UneFauteEstMontree}"/>
+            <Button Grid.Row="0" Grid.Column="2" x:Name="BoutonIgnorer" Classes="commande"
+                    Content="Ignorer" ToolTip.Tip="Laisser ce mot, et passer à la faute suivante"
+                    Command="{Binding IgnorerLaFauteCommand}"/>
+            <Button Grid.Row="0" Grid.Column="4" x:Name="BoutonFermerLOrthographe" Classes="ib" Width="26" Height="26"
+                    Focusable="False" ToolTip.Tip="Fermer la vérification (Échap)"
+                    Command="{Binding FermerLaRechercheCommand}">
+                <Viewbox Width="14" Height="14">
+                    <Canvas Width="24" Height="24" ClipToBounds="True">
+                        <Path Classes="iconeTrait" StrokeThickness="2" StrokeLineCap="Round" Data="M6 6L18 18M18 6L6 18"/>
+                    </Canvas>
+                </Viewbox>
+            </Button>
+
+            <ListBox Grid.Row="2" Grid.Column="0" Grid.RowSpan="3" x:Name="Suggestions" Height="96" FontSize="12" Focusable="True"
+                     BorderBrush="{StaticResource BordChamp}" BorderThickness="1"
+                     ItemsSource="{Binding SuggestionsDeLaFaute}" SelectedItem="{Binding SuggestionChoisie}"/>
+            <StackPanel Grid.Row="2" Grid.Column="2" Grid.ColumnSpan="3" Grid.RowSpan="3" Spacing="6">
+                <Button x:Name="BoutonIgnorerTout" Classes="commande" HorizontalAlignment="Stretch"
+                        Content="Ignorer tout" ToolTip.Tip="Ce mot n'est plus une faute jusqu'à la fin de la session"
+                        Command="{Binding IgnorerToutesLesFautesCommand}"/>
+                <Button x:Name="BoutonRemplacerLaFaute" Classes="commande principal" HorizontalAlignment="Stretch"
+                        Content="Remplacer" ToolTip.Tip="Remplacer le mot par la suggestion choisie, en un pas"
+                        Command="{Binding RemplacerLaFauteCommand}"/>
+                <Button x:Name="BoutonAjouterAuDictionnaire" Classes="commande" HorizontalAlignment="Stretch"
+                        Content="Ajouter au dictionnaire" ToolTip.Tip="Ajouter ce mot à votre dictionnaire, pour sa langue"
+                        Command="{Binding AjouterAuDictionnaireCommand}"/>
+            </StackPanel>
+        </Grid>
+        </Panel>
     </Border>
 </UserControl>

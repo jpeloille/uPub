@@ -18,6 +18,7 @@ namespace MyPublisher.Banc;
 ///   MyPublisher.Banc excedent &lt;doc.mypub&gt; --sortie &lt;blocs.json&gt;
 ///   MyPublisher.Banc empreinte &lt;doc&gt; --sortie &lt;empreinte.txt&gt;
 ///   MyPublisher.Banc saisie &lt;doc&gt; --sortie &lt;écarts.json&gt; [--au-mieux] [--zoom 2]
+///   MyPublisher.Banc orthographe &lt;doc&gt; [--langue en-US] [--dictionnaires &lt;dossier&gt;]
 ///
 /// Les deux jeux se choisissent par le modèle de vue, exactement comme la liste du
 /// panneau les choisit — c'est le geste « changer de jeu » du poste C5b, rejoué sans
@@ -43,6 +44,7 @@ internal static class Program
                 "excedent" => Excedent.Lancer(args),
                 "empreinte" => Empreinte.Lancer(args),
                 "saisie" => Saisie.Lancer(args),
+                "orthographe" => VerificationOrthographique.Lancer(args),
                 _ => Inconnu(args[0]),
             };
         }
@@ -141,5 +143,7 @@ internal static class Program
             "        MyPublisher.Banc empreinte <doc> --sortie <empreinte.txt>");
         Console.Error.WriteLine(
             "        MyPublisher.Banc saisie <doc> --sortie <écarts.json> [--au-mieux] [--zoom 2]");
+        Console.Error.WriteLine(
+            "        MyPublisher.Banc orthographe <doc> [--langue en-US] [--dictionnaires <dossier>]");
     }
 }
