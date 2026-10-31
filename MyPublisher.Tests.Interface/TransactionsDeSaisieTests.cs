@@ -469,7 +469,10 @@ public class TransactionsDeSaisieTests
         retrait.SelectAll();
         fenetre.KeyTextInput("5");
         Rendu.Touche(fenetre, PhysicalKey.Enter);
-        Assert.Equal(Units.MmToPoints(5), bloc.IndentFirstLine, precision: 9);
+        // Depuis R6, le retrait saisi au dock pendant la saisie va au paragraphe du curseur, en
+        // écart ; le bloc garde le sien. Le pas, lui, ne change pas.
+        Assert.Equal(Units.MmToPoints(5), Assert.Single(bloc.Paragraphs).IndentFirstLine!.Value, precision: 9);
+        Assert.Equal(0, bloc.IndentFirstLine);
         etats.Add(("retrait de 5 mm", Etat(vm)));
 
         Rendu.Cliquer(fenetre, Rendu.SurLaPage(fenetre, bloc.X + bloc.Width - 20, bloc.Y + 10));

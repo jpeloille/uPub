@@ -211,27 +211,33 @@
                             <Border Classes="separateur"/>
                             <!-- Les quatre alignements : la maquette omet la droite, que le modèle
                                  a, et Publisher aussi ; elle se range entre le centre et la
-                                 justification, dans l'ordre du menu Texte. -->
-                            <views:BoutonDEtat Classes="ib" Focusable="False" ToolTip.Tip="Aligner le texte à gauche"
-                                               Content="{StaticResource IconeTexteAGauche}"
-                                               IsChecked="{Binding Align, Mode=OneWay, Converter={x:Static conv:EnumToBool.Instance}, ConverterParameter=Left}"
-                                               Command="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).AlignerLeTexteCommand}"
-                                               CommandParameter="{x:Static models:TextAlign.Left}"/>
-                            <views:BoutonDEtat Classes="ib" Focusable="False" ToolTip.Tip="Centrer le texte"
-                                               Content="{StaticResource IconeTexteCentre}"
-                                               IsChecked="{Binding Align, Mode=OneWay, Converter={x:Static conv:EnumToBool.Instance}, ConverterParameter=Center}"
-                                               Command="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).AlignerLeTexteCommand}"
-                                               CommandParameter="{x:Static models:TextAlign.Center}"/>
-                            <views:BoutonDEtat Classes="ib" Focusable="False" ToolTip.Tip="Aligner le texte à droite"
-                                               Content="{StaticResource IconeTexteADroite}"
-                                               IsChecked="{Binding Align, Mode=OneWay, Converter={x:Static conv:EnumToBool.Instance}, ConverterParameter=Right}"
-                                               Command="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).AlignerLeTexteCommand}"
-                                               CommandParameter="{x:Static models:TextAlign.Right}"/>
-                            <views:BoutonDEtat Classes="ib" Focusable="False" ToolTip.Tip="Justifier"
-                                               Content="{StaticResource IconeTexteJustifie}"
-                                               IsChecked="{Binding Align, Mode=OneWay, Converter={x:Static conv:EnumToBool.Instance}, ConverterParameter=Justify}"
-                                               Command="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).AlignerLeTexteCommand}"
-                                               CommandParameter="{x:Static models:TextAlign.Justify}"/>
+                                 justification, dans l'ordre du menu Texte. Ils se lient au
+                                 paragraphe visé (R6) : le bloc hors saisie, les paragraphes de la
+                                 sélection en saisie ; mixtes, aucun n'est allumé. -->
+                            <StackPanel x:Name="AlignementsDuParagraphe" Orientation="Horizontal" Spacing="6"
+                                        x:DataType="vm:ParagrapheVise"
+                                        DataContext="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).ParagrapheVise}">
+                                <views:BoutonDEtat Classes="ib" Focusable="False" ToolTip.Tip="Aligner le texte à gauche"
+                                                   Content="{StaticResource IconeTexteAGauche}"
+                                                   IsChecked="{Binding Align, Mode=OneWay, Converter={x:Static conv:EnumToBool.Instance}, ConverterParameter=Left}"
+                                                   Command="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).AlignerLeTexteCommand}"
+                                                   CommandParameter="{x:Static models:TextAlign.Left}"/>
+                                <views:BoutonDEtat Classes="ib" Focusable="False" ToolTip.Tip="Centrer le texte"
+                                                   Content="{StaticResource IconeTexteCentre}"
+                                                   IsChecked="{Binding Align, Mode=OneWay, Converter={x:Static conv:EnumToBool.Instance}, ConverterParameter=Center}"
+                                                   Command="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).AlignerLeTexteCommand}"
+                                                   CommandParameter="{x:Static models:TextAlign.Center}"/>
+                                <views:BoutonDEtat Classes="ib" Focusable="False" ToolTip.Tip="Aligner le texte à droite"
+                                                   Content="{StaticResource IconeTexteADroite}"
+                                                   IsChecked="{Binding Align, Mode=OneWay, Converter={x:Static conv:EnumToBool.Instance}, ConverterParameter=Right}"
+                                                   Command="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).AlignerLeTexteCommand}"
+                                                   CommandParameter="{x:Static models:TextAlign.Right}"/>
+                                <views:BoutonDEtat Classes="ib" Focusable="False" ToolTip.Tip="Justifier"
+                                                   Content="{StaticResource IconeTexteJustifie}"
+                                                   IsChecked="{Binding Align, Mode=OneWay, Converter={x:Static conv:EnumToBool.Instance}, ConverterParameter=Justify}"
+                                                   Command="{Binding $parent[views:BarreContextuelle].((vm:MainWindowViewModel)DataContext).AlignerLeTexteCommand}"
+                                                   CommandParameter="{x:Static models:TextAlign.Justify}"/>
+                            </StackPanel>
                             <Border Classes="separateur"/>
                             <!-- L'interligne en multiple de la hauteur naturelle (R4), et non en
                                  points comme la maquette : le modèle ne change pas pour

@@ -297,9 +297,15 @@ Fenêtre masque aussi l'un ou l'autre.
 - **Retraits et espacement de paragraphe** : retrait à gauche, à droite, et retrait de
   première ligne — négatif, il fait pendre cette ligne à gauche des suivantes, ce qui
   est la façon d'aligner une liste à puces. Plus un espace avant et un espace après le
-  paragraphe. Le dock les règle pour le bloc entier ; le fichier, lui, sait déjà les
-  porter paragraphe par paragraphe, ce dont les documents Publisher se servent
-  abondamment.
+  paragraphe. Le fichier les porte paragraphe par paragraphe, ce dont les documents
+  Publisher se servent abondamment, et le dock les règle de même : hors saisie pour le
+  bloc entier, pendant la saisie pour les paragraphes que touche la sélection, ou celui
+  du curseur — un champ reste vide quand ils diffèrent. « Diminuer le retrait » et
+  « Augmenter le retrait » mènent le retrait gauche au taquet précédent ou suivant, de
+  36 pt en 36 pt, chaque paragraphe depuis le sien. L'alignement suit la même règle, à
+  la barre contextuelle, au menu Texte et au clavier ; aucun bouton n'est allumé quand
+  les paragraphes visés ont des fers différents. L'interligne, lui, reste un réglage
+  du bloc : Publisher le règle par paragraphe, c'est un écart assumé.
 - **Colonnes à l'intérieur d'un bloc de texte** : on donne au bloc un nombre de
   colonnes et une gouttière, et le texte remplit la première jusqu'au bas du bloc
   avant de passer à la suivante. C'est autre chose que la grille de composition plus
@@ -495,7 +501,7 @@ comptés pour rien : sur un AZERTY, `Ctrl+]` se tape `Ctrl+AltGr+)`, `Ctrl+[` se
 | Raccourci | Action |
 |---|---|
 | `Ctrl+G` / `Ctrl+I` / `Ctrl+U` | Gras / Italique / Souligné du bloc de texte sélectionné |
-| `Ctrl+L` / `Ctrl+E` / `Ctrl+R` / `Ctrl+J` | Aligner le texte à gauche / Centrer / Aligner à droite / Justifier, sur le bloc entier |
+| `Ctrl+L` / `Ctrl+E` / `Ctrl+R` / `Ctrl+J` | Aligner le texte à gauche / Centrer / Aligner à droite / Justifier : le bloc entier, ou, en saisie, les paragraphes que touche la sélection |
 | `Ctrl+]` / `Ctrl+[` | Le corps d'un point de plus / de moins, sur le bloc de texte ou le tableau |
 | `Ctrl+Maj+>` / `Ctrl+Maj+<` | La taille suivante / précédente de la liste standard : 8, 9, 10, 10,5, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72 ; au-delà, de dix en dix ; en deçà, d'un point |
 | Dans la liste des polices de la barre : `Entrée` ou `Tab`, `↑` / `↓`, `Échap` | Pose la police proposée — la première de celles qui commencent par la frappe — et rend la planche, ou passe au champ suivant ; marque la proposition précédente / suivante ; renonce à ce qui est tapé et rend la planche |
@@ -747,9 +753,7 @@ partout ailleurs — à l'écran, à l'export — un chemin d'image est absolu.
   encore à la souris : on ne peut pas sélectionner trois mots dans un bloc pour les
   mettre en gras. La barre contextuelle, le menu Texte et `Ctrl+G` agissent sur le bloc
   entier.
-- L'alignement, les retraits et l'espacement varient d'un paragraphe à l'autre — un
-  document Publisher importé les garde, et ils s'affichent et s'exportent —, mais la
-  barre contextuelle et le dock ne règlent que le bloc entier.
+- L'interligne est un réglage du bloc entier : Publisher le règle par paragraphe.
 - La coupure des lignes se décide, à l'écran comme au PDF, sur la plus large des deux
   mesures, et sur la largeur du bloc telle que le modèle la donne. Ce qui est vérifié,
   par `Scripts/comparer-mots.sh` dans la recette de Q13 : aucune ligne coupée

@@ -249,10 +249,12 @@ public partial class MainWindowViewModel
     private void BasculerItalique() => Retoucher(texte => texte.Italic = !texte.Italic,
         tableau => tableau.Italic = !tableau.Italic, "Italique");
 
-    /// <summary>Les quatre alignements du texte, au menu Texte.</summary>
+    /// <summary>
+    /// Les quatre alignements du texte, au menu Texte : le bloc hors saisie, les paragraphes de
+    /// la sélection en saisie (poste R6, <c>ParagrapheVise</c>).
+    /// </summary>
     [RelayCommand(CanExecute = nameof(EstUnBlocDeTexte))]
-    private void AlignerLeTexte(TextAlign alignement) =>
-        Retoucher(texte => texte.Align = alignement, null, $"Texte aligné : {Libelles.De(alignement)}");
+    private void AlignerLeTexte(TextAlign alignement) => AlignerLesParagraphesVises(alignement);
 
     private void Retoucher(Action<TextFrame> surTexte, Action<TableFrame>? surTableau, string message)
     {
@@ -438,6 +440,9 @@ public partial class MainWindowViewModel
         BasculerGrasCommand.NotifyCanExecuteChanged();
         BasculerItaliqueCommand.NotifyCanExecuteChanged();
         AlignerLeTexteCommand.NotifyCanExecuteChanged();
+        // Les deux boutons de retrait du dock (R6) : un bloc de texte seul.
+        DiminuerLeRetraitCommand.NotifyCanExecuteChanged();
+        AugmenterLeRetraitCommand.NotifyCanExecuteChanged();
         // Le souligné de I7, au menu Texte et dans la barre depuis I3 : un bloc de texte seul.
         SoulignerCommand.NotifyCanExecuteChanged();
     }
