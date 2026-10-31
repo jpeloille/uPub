@@ -127,7 +127,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **N20** | Rechercher et remplacer | **100 %** | La barre de recherche (`Views/BarreDeRecherche.axaml`), posée par la fenêtre sur la planche, en haut à droite, sous la règle, par-dessus — la planche ne bouge pas (règle 3), rien n'entre dans `PageRoot` (règle 4) : le texte cherché, le texte de remplacement, *Respecter la casse*, *Mot entier*, Suivant, Remplacer, Remplacer tout, et sa croix. `Ctrl+F` et *Edition ▸ Rechercher…* l'ouvrent, le focus au texte cherché ; `Ctrl+H` et *Remplacer…*, au texte de remplacement ; `F3` et `Maj+F4` cherchent le suivant, et ouvrent la barre quand il n'y a rien à chercher ; `Entrée` y cherche le suivant, `Échap` la ferme et rend la planche — les quatre touches, réservées par la fiche 24, y sont liées. Le parcours (`MainWindowViewModel.Rechercher.cs`) va de page en page, puis de haut en bas et de gauche à droite, dans les blocs de texte visibles et sans champ, les cases des tableaux et ce que portent les groupes, et reprend au début en le disant ; le texte trouvé est sélectionné en saisie, la page suivant (`TexteTrouve`, que la planche sert depuis `PageCanvas.Saisie.cs`) ; dans un groupe, le groupe est sélectionné, dans une case, le tableau, et la barre d'état dit où. Le remplacement passe par le noyau (`Models/Recherche.cs`, et `Recalage.Appliquer` pour une édition dite et non déduite) : le texte remplacé prend le style de son premier caractère (Q1) ; *Remplacer* fait un pas, *Remplacer tout* un seul pour le document. Repris le 31 octobre 2026, sur la décision du propriétaire : le focus reste dans la barre, comme dans le volet de Publisher — une seconde `Entrée` cherche le suivant, la sélection dessinée sur la composition (N21) —, et `Échap` le rend au texte trouvé, où l'on tape par-dessus. Neuf tests du noyau et douze sur la fenêtre sous `poste=N20` ; trois sabotages au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **N21** | La saisie montre le texte composé | **100 %** | Voie 2a. Pendant la saisie, la composition reste à l'écran : l'encre de la page est celle d'avant l'entrée, au pixel, sur l'exemple et ATA 21, et ce qu'on tape se voit tel que la page le montre hors saisie. Le champ reste, caché (opacité nulle) et hors du test de survol, pour la frappe, la méthode d'entrée, le presse-papiers et la navigation au clavier ; la couche garde le clic sur le texte en saisie (`PressionDansLaSaisie`, `PageCanvas.Saisie.cs`) : clic, `Maj`+clic, double-clic au mot, triple-clic au paragraphe, glissé par caractère, mot ou paragraphe, tout lu sur la composition ; le clic droit garde la saisie et laisse remonter sa demande de menu (A12). Le curseur, la sélection — celle que le modèle de vue garde (N15), qui survit au focus de la barre — et le pré-édit se dessinent dans l'`Overlay` (`MarquesDuTexte`), aux couleurs de l'apparence, tournés et mis à l'échelle avec le bloc. Le bord d'un caractère est lu dans le morceau façonné (`IMetriques.Bord`) : la reprise de N3 que la décision demandait, ligatures et crénages compris, au dessin à 0,0000 pt sur 5 441 bords. Un clic sur un caractère de chacun des sept blocs de texte d'ATA 21 y pose le curseur, dessiné sous lui. `PageCanvas.axaml.cs` n'est pas touché ; la navigation au clavier sur les lignes composées reste au champ, mesurée sur ATA 21, pour un poste à part. Dix tests sous `poste=N21` ; recette N5 reprise (règle 14) ; deux sabotages au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **N22** | Les caractères spéciaux | **100 %** | *Affichage ▸ Caractères spéciaux* et `Ctrl+Maj+Y` : une bascule de la session (`CaracteresSpeciauxVisibles`, `MainWindowViewModel.CaracteresSpeciaux.cs`), fermée à l'ouverture, hors du document et de l'historique, qui joue aussi en saisie sans la refermer. Sur chaque bloc de texte visible de la page, un point pour chaque espace, une flèche pour chaque tabulation, ¶ à chaque fin de paragraphe et au bout du texte, ↵ à chaque saut forcé, à l'accent de l'apparence et au corps du texte, aux places de N3 : ¶ au `PointDe` de son saut à 0,01 pt, sur le texte riche, l'exemple et ATA 21 ; une espace sur toute sa chasse, élargie par la justification ou pendante au bout d'une ligne renvoyée (`GeometrieDuTexte.AbscisseSur`, un accesseur ajouté à `TexteCompose.cs`). Le dessin (`Views/CaracteresSpeciaux.cs`, posé par `PageCanvas.CaracteresSpeciaux.cs`) vit dans l'`Overlay`, où il entre à la première ouverture de la bascule ; il est mené par la transformation des contrôles qui dessinent le bloc — tourné, mis à l'échelle — et découpé par la page et par le bloc ; un bloc ne se recompose que quand il change. L'encre de la page est identique, bascule ouverte ou fermée ; le PDF ne change pas ; `PageCanvas.axaml.cs` n'est pas touché. Pas de bouton ¶ : la maquette n'en a pas. Huit tests sous `poste=N22` ; un sabotage au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
-| **N23** | Puces et numérotation | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 8 |
+| **N23** | Puces et numérotation | **100 %** | Une propriété de paragraphe, `Liste` — aucune, puces (« • » par défaut, ou le caractère tapé), numéros « 1. », « a) », « i. » avec leur premier numéro —, valeur immuable (`ListeDeParagraphe`) sur `TextFrame` et sur `ParagraphSpan`, clé additive : `FormatVersion` reste 5, Samples et Templates réenregistrés (`"Liste": null`, rien d'autre), l'import inchangé. Les paragraphes consécutifs d'une même liste se numérotent de proche en proche, un paragraphe hors liste interrompt la suite, le premier numéro la fait repartir. La composition pose la marque en tête de la première ligne, au retrait de première ligne et au style du premier caractère : un morceau sans position (`Morceau.SansPosition`), que le curseur, le clic (N3), le souligné et les caractères spéciaux (N22) sautent, et que l'écran, le PDF, les vignettes et le compte de I9 voient par la même composition. Poser une liste donne le retrait suspendu d'Office (18 pt) à un paragraphe sans retrait, l'ôter le rend. Au dock, section Paragraphe : « Puces et numéros », la puce, le premier numéro, sur les paragraphes du `ParagrapheVise` (R6) — le bloc hors saisie, la sélection en saisie ; *Texte ▸ Puces et numéros…* y mène (N18). En saisie, Entrée dans un élément continue la liste (Q1), Entrée dans un élément vide l'en sort. Trente-quatre tests (vingt-quatre du noyau, dix sur la fenêtre), dont le PDF lu par `pdftotext -bbox` à 0,05 pt de l'écran ; l'empreinte de la composition du corpus inchangée. Recette dans `Scripts/recettes/`, un sabotage au juge ; relecture et juge après fusion |
 | **N24** | Exposant, indice, capitales | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 9 |
 | **N25** | La vérification orthographique | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 9 ; dépendance neuve à éprouver d'abord |
 | **N26** | Taper dans le texte d'un groupe, et prendre un membre seul | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 10 |
@@ -9177,6 +9177,151 @@ d'un bloc à l'autre (pas de chaînage) ; l'import ne change pas.
 Fichiers : `ParagraphSpan.cs`, `Frame.cs`, `Compositeur.cs`, `Recalage.cs`, `PageCanvas.Saisie.cs`
 (Entrée), `MainWindow.axaml` (dock Paragraphe), Samples, Templates. Dépend de R6. Effort : moyen à
 lourd.
+
+*Livré le 31 octobre 2026*, dans la salve Saisie 8 ; la relecture adversariale et le juge viennent
+après la fusion. **Le modèle.** `ListeDeParagraphe` (`Models/ListeDeParagraphe.cs`, neuf), un
+enregistrement immuable : `Sorte` (aucune, puces, numéros), `Puce` (« • » par défaut), `Format`
+(`Chiffres` « 1. », `Lettres` « a) », `Romains` « i. »), `Premier` (nul pour 1). Deux listes sont
+égales quand leurs quatre réglages le sont : c'est ce qui fusionne deux écarts voisins, et ce qui
+enchaîne deux paragraphes dans une même suite. `TextFrame.Liste` et `ParagraphSpan.Liste`, nulles
+par défaut ; `ParagrapheEffectif.Liste`, hors des membres positionnels — les réglages construits
+sans elle n'ont pas de liste —, que `Resoudre` remplit : la liste « aucune » d'un écart sort son
+paragraphe de celle du bloc, et l'effective est nulle hors liste. La copie du bloc et de l'écart la
+garde, et `MiseEnForme` la porte dans ses surcharges de paragraphe — sans quoi une pose d'alignement,
+qui récrit les écarts, l'aurait perdue. `FormatVersion` reste 5. **Samples et Templates sont
+réenregistrés par `--resave`**, et il le fallait : le sérialiseur écrit toutes les valeurs, et
+`Scripts/controle.sh` relit puis réécrit l'exemple, qui aurait gagné une clé ; seize des 17
+documents changent — `recette-fonds` n'a pas de bloc de texte —, et leur diff ne porte que
+`"Liste": null`, 190 fois, sur chaque bloc de texte et chaque écart. L'import ne change pas.
+
+**La numérotation** (`Listes.Numeros`, `Listes.Marques`) : des paragraphes consécutifs qui portent
+la même liste numérotée se suivent, à partir de son premier numéro ; tout autre paragraphe — sans
+liste, à puces, d'une autre forme ou d'un autre premier numéro — interrompt la suite. Les lettres vont
+de « a » à « z » puis « aa », « bb »… comme Office, jusqu'à trente lettres ; les chiffres romains
+jusqu'à 3 999 ; au-delà, et pour zéro, le numéro s'écrit en chiffres — un premier numéro aberrant,
+venu d'un fichier, n'écrit pas une marque de millions de lettres. Une liste ne court pas d'un bloc à l'autre.
+
+**La composition.** `Morceau` gagne `SansPosition` (−1) et `EstUneMarque`, dans une seconde
+déclaration partielle : son constructeur et sa forme ne changent pas. `Compositeur.Composition` pose
+en tête de la première ligne de chaque élément un morceau de la marque, au style de la première unité
+du paragraphe — son premier caractère, ou le saut d'un paragraphe vide —, dont la largeur compte la
+marque et le blanc qui la suit : le texte part au retrait suspendu (−`IndentFirstLine`) quand la marque
+y tient, sinon à la chasse d'une espace après elle, mesurée à la règle de coupure pour la décision du
+renvoi (Q13). Une ligne qui ne porte que la marque est vide pour le renvoi, et `Fermer` ne la rogne
+pas. Un texte vide n'a pas de marque. `Abscisse` la saute — le début du paragraphe est après elle, un
+élément vide met son curseur après elle —, si bien que `PositionLaPlusProche`, donc `IndexSous` (N3),
+rend le début du paragraphe pour un clic sur elle ; `Soulignes` ne la souligne pas ;
+`TexteCompose.StyleDe` la saute (une ligne, `TexteCompose.cs`). L'écran, le PDF, les vignettes et le
+compte de I9 l'ont par la même composition ; rien ne la dessine à part. Les caractères spéciaux de
+N22, qui se lisent sur les positions du texte, n'y dessinent rien.
+
+**La pose** (`Listes.Poser`, `Listes.PoserSurLeBloc`, `Listes.Recommencer`, dans le même fichier) :
+un paragraphe qui entre dans une liste sans aucun retrait reçoit le retrait suspendu d'Office, 18 pt à
+gauche et −18 pt de première ligne (« Indent list by 0.25" » de Publisher) ; un paragraphe qui en sort
+avec exactement ce retrait le rend, à zéro ; un retrait réglé à la main est gardé. Le premier numéro
+se pose sur le paragraphe et sur la fin de sa suite, qui reste sa suite.
+
+**La vue.** Le partiel du poste, `MainWindowViewModel.Listes.cs` : `ListeVisee`, le pendant de
+`ParagrapheVise` pour les listes, dont elle prend la cible — le bloc hors saisie, les paragraphes de
+la sélection en saisie — et les avis, et par qui elle écrit ; `Option` (« Aucune », « • Puces »,
+« 1. 2. 3. », « a) b) c) », « i. ii. iii. », nulle quand les paragraphes visés diffèrent), `Puce`,
+`PremierNumero` (le numéro du premier paragraphe visé), `EnPuces`, `Numerotee` ; la commande
+`PucesEtNumeros`. Au dock, une rangée de plus dans la section Paragraphe : la liste « Puces et
+numéros » (`ListeDuParagraphe`), et à côté la puce (`PuceDuParagraphe`) ou le premier numéro
+(`PremierNumero`), selon la liste. *Texte ▸ P_uces et numéros…*, après *Paragraphe…* comme le menu
+Format de Publisher, y mène par la `DockDemande` de N18, le focus dans la liste ; grisé sans bloc de
+texte. Pas de raccourci : la fiche 24 n'en relève pas. Pas de vue neuve, pas de couleur. **Entrée**
+(`PageCanvas.Saisie.cs`, `SortirDeLaListe`, appelé par `ToucheDeLaSaisie` avant les lignes composées
+de N29, qui ne prennent pas Entrée) : dans un élément qui porte du texte, la planche laisse faire le
+champ, et le recalage de Q1 donne au paragraphe neuf l'écart de celui qu'il coupe, donc le numéro
+suivant ; dans un élément vide, le curseur seul, elle sort le paragraphe de la liste au lieu d'écrire
+un saut. Les écritures sont dans la transaction de la saisie : un pas avec la frappe.
+
+Le poste touche, hors des fichiers que le plan nomme, `MiseEnForme.cs` (la liste dans les surcharges
+de paragraphe et à la pose — un ajout dans la partie des paragraphes, R7 travaillant dans celle des
+caractères), `TexteCompose.cs` (une ligne), `MainWindowViewModel.ParagrapheVise.cs` (`Ecrire` devient
+interne, et la liste du bloc entre dans ce qu'il écoute : deux lignes),
+`MainWindowViewModel.VersLeDock.cs` (l'avis de la commande, une ligne), le README (Puces et
+numérotation, et l'entrée du menu), et `DispositionTests` (règle 14 : le menu Texte compte *Puces et
+numéros…* en tête, après *Paragraphe…*). `Recalage.cs`, `PubImporter.cs` et `PageCanvas.axaml.cs` ne
+sont pas touchés.
+
+*Recette jouée* : `Scripts/recettes/N23-puces-et-numeros.sh`. Les sources — la liste au bloc et à
+l'écart, leur copie, la mise en forme qui la porte, `FormatVersion` à 5, l'import intact, chaque bloc
+et chaque écart des 17 documents réenregistrés ; la marque posée par le `Compositeur` seul, et
+sautée par le point d'insertion ; le dock, le menu, Entrée dans la saisie, la planche principale
+intacte, le README —, puis vingt-quatre tests du noyau (`PucesEtNumerosTests`) : « 1. » et « 2. » sur
+le deuxième et le troisième de trois paragraphes, au retrait de première ligne, le texte à 18 pt ; la
+suite interrompue et repartie ; les trois formes ; la marque sans position sous le curseur et le clic ;
+l'élément vide ; le style du premier caractère, sans souligné ; le mot trop large qui reste avec sa
+marque ; le saut tapé qui continue la liste ; le retrait suspendu donné et rendu ; le premier numéro ;
+l'aller-retour JSON, la copie, et un document sans liste ; et dix sur la fenêtre
+(`PucesEtNumerosSurLaFenetreTests`) : la recette du plan — la sélection du deuxième au troisième
+paragraphe, « 1. 2. 3. » choisi au dock, un seul écart, « 1. » et « 2. » à 104,0000 pt au PDF
+(`pdftotext -bbox`) comme à l'écran, « Alpha » et « Beta » à 122,0000 pt des deux côtés, un pas ;
+Entrée à la fin de l'élément 2, qui donne « 3. » en un pas ; Entrée dans l'élément vide, qui le sort
+de la liste, puis une Entrée hors liste ; le menu ; les puces posées hors saisie sur le bloc ; la puce
+tapée ; le premier numéro saisi au dock pendant la saisie, un pas à lui (Q25) ; l'état mixte ; le clic
+sur la marque et les caractères spéciaux ; le compte des lignes en excédent. Un sabotage au juge,
+celui du plan : la numérotation qui ne s'interrompt pas. **Les documents sans liste se rendent à
+l'identique** : l'empreinte de la composition de N3 (`Scripts/empreinte-composition.sh`) — les 17
+documents et les deux documents ATR, 2 506 lignes composées à la règle de l'écran et à celle du PDF,
+les pixels de 30 pages, le PDF exporté et ses mots —, relevée sur la base (`b1684b9`) puis sur la
+copie, est la même.
+
+*Ce que l'implémentation a appris.*
+- **Une seconde Entrée sous une liste faisait renaître une marque.** Sortie d'un élément vide, une
+  Entrée de plus dans le paragraphe vide hors liste écrivait le saut, que le recalage de Q1 place au
+  bout de l'élément d'au-dessus (`Recalage.Placer`) : le paragraphe neuf en prenait la liste, et un
+  « 3. » apparaissait au-dessus du curseur. Dans ce cas seul — un paragraphe vide hors liste, sous un
+  élément —, la planche écrit le saut elle-même, comme elle écrit le saut forcé de N16, et garde le
+  paragraphe neuf hors liste. Le reste de la règle de Q1 n'est pas touché.
+- **Une égalité de valeurs suffit à la numérotation.** Le premier numéro aurait pu dire « repartir
+  ici » sur le seul paragraphe qui le porte ; mais le recalage donne au paragraphe neuf l'écart de
+  celui qu'il coupe, et une Entrée dans l'élément qui repart aurait fait deux éléments qui repartent.
+  Une suite est donc faite de paragraphes de listes égales, et le premier numéro d'un paragraphe se
+  pose aussi sur la fin de sa suite : Entrée continue sans rien de plus, et la liste du bloc numérote
+  tous ses paragraphes.
+- **`MiseEnForme.Lire` ne lit pas la liste** : nul y veut dire mixte, et « aucune liste » s'y serait
+  confondu ; un test de N2 attendait les réglages sans elle. La liste se lit paragraphe par
+  paragraphe, sur `ParagrapheEffectif.Liste`.
+- **Deux recettes lisent la forme du code qu'on touche** : celle de N3 veut `Morceau` déclaré d'une
+  ligne, fini par `int Debut);` — d'où la seconde déclaration partielle —, celle de N29 veut le passage
+  par les lignes composées juste avant les touches sous Maj — d'où Entrée prise avant lui.
+- À 24 pt, « 1. » mesure 22,9 pt en DejaVu Sans et ne tient pas dans le creux de 18 pt : le texte part
+  à la marque plus une espace. La recette sur la fenêtre est jouée en 16 pt, où il tient.
+
+*Choisi sans certitude* :
+- une suite est faite de listes égales : repartir au même premier numéro que la suite précédente n'est
+  possible qu'à 1 (la liste sans premier numéro) ; un premier numéro égal à celui de la suite suivante
+  les fond en une ;
+- le retrait suspendu de 18 pt n'est donné qu'à un paragraphe sans aucun retrait, et rendu qu'à un
+  paragraphe qui a exactement celui-là ; hors saisie, il va au bloc ;
+- une marque plus large que le creux pousse le texte d'une espace au-delà d'elle ; Word le pousse au
+  taquet suivant ;
+- la marque prend tout le style du premier caractère — police, corps, graisse, couleur, décalage —,
+  sauf le souligné ; un élément vide prend le style de son saut ;
+- un bloc au texte vide ne dessine pas sa marque, à l'écran comme au PDF, la composition ne rendant
+  aucune ligne pour lui ; le curseur s'y pose au retrait de première ligne ;
+- la puce est le dernier caractère tapé dans son champ (deux unités au plus, une paire de
+  substitution) ; un champ vidé n'écrit rien ;
+- choisir une numérotation pose la liste sans premier numéro sur les paragraphes visés, et efface donc
+  un premier numéro qu'ils portaient ; choisir l'entrée déjà montrée ne fait rien ;
+- le premier numéro montré est le numéro du premier paragraphe visé, et non sa valeur écrite ; hors
+  saisie, celui du bloc ; le champ va de 1 à 9 999 ;
+- Entrée en tête d'un élément qui porte du texte suit la règle de Q1, comme le plan le dit : le
+  paragraphe vide qu'elle crée au-dessus prend le réglage du paragraphe d'au-dessus, et non celui de
+  l'élément comme dans Word.
+
+*Relevé, non corrigé* :
+- `Ctrl+Entrée`, que le champ prend, et un collage qui porte des sauts continuent la liste par la
+  règle de Q1, sans la sortie d'un élément vide ;
+- la mesure de N7 au banc (`MyPublisher.Banc/Saisie.cs`) lit `Morceau.Debut` sans écarter la marque :
+  sur un bloc en liste, le classement de ses causes pourrait se tromper ; aucun document du corpus
+  n'a de liste ;
+- l'invariant de N3 — chaque morceau est dans le texte, `texte.Substring(m.Debut, …)` — ne vaut plus
+  que pour les morceaux qui ne sont pas des marques ; les tests de N3 se jouent sur des documents sans
+  liste.
 
 #### N24 — Exposant, indice, capitales *(fiche 23, b14)*
 

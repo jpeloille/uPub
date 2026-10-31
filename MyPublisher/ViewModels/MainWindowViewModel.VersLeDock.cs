@@ -108,6 +108,7 @@ public partial class MainWindowViewModel
     {
         PoliceCommand.NotifyCanExecuteChanged();
         ParagrapheCommand.NotifyCanExecuteChanged();
+        PucesEtNumerosCommand.NotifyCanExecuteChanged();
         RotationPersonnaliseeCommand.NotifyCanExecuteChanged();
         PivoterAGaucheCommand.NotifyCanExecuteChanged();
         PivoterADroiteCommand.NotifyCanExecuteChanged();

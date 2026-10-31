@@ -389,6 +389,15 @@ public partial class PageCanvas
             return;
         }
 
+        // Entrée dans un élément de liste vide l'en sort, au lieu d'insérer un saut (N23). Avant les
+        // lignes composées, qui ne prennent pas Entrée, pour que leur passage reste le dernier avant
+        // les touches sous Maj.
+        if (e.Key == Key.Enter && e.KeyModifiers == KeyModifiers.None && SortirDeLaListe(zone))
+        {
+            e.Handled = true;
+            return;
+        }
+
         // Début, Fin, les flèches verticales et les touches de page, sur les lignes composées (N29).
         if (ToucheDesLignes(zone, e)) return;
 
@@ -404,6 +413,70 @@ public partial class PageCanvas
                 e.Handled = true;
                 break;
         }
+    }
+
+    /// <summary>
+    /// Entrée dans un élément de liste (poste N23 ; fiche 23, b12). Dans un élément qui porte du
+    /// texte, la planche laisse faire le champ : il écrit le saut, et le recalage de Q1 donne au
+    /// paragraphe neuf l'écart de celui qu'il coupe — sa liste, donc le numéro suivant. Dans un
+    /// élément vide, le curseur seul, Entrée sort le paragraphe de la liste au lieu d'écrire un
+    /// saut, comme Publisher et Word : sa liste devient « aucune », et le retrait suspendu que la
+    /// liste lui avait donné est rendu (<see cref="Listes.Poser"/>). Dans un paragraphe vide hors
+    /// liste, juste sous un élément, la planche écrit le saut elle-même et garde hors liste le
+    /// paragraphe qu'il crée, que le recalage aurait mis dans la liste d'au-dessus. Les écritures se
+    /// font dans la transaction de la saisie, comme la frappe : un pas avec elle. Rend vrai si la
+    /// touche est prise.
+    /// </summary>
+    private bool SortirDeLaListe(TextBox zone)
+    {
+        if (_editing is not { } bloc) return false;
+
+        var texte = bloc.Text ?? "";
+        if (zone.SelectionStart != zone.SelectionEnd || !string.Equals(zone.Text ?? "", texte, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        var curseur = Math.Clamp(zone.CaretIndex, 0, texte.Length);
+        var vide = (curseur == 0 || texte[curseur - 1] is '\n' or '\r')
+                   && (curseur == texte.Length || texte[curseur] is '\n' or '\r');
+        if (!vide) return false;
+
+        var paragraphe = Recalage.ParagrapheDe(texte, curseur);
+        var effectifs = ParagrapheEffectif.Resoudre(Recalage.NombreDeParagraphes(texte), bloc.Paragraphs, bloc.Paragraph);
+
+        if (effectifs[paragraphe].Liste is not null)
+        {
+            HorsDeLaListe(bloc, texte, paragraphe);
+            return true;
+        }
+
+        // Un paragraphe vide hors liste, sous un élément : le saut s'y écrit, mais le recalage le
+        // place au bout de l'élément d'au-dessus (Q1, Recalage.Placer), dont le paragraphe neuf
+        // prendrait la liste — une marque renaîtrait au-dessus du curseur. Le saut est écrit ici,
+        // comme le champ l'écrirait, et le paragraphe neuf rendu hors liste.
+        if (paragraphe == 0 || effectifs[paragraphe - 1].Liste is null) return false;
+
+        var apres = texte[..curseur] + "\n" + texte[curseur..];
+        zone.SetCurrentValue(TextBox.TextProperty, apres);
+        PoserLaSelection(zone, curseur + 1, curseur + 1);
+        if (!string.Equals(bloc.Text, apres, StringComparison.Ordinal)) return true;
+        HorsDeLaListe(bloc, apres, paragraphe);
+        return true;
+    }
+
+    /// <summary>
+    /// Sort un paragraphe de sa liste, et lui rend le retrait suspendu qu'elle lui avait donné
+    /// (<see cref="Listes.Poser"/>) : par le paragraphe visé, qui tient ses avis le temps de
+    /// l'écriture (R6) ; sans modèle de vue, sur le bloc.
+    /// </summary>
+    private void HorsDeLaListe(TextFrame bloc, string texte, int paragraphe)
+    {
+        bool Sortir(TextFrame cible) => ReferenceEquals(cible, bloc) &&
+            Listes.Poser(texte, cible.Paragraphs, cible.Paragraph, new Plage(paragraphe, 1), ListeDeParagraphe.Aucune);
+
+        if (_vm is { } vm && ReferenceEquals(vm.ParagrapheVise.Bloc, bloc)) vm.ParagrapheVise.Ecrire(Sortir);
+        else Sortir(bloc);
     }
 
     /// <summary>
