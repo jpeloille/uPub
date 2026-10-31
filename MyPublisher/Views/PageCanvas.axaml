@@ -31,6 +31,14 @@
             <Setter Property="FondDuPreEdit" Value="{StaticResource Blanc}"/>
         </Style>
 
+        <!-- Les caractères spéciaux (poste N22, Affichage ▸ Caractères spéciaux, Ctrl+Maj+Y) :
+             points, flèches, ¶ et ↵ à l'accent, qui ne se confond pas avec l'encre du
+             document. Posés par le code dans l'Overlay, hors de PageRoot : rien ne s'en
+             imprime (PageCanvas.CaracteresSpeciaux.cs). -->
+        <Style Selector="views|CaracteresSpeciaux">
+            <Setter Property="Encre" Value="{StaticResource Accent}"/>
+        </Style>
+
         <!-- ItemsControl place ses éléments via un ContentPresenter : c'est lui qui porte
              la position sur le Canvas. Le style est posé ici, et non sur un ItemsControl
              précis, pour valoir aussi bien pour les blocs de la page que pour ceux d'un

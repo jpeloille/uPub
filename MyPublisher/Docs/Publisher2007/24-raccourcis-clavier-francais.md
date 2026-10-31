@@ -17,7 +17,8 @@ Ctrl+B deux fois —, dont quatre étaient à venir et deux réservées. Les sec
 du presse-papiers, `Ctrl+Inser`, `Maj+Suppr` et `Maj+Inser`, d'abord relevées sans être liées,
 le sont depuis le 28 octobre 2026, à la demande du propriétaire. Le poste N20 en a lié deux de
 plus, le 31 octobre 2026, réservées jusque-là : F3, Ctrl+F ou Maj+F4, et Ctrl+H — rechercher et
-remplacer.
+remplacer. Le poste N22 en a lié une, le même jour, réservée jusque-là : Ctrl+Maj+Y, les caractères
+spéciaux.
 
 ## Pourquoi une fiche de plus
 
@@ -140,7 +141,7 @@ Les sections de l'aide, dans son ordre, sans celle du ruban.
 | Ouvrir la boîte de dialogue Police | Ctrl+Maj+F | HR | **gardé** : Premier plan (A4, règle 12), `Alt+F6` étant pris par le bureau ; la boîte Police n'existe pas, le dock en tient lieu |
 | Copier la mise en forme | Ctrl+Maj+C | HR | **réservé** : R7 |
 | Coller la mise en forme | Ctrl+Maj+V | HR | **réservé** : R7 |
-| Activer ou désactiver l’option Caractères spéciaux | Ctrl+Maj+Y | p. 9, *Special Characters* `Ctrl+Shift+Y` | **réservé** : N22 |
+| Activer ou désactiver l’option Caractères spéciaux | Ctrl+Maj+Y | p. 9, *Special Characters* `Ctrl+Shift+Y` | **lié** (N22) : *Affichage ▸ Caractères spéciaux*, une bascule de la session, même en saisie |
 | Appliquer à la mise en forme des caractères le style de texte actuel | Ctrl+Espace | HR | **réservé** : R7 — `MiseEnForme.Retirer` (N2) attend la sélection du texte |
 | Appliquer ou supprimer la mise en indice | Ctrl+= | HR | **gardé** au zoom avant jusqu'à N24, qui le prend (règle 12). Sur l'AZERTY du propriétaire, `Ctrl` + « = » arrive en `OemPlus` sous `Control`, et le zoom le prend (sonde) |
 | Appliquer ou supprimer la mise en exposant | Ctrl+Maj+= | HR | **réservé** : N24. Sur l'AZERTY, `OemPlus` sous `Control, Shift`, symbole « + », que rien ne prend (sonde) |
@@ -368,3 +369,8 @@ arrive à la fenêtre sur ce bureau n'est pas mesuré — la sonde du clavier
 Relevé de nouveau le 31 octobre 2026 pour le poste N20, par `gsettings list-recursively` : ni
 `Ctrl+F`, ni `Ctrl+H`, ni `F3`, ni `Maj+F4` ne sont pris par le bureau ; seul le terminal Ptyxis
 prend `Ctrl+Maj+F`, chez lui.
+
+Relevé de nouveau le 31 octobre 2026 pour le poste N22, par `gsettings list-recursively` (GNOME
+Shell 50.1, IBus 1.5.34) : aucune liaison du bureau, d'ibus ni des extensions ne porte la lettre Y,
+sous quelque modificateur que ce soit ; `Ctrl+Maj+Y` est libre. La machine n'a toujours pas KDE
+(pas de `~/.config/kglobalshortcutsrc`).

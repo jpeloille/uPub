@@ -125,7 +125,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **N19** | Le corps et la police : une liste, et une frappe | **100 %** | La police de la barre se tape, au texte et au tableau : `ListeDesPolices` (`Views/ListeDesPolices.cs`), une `ComboBox` éditable sous son apparence, dont la frappe ne passe plus par la recherche d'Avalonia 11.3.9 — qui prenait, à chaque lettre, l'entrée de même texte : « DejaVu Sans Mono » tapé posait DejaVu Sans au onzième caractère. La liste s'ouvre sur les familles dont le libellé commence par la frappe, sans la casse, la première marquée — « Geo » propose Georgia —, `↑` et `↓` promènent la marque, `Entrée` la pose en un pas et rend la planche, `Tab` la pose et passe au corps, `Échap` renonce ; une police que rien ne commence est refusée, et la barre d'état le dit (`Status`, N14) ; la zone montre le libellé, « Corps du jeu — DejaVu Sans », « Georgia (absente) » ; Q20 et la règle 1 tiennent. Repris le 30 octobre 2026, à la demande du propriétaire : un clic sur le nom ouvre la liste entière, la police du bloc marquée, le nom tout pris, et un second clic la referme, sans rien poser. Le corps garde son champ (N14 : « 10,5 » tapé donne 10,5 pt) et reçoit « Tailles du corps », un menu volant des dix-sept tailles du noyau (`CorpsStandard`, N10), la taille du bloc cochée, en un pas (`PoserLeCorps`, `MainWindowViewModel.CorpsEtPolice.cs`). Vingt tests sur la fenêtre ; deux tests voisins réécrits (règle 14) ; trois sabotages au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **N20** | Rechercher et remplacer | **100 %** | La barre de recherche (`Views/BarreDeRecherche.axaml`), posée par la fenêtre sur la planche, en haut à droite, sous la règle, par-dessus — la planche ne bouge pas (règle 3), rien n'entre dans `PageRoot` (règle 4) : le texte cherché, le texte de remplacement, *Respecter la casse*, *Mot entier*, Suivant, Remplacer, Remplacer tout, et sa croix. `Ctrl+F` et *Edition ▸ Rechercher…* l'ouvrent, le focus au texte cherché ; `Ctrl+H` et *Remplacer…*, au texte de remplacement ; `F3` et `Maj+F4` cherchent le suivant, et ouvrent la barre quand il n'y a rien à chercher ; `Entrée` y cherche le suivant, `Échap` la ferme et rend la planche — les quatre touches, réservées par la fiche 24, y sont liées. Le parcours (`MainWindowViewModel.Rechercher.cs`) va de page en page, puis de haut en bas et de gauche à droite, dans les blocs de texte visibles et sans champ, les cases des tableaux et ce que portent les groupes, et reprend au début en le disant ; le texte trouvé est sélectionné en saisie, la page suivant (`TexteTrouve`, que la planche sert depuis `PageCanvas.Saisie.cs`) ; dans un groupe, le groupe est sélectionné, dans une case, le tableau, et la barre d'état dit où. Le remplacement passe par le noyau (`Models/Recherche.cs`, et `Recalage.Appliquer` pour une édition dite et non déduite) : le texte remplacé prend le style de son premier caractère (Q1) ; *Remplacer* fait un pas, *Remplacer tout* un seul pour le document. Neuf tests du noyau et dix sur la fenêtre sous `poste=N20` ; deux sabotages au juge. **Le texte trouvé prend le focus** : une seconde `Entrée` l'écrirait par-dessus (voir la section). Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **N21** | La saisie montre le texte composé | **100 %** | Voie 2a. Pendant la saisie, la composition reste à l'écran : l'encre de la page est celle d'avant l'entrée, au pixel, sur l'exemple et ATA 21, et ce qu'on tape se voit tel que la page le montre hors saisie. Le champ reste, caché (opacité nulle) et hors du test de survol, pour la frappe, la méthode d'entrée, le presse-papiers et la navigation au clavier ; la couche garde le clic sur le texte en saisie (`PressionDansLaSaisie`, `PageCanvas.Saisie.cs`) : clic, `Maj`+clic, double-clic au mot, triple-clic au paragraphe, glissé par caractère, mot ou paragraphe, tout lu sur la composition ; le clic droit garde la saisie et laisse remonter sa demande de menu (A12). Le curseur, la sélection — celle que le modèle de vue garde (N15), qui survit au focus de la barre — et le pré-édit se dessinent dans l'`Overlay` (`MarquesDuTexte`), aux couleurs de l'apparence, tournés et mis à l'échelle avec le bloc. Le bord d'un caractère est lu dans le morceau façonné (`IMetriques.Bord`) : la reprise de N3 que la décision demandait, ligatures et crénages compris, au dessin à 0,0000 pt sur 5 441 bords. Un clic sur un caractère de chacun des sept blocs de texte d'ATA 21 y pose le curseur, dessiné sous lui. `PageCanvas.axaml.cs` n'est pas touché ; la navigation au clavier sur les lignes composées reste au champ, mesurée sur ATA 21, pour un poste à part. Dix tests sous `poste=N21` ; recette N5 reprise (règle 14) ; deux sabotages au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
-| **N22** | Les caractères spéciaux | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 7 |
+| **N22** | Les caractères spéciaux | **100 %** | *Affichage ▸ Caractères spéciaux* et `Ctrl+Maj+Y` : une bascule de la session (`CaracteresSpeciauxVisibles`, `MainWindowViewModel.CaracteresSpeciaux.cs`), fermée à l'ouverture, hors du document et de l'historique, qui joue aussi en saisie sans la refermer. Sur chaque bloc de texte visible de la page, un point pour chaque espace, une flèche pour chaque tabulation, ¶ à chaque fin de paragraphe et au bout du texte, ↵ à chaque saut forcé, à l'accent de l'apparence et au corps du texte, aux places de N3 : ¶ au `PointDe` de son saut à 0,01 pt, sur le texte riche, l'exemple et ATA 21 ; une espace sur toute sa chasse, élargie par la justification ou pendante au bout d'une ligne renvoyée (`GeometrieDuTexte.AbscisseSur`, un accesseur ajouté à `TexteCompose.cs`). Le dessin (`Views/CaracteresSpeciaux.cs`, posé par `PageCanvas.CaracteresSpeciaux.cs`) vit dans l'`Overlay`, où il entre à la première ouverture de la bascule ; il est mené par la transformation des contrôles qui dessinent le bloc — tourné, mis à l'échelle — et découpé par la page et par le bloc ; un bloc ne se recompose que quand il change. L'encre de la page est identique, bascule ouverte ou fermée ; le PDF ne change pas ; `PageCanvas.axaml.cs` n'est pas touché. Pas de bouton ¶ : la maquette n'en a pas. Huit tests sous `poste=N22` ; un sabotage au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **N23** | Puces et numérotation | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 8 |
 | **N24** | Exposant, indice, capitales | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 9 |
 | **N25** | La vérification orthographique | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 9 ; dépendance neuve à éprouver d'abord |
@@ -8909,6 +8909,83 @@ marque dessinée dans `PageRoot`.
 
 Fichiers : un fichier partiel de la planche pour les marques (neuf), `MainWindow.axaml` (menu
 Affichage, liaison), README (Affichage). Dépend de N3 et N21. Effort : moyen.
+
+*Livré le 31 octobre 2026*, dans la salve Saisie 7 ; la relecture adversariale vient après la
+fusion. **Le bureau, vérifié avant d'écrire** (`gsettings list-recursively`, GNOME Shell 50.1,
+IBus 1.5.34 ; pas de KDE) : aucune liaison du bureau, d'ibus ni des extensions ne porte la lettre
+Y ; `Ctrl+Maj+Y` est libre, et la fiche 24 le dit. **La bascule** est une propriété du partiel du
+poste, `CaracteresSpeciauxVisibles`, fermée à l'ouverture comme chez Publisher, avec sa commande ;
+`Ctrl+Maj+Y` est lié dans la fenêtre, et *Affichage ▸ Caractères _spéciaux* — troisième entrée,
+après les deux bascules de N4 — la montre cochée, avec sa touche. Rien n'entre au document, à
+l'historique ni aux préférences ; la touche joue en saisie sans la refermer, le champ gardant le
+focus. **Les marques** se lisent sur la géométrie du texte tel qu'il est dessiné (N3) : chaque
+caractère du texte est sur une ligne et une seule, sauts exceptés ; une espace ou une tabulation se
+marque sur la sienne, de son bord à celui du caractère qui la suit sur cette même ligne ; un saut se
+marque au bout de la ligne qu'il ferme, à son `PointDe` — ¶ pour « \n », « \r » ou « \r\n »
+(une fois), ↵ pour U+2028 —, et le bout du texte ferme le dernier paragraphe, si bien qu'un bloc
+compte autant de ¶ que `Recalage.NombreDeParagraphes`. Le point se pose au milieu de la chasse de
+l'espace, la flèche au milieu de l'avance de la tabulation, ¶ et ↵ juste après le dernier caractère,
+sur la ligne de base, au corps du caractère qui les porte. L'espace qui pend au bout d'une ligne
+renvoyée garde sa chasse sur sa ligne : `PointDe` rend la position qui la suit au début de la ligne
+suivante, d'où **un accesseur dans `TexteCompose.cs`**, `GeometrieDuTexte.AbscisseSur(ligne,
+index)`, l'abscisse d'une position sur une ligne donnée — une méthode d'une ligne, posée seule après
+`Metriques` : N29 travaille dans le même fichier, dans la même salve. **Le dessin** est un contrôle neuf, `CaracteresSpeciaux`
+(`Views/CaracteresSpeciaux.cs`), qui ne calcule rien ; la planche le pose dans l'`Overlay`, sous les
+marques de la saisie et les poignées, et lui donne, pour chaque bloc, les caractères dans le repère
+du bloc non tourné et les niveaux qui y mènent depuis l'`Overlay` — la page, chaque contrôle qui
+découpe ce qu'il porte, le contrôle de la composition —, chacun avec sa transformation et son
+rectangle : les marques sont tournées et mises à l'échelle avec le bloc, et découpées comme son
+texte. Sa couleur est l'`Accent` de l'apparence, posée par le style de la planche
+(`PageCanvas.axaml`). **La mécanique** est dans un partiel neuf, `PageCanvas.CaracteresSpeciaux.cs`,
+branché au premier chargement de la planche (`OnLoaded`) sans toucher au fichier principal (règle
+16) : bascule ouverte, chaque passe de mise en page relit les blocs de texte visibles sous
+`PageRoot` et leur place ; un bloc ne se recompose que quand il change — son texte, une propriété
+autre que sa place, ses fragments, ses écarts, son contenu, la charte de la page —, une fois le
+geste fini (comme les marques de N21). Bascule fermée, rien n'est suivi ni écouté. Le README dit
+la touche au sous-tableau Affichage et la bascule avec les repères ; les deux vues neuves sont à la
+recette I1.
+
+*Recette jouée* : `Scripts/recettes/N22-caracteres-speciaux.sh`. Les sources — la bascule dans le
+partiel et hors du noyau ; la touche liée une fois, le menu, le README ; le contrôle posé dans
+l'`Overlay`, rien dans `PageRoot` ni dans le fichier principal, la couleur prise à l'apparence ;
+la recette I1 —, puis huit tests sous `poste=N22` (`CaracteresSpeciauxTests`) : la bascule au
+clavier et au menu, sans pas ni « modifié » ; sur `recette-texte-riche.mypub`, autant de ¶ que de
+paragraphes, chacun au `PointDe` de son saut à 0,01 pt, l'encre de la page identique bascule ouverte
+ou fermée, le contrôle dans l'`Overlay` ; chaque espace, tabulation, saut forcé et fin de paragraphe
+de l'exemple et d'ATA 21 au point de N3 ; un texte fait pour (espaces doubles, tabulation, saut
+forcé, paragraphe vide, « \r\n », espace finale) et le changement de corps ; l'espace pendante et
+l'espace justifiée ; la frappe en saisie ; l'image composée d'un bloc tourné de 30° à 200 %, et une
+ligne coupée par le bord du bloc ; une autre page, un bloc masqué puis montré, un bloc ajouté, et
+plus aucun abonnement bascule fermée. Un sabotage au juge, celui du plan : le contrôle posé dans
+`PageRoot` — l'encre de la page change.
+
+*Ce que l'implémentation a appris.* Posé dans l'`Overlay` dès le chargement de la planche, le
+contrôle — vide, et même sans taille — faisait tomber six tests d'autres postes qui lisent l'image
+composée de la fenêtre (vignettes de I5, dock, alerte de I9, rafraîchissement) quand ils tournent
+ensemble ; seuls, ils passaient. Mesuré en alternant la base et la copie, six passages chacune : la
+base passait toujours, la copie jamais. Posé à la première ouverture de la bascule, ils passent six
+fois sur six, et la suite d'interface entière, 592 tests, passe. La cause n'est pas élucidée ;
+bascule jamais ouverte, l'arbre de la planche est désormais celui d'avant le poste.
+
+*Choisi sans certitude* :
+- la couleur est l'accent de l'interface, qui ne se confond pas avec l'encre du document ;
+- les signes sont pris dans la police par défaut de l'interface, au corps du caractère qui les
+  porte, et non dans la police du texte : une police de symboles n'a ni ¶ ni flèche ;
+- seule l'espace U+0020 a son point : l'espace insécable et les espaces typographiques n'en ont pas,
+  la spécification ne les nommant pas ;
+- un ¶ ferme aussi le dernier paragraphe, au bout du texte, et un bloc vide en montre un ; Publisher
+  marque la fin d'un article d'un autre signe, que la fiche ne relève pas ;
+- « Limites et repères » (`Ctrl+Maj+O`) ne masque pas les caractères spéciaux : ce sont deux
+  bascules de Publisher ;
+- un bloc à champ n'a pas de marques — son texte affiché n'est pas son texte (N3) — ; les cases d'un
+  tableau non plus, le tableau ne passant pas par `TexteCompose` ;
+- une ligne qui sort du bloc garde ses marques dans les données, mais le bloc les découpe à l'écran,
+  comme son texte.
+
+*Relevé, non corrigé* : `Scripts/comparer-rendus.sh` sur `exemple-bulletin.mypub`, au seuil par
+défaut, compte 4,22 % de pixels différents et échoue — sur la base comme sur la copie, au même
+chiffre : ce sont les glyphes de deux rastériseurs, que `verifier.sh` dit ; sur
+`recette-texte-riche.mypub`, 0,75 %.
 
 #### N23 — Puces et numérotation *(fiche 23, b12)*
 

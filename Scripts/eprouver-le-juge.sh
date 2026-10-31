@@ -2976,6 +2976,14 @@ saboter "le texte en saisie perd sa sélection sous le menu (A12)" \
     '            zone.ClearSelectionOnLostFocus = true;' \
     'A12-menu-contextuel|MenuDuBlocTests'
 
+# Les caractères spéciaux (N22) dessinés dans la page et non dans l'Overlay : ils entreraient dans
+# ce que l'écran compare au PDF (règle 4), et l'encre de la page changerait avec la bascule.
+saboter "une marque des caractères spéciaux (N22) dessinée dans PageRoot" \
+    MyPublisher/Views/PageCanvas.CaracteresSpeciaux.cs \
+    '        Overlay.Children.Insert(0, _caracteresSpeciaux);' \
+    '        PageRoot.Children.Add(_caracteresSpeciaux);' \
+    'N22-caracteres-speciaux|CaracteresSpeciauxTests'
+
 # Un motif qui ne désigne aucun sabotage ne prouve rien. « eprouver-le-juge.sh I4 » sortait
 # en 0 sur « 0 sabotages, 0 attrapés », quand les intitulés de la planche ne portaient pas
 # encore le code du poste : le filet passait pour éprouvé sans qu'on l'ait troué.

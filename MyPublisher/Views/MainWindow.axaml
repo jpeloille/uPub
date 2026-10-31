@@ -93,6 +93,10 @@
         <KeyBinding Gesture="Ctrl+Shift+L" Command="{Binding PageEntiereCommand}"/>
         <KeyBinding Gesture="Ctrl+Shift+O" Command="{Binding BasculerLesReperesCommand}"/>
         <KeyBinding Gesture="Ctrl+F7" Command="{Binding BasculerLesLignesDeBaseCommand}"/>
+        <!-- Les caractères spéciaux de Publisher (p. 9, poste N22) : une bascule de la session,
+             même en saisie. Le bureau ne prend pas Ctrl+Maj+Y (GNOME, relevé le 31 octobre 2026),
+             ni OnKeyDown, qui ne lit pas Y. -->
+        <KeyBinding Gesture="Ctrl+Shift+Y" Command="{Binding BasculerLesCaracteresSpeciauxCommand}"/>
         <!-- Le gras et l'italique comme dans Publisher en français : G et I. Ni l'un ni
              l'autre n'est pris par OnKeyDown, qui n'intercepte sous Ctrl que N, O, S et les
              touches du presse-papiers. -->
@@ -850,6 +854,10 @@
                                   ToggleType="CheckBox" IsChecked="{Binding ShowGuides, Mode=TwoWay}"/>
                         <MenuItem Name="MenuLignesDeBase" Header="Repères de lignes de _base" InputGesture="Ctrl+F7"
                                   ToggleType="CheckBox" IsChecked="{Binding ShowBaselines, Mode=TwoWay}"/>
+                        <!-- Special Characters de Publisher (p. 9), sans le bouton ¶ de la barre (p. 24),
+                             que la maquette n'a pas : le menu et la touche suffisent (poste N22). -->
+                        <MenuItem Name="MenuCaracteresSpeciaux" Header="Caractères _spéciaux" InputGesture="Ctrl+Shift+Y"
+                                  ToggleType="CheckBox" IsChecked="{Binding CaracteresSpeciauxVisibles, Mode=TwoWay}"/>
                         <MenuItem Header="Rè_gles" ToggleType="CheckBox" IsChecked="{Binding ShowRulers, Mode=TwoWay}"/>
                         <Separator/>
                         <MenuItem Header="Zoom _avant" InputGesture="Ctrl+OemPlus" Command="{Binding ZoomInCommand}"/>
