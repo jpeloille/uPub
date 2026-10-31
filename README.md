@@ -498,6 +498,7 @@ comptés pour rien : sur un AZERTY, `Ctrl+]` se tape `Ctrl+AltGr+)`, `Ctrl+[` se
 | `Ctrl+Maj+>` / `Ctrl+Maj+<` | La taille suivante / précédente de la liste standard : 8, 9, 10, 10,5, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72 ; au-delà, de dix en dix ; en deçà, d'un point |
 | Dans la liste des polices de la barre : `Entrée` ou `Tab`, `↑` / `↓`, `Échap` | Pose la police proposée — la première de celles qui commencent par la frappe — et rend la planche, ou passe au champ suivant ; marque la proposition précédente / suivante ; renonce à ce qui est tapé et rend la planche |
 | Dans la saisie d'un bloc : `Entrée` / `Maj+Entrée` / `Tab` | Un nouveau paragraphe / Un saut de ligne forcé, qui coupe la ligne sans changer de paragraphe — ni retrait de première ligne, ni espace de paragraphe après lui / Une tabulation, au taquet suivant, tous les 36 pt ; `Maj+Tab` ne quitte pas le bloc. Dans le dock, `Tab` reste le passage au champ suivant |
+| Dans la saisie d'un bloc : `Début` / `Fin`, `↑` / `↓`, `Pg.Préc` / `Pg.Suiv` | Le début / le bout de la ligne telle qu'elle s'imprime ; la ligne du dessus / du dessous, à la même abscisse, gardée d'une flèche à l'autre — d'une colonne à la suivante dans l'ordre du texte, au début du texte depuis la première ligne, à sa fin depuis la dernière ; la première / la dernière ligne du bloc. Sous `Maj`, chacune étend la sélection ; `Ctrl+Début` et `Ctrl+Fin` mènent au début et à la fin du texte |
 
 ### Affichage
 

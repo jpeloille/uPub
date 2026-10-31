@@ -2976,6 +2976,15 @@ saboter "le texte en saisie perd sa sélection sous le menu (A12)" \
     '            zone.ClearSelectionOnLostFocus = true;' \
     'A12-menu-contextuel|MenuDuBlocTests'
 
+# N29 : le sabotage du plan, ↓ rendu au champ — le champ caché navigue de nouveau sur ses propres
+# lignes, coupées à sa mesure, sans retraits ni colonnes : le curseur tombe ailleurs que sur la
+# ligne composée du dessous.
+saboter "↓ rendu au champ (N29)" \
+    MyPublisher/Views/PageCanvas.ClavierDuTexte.cs \
+    'e.Key is not (Key.Home or Key.End or Key.Up or Key.Down or Key.PageUp or Key.PageDown))' \
+    'e.Key is not (Key.Home or Key.End or Key.Up or Key.PageUp or Key.PageDown))' \
+    'N29-clavier-sur-la-composition|ClavierSurLaCompositionTests'
+
 # Un motif qui ne désigne aucun sabotage ne prouve rien. « eprouver-le-juge.sh I4 » sortait
 # en 0 sur « 0 sabotages, 0 attrapés », quand les intitulés de la planche ne portaient pas
 # encore le code du poste : le filet passait pour éprouvé sans qu'on l'ait troué.

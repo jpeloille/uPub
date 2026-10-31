@@ -38,7 +38,8 @@ namespace MyPublisher.Views;
 /// remplaçait la composition pendant la saisie : 471 pt d'écart au plus entre son curseur et le
 /// caractère composé. Désormais la composition reste à l'écran, et le champ, caché et hors du
 /// test de survol, ne fait plus que la frappe, la méthode d'entrée, le presse-papiers et la
-/// navigation au clavier. La couche de saisie garde tous les clics, texte en saisie compris
+/// navigation au clavier dans le texte — celle qui suit les lignes, la planche la calcule sur la
+/// composition (poste N29, <see cref="ToucheDesLignes"/>). La couche de saisie garde tous les clics, texte en saisie compris
 /// (<see cref="PressionDansLaSaisie"/>) : un clic y pose le curseur, <c>Maj</c>+clic étend la
 /// sélection, le double-clic prend un mot, le triple-clic le paragraphe, et le glissé étend par
 /// caractère, par mot ou par paragraphe — tout lu sur la composition (<see cref="GeometrieDuTexte"/>).
@@ -266,6 +267,9 @@ public partial class PageCanvas
         InputLayer.Laisse = null;
         AddHandler(PointerPressedEvent, PressionDansLaSaisie, RoutingStrategies.Tunnel);
 
+        // Le clavier suit les lignes composées, et la méthode d'entrée le curseur dessiné (N29).
+        BrancherLeClavierDesLignes();
+
         // Les marques suivent la mise en page — le zoom, la place et la taille du bloc —, et la
         // sélection que le modèle de vue garde.
         LayoutUpdated += (_, _) => SuivreLaMiseEnPage();
@@ -341,6 +345,9 @@ public partial class PageCanvas
         {
             return;
         }
+
+        // Début, Fin, les flèches verticales et les touches de page, sur les lignes composées (N29).
+        if (ToucheDesLignes(zone, e)) return;
 
         if (e.KeyModifiers != KeyModifiers.Shift) return;
 
@@ -757,11 +764,14 @@ public partial class PageCanvas
             compose.Geometrie() is not { } geometrie)
         {
             marques.Effacer();
+            DireLeCurseurALaMethode(null, null);
             return;
         }
 
-        var preEdit = focus ? PreEditDe(geometrie, selection.Curseur) : null;
-        var curseur = focus && selection.EstVide ? geometrie.CurseurDe(selection.Curseur) : (Rect?)null;
+        // Au bout de la ligne qu'une coupure douce finit, si Fin ou une flèche l'y a mis (N29).
+        var enFinDeLigne = CurseurEnFinDeLigne(selection);
+        var preEdit = focus ? PreEditDe(geometrie, selection.Curseur, enFinDeLigne) : null;
+        var curseur = focus && selection.EstVide ? geometrie.CurseurDe(selection.Curseur, enFinDeLigne) : (Rect?)null;
         if (preEdit is not null && curseur is { } avant)
         {
             // Le curseur suit le pré-édit, à la place que la méthode d'entrée lui donne dedans.
@@ -772,6 +782,10 @@ public partial class PageCanvas
         }
 
         marques.Poser(transformation, geometrie.RectanglesDe(selection.Debut, selection.Fin), curseur, preEdit);
+
+        // La fenêtre de candidats de la méthode d'entrée suit le curseur dessiné, ou celui qu'une
+        // sélection cache (N29).
+        DireLeCurseurALaMethode(compose, curseur ?? geometrie.CurseurDe(selection.Curseur, enFinDeLigne));
     }
 
     /// <summary>
@@ -779,14 +793,14 @@ public partial class PageCanvas
     /// sur la ligne de base de la ligne du curseur, sur un fond qui couvre la composition sous lui
     /// — un pré-édit ne repousse pas le texte composé, qui ne le connaît pas encore.
     /// </summary>
-    private PreEditPose? PreEditDe(GeometrieDuTexte geometrie, int curseur)
+    private PreEditPose? PreEditDe(GeometrieDuTexte geometrie, int curseur, bool enFinDeLigne)
     {
         if (_presentationSuivie?.PreeditText is not { Length: > 0 } chaine) return null;
 
         var style = geometrie.StyleDe(curseur);
         var texte = new MetriquesAvalonia().Composer(chaine, style);
-        var point = geometrie.PointDe(curseur);
-        var bande = geometrie.CurseurDe(curseur);
+        var point = geometrie.PointDe(curseur, enFinDeLigne);
+        var bande = geometrie.CurseurDe(curseur, enFinDeLigne);
         var origine = new Point(point.X, point.Y - texte.Baseline);
         var fond = new Rect(point.X, bande.Top, texte.WidthIncludingTrailingWhitespace, bande.Height);
         return new PreEditPose(texte, origine, fond, chaine);

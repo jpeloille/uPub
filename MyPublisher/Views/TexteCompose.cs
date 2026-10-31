@@ -469,6 +469,88 @@ public sealed class GeometrieDuTexte
         return new Rect(PointDe(index).X, haut, 0, bas - haut);
     }
 
+    // ------------------------------------------------- le clavier sur les lignes (N29)
+
+    /// <summary>
+    /// Le rang de la ligne que la position <paramref name="index"/> finit en douceur : une ligne
+    /// renvoyée, dont le bout est aussi le début de la suivante (poste N29). -1 ailleurs — au bout
+    /// d'un paragraphe ou d'un saut forcé, qui ne sont dans aucune ligne, la position n'est qu'à
+    /// une seule ligne.
+    /// </summary>
+    public int LigneQueFinit(int index)
+    {
+        for (var rang = 0; rang + 1 < Lignes.Count; rang++)
+        {
+            var ligne = Lignes[rang].Ligne;
+            if (ligne.Debut > index) break;
+            if (ligne.Fin == index && Lignes[rang + 1].Ligne.Debut == index) return rang;
+        }
+
+        return -1;
+    }
+
+    /// <summary>
+    /// Le rang de la ligne où le curseur placé avant <paramref name="index"/> se dessine (poste
+    /// N29). Une coupure douce donne la même position au bout d'une ligne et au début de la
+    /// suivante : <paramref name="enFinDeLigne"/> — l'affinité du curseur — le met au bout de celle
+    /// qu'elle finit, comme <c>Fin</c> le veut ; sinon au début de la suivante, comme
+    /// <see cref="LigneDe"/>.
+    /// </summary>
+    public int RangDuCurseur(int index, bool enFinDeLigne) =>
+        enFinDeLigne && LigneQueFinit(index) is var rang and >= 0 ? rang : LigneDe(index).Rang;
+
+    /// <summary>
+    /// Le point d'insertion avant <paramref name="index"/>, sur la ligne que l'affinité désigne
+    /// (<see cref="RangDuCurseur"/>) : au bout de la ligne qu'une coupure douce finit, blancs
+    /// pendants compris, quand <paramref name="enFinDeLigne"/> ; sinon <see cref="PointDe(int)"/>.
+    /// </summary>
+    public Point PointDe(int index, bool enFinDeLigne)
+    {
+        var posee = Lignes[RangDuCurseur(index, enFinDeLigne)];
+        var x = Compositeur.Abscisse(
+            posee.Ligne, posee.Decalages, Math.Clamp(index, 0, _texte.Length), _texte, _commun, _metriques);
+        return new Point(posee.Origine + x, posee.LigneDeBase);
+    }
+
+    /// <summary>Le curseur avant <paramref name="index"/>, sur la ligne que l'affinité désigne (poste N29).</summary>
+    public Rect CurseurDe(int index, bool enFinDeLigne)
+    {
+        var (haut, bas) = Bande(Lignes[RangDuCurseur(index, enFinDeLigne)]);
+        return new Rect(PointDe(index, enFinDeLigne).X, haut, 0, bas - haut);
+    }
+
+    /// <summary>
+    /// Le décalage de la colonne qui porte la ligne <paramref name="rang"/> : le pas d'une colonne
+    /// à l'autre, autant de fois qu'il y a de colonnes avant elle. L'abscisse que les flèches
+    /// visent se garde dans la colonne, pour que la ligne qui suit la dernière d'une colonne, la
+    /// première de la suivante, soit visée au même endroit de sa colonne (poste N29).
+    /// </summary>
+    public double DecalageDeColonne(int rang) => Lignes[rang].Ligne.Colonne * _pas;
+
+    /// <summary>
+    /// La position de la ligne <paramref name="rang"/> la plus proche de l'abscisse
+    /// <paramref name="abscisse"/>, dans le repère du bloc (poste N29), et son affinité : le bout
+    /// d'une ligne renvoyée se dessine au bout d'elle, non au début de la suivante.
+    /// </summary>
+    public (int Position, bool EnFinDeLigne) SurLaLigne(int rang, double abscisse)
+    {
+        var posee = Lignes[rang];
+        var position = Compositeur.PositionLaPlusProche(
+            posee.Ligne, posee.Decalages, abscisse - posee.Origine, _texte, _commun, _metriques);
+        return (position, position == posee.Ligne.Fin && LigneQueFinit(position) == rang);
+    }
+
+    /// <summary>
+    /// Le bout de la ligne <paramref name="rang"/>, où <c>Fin</c> mène (poste N29) : après ses
+    /// blancs pendants — une espace où la ligne se coupe appartient à la ligne qu'elle finit —, et
+    /// au bout d'elle quand la ligne est renvoyée.
+    /// </summary>
+    public (int Position, bool EnFinDeLigne) FinDeLaLigne(int rang)
+    {
+        var fin = Lignes[rang].Ligne.Fin;
+        return (fin, LigneQueFinit(fin) == rang);
+    }
+
     /// <summary>
     /// La sélection [<paramref name="debut"/>, <paramref name="fin"/>) telle que la saisie la
     /// surligne sur le texte composé (poste N21) : un rectangle par ligne qu'elle touche, de
