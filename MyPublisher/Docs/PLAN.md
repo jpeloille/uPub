@@ -132,12 +132,13 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **N26** | Taper dans le texte d'un groupe, et prendre un membre seul | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 10 |
 | **N27** | Taper dans une case, sur la page | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 11 ; revient sur un choix écrit en C9 |
 | **N28** | Lignes et colonnes à l'endroit choisi, et plusieurs cases à la fois | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 12 |
+| **N29** | Le clavier suit les lignes composées | 0 % | Décidé le 31 octobre 2026 par le propriétaire, sur la mesure de N21 ; salve Saisie 7 |
 | **D** | Moteur de composition | — | Décision non ouverte ; à rouvrir quand A, B et C sont livrées |
 
 **Par phase** — P : 4 sur 4 · A : 11 sur 15 · B : 4 sur 7 · C : 7 sur 9 · R : 5 sur 7 ·
-Q : 22 sur 25 · I : 9 sur 9 · N : 21 sur 28 · D : non planifié.
+Q : 22 sur 25 · I : 9 sur 9 · N : 21 sur 29 · D : non planifié.
 
-Soit **83 postes sur 104**. Le 25 octobre 2026, la phase N en a ajouté vingt-huit, et la phase Q
+Soit **83 postes sur 105**. Le 31 octobre 2026, le propriétaire a ajouté N29, sur la mesure de N21. Le 25 octobre 2026, la phase N en a ajouté vingt-huit, et la phase Q
 deux (Q24, Q25), tirés de la relecture du cours sous l'angle de la saisie (fiche 23). Le
 24 octobre 2026, la phase I en avait ajouté neuf, tirés de la
 maquette de la nouvelle interface. Le compte avait doublé le 11 octobre 2026 sans que rien ne
@@ -9078,6 +9079,47 @@ somme des largeurs qui dérive.
 Fichiers : `PageCanvas.axaml.cs`, `Table.cs`, `PageCanvas.axaml`. Dépend de N27 et A12. Effort :
 moyen.
 
+#### N29 — Le clavier suit les lignes composées *(fiche 23, a21 ; N21)*
+
+*Décidé le 31 octobre 2026 par le propriétaire, sur la mesure de N21.* Depuis N21, la saisie montre
+le texte composé, mais le champ caché garde la navigation au clavier sur ses propres lignes, coupées
+à sa mesure, sans retraits ni fragments : sur ATA 21, depuis le milieu de 33 lignes composées, `↓`
+tombe ailleurs que là où la composition l'attend 21 fois, `↑` 23 fois, `Début` et `Fin` 4 fois
+chacune (mesure de N21). Le propriétaire a choisi d'en faire un poste à part, dans la salve suivante.
+
+Le poste, en saisie, calculé sur les lignes de `TexteCompose` (N3, N21) :
+- `Début` et `Fin` mènent au début et au bout de la ligne composée du curseur ; `Ctrl+Début` et
+  `Ctrl+Fin` restent au début et à la fin du texte ;
+- `↑` et `↓` mènent à la ligne composée du dessus ou du dessous, au caractère le plus proche de
+  l'abscisse visée, qui se garde d'une flèche à l'autre (`↓ ↓ ↑` revient au même point) et se perd au
+  premier autre déplacement ; dans un bloc à colonnes, la ligne suivante de la dernière d'une colonne
+  est la première de la suivante, dans l'ordre du texte ; `↑` sur la première ligne mène au début du
+  texte, `↓` sur la dernière à sa fin ;
+- `Page préc.` et `Page suiv.` mènent à la première et à la dernière ligne composée du bloc, à
+  l'abscisse visée ;
+- avec `Maj`, chacune étend la sélection depuis son ancre (N15) ;
+- la fenêtre de candidats de la méthode d'entrée se pose au curseur dessiné, et non au curseur du
+  champ caché (relevé de N21).
+Le champ reste la source de la frappe : la touche calculée y pose le curseur et la sélection, et
+n'y laisse pas passer sa propre navigation.
+
+*Piège* : une coupure douce donne la même position à la fin d'une ligne et au début de la suivante —
+`Fin` doit dessiner le curseur au bout de sa ligne, non au début de celle d'en dessous (l'affinité du
+curseur) ; une espace où la ligne se coupe appartient à la ligne qu'elle finit ; un bloc tourné
+navigue dans son repère ; `Ctrl+←` et `Ctrl+→` (le mot) restent au champ, qui les fait sur le texte.
+
+*Recette* :
+- la mesure de N21 rejouée sur ATA 21 : aucun écart pour `Début`, `Fin`, `↑`, `↓` ;
+- `↓ ↓ ↑` revient à l'abscisse de départ ; `Maj+↓` étend la sélection d'une ligne composée ;
+- dans un bloc à deux colonnes, `↓` sur la dernière ligne de la première colonne mène à la première de
+  la seconde ;
+- `Fin` sur une ligne coupée en douceur dessine le curseur au bout de la ligne ;
+- un bloc tourné de 30° navigue comme à plat ;
+- au juge : `↓` rendu au champ.
+
+Fichiers : `PageCanvas.Saisie.cs`, `TexteCompose.cs`, `MarquesDuTexte.cs`, README (Clavier). Dépend
+de N15 et N21. Effort : moyen.
+
 A11 et A13 ferment la phase, chacun dans sa salve : leurs ajouts sont écrits dans leur section.
 
 ---
@@ -9109,7 +9151,7 @@ y prend R6, R7, A8, A9, A11, A12, A13, Q21 et Q22. Ses salves partagent `MainWin
 | **Saisie 4** | N12 · N13 · N14 | Le clic simple (`PageCanvas`) ; les menus ; les champs du dock et de la barre |
 | **Saisie 5** | N15 puis N16 (une copie) · N17 · N18 · N19 | La sélection du texte, puis Tab et le saut forcé ; Ctrl+glisser et le rectangle (`PageCanvas`) ; les menus vers le dock, avec A8 et A9 ; le corps et la police, dans la barre |
 | **Saisie 6** | A12 · N20 · N21 | Le clic droit (`PageCanvas`) ; rechercher ; la voie choisie — si N21 doit toucher `PageCanvas.axaml.cs`, il passe après A12 |
-| **Saisie 7** | R6 · N22 | Le paragraphe du curseur ; les caractères spéciaux, dans l'`Overlay` |
+| **Saisie 7** | R6 · N22 · N29 | Le paragraphe du curseur ; les caractères spéciaux, dans l'`Overlay` ; le clavier sur les lignes composées, ajouté le 31 octobre 2026 |
 | **Saisie 8** | R7 · N23 | Le texte riche à la souris ; les puces |
 | **Saisie 9** | N24 · N25 | Exposant et capitales ; l'orthographe |
 | **Saisie 10 à 14** | N26 · N27 · N28 · A11 · A13, un par salve | Tous dans `PageCanvas.axaml.cs` |
