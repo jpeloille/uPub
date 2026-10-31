@@ -3016,6 +3016,23 @@ saboter "une marque des caractères spéciaux (N22) dessinée dans PageRoot" \
     '        PageRoot.Children.Add(_caracteresSpeciaux);' \
     'N22-caracteres-speciaux|CaracteresSpeciauxTests'
 
+# Q26 : FinCellule qui oublie le fer — une case dont le bloc de texte n'est pas ouvert dans la
+# source reçoit son texte sans le fer de son paragraphe, et les seize valeurs centrées des Fiches
+# reviennent au fer à gauche, comme avant le poste.
+saboter "une case importée (Q26) oublie le fer de son paragraphe" \
+    MyPublisher.Core/Services/PubImporter.cs \
+    '                if (_fers.Count > 0) _cellule.Align = _fers[0];' \
+    '' \
+    'Q26-fer-a-l-import|FerALImport'
+
+# Q26 : le paragraphe à gauche sans autre réglage ne reçoit plus d'écart, et reprend le fer de son
+# bloc — ATA 21 repasse à 35 paragraphes justifiés pour 31 dans la source.
+saboter "un paragraphe à gauche importé (Q26) prend le fer de son bloc" \
+    MyPublisher.Core/Services/PubImporter.cs \
+    '                _paragraphes.Add(new ParagraphSpan { Start = i, Length = 1, Align = _fers[i] });' \
+    '' \
+    'Q26-fer-a-l-import|FerALImport'
+
 # Un motif qui ne désigne aucun sabotage ne prouve rien. « eprouver-le-juge.sh I4 » sortait
 # en 0 sur « 0 sabotages, 0 attrapés », quand les intitulés de la planche ne portaient pas
 # encore le code du poste : le filet passait pour éprouvé sans qu'on l'ait troué.

@@ -95,7 +95,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **Q23** | Sélectionner un bloc ne fige pas la fenêtre | **100 %** | La cause, mesurée : les trois sections du dock et les réglages de la barre contextuelle étaient des `ContentControl` liés au bloc seul, qu'une sélection vide vidait et que la pression suivante reconstruisait — mille visuels, vingt-quatre champs numériques —, dans la pression même ; la liste des polices n'y était pour rien. Ils sont construits une fois par sorte de bloc et gardés, masqués sans bloc de leur sorte (`Views/GabaritsGardes.cs`) : sur ATA 21, une pression sur un bloc non sélectionné rend la main en 30 à 52 ms au lieu de 107 à 136, l'image comprise, et n'ajoute plus qu'un visuel à la fenêtre. « Blocs de la page » ne défile plus que si la ligne du bloc n'est pas en vue ; le sélecteur de couleur refermé ne rend plus le focus à un champ de la barre, qui engloutissait son pas. Les deux tests du double-clic reprennent le geste entier et passent vingt fois de suite, chacun dans un processus neuf. Quatre tests, et un de la barre ; relu et jugé le 26 octobre 2026 : aucun défaut de l'application ; le chronomètre tombe sous une charge de 18 sur vingt cœurs sans être mou, et le juge ne le prend plus pour garde-fou ; un test du sélecteur de couleur refermé sans clic ; cinq sabotages au lieu d'un. Le même jour, sur la décision du propriétaire, le sélecteur refermé ne rend plus le focus à un champ du dock non plus, la zone de saisie de la page exceptée (un test de la barre, un sixième sabotage). Recette dans `Scripts/recettes/` |
 | **Q24** | Annuler ou Rétablir ne laisse plus une saisie hors de toute transaction | **100 %** | `Undo` et `Redo` referment ce qui est ouvert, comme avant, puis lèvent un avis sur chaque chemin, rien à défaire compris (`MainWindowViewModel.Transactions.cs`), sans rien rouvrir eux-mêmes : chaque propriétaire encore actif rouvre sa propre transaction, et lui seul — la saisie sur la page si elle l'est toujours, le champ du dock ou de la barre s'il a toujours le focus, et deux que le plan ne nommait pas, le glissé dont le bouton est tenu et le sélecteur de couleur resté ouvert. Une annulation qui relit le document referme la saisie, et rien ne se rouvre pour elle. Les trois cas du plan se montraient, le déduit compris : un champ de la barre sous un `Ctrl+Z` sans rien à annuler, une marge de l'onglet Document sous une vraie annulation ; les champs du bloc, eux, perdent le focus à une annulation, la sélection se vidant en passant. Neuf tests, dont sept tombaient sur le code d'avant ; le test du double-clic de Q14 n'est plus joué à froid par la recette, où il tombait sous la charge de la machine, avant Q24 comme après ; relecture et juge après fusion. Recette dans `Scripts/recettes/` |
 | **Q25** | Un réglage fait pendant une saisie a son propre pas | **100 %** | Confirmé d'abord par un test : la transaction de la saisie s'ouvrait au double-clic et ne se refermait qu'à Échap, et le corps réglé à la barre, le retrait saisi au dock ou la couleur prise au sélecteur pendant la frappe se fondaient dans son pas. Elle suit désormais le focus de la zone de saisie sur la page — ouverte quand la zone le prend, refermée quand elle le perd, et à `EndTextEdit` ; la saisie reste ouverte quand on clique dans la barre ou le dock, et les boutons G, I et S, qui ne prennent pas le focus, gardent `UnGesteUnPas`. La réponse de la planche à l'avis de Q24 suit le même focus : sous un `Ctrl+Z` sans rien à annuler, seul le champ qui a le focus rouvre sa transaction. Le sélecteur de couleur referme la sienne dès que son volet commence à se refermer, avant de rendre le focus à la zone, qui rouvrait la sienne dedans. Cinq tests, dont quatre tombaient sur le code d'avant ; relecture et juge après fusion. Recette dans `Scripts/recettes/` |
-| **Q26** | L'import garde le fer des cases et des paragraphes à gauche | 0 % | Décidé le 31 octobre 2026 par le propriétaire, sur le relevé de R6 ; salve Saisie 8 |
+| **Q26** | L'import garde le fer des cases et des paragraphes à gauche | **100 %** | Décidé le 31 octobre 2026 par le propriétaire, sur le relevé de R6. `PubImporter.cs` retient le fer de chaque paragraphe ouvert : une case dont le bloc de texte n'est pas ouvert dans la source prend dans `FinCellule` le fer de son premier paragraphe — les 16 valeurs centrées des Fiches le sont, à l'import, à l'écran (0,0000 pt) et au PDF (0,022 pt au plus) — ; dans `FinTexte`, le fer du bloc est le plus répandu de tous ses paragraphes, et tout paragraphe d'un autre fer reçoit son écart, le fer à gauche compris — ATA 21 lu paragraphe par paragraphe au fer de `pub2raw`, 31 justifiés et 21 à gauche. Avant et après, bloc par bloc, les deux documents ne diffèrent que par ces 20 fers. `FormatVersion` reste 5 : un document déjà importé se réimporte. L'aller-retour de R6 sur les Fiches joué : chaque bande prise d'un clic, le dock montre « Centré » sans rien écrire. Huit tests sous `poste=Q26` (cinq du noyau, trois d'interface) ; le commentaire d'un test de R6 réécrit (règle 14) ; deux sabotages au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **I1** | Apparence de l'interface | **100 %** | `Views/Apparence.axaml` — pas « charte », qui nomme le jeu du document —, chargée par `App.axaml` : les 26 couleurs de l'interface de la maquette, une fois chacune et sous leur nom ; cinq classes aux tailles et aux couleurs de la feuille de style de la maquette, dont le bouton-icône de 30 × 30 plein d'accent quand il est actif ; 35 icônes au tracé de la maquette, à la couleur courante, une par emploi. L'écran d'aujourd'hui ne change pas d'un pixel. La recette tient la liste des vues de la phase et le poste de chaque icône, que les postes suivants complètent ; une vue qui cite l'apparence ou écrit en dur une de ses couleurs sans être dans la liste la fait échouer. Recette dans `Scripts/recettes/` |
 | **I2** | Disposition de la fenêtre | **100 %** | La fenêtre de la maquette, de haut en bas. Barre de menus : la marque, le titre du document centré, deux menus neufs — Texte (gras `Ctrl+G`, italique `Ctrl+I`, les quatre alignements, « Importer un te_xte… ») et Fenêtre (les deux panneaux, et B7). Barre principale à icônes : Annuler et Rétablir grisés sur un historique vide, mais pas pendant une saisie qui a déjà changé le bloc ; « Page entière » posé pour I6. La place de la barre contextuelle, de hauteur constante, et sa pastille, dans son propre fichier pour I3. Rail d'outils, sans Main, Zoom ni Ligne avant leur geste. Panneau Pages, dont l'entrée est un contrôle à part pour I5. Dock à quatre onglets, sections repliables retenues le temps de la session, longueurs en millimètres, vignettes de Fond et contour, « Blocs de la page » l'avant en tête. Barre d'état : la page, le format, le zoom en échelle logarithmique. Chaque champ, chaque onglet et chaque geste de la fenêtre fait un seul pas d'annulation ; les vingt-six icônes du poste servent. Repris après relecture : quatorze défauts, tous refermés ; jugé le 26 octobre 2026, sur la fenêtre de I3, I5 et I6 : vingt-cinq sabotages, vingt-cinq pris par leur garde-fou. Recette dans `Scripts/recettes/` |
 | **I3** | Barre contextuelle | **100 %** | La barre suit la sélection, à la suite de la pastille de I2. Pour un bloc de texte : la police avec la garde de Q20, le corps, le gras, l'italique, le souligné — bouton S, `Ctrl+U` et « Souligné » au menu Texte sur la commande de I7, qui retire le souligné quelle qu'en soit la sorte ou pose le trait simple, et un chevron qui propose le double, l'épais et « mots seuls » —, les quatre alignements, la droite comprise, l'interligne en multiple, et la couleur du texte, dont la vignette ouvre le sélecteur du jeu ; un tableau a la même mise en forme, sans l'alignement ni le souligné ; un groupe se dissocie, plusieurs blocs s'alignent et se répartissent ; une image, une forme ou la page n'ont que la pastille. Ce que la barre porte a quitté le dock : la section Caractère, l'alignement et l'interligne de Paragraphe, la mise en forme du tableau. Chaque bouton joue la commande du menu Texte sans prendre le focus et ne se coche que par le bloc, si bien que chaque clic fait son pas, même pendant une saisie ; le sélecteur de couleur, ouvert hors de la barre, tient sa propre transaction ; `Échap` quitte un champ de la barre et rend les lettres seules aux outils. Un clic sur « Centrer le texte » centre le bloc à l'écran et au PDF en un pas. Treize tests ; relu et jugé le 26 octobre 2026 : les commandes de la barre — Aligner, Répartir, Dissocier — ne prennent plus le focus et font leur pas au clic, au lieu de l'attendre et d'y fondre la flèche suivante ; « Souligné » ne s'offre plus sans bloc de texte ; neuf sabotages au juge, le poste n'en avait aucun. Repris après le contrôle indépendant : deux de ces tests tombaient trois fois sur quatorze en suite entière — un clic dans un menu tout juste ouvert, ou sur un bouton que la barre venait d'échanger, cherchait sa cible dans la dernière image rendue, où elle n'était pas encore ; le banc, pas le produit. Le clic au centre d'un contrôle n'a plus qu'une aide, `Rendu.Cliquer`, pour les trois classes qui en avaient chacune une copie : elle attend que l'image montre le contrôle sous son centre, et échoue en nommant ce qui le couvre. Recette dans `Scripts/recettes/` |
@@ -5230,6 +5230,69 @@ que par les fers.
 
 Fichiers : `PubImporter.cs`, les tests de l'import, la recette R5 si ses nombres changent. Dépend de
 R5 et R6. Effort : faible.
+
+*Livré le 31 octobre 2026*, dans la salve Saisie 8 ; la relecture adversariale et le juge viennent
+après la fusion. **La vérité de la recette**, établie d'abord sur `pub2raw` : ATA 21 porte 52
+paragraphes dans 9 blocs de texte, 31 justifiés et 21 à gauche, aucun dans une case ; les Fiches,
+121 paragraphes dans 18 blocs (120 à gauche, 1 justifié) et 51 cases, dont 16 au premier paragraphe
+centré, 35 à gauche ou sans paragraphe — aucune case n'ouvre de bloc de texte. **L'import**
+(`PubImporter.cs`, seul fichier de code touché) retient le fer de chaque paragraphe ouvert
+(`_fers`), qu'il ait reçu un écart ou non. `FinCellule` donne à la case le fer de son premier
+paragraphe, son texte fût-il vide ; une case sans paragraphe reste au fer à gauche. `FinTexte`
+prend pour fer du bloc le plus répandu de **tous** ses paragraphes, et non des seuls qui portaient un
+écart, puis donne à tout paragraphe d'un autre fer qui n'a pas d'écart un écart qui ne dit que son
+fer ; les écarts sont rangés par paragraphe. `FormatVersion` reste 5. La recette R5 ne compte pas
+de fers, et ses nombres ne changent pas.
+
+*Recette jouée* : `Scripts/recettes/Q26-fer-a-l-import.sh`. Le format à la version 5 ; les deux
+documents importés par le vrai binaire et confrontés au relevé, chaque paragraphe de bloc au fer de
+la source et chaque case au fer de son premier paragraphe — ATA 21, 31 justifiés et 21 à gauche ;
+les Fiches, 16 cases centrées sur 51 ; le PDF des Fiches, où le milieu de l'encre de la première
+ligne de chacune des 16 cases est au milieu de sa case à 0,022 pt au plus (`pdftotext -bbox`,
+tolérance 0,05 pt) ; puis huit tests sous `poste=Q26`. Dans `MyPublisher.Tests`
+(`FerALImportTests`), sur des relevés écrits à la main : la bande des Fiches, la valeur du milieu
+centrée et le bloc calculé de la case aussi, une case vide au fer de son paragraphe ; une case à
+plusieurs paragraphes au fer du premier, une case sans paragraphe à gauche ; le premier bloc d'ATA
+21, l'intitulé à gauche gardant son fer par un écart qui ne dit que lui ; le fer du bloc pris à la
+plupart de ses paragraphes ; un bloc sans fer divergent qui ne reçoit aucun écart de plus — quatre
+tombaient sur le code d'avant. Dans `MyPublisher.Tests.Interface`
+(`FerALImportDesDocumentsReelsTests`) : les deux documents confrontés au relevé, paragraphe par
+paragraphe et case par case ; puis l'aller-retour de R6 sur les Fiches — chaque bande prise d'un
+clic sur la page, l'écran centrant la première ligne de la case à 0,0000 pt, le choix d'alignement
+de la case au dock montrant « Centré » sans rien écrire ; rien à défaire, le document intact,
+enregistré et relu avec ses 16 cases centrées. Deux sabotages au juge : `FinCellule` qui oublie le
+fer, et le paragraphe à gauche qui ne reçoit plus son écart.
+
+*Ce que l'implémentation a appris.*
+- **Avant et après, bloc par bloc, les documents réels ne diffèrent que par les fers** — vérifié en
+  comparant les deux imports, réglages effectifs de chaque paragraphe compris : 4 paragraphes d'ATA
+  21 passent de justifié à gauche (les intitulés « Air Production », « Air Distribution »,
+  « Ventilation », et un paragraphe vide de « Ventilation »), et 16 cases des Fiches de gauche à
+  centré. Aucun bloc ne change de fer, aucun retrait ni espacement ne bouge.
+- **ATA 21 compte 32 paragraphes justifiés au modèle, pour 31 dans la source**, et c'est juste : le
+  premier bloc porte un saut de ligne forcé (« … through the mixing / chamber. »), que l'import rend
+  encore par un paragraphe (T1 de l'étude de 98) ; sa suite est un paragraphe du modèle, justifié
+  comme celui qu'elle continue. Des 36 qu'on comptait, quatre venaient du fer du bloc et un de ce
+  saut. La recette et les tests lisent donc chaque paragraphe de la source au paragraphe du modèle
+  où il commence, après les sauts forcés de ceux qui le précèdent.
+
+*Choisi sans certitude* :
+- le fer du bloc est le plus répandu de tous ses paragraphes, et non des seuls qui portaient un
+  écart, comme avant : sans cela un bloc de quatre paragraphes ordinaires et d'un centré serait
+  centré, avec quatre écarts « à gauche ». Sur les deux documents réels, le choix ne change le fer
+  d'aucun bloc ; à égalité, le premier fer rencontré l'emporte, comme avant ;
+- une case vide prend aussi le fer de son paragraphe — c'est là qu'on y tapera ; une case qui
+  ouvrirait un bloc de texte garde le fer de ce bloc, comme avant (aucune dans les documents réels) ;
+- l'aller-retour « par l'interface » des cases se joue par le dock, la case n'ayant pas de
+  paragraphe que le panneau de R6 vise : la bande prise d'un clic, le choix d'alignement de la case
+  lu, rien d'écrit ;
+- le test de R6 qui parcourt ATA 21 garde son assertion (au moins 31 justifiés) ; son commentaire,
+  qui disait l'import fautif, est réécrit (règle 14).
+
+*Relevé, non corrigé* : le saut de ligne forcé rendu par un paragraphe décale aussi les écarts qui
+le suivent dans son bloc — « chamber. » prend le retrait suspendu de « Pack valve… », et « This
+butterfly valve… » perd sa marge de 0,193 in. C'est ce que T1 de l'étude de 98 corrige ; les fers
+d'ATA 21 n'en souffrent pas, ses paragraphes voisins étant tous justifiés.
 
 ---
 

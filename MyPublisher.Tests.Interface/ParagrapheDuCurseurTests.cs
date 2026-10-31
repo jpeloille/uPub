@@ -492,11 +492,13 @@ public class ParagrapheDuCurseurTests
     /// <summary>
     /// La recette demandait que « les 16 paragraphes centrés des Fiches survivent à un aller-retour
     /// par l'interface ». Ils sont tous dans des cases de tableau — la colonne du milieu des bandes —,
-    /// qui n'ont pas de paragraphes, et que l'import ramène au fer à gauche (voir la section R6 du
-    /// plan, <i>Relevé, non corrigé</i>) : le panneau ne les voit pas. L'épreuve se joue donc sur
-    /// les paragraphes justifiés d'ATA 21, l'autre document du constat de R6, qui sont dans des
-    /// blocs de texte, mêlés au fer à gauche — 31 dans la source, 36 à l'import, qui donne le fer
-    /// du bloc à des paragraphes à gauche sans écart (relevé aussi). Chaque bloc qui en porte
+    /// qui n'ont pas de paragraphes : le panneau ne les voit pas — leur aller-retour par le dock est
+    /// joué par Q26 (<c>FerALImportDesDocumentsReelsTests</c>), qui leur a rendu leur fer à
+    /// l'import. L'épreuve se joue donc ici sur les paragraphes justifiés d'ATA 21, l'autre document
+    /// du constat de R6, qui sont dans des blocs de texte, mêlés au fer à gauche — 31 dans la
+    /// source. L'import en comptait 36, donnant le fer du bloc à des paragraphes à gauche sans
+    /// écart ; depuis Q26, 32 paragraphes du modèle : les 31, et la suite d'un saut de ligne forcé
+    /// que l'import rend encore par un paragraphe (« mixing / chamber. », T1). Chaque bloc qui en porte
     /// s'ouvre en saisie d'un clic, le curseur passe dans chacun de ses paragraphes — la barre
     /// allume le fer du paragraphe et lui seul, le dock lit ses retraits —, puis la saisie se
     /// referme. Rien n'est écrit ; le document enregistré et relu les a tous.
