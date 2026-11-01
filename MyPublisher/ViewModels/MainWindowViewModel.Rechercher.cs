@@ -25,7 +25,8 @@ namespace MyPublisher.ViewModels;
 /// barre, le focus y reste, comme dans le volet de Publisher, et <c>Échap</c> le rend au texte
 /// trouvé (décision du propriétaire, 31 octobre 2026). Trouvé dans un groupe, il sélectionne le groupe et
 /// ouvre la saisie du bloc qui le porte, comme dans un bloc de la page (poste N26) ; dans une case, il
-/// sélectionne le tableau et nomme la case, qui se règle au dock — la page n'a pas de saisie de case.
+/// sélectionne le tableau et ouvre la saisie de la case, depuis le poste N27, qui tape dans les cases
+/// sur la page.
 ///
 /// Le remplacement passe par le noyau (<see cref="Recherche.Remplacer(TextFrame, Plage, string)"/>,
 /// <see cref="Recalage"/>), sans passer par l'écran : le texte remplacé prend le style de son
@@ -88,21 +89,21 @@ public partial class MainWindowViewModel
         public string Texte => Case?.Text ?? Bloc?.Text ?? "";
 
         /// <summary>
-        /// Un bloc de texte, posé sur la page ou membre d'un groupe : on y entre en saisie, le groupe
-        /// restant la sélection depuis le poste N26.
+        /// Un bloc de texte, posé sur la page ou membre d'un groupe, ou une case : on y entre en
+        /// saisie, le groupe restant la sélection depuis le poste N26, le tableau depuis le poste N27.
         /// </summary>
-        public bool EnSaisie => Bloc is not null;
+        public bool EnSaisie => Bloc is not null || Case is not null;
+
+        /// <summary>La plage [<paramref name="debut"/>, <paramref name="fin"/>) de ce texte, sélectionnée en saisie, le curseur à sa fin.</summary>
+        public SelectionDuTexte Selection(int debut, int fin) => new(Bloc ?? (Frame)Tableau!, Case, debut, fin, fin);
+
+        /// <summary>Cette cible est-elle le texte de la sélection du texte en saisie ?</summary>
+        public bool Porte(SelectionDuTexte selection) =>
+            selection.Case is { } case_ ? ReferenceEquals(Case, case_) : Case is null && ReferenceEquals(Bloc, selection.Bloc);
     }
 
     /// <summary>Une occurrence trouvée : le texte où elle est, et sa plage.</summary>
     private sealed record Occurrence(Cible Cible, Plage Plage);
-
-    /// <summary>
-    /// La dernière occurrence montrée hors de la saisie — dans une case —, d'où la
-    /// recherche suivante repart et que <i>Remplacer</i> remplace, tant que son bloc reste
-    /// sélectionné. Dans un bloc de texte, c'est la sélection du texte (N15) qui le dit.
-    /// </summary>
-    private Occurrence? _occurrenceMontree;
 
     /// <summary>
     /// Les textes du document, dans l'ordre du parcours : les pages dans leur ordre ; sur la page,
@@ -244,7 +245,6 @@ public partial class MainWindowViewModel
             }
         });
 
-        _occurrenceMontree = null;
         Status = nombre switch
         {
             0 => Introuvable,
@@ -291,7 +291,6 @@ public partial class MainWindowViewModel
             }
         }
 
-        _occurrenceMontree = null;
         Status = Introuvable;
         return false;
     }
@@ -299,16 +298,10 @@ public partial class MainWindowViewModel
     /// <summary>D'où la recherche part : le texte, et la position dans ce texte.</summary>
     private (int Rang, int Depuis) Depart(List<Cible> cibles)
     {
-        if (SelectionDuTexte is { Case: null, Bloc: TextFrame enSaisie } selection)
+        if (SelectionDuTexte is { } selection)
         {
-            var rang = cibles.FindIndex(cible => cible.EnSaisie && ReferenceEquals(cible.Bloc, enSaisie));
+            var rang = cibles.FindIndex(cible => cible.EnSaisie && cible.Porte(selection));
             if (rang >= 0) return (rang, selection.Fin);
-        }
-
-        if (_occurrenceMontree is { } montree && SingleSelected is { } seul && ReferenceEquals(seul, montree.Cible.Racine))
-        {
-            var rang = cibles.IndexOf(montree.Cible);
-            if (rang >= 0) return (rang, montree.Plage.Start + montree.Plage.Length);
         }
 
         if (SingleSelected is { } bloc)
@@ -323,9 +316,10 @@ public partial class MainWindowViewModel
     }
 
     /// <summary>
-    /// Montre l'occurrence : sa page devient la page courante, et son bloc la sélection. Dans un
-    /// bloc de texte, la planche ouvre la saisie, la plage sélectionnée — dans un groupe aussi,
-    /// le groupe sélectionné, depuis le poste N26 ; dans une case, la barre d'état dit où elle est.
+    /// Montre l'occurrence : sa page devient la page courante, et son bloc la sélection. La planche
+    /// ouvre la saisie, la plage sélectionnée — dans un groupe aussi, le groupe sélectionné, depuis
+    /// le poste N26 ; dans une case, le tableau sélectionné, depuis le poste N27 —, et la barre d'état
+    /// nomme la case.
     /// </summary>
     private void Montrer(Occurrence occurrence, bool reprise)
     {
@@ -337,43 +331,24 @@ public partial class MainWindowViewModel
         var trouve = $"« {TexteCherche} » trouvé page {numero}";
         var repris = reprise ? " — la recherche a repris au début du document" : "";
 
-        if (cible.EnSaisie)
-        {
-            _occurrenceMontree = null;
-            var fin = occurrence.Plage.Start + occurrence.Plage.Length;
-            TexteTrouve?.Invoke(this, new SelectionDuTexte(cible.Bloc!, null, occurrence.Plage.Start, fin, fin));
-            Status = $"{trouve}{repris}.";
-            return;
-        }
-
-        // Une case, seule à n'avoir pas de saisie sur la page (N27), d'un tableau posé sur la page ou
-        // dans un groupe.
-        _occurrenceMontree = occurrence;
-        Status = $"{trouve}, dans la case {cible.Case?.Label} du tableau « {cible.Tableau?.Name} »{repris} : la case se règle au dock.";
+        var fin = occurrence.Plage.Start + occurrence.Plage.Length;
+        TexteTrouve?.Invoke(this, cible.Selection(occurrence.Plage.Start, fin));
+        Status = cible.Case is null
+            ? $"{trouve}{repris}."
+            : $"{trouve}, dans la case {cible.Case.Label} du tableau « {cible.Tableau?.Name} »{repris}.";
     }
 
     /// <summary>
-    /// L'occurrence que <i>Remplacer</i> remplace : la sélection du texte en saisie, si elle en est
-    /// une ; sinon l'occurrence montrée dans une case, si son bloc est toujours la
-    /// sélection et que son texte n'a pas changé sous elle.
+    /// L'occurrence que <i>Remplacer</i> remplace : la sélection du texte en saisie — d'un bloc ou
+    /// d'une case —, si elle en est une.
     /// </summary>
     private Occurrence? OccurrenceSelectionnee()
     {
-        var criteres = CriteresDeRecherche;
-        var cibles = Cibles();
+        if (SelectionDuTexte is not { EstVide: false } selection) return null;
 
-        if (SelectionDuTexte is { Case: null, Bloc: TextFrame enSaisie, EstVide: false } selection)
-        {
-            var cible = cibles.Find(c => c.EnSaisie && ReferenceEquals(c.Bloc, enSaisie));
-            return cible is not null && Recherche.EstUneOccurrence(cible.Texte, selection.Plage, criteres)
-                ? new Occurrence(cible, selection.Plage)
-                : null;
-        }
-
-        return _occurrenceMontree is { } montree && SingleSelected is { } seul &&
-               ReferenceEquals(seul, montree.Cible.Racine) && cibles.Contains(montree.Cible) &&
-               Recherche.EstUneOccurrence(montree.Cible.Texte, montree.Plage, criteres)
-            ? montree
+        var cible = Cibles().Find(c => c.EnSaisie && c.Porte(selection));
+        return cible is not null && Recherche.EstUneOccurrence(cible.Texte, selection.Plage, CriteresDeRecherche)
+            ? new Occurrence(cible, selection.Plage)
             : null;
     }
 

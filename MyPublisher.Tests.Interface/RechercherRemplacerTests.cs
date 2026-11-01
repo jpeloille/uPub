@@ -379,8 +379,10 @@ public class RechercherRemplacerTests
     /// <summary>
     /// Un texte trouvé dans un groupe sélectionne le groupe et ouvre la saisie du bloc qui le porte,
     /// la plage sélectionnée — depuis N26, qui entre dans les groupes (règle 14 : le groupe était
-    /// sélectionné, la barre d'état le disait) ; dans une case, le tableau, et la case est nommée.
-    /// <i>Remplacer</i> y remplace l'occurrence montrée, en un pas.
+    /// sélectionné, la barre d'état le disait) ; dans une case, il sélectionne le tableau et ouvre la
+    /// saisie de la case, la plage sélectionnée, et la barre d'état nomme la case — depuis N27, qui
+    /// tape dans les cases (règle 14 : le tableau était sélectionné, sans saisie). <i>Remplacer</i> y
+    /// remplace l'occurrence sélectionnée, en un pas.
     /// </summary>
     [AvaloniaFact]
     [Trait("poste", "N20")]
@@ -406,7 +408,9 @@ public class RechercherRemplacerTests
 
         Rendu.Touche(fenetre, PhysicalKey.F3);
         Assert.Same(tableau, vm.SingleSelected);
-        Assert.Null(vm.SelectionDuTexte);
+        Assert.Same(tableau.Cells[1], vm.CaseEnSaisie);
+        Assert.Equal((tableau, tableau.Cells[1], 0, 8),
+            (vm.SelectionDuTexte?.Bloc, vm.SelectionDuTexte?.Case, vm.SelectionDuTexte?.Debut, vm.SelectionDuTexte?.Fin));
         Assert.Contains($"dans la case {tableau.Cells[1].Label} du tableau « Bande »", vm.Status);
 
         vm.TexteDeRemplacement = "journal";

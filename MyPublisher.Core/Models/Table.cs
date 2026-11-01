@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Linq;
 using System.Text.Json.Serialization;
 using CommunityToolkit.Mvvm.ComponentModel;
 
@@ -220,5 +222,122 @@ public partial class TableCell : ObservableObject
         // duplication doivent pouvoir diverger.
         foreach (var fragment in Spans) copie.Spans.Add(fragment.Clone());
         return copie;
+    }
+}
+
+/// <summary>
+/// Taper dans une case, sur la page (poste N27 ; fiche 23, g2 à g4) : ce que la planche demande au
+/// tableau pour y entrer d'un clic, et passer de case en case au clavier. Tout se lit sur les
+/// colonnes, les lignes et les cases, comme <see cref="CellFrames"/> les dessine : une case mal
+/// repérée n'existe pas, et la première posée sur un croisement l'emporte.
+/// </summary>
+public partial class TableFrame
+{
+    /// <summary>
+    /// La case dessinée au croisement de la ligne et de la colonne — la première posée, comme
+    /// <see cref="CellFrames"/> la retient —, ou rien : un croisement sans cellule est une case vide,
+    /// où rien ne se tape.
+    /// </summary>
+    public TableCell? CaseEn(int ligne, int colonne) =>
+        ligne < 0 || ligne >= Rows.Count || colonne < 0 || colonne >= Columns.Count
+            ? null
+            : Cells.FirstOrDefault(c => c.Row == ligne && c.Column == colonne);
+
+    /// <summary>
+    /// La case sous un point du repère du tableau, en points depuis son coin supérieur gauche :
+    /// celle de la colonne et de la ligne qui le portent, bords compris du côté de la case
+    /// suivante. Rien hors des colonnes et des lignes, ni sur un croisement vide.
+    /// </summary>
+    public TableCell? CaseSous(double x, double y)
+    {
+        var colonne = RangSous(Columns.Select(c => c.Width), x);
+        var ligne = RangSous(Rows.Select(r => r.Height), y);
+        return colonne is { } c && ligne is { } l ? CaseEn(l, c) : null;
+    }
+
+    private static int? RangSous(IEnumerable<double> tailles, double position)
+    {
+        if (position < 0) return null;
+
+        var bord = 0.0;
+        var rang = 0;
+        foreach (var taille in tailles)
+        {
+            bord += taille;
+            if (position < bord) return rang;
+            rang++;
+        }
+
+        // Le bord extérieur appartient à la dernière.
+        return rang > 0 && position <= bord ? rang - 1 : null;
+    }
+
+    /// <summary>
+    /// Les cases dessinées, dans l'ordre de lecture : ligne après ligne, de gauche à droite. C'est
+    /// l'ordre de <c>Tab</c> et des flèches de côté, et celui où la recherche les parcourt.
+    /// </summary>
+    public IReadOnlyList<TableCell> CasesDansLOrdre() =>
+        Cells.Where(c => ReferenceEquals(CaseEn(c.Row, c.Column), c))
+            .OrderBy(c => c.Row).ThenBy(c => c.Column)
+            .ToList();
+
+    /// <summary>
+    /// La case qui suit <paramref name="case_"/> dans l'ordre de lecture — <paramref name="sens"/>
+    /// vaut 1 —, ou qui la précède — -1 ; rien au bout du tableau.
+    /// </summary>
+    public TableCell? CaseVoisine(TableCell case_, int sens)
+    {
+        var ordre = CasesDansLOrdre();
+        var rang = -1;
+        for (var i = 0; i < ordre.Count; i++)
+        {
+            if (ReferenceEquals(ordre[i], case_)) rang = i;
+        }
+
+        var cible = rang + Math.Sign(sens);
+        return rang < 0 || cible < 0 || cible >= ordre.Count ? null : ordre[cible];
+    }
+
+    /// <summary>
+    /// La case au-dessus de <paramref name="case_"/> — <paramref name="sens"/> vaut -1 — ou
+    /// au-dessous — 1 —, dans sa colonne : la plus proche, les croisements vides sautés ; rien au
+    /// bord du tableau.
+    /// </summary>
+    public TableCell? CaseDansLaColonne(TableCell case_, int sens)
+    {
+        if (!ReferenceEquals(CaseEn(case_.Row, case_.Column), case_) || sens == 0) return null;
+
+        for (var ligne = case_.Row + Math.Sign(sens); ligne >= 0 && ligne < Rows.Count; ligne += Math.Sign(sens))
+        {
+            if (CaseEn(ligne, case_.Column) is { } voisine) return voisine;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Ajoute une ligne au bas du tableau, ses cases habillées comme celles qui l'entourent — le
+    /// compteur du dock fait la même chose —, et rend la première de ses cases : <c>Tab</c> dans
+    /// la dernière case y mène.
+    /// </summary>
+    public TableCell? AjouterUneLigne()
+    {
+        RowCount = Rows.Count + 1;
+        var ligne = Rows.Count - 1;
+        return CasesDansLOrdre().FirstOrDefault(c => c.Row == ligne);
+    }
+
+    /// <summary>
+    /// Le cadre de la case dans le repère du tableau, en points : son coin supérieur gauche, sa
+    /// largeur et sa hauteur, tels que <see cref="CellFrames"/> les pose. Rien pour une case mal
+    /// repérée.
+    /// </summary>
+    public (double X, double Y, double Largeur, double Hauteur)? CadreDe(TableCell case_)
+    {
+        if (case_.Row < 0 || case_.Row >= Rows.Count || case_.Column < 0 || case_.Column >= Columns.Count) return null;
+
+        var x = Columns.Take(case_.Column).Sum(c => c.Width);
+        var y = Rows.Take(case_.Row).Sum(r => r.Height);
+        return (x, y, Columns[case_.Column].Width, Rows[case_.Row].Height);
     }
 }

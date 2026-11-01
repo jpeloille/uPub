@@ -312,7 +312,7 @@ public partial class MainWindowViewModel
         {
             (depart, depuis) = Depart(cibles);
             // Le curseur dans un mot le vérifie : la recherche partirait de la fin de la sélection.
-            if (SelectionDuTexte is { Case: null, EstVide: true } curseur) depuis = Math.Max(0, curseur.Curseur - 1);
+            if (SelectionDuTexte is { EstVide: true } curseur) depuis = Math.Max(0, curseur.Curseur - 1);
         }
 
         if (depart < 0) (depart, depuis) = (0, 0);
@@ -338,7 +338,8 @@ public partial class MainWindowViewModel
 
     /// <summary>
     /// Montre la faute : sa page, son bloc sélectionné ; dans un bloc de texte, le mot sélectionné
-    /// en saisie, comme un texte trouvé (N20) ; dans un groupe ou une case, la barre d'état dit où.
+    /// en saisie, comme un texte trouvé (N20) — dans un groupe (N26) et dans une case (N27) aussi, la
+    /// barre d'état nommant la case.
     /// La barre montre le mot et ses suggestions, la première choisie.
     /// </summary>
     private void MontrerLaFaute(FauteMontree montree, bool reprise)
@@ -358,16 +359,11 @@ public partial class MainWindowViewModel
         var dit = $"« {faute.Mot} » n'est pas dans le dictionnaire ({faute.Langue}), page {numero}";
         var repris = reprise ? " — la vérification a repris au début du document" : "";
 
-        if (cible.EnSaisie)
-        {
-            TexteTrouve?.Invoke(this, new SelectionDuTexte(cible.Bloc!, null, faute.Debut, faute.Fin, faute.Fin));
-            Status = $"{dit}{repris}.";
-            return;
-        }
-
-        Status = cible.Racine is GroupFrame groupe
-            ? $"{dit}, dans le groupe « {groupe.Name} »{repris}."
-            : $"{dit}, dans la case {cible.Case?.Label} du tableau « {cible.Tableau?.Name} »{repris}.";
+        // Dans un bloc, un groupe ou une case — la case depuis le poste N27 —, le mot sélectionné en saisie.
+        TexteTrouve?.Invoke(this, cible.Selection(faute.Debut, faute.Fin));
+        Status = cible.Case is null
+            ? $"{dit}{repris}."
+            : $"{dit}, dans la case {cible.Case.Label} du tableau « {cible.Tableau?.Name} »{repris}.";
     }
 
     /// <summary>

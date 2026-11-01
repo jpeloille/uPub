@@ -1447,6 +1447,8 @@ public partial class PageCanvas : UserControl
         _editing = null;
         _zoneDeSaisie = null;
         _vm?.SuivreLeTexteEnSaisie(null);
+        // La saisie d'une case, si c'en était une (poste N27, PageCanvas.SaisieDansUneCase.cs).
+        OublierLaCase();
         RefreshOverlay();
     }
 

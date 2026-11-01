@@ -951,6 +951,37 @@ public static class Rendu
     }
 
     /// <summary>
+    /// La zone de saisie d'une case ouverte sur la page (poste N27) : le champ unique, posé hors de
+    /// PageRoot, dans l'<c>Overlay</c>, le temps de la saisie, visible. <c>null</c> hors de la saisie
+    /// d'une case.
+    /// </summary>
+    public static TextBox? ZoneDeLaCase(Window fenetre) =>
+        Nomme<Canvas>(fenetre, "Overlay").Children.OfType<TextBox>()
+            .SingleOrDefault(zone => zone.Name == PageCanvas.NomDuChampDeLaCase && zone.IsVisible);
+
+    /// <summary>
+    /// Entre dans une case comme l'utilisateur (poste N27) : un clic à (<paramref name="dx"/>,
+    /// <paramref name="dy"/>) du coin de la case, dans le repère du tableau — rotation comprise —, un
+    /// tableau posé sur la page. Le point doit tomber dans la case, hors de la bande de bord du
+    /// tableau, où le clic le prendrait sans entrer. Rend la zone de saisie de la case, et échoue si
+    /// la saisie ne s'est pas ouverte, si le tableau n'est pas resté la sélection ou si la zone n'a
+    /// pas le focus.
+    /// </summary>
+    public static TextBox EntrerDansLaCase(Window fenetre, MainWindowViewModel vm, TableFrame tableau, TableCell case_,
+                                           double dx = 8, double dy = 8)
+    {
+        var cadre = tableau.CadreDe(case_) ?? throw new InvalidOperationException($"la case {case_.Label} n'est pas dans le tableau");
+        var (x, y) = tableau.ToPage(cadre.X + dx, cadre.Y + dy);
+        Cliquer(fenetre, SurLaPage(fenetre, x, y));
+        Assert.Same(case_, vm.CaseEnSaisie);
+        Assert.Same(tableau, vm.SingleSelected);
+
+        var zone = ZoneDeLaCase(fenetre) ?? throw new InvalidOperationException("la saisie de la case est ouverte, mais aucune zone ne se voit");
+        Assert.True(zone.IsFocused, "la zone de saisie de la case n'a pas le focus");
+        return zone;
+    }
+
+    /// <summary>
     /// Le bord avant d'un caractère d'une zone de texte, à mi-hauteur de sa ligne, dans la
     /// racine qui la porte : là où une pression pose le curseur devant lui. L'indice qui suit le
     /// dernier caractère est le bout du texte.
@@ -983,11 +1014,23 @@ public static class Rendu
     /// La composition qu'un champ de la saisie sur la page tient à jour, et que l'écran montre à
     /// sa place (poste N21) ; rien pour un autre champ.
     /// </summary>
-    private static TexteCompose? CompositionDuChamp(TextBox zone) =>
-        zone.DataContext is TextFrame bloc && zone.GetVisualAncestors().OfType<Panel>().Any(p => p.Name == "PageRoot")
+    private static TexteCompose? CompositionDuChamp(TextBox zone)
+    {
+        if (zone.DataContext is not TextFrame bloc) return null;
+
+        // Le champ d'une case, hors de PageRoot (poste N27) : la case se dessine par un bloc que le
+        // tableau reconstruit à chaque changement, et qui emprunte les fragments de la case.
+        if (zone.Name == PageCanvas.NomDuChampDeLaCase && zone.GetVisualRoot() is Window fenetre)
+        {
+            return Nomme<Panel>(fenetre, "PageRoot").GetVisualDescendants().OfType<TexteCompose>()
+                .FirstOrDefault(c => c.Bloc is { } dessine && ReferenceEquals(dessine.Spans, bloc.Spans) && c.IsEffectivelyVisible);
+        }
+
+        return zone.GetVisualAncestors().OfType<Panel>().Any(p => p.Name == "PageRoot")
             ? (zone.GetVisualRoot() as Visual)?.GetVisualDescendants().OfType<TexteCompose>()
                 .FirstOrDefault(c => ReferenceEquals(c.Bloc, bloc) && c.IsEffectivelyVisible)
             : null;
+    }
 
     /// <summary>
     /// Sélectionne au pointeur les caractères [<paramref name="debut"/>, <paramref name="fin"/>)
