@@ -3153,6 +3153,28 @@ saboter "la découpe du groupe ne suit pas le filet d'un membre (N26)" \
     '' \
     'N26-saisie-dans-un-groupe|SaisieDansUnGroupeTests'
 
+# N27 — taper dans une case, sur la page. Celui du plan : Tab qui sort du tableau, la saisie refermée
+# au lieu de passer à la case suivante.
+saboter "Tab qui sort du tableau (N27)" \
+    MyPublisher/Views/PageCanvas.SaisieDansUneCase.cs \
+    '                AllerALaCaseSuivante(saisie);' \
+    '                EndTextEdit();' \
+    'N27-saisie-dans-une-case|SaisieDansUneCaseTests'
+
+# Le témoin de la case ne suit plus le texte que le dock y écrit : la page et le dock se contredisent.
+saboter "le texte tapé au dock ne suit pas dans la saisie de la case (N27)" \
+    MyPublisher/Views/PageCanvas.SaisieDansUneCase.cs \
+    '        if (!string.Equals(saisie.Temoin.Text, saisie.Case.Text, StringComparison.Ordinal)) saisie.Temoin.Text = saisie.Case.Text;' \
+    '' \
+    'N27-saisie-dans-une-case|SaisieDansUneCaseTests'
+
+# La recherche ne reconnaît plus la sélection d'une case : Remplacer n'y remplace rien.
+saboter "la recherche ne reconnaît pas la sélection d'une case (N27)" \
+    MyPublisher/ViewModels/MainWindowViewModel.Rechercher.cs \
+    'public bool EnSaisie => Bloc is not null || Case is not null;' \
+    'public bool EnSaisie => Bloc is not null;' \
+    'N27-saisie-dans-une-case|SaisieDansUneCaseTests|N20-rechercher-remplacer|RechercherRemplacerTests'
+
 # Un motif qui ne désigne aucun sabotage ne prouve rien. « eprouver-le-juge.sh I4 » sortait
 # en 0 sur « 0 sabotages, 0 attrapés », quand les intitulés de la planche ne portaient pas
 # encore le code du poste : le filet passait pour éprouvé sans qu'on l'ait troué.

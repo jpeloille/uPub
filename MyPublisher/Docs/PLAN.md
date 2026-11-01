@@ -132,7 +132,7 @@ pas un poste à moitié livré. La colonne se met à jour dans le commit qui cl�
 | **N24** | Exposant, indice, capitales | **100 %** | Une clé `Capitales` — aucune, capitales, petites capitales — sur `TextFrame` et `StyleSpan`, additive : `FormatVersion` reste 5, Samples et Templates réenregistrés (`"Capitales"`, rien d'autre). La composition dessine en capitales sans toucher à `Text`, caractère pour caractère (`char.ToUpperInvariant` : « ß » reste tel quel, les positions de N3 tiennent), et fabrique les petites capitales en dessinant les minuscules en capitales à 70 % du corps, la ligne de base d'un exposant gardée ; un mot en petites capitales ne se coupe pas entre ses deux tailles. L'exposant et l'indice d'Office tels que l'import les lit : la ligne de base décalée de la moitié du corps, le corps à 67 % — l'import applique désormais au corps la taille relative de libmspub, qu'il croyait déjà répercutée, et lit ses capitales. Sur la `MiseEnFormeVisee` de R7, en un pas : `Ctrl+Maj+=` l'exposant, `Ctrl+=` l'indice — le zoom avant n'a plus de touche, le « + » du pavé numérique compris —, `Ctrl+Maj+K` les petites majuscules, et *Texte ▸ Exposant et majuscules ▸* les quatre, au menu du texte aussi ; chacune bascule. Les documents sans exposant ni capitales se rendent à l'identique : l'empreinte de la composition de 18 des 19 documents du corpus est inchangée, les Fiches changent par leurs quatre indices. Quatorze tests (huit du noyau, six sur la fenêtre), dont le « 2 » de « x2 » au PDF au corps et à la ligne de base attendus, et les petites capitales à 0,1 pt de 70 % de la hauteur des capitales ; six tests voisins et les recettes A4, R5 et R7 repris (règle 14) ; deux sabotages au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **N25** | La vérification orthographique | **100 %** | La dépendance éprouvée d'abord : WeCantSpell.Hunspell 7.0.1, un portage de Hunspell en code géré, au noyau seul, sous la triple licence de Hunspell (MPL 1.1, GPL 2.0, LGPL 2.1, lue dans le paquet et le dépôt), prise sous MPL 1.1 sans modification — la mention et la source au README ; `verifier-dependances.sh` ne la signale pas (il échoue, sur la base aussi, sur `System.Security.Cryptography.Pkcs` 8.0.1, tiré par PdfSharp). Un service du noyau, `Orthographe` : les dictionnaires de Hunspell du système (`/usr/share/hunspell`), chargés à la première demande, une langue de N9 menant à son fichier (`fr-FR` → `fr_FR`, puis `fr`) ; les fautes d'un texte mot par mot, chaque mot dans la langue de son premier caractère, avec un cache par mot ; sigles et mots à chiffre hors vérification ; un dictionnaire absent le dit une fois à la barre d'état, et rien n'est souligné dans cette langue. Donné par `App.axaml.cs` seul, comme les préférences. Un trait ondulé, au rouge de l'apparence, sous chaque faute des blocs visibles de la page, aux abscisses de N3, sur chaque ligne qu'elle occupe, dans l'`Overlay` (`FautesSoulignees`), par le suivi des blocs de N22, désormais partagé — tourné, mis à l'échelle et découpé avec le bloc ; le mot qu'on tape ne se souligne qu'une fois quitté ; l'encre de la page et le PDF identiques, vérification ouverte ou fermée ; `PageCanvas.axaml.cs` n'est pas touché. `F7` et *Edition ▸ Vérifier l'orthographe…* : la barre de N20 en mode orthographe, la faute suivante dans l'ordre de lecture de N20, sélectionnée en saisie, ses suggestions dans une liste qui prend le focus — Ignorer, Ignorer tout (la session), Remplacer (un pas, `Entrée`), Ajouter au dictionnaire ; `Échap` rend le mot. Au clic droit sur une faute en saisie, ses suggestions en tête du menu du texte (A12), puis Ignorer tout et Ajouter au dictionnaire. Le dictionnaire de l'utilisateur, par langue, et la case *Vérifier pendant la frappe* (menu Edition) dans les préférences de N11. Le banc relève les fautes d'un document (`orthographe`) : ATA 21 en `en-US`, 8 mots signalés sur 521, stable. Vingt tests sous `poste=N25`, dix du noyau et dix sur la fenêtre, sur un dictionnaire de test (`Scripts/fixtures/orthographe/`) ; deux sabotages au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **N26** | Taper dans le texte d'un groupe, et prendre un membre seul | **100 %** | La sélection garde son modèle — les blocs de la page, `SingleSelected` inchangé — et s'augmente de deux états, au partiel du poste (`MainWindowViewModel.MembreDuGroupe.cs`) : `TexteEnSaisie`, que la planche dit, et `MembreSeul` ; `BlocVise` les rassemble, et la barre, les trois sections du dock, la pastille, R6, R7, N24, l'excédent, le fond, le contour, le menu du bloc le suivent (quatre liaisons, trente-cinq lectures ; la recette Q23 lit `BlocVise`). Un clic dans le texte d'un membre traverse le groupe — ses blocs, puis `ToLocal` à chaque niveau — et ouvre sa saisie, le curseur au caractère visé, **le groupe restant la sélection** ; la frappe fait un pas, rien ne se dissocie ; sur un groupe tourné qui porte un texte tourné, le curseur, la sélection, les caractères de N22 et le trait de N25 tombent à moins d'un demi-pixel de la place du modèle. La recherche de N20 entre de même dans un groupe. Un clic sur un membre d'un groupe sélectionné le prend seul au relâché — un glissé déplace toujours le groupe entier, sauf parti du membre pris, qui bouge dans son groupe ; un clic de plus descend dans un groupe imbriqué ; double-clic sur une image ou une forme : sa section du dock ; `Échap` rend le groupe — : son cadre et huit poignées grises qui ne se prennent pas, « Position et taille » grisé, le redimensionnement réservé à la dissociation. `Suppr`, les flèches (dans le sens de l'écran, rotations retirées), l'alignement (sur le cadre du groupe), `Alt`+flèche et Couper le gardent dans son groupe, retenu à son cadre ; `MainWindowViewModel.cs` touché de trois lignes, dans `DeleteSelected`, `NudgeSelection` et `AlignEach`. La découpe de Q5 suit désormais les blocs du groupe et le filet d'un membre réglé. Douze tests sous `poste=N26` ; deux tests réécrits (C3, N20 ; règle 14) ; cinq sabotages au juge, dont la saisie qui dissocie le groupe. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
-| **N27** | Taper dans une case, sur la page | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 11 ; revient sur un choix écrit en C9 |
+| **N27** | Taper dans une case, sur la page | **100 %** | Revient sur C9 sans toucher à son parti : les cases restent reconstruites à chaque lecture, et la saisie d'une case passe par **un champ unique hors de la page**, posé dans l'`Overlay` le temps de la saisie, qui écrit `TableCell.Saisie` comme le champ du dock (`PageCanvas.SaisieDansUneCase.cs`) ; le champ du gabarit, celui de N26, serait détruit à chaque frappe. Un clic dans une case — hors de la bande de bord du tableau, lue à travers les groupes, rotation comprise — ouvre sa saisie, le curseur au caractère visé, **le tableau restant la sélection** et le bloc visé (dans un groupe, pris seul) : la barre règle le tableau, le dock garde sa saisie de case, et ce qu'on tape d'un côté se voit de l'autre. La saisie tient un bloc témoin de la case, qui emprunte ses fragments : la voie 2a, N15, N16, N22, N25, N29, A12, Q24 et Q25 valent pour la case sans être réécrits ; le contrôle qui dessine la case, remplacé à chaque frappe, est retrouvé par ses fragments. `Tab` et `Maj+Tab` de case en case, le texte sélectionné ; `Tab` dans la dernière case ajoute une ligne, en un pas ; `Ctrl+Tab` une tabulation ; les flèches passent à la case voisine au bord du texte ; un pas par case ; `Échap` rend le tableau. La sélection du texte porte la case (`SelectionDuTexte.Case`) ; le modèle de vue la dit au partiel du poste (`CaseEnSaisie`) ; le noyau (`Table.cs`) dit la case sous un point, les voisines, et ajoute la ligne. La recherche (N20) et F7 (N25) entrent dans la case. Sur un tableau tourné, le curseur, la sélection, le ¶ de N22 et le trait de N25 tombent à moins d'un demi-pixel du modèle ; les cases étaient déjà soulignées, contrairement au relevé de N25. `PageCanvas.axaml.cs` touché d'une ligne. Onze tests sous `poste=N27` ; un test de N20 réécrit et la recette N20 relue (règle 14) ; trois sabotages au juge, dont `Tab` qui sort du tableau. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **N28** | Lignes et colonnes à l'endroit choisi, et plusieurs cases à la fois | 0 % | Spécifié le 25 octobre 2026 ; salve Saisie 12 |
 | **N29** | Le clavier suit les lignes composées | **100 %** | En saisie, `Début`, `Fin`, `↑`, `↓`, `Pg.Préc` et `Pg.Suiv`, seules ou sous `Maj`, sont prises avant le champ caché et calculées sur les lignes de la composition (`PageCanvas.ClavierDuTexte.cs`, branché par trois lignes de `PageCanvas.Saisie.cs`) : début et bout de la ligne composée, ligne du dessus ou du dessous dans l'ordre du texte — d'une colonne à la suivante —, à l'abscisse visée, gardée d'une flèche à l'autre et perdue au premier autre déplacement ; bouts du texte depuis la première et la dernière ligne ; première et dernière ligne du bloc. `Fin` sur une ligne coupée en douceur dessine le curseur au bout d'elle (l'affinité du curseur). La géométrie (`TexteCompose.cs`) dit la coupure douce, la ligne du curseur, la colonne. La fenêtre de candidats de la méthode d'entrée se pose au curseur dessiné : le client du champ est enveloppé au passage montant de sa demande, sans le seuil D. La mesure de N21 rejouée sur ATA 21 (six blocs, 44 lignes) : aucun écart pour `Début`, `Fin`, `↑`, `↓`, contre 8, 10, 32 et 30 sans le poste. `PageCanvas.axaml.cs` et `MarquesDuTexte.cs` ne sont pas touchés. Six tests sous `poste=N29` ; un sabotage au juge. Recette dans `Scripts/recettes/` ; relecture et juge après fusion |
 | **D** | Moteur de composition | — | Décision non ouverte ; à rouvrir quand A, B et C sont livrées |
@@ -10124,6 +10124,93 @@ Tab, Maj+Tab, puis la ligne ajoutée ; un pas par case ; au juge : Tab qui sort 
 
 Fichiers : `PageCanvas.axaml.cs`, `PageCanvas.Saisie.cs`, `MainWindow.axaml`, `Table.cs`. Dépend de
 N26 et N16. Effort : lourd.
+
+**Le choix, relevé sur le code.** Les cases passent par `TexteCompose` : le gabarit de `TableFrame`
+pose une liste sur `CellFrames`, et chaque case se dessine par le gabarit du bloc de texte — son
+`TexteCompose`, et son champ caché de la voie 2a. Mais `CellFrames` rend des blocs neufs à chaque
+lecture, et la liste reconstruit tous les contrôles du tableau à chaque changement d'une case : le champ
+du gabarit, celui que N26 a pris pour le membre d'un groupe, serait détruit à la première frappe. La voie
+de N26 est donc fermée aux cases, et la seule qui reste n'exige pas de cases stables : **le champ caché de
+N21, unique, hors de la page**, posé dans l'`Overlay` le temps de la saisie, qui **écrit
+`TableCell.Saisie`**, comme le champ du dock. Les cases restent reconstruites à chaque lecture : le parti
+de C9 tient, et rien n'est à trancher par le propriétaire.
+
+*Livré le 1er novembre 2026*, dans la salve Saisie 11 ; la relecture adversariale et le juge viennent
+après la fusion. **La planche** (`PageCanvas.SaisieDansUneCase.cs`, neuf). Un clic sans `Ctrl` ni `Maj`
+dans une case — l'intérieur du tableau moins sa bande de bord de 5 px, lu dans son repère à travers ceux
+des groupes, rotation comprise (`CaseSousLeChemin`) — passe par l'entrée dans le texte de N12 et N26 : il
+prend le tableau, ou le groupe qui le porte, le tableau y étant pris seul (N26), et ouvre la saisie de la
+case, le curseur au caractère visé, lu sur la composition à l'écran. Le bord prend et déplace le tableau,
+comme celui d'un bloc de texte ; un croisement sans case n'a pas de texte. La saisie tient un **bloc
+témoin** de la case, tiré de `CellFrames` à l'ouverture : il emprunte les fragments de la case, comme
+tout bloc de case, et la planche tient son texte à jour dans les deux sens. C'est lui qui est `_editing` :
+le champ a pour contexte le témoin et écrit la saisie de la case, si bien que tout ce que la voie 2a,
+N15, N16, N22, N25, N29, A12, Q24 et Q25 font du texte en saisie vaut pour la case sans y être réécrit.
+Le contrôle qui dessine la case, remplacé à chaque frappe, est retrouvé par les fragments qu'il emprunte
+(`DessineLeTexte`, une ligne dans `TexteComposeDe`), et les marques se reposent quand il change
+(`_composeDesMarques`). `PageCanvas.axaml.cs` est touché d'une ligne : `EndTextEdit` oublie la case.
+**Le tableau reste la sélection**, et le bloc visé : la barre règle le tableau entier, le dock garde sa
+saisie de case, liée au même texte — ce qu'on tape sur la page se voit au dock, et inversement, la saisie
+de la page restant ouverte. La sélection du texte porte la case (`SelectionDuTexte.Case`, le tableau pour
+bloc), la forme que N15 lui avait donnée d'avance. Le modèle de vue la dit au partiel du poste
+(`MainWindowViewModel.SaisieDansUneCase.cs`, règle 10) : `CaseEnSaisie`, `TableauDeLaCase`, et la barre
+d'état nomme la case. Le noyau (`Table.cs`, un partiel de `TableFrame`) dit la case sous un point, les
+cases dans l'ordre de lecture, la voisine, celle du dessus ou du dessous, et ajoute une ligne.
+
+**Le clavier**, avant le champ et avant les lignes composées (`ToucheDeLaCase`) : `Tab` passe à la case
+suivante, son texte sélectionné, `Maj+Tab` à la précédente ; `Tab` dans la dernière case ajoute une
+ligne, habillée comme le compteur du dock l'habille, en un pas à elle, et mène à sa première case ;
+`Ctrl+Tab` met une tabulation ; `←` au début du texte et `→` à sa fin passent à la case d'avant ou
+d'après, `↑` sur la première ligne composée et `↓` sur la dernière à la case du dessus ou du dessous, à
+l'abscisse du curseur. Passer d'une case à l'autre referme la saisie de l'une et ouvre celle de l'autre :
+**un pas par case**. Le champ de la case prend le focus tout de suite, et la touche qui suit `Tab` tombe
+déjà dans la case suivante. `Échap` rend le tableau.
+
+**La recherche (N20) et la vérification (F7, N25) entrent dans la case**, comme N26 les a fait entrer
+dans un groupe : le tableau sélectionné, la plage trouvée sélectionnée en saisie dans la case, la barre
+d'état nommant la case ; *Remplacer* remplace la plage sélectionnée. L'occurrence « montrée » d'une case,
+qui tenait lieu de sélection, n'a plus lieu d'être et s'en va. Un test de N20 réécrit (règle 14) : il
+voyait le tableau sélectionné sans saisie. La recette de N20 lit la sélection dite par le nouvel appel
+(`SelectionDeLaSaisie`) ; celle de N12 lit toujours la ligne « Clic » du README, qui nomme la case.
+
+Onze tests sous `poste=N27` (`SaisieDansUneCaseTests`, la vraie fenêtre) : la recette du plan — un clic
+dans la 2ᵉ case d'une bande, « 12 », la case et le dock qui le portent, un pas, le PDF qui porte « 12 »
+entre les bords de la case (`pdftotext -bbox`), `Échap` qui rend le tableau — ; `Tab`, `Maj+Tab` et la
+ligne ajoutée en un pas ; un pas par case et `Ctrl+Tab` ; `Ctrl+Z` dans la transaction de la saisie ; les
+flèches au bord du texte ; la page et le dock ; la barre, le dock, le menu du texte (A12) et `Ctrl+G` ;
+un tableau tourné de 30°, où le curseur, la sélection, le ¶ de N22 et le trait ondulé de N25 tombent à
+moins d'un demi-pixel de la place du modèle, avant et après une frappe ; la recherche et F7 ; la case
+d'un tableau tourné dans un groupe tourné ; le bord qui prend et déplace le tableau. Deux aides au banc,
+`EntrerDansLaCase` et `ZoneDeLaCase`, et `BordDuCaractere` qui lit la composition d'une case. Trois
+sabotages au juge, dont celui du plan, `Tab` qui sort du tableau.
+
+*Ce que l'implémentation a appris.*
+- **Les cases étaient déjà soulignées** par N25, et marquées par N22 : leur suivi lit tous les
+  `TexteCompose` de la page, cases comprises. Le relevé de N25 — « elles ne sont pas dessinées par
+  `TexteCompose` » — se trompait ; le test du tableau tourné le montre avant d'entrer dans la case.
+- **Le mot qu'on tape dans une case se serait souligné** : la planche le reconnaissait au bloc en saisie,
+  que le contrôle d'une case ne dessine jamais. Il est reconnu aux fragments de la case.
+
+*Choisi sans certitude* :
+- `Tab` et `Maj+Tab` sélectionnent le texte de la case où ils mènent, comme Word et, à notre lecture,
+  Publisher ; la frappe le remplace ;
+- `←` et `→` vont dans l'ordre de lecture, d'une ligne du tableau à l'autre ; `↑` et `↓` restent dans la
+  colonne, les croisements vides sautés ; sous `Maj`, les flèches restent dans la case : sélectionner
+  plusieurs cases est à N28 ;
+- la ligne que `Tab` ajoute est habillée comme celle du compteur du dock (C9) : chaque case neuve reprend
+  l'alignement, le fond et le contour de la dernière case du tableau, et non de la case d'au-dessus ;
+- le tableau d'un groupe est pris seul dans son groupe, pour que le dock montre sa section ; `Échap`
+  rend le tableau, puis le groupe ;
+- une case vide de texte ne s'ouvre qu'en dedans de la bande de bord du tableau : sur une bande de 26 pt,
+  il reste 16 pt de haut où cliquer ;
+- le champ d'une saisie refermée reste caché dans l'`Overlay` jusqu'à la saisie de case suivante, qui
+  l'ôte : il se cache comme celui d'un bloc, le focus le quittant de même.
+
+*Relevé, non corrigé* :
+- **la mise en forme vise le tableau entier** : `Ctrl+G`, la barre et le menu Texte, dans une case, mettent
+  le tableau en gras, et non la sélection — la mise en forme d'une case est à N28 (g5). Le README le dit ;
+- un tableau d'un groupe qui gagne une ligne par `Tab` peut sortir du cadre du groupe, que la découpe de
+  Q5 rogne : le groupe ne s'agrandit pas.
 
 #### N28 — Lignes et colonnes à l'endroit choisi, et plusieurs cases à la fois *(fiche 23, g5 à g7)*
 

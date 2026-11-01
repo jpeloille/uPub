@@ -100,6 +100,8 @@ public partial class PageCanvas
     /// </summary>
     private bool DansLeTexteDuChemin(IReadOnlyList<Frame> chemin, Point page)
     {
+        // Une case d'un tableau a son texte, depuis le poste N27 (PageCanvas.SaisieDansUneCase.cs).
+        if (chemin[^1] is TableFrame) return CaseSousLeChemin(chemin, page) is not null;
         if (chemin[^1] is not TextFrame { Visible: true, HasField: false } texte) return false;
 
         var (lx, ly) = MainWindowViewModel.VersLeBloc(chemin, page.X, page.Y);
@@ -158,6 +160,8 @@ public partial class PageCanvas
     private bool EntrerDansLeTexte(Frame bloc, Point page, PointerPressedEventArgs e)
     {
         var chemin = CheminSous(bloc, page);
+        // Dans une case, la saisie de la case, le tableau restant la sélection (poste N27).
+        if (chemin[^1] is TableFrame) return EntrerDansLaCase(chemin, page, e);
         if (_vm is null || !DansLeTexteDuChemin(chemin, page) || chemin[^1] is not TextFrame texte) return false;
 
         var curseur = PositionVisee(texte, e);
@@ -190,7 +194,7 @@ public partial class PageCanvas
     /// <summary>Le contrôle qui dessine la composition du bloc sur la page, s'il est à l'écran.</summary>
     private TexteCompose? TexteComposeDe(TextFrame bloc) =>
         Scaler.GetVisualDescendants().OfType<TexteCompose>()
-            .FirstOrDefault(controle => ReferenceEquals(controle.Bloc, bloc) && controle.IsEffectivelyVisible);
+            .FirstOrDefault(controle => DessineLeTexte(controle, bloc) && controle.IsEffectivelyVisible);
 
     /// <summary>
     /// Le glissé dans le texte, passé le seuil : la sélection du champ suit le pointeur depuis
@@ -334,10 +338,14 @@ public partial class PageCanvas
     /// </summary>
     private void OnTexteTrouve(object? sender, SelectionDuTexte trouve)
     {
-        if (trouve.Bloc is not TextFrame bloc) return;
+        if (trouve.Bloc is not TextFrame && trouve is not { Case: not null, Bloc: TableFrame }) return;
 
         var dansLaBarre = TopLevel.GetTopLevel(this)?.FocusManager?.GetFocusedElement() as InputElement;
         if (dansLaBarre?.FindAncestorOfType<BarreDeRecherche>(includeSelf: true) is null) dansLaBarre = null;
+
+        // Dans une case, la saisie de la case s'ouvre, le tableau restant la sélection, et c'est le
+        // témoin de la case qu'elle tient (poste N27, PageCanvas.SaisieDansUneCase.cs).
+        if ((OuvrirLaCaseTrouvee(trouve) ?? trouve.Bloc) is not TextFrame bloc) return;
 
         if (!ReferenceEquals(_editing, bloc))
         {
@@ -361,7 +369,7 @@ public partial class PageCanvas
 
             if (zone.IsFocused) PoserLaSelection(zone, debut, fin);
             dansLaBarre.Focus();
-            _vm?.SuivreLaSelectionDuTexte(SelectionDuTexte.De(bloc, null, debut, fin, longueur));
+            _vm?.SuivreLaSelectionDuTexte(SelectionDeLaSaisie(bloc, debut, fin, longueur));
         }, DispatcherPriority.Background);
     }
 
@@ -372,7 +380,7 @@ public partial class PageCanvas
     /// </summary>
     private void OnSaisieRendue(object? sender, SelectionDuTexte selection)
     {
-        if (!ReferenceEquals(selection.Bloc, _editing) || _zoneDeSaisie is not { } zone) return;
+        if (_editing is null || !EstLaSelectionDe(selection, _editing) || _zoneDeSaisie is not { } zone) return;
 
         var longueur = zone.Text?.Length ?? 0;
         zone.Focus();
@@ -402,6 +410,9 @@ public partial class PageCanvas
         {
             return;
         }
+
+        // Dans une case : Tab, Maj+Tab, Ctrl+Tab et les flèches au bord du texte (N27).
+        if (ToucheDeLaCase(zone, e)) return;
 
         // Entrée dans un élément de liste vide l'en sort, au lieu d'insérer un saut (N23). Avant les
         // lignes composées, qui ne prennent pas Entrée, pour que leur passage reste le dernier avant
@@ -577,6 +588,9 @@ public partial class PageCanvas
     {
         if (_vm is null || _editing is null || !ReferenceEquals(zone.DataContext, _editing) || !zone.IsVisible) return;
 
+        // La case d'un tableau : sa sélection porte le tableau et la case (poste N27).
+        if (DireLaSelectionDeLaCase(zone)) return;
+
         _vm.SuivreLaSelectionDuTexte(SelectionDuTexte.De(_editing, null, zone.SelectionStart, zone.SelectionEnd,
             zone.Text?.Length ?? 0));
     }
@@ -601,7 +615,7 @@ public partial class PageCanvas
     {
         zone.PropertyChanged -= OnZoneSuivieChangee;
         if (ReferenceEquals(_zoneSuivie, zone)) _zoneSuivie = null;
-        if (_vm?.SelectionDuTexte is { } selection && ReferenceEquals(selection.Bloc, zone.DataContext))
+        if (_vm?.SelectionDuTexte is { } selection && EstLaSelectionDe(selection, zone.DataContext))
         {
             _vm.SuivreLaSelectionDuTexte(null);
         }
@@ -779,6 +793,12 @@ public partial class PageCanvas
     private bool _marquesDemandees;
 
     /// <summary>
+    /// Le contrôle sur lequel les marques sont posées : celui d'une case est remplacé à chaque frappe,
+    /// le tableau reconstruisant ses cases (poste N27), et les marques se reposent sur le neuf.
+    /// </summary>
+    private TexteCompose? _composeDesMarques;
+
+    /// <summary>
     /// Les marques suivent la sélection que le modèle de vue garde (N15), et non celle du champ :
     /// quand la barre prend le focus, le champ réduit la sienne à un curseur, et c'est la sélection
     /// gardée, celle que la barre mettra en forme (R7), qui reste surlignée.
@@ -855,6 +875,7 @@ public partial class PageCanvas
         }
 
         if (!MarquesDeLaSaisie.Visibles || TexteComposeDe(bloc) is not { } compose ||
+            !ReferenceEquals(compose, _composeDesMarques) ||
             compose.TransformToVisual(MarquesDeLaSaisie) != MarquesDeLaSaisie.Transformation)
         {
             PoserLesMarquesDuTexte();
@@ -891,11 +912,12 @@ public partial class PageCanvas
         var focus = _zoneSuivie is { IsFocused: true } zone && ReferenceEquals(zone.DataContext, _editing);
 
         // Un curseur seul, sans le focus, ne se montre pas : rien à composer.
-        if (_editing is not { } bloc || _vm?.SelectionDuTexte is not { Case: null } selection ||
-            !ReferenceEquals(selection.Bloc, bloc) || (selection.EstVide && !focus) ||
+        if (_editing is not { } bloc || _vm?.SelectionDuTexte is not { } selection ||
+            !EstLaSelectionDe(selection, bloc) || (selection.EstVide && !focus) ||
             TexteComposeDe(bloc) is not { } compose || compose.TransformToVisual(marques) is not { } transformation ||
             compose.Geometrie() is not { } geometrie)
         {
+            _composeDesMarques = null;
             marques.Effacer();
             DireLeCurseurALaMethode(null, null);
             return;
@@ -915,6 +937,7 @@ public partial class PageCanvas
         }
 
         marques.Poser(transformation, geometrie.RectanglesDe(selection.Debut, selection.Fin), curseur, preEdit);
+        _composeDesMarques = compose;
 
         // La fenêtre de candidats de la méthode d'entrée suit le curseur dessiné, ou celui qu'une
         // sélection cache (N29).

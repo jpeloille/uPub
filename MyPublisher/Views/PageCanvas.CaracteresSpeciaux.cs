@@ -327,7 +327,9 @@ public partial class PageCanvas
     {
         if (geometrie is null || bloc is null || _vmDesCaracteres is not { } vm) return [];
 
-        var tape = ReferenceEquals(bloc, _editing) && vm.SelectionDuTexte is { EstVide: true } curseur && ReferenceEquals(curseur.Bloc, bloc)
+        // Le texte en saisie : un bloc, ou la case qu'un contrôle neuf dessine à chaque frappe (N27).
+        var tape = _editing is { } enSaisie && EstDessineEnSaisie(bloc) && vm.SelectionDuTexte is { EstVide: true } curseur &&
+                   EstLaSelectionDe(curseur, enSaisie)
             ? curseur.Curseur
             : -1;
         var traits = new List<TraitDeFaute>();

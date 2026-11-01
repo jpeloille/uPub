@@ -1766,10 +1766,12 @@
                                                             </ItemsControl>
                                                         </StackPanel>
 
-                                                        <!-- Les cases se règlent ici et non sur la page : il n'y a pas
-                                                             de sélection à l'intérieur d'un bloc, et une bande en
-                                                             compte trois. Chacune est nommée par son rang, ligne puis
-                                                             colonne, pour qu'on sache laquelle on modifie. -->
+                                                        <!-- Les cases se règlent ici : leur alignement et leur fond.
+                                                             Leur texte se tape aussi sur la page, d'un clic, depuis
+                                                             le poste N27 : le champ de la page et celui-ci écrivent
+                                                             la même saisie, et chacun voit ce que l'autre tape.
+                                                             Chacune est nommée par son rang, ligne puis colonne,
+                                                             pour qu'on sache laquelle on modifie. -->
                                                         <TextBlock FontSize="12" FontWeight="SemiBold" Text="Cases" Margin="0,4,0,0"/>
                                                         <ItemsControl ItemsSource="{Binding Cells}">
                                                             <ItemsControl.ItemTemplate>

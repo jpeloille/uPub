@@ -166,7 +166,8 @@ trouve = corps(saisie, "private void OnTexteTrouve(object? sender, SelectionDuTe
 exige("BeginTextEdit(bloc, trouve.Fin);" in trouve and "PoserLaSelection(zone," in trouve,
       "la planche n'ouvre pas la saisie du texte trouvé, la plage sélectionnée.")
 exige("FindAncestorOfType<BarreDeRecherche>(includeSelf: true)" in trouve and "dansLaBarre.Focus();" in trouve
-      and "_vm?.SuivreLaSelectionDuTexte(SelectionDuTexte.De(bloc, null, debut, fin, longueur));" in trouve,
+      # La sélection dite porte la case quand le texte est trouvé dans une case (poste N27).
+      and "_vm?.SuivreLaSelectionDuTexte(SelectionDeLaSaisie(bloc, debut, fin, longueur));" in trouve,
       "le focus ne reste pas dans la barre, la sélection dite au modèle de vue (décision du 31 octobre 2026).")
 rendue = corps(saisie, "private void OnSaisieRendue(object? sender, SelectionDuTexte selection)") or ""
 exige("zone.Focus();" in rendue and "PoserLaSelection(zone," in rendue, "Échap ne rend pas le focus au texte trouvé.")

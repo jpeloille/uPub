@@ -176,7 +176,7 @@ public partial class PageCanvas
     /// </summary>
     private bool CurseurEnFinDeLigne(SelectionDuTexte selection) =>
         LigneViseeTenue(_zoneSuivie) is { EnFinDeLigne: true } visee &&
-        ReferenceEquals(visee.Zone.DataContext, selection.Bloc) && visee.Curseur == selection.Curseur;
+        EstLaSelectionDe(selection, visee.Zone.DataContext) && visee.Curseur == selection.Curseur;
 
     /// <summary>La méthode d'entrée compose-t-elle dans ce champ ? Le champ ne navigue pas pendant ce temps.</summary>
     private bool PreEditEnCours(TextBox zone)

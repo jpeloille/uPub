@@ -269,8 +269,11 @@ Fenêtre masque aussi l'un ou l'autre.
   porte son texte, son alignement, son fond et son contour ; la grille se règle d'un
   geste pour toutes. Les colonnes et les lignes font la taille du bloc : élargir une
   colonne élargit le tableau, et tirer le tableau à la poignée mesure ses cases à la
-  même aune. Une case se remplit dans la section Tableau du dock, où elle est nommée par
-  son rang — « L1 · C2 ».
+  même aune. Une case se tape sur la page, d'un clic, le tableau restant sélectionné :
+  `Tab` passe à la case suivante, `Maj+Tab` à la précédente, `Tab` dans la dernière ajoute
+  une ligne, `Ctrl+Tab` met une tabulation, et les flèches passent à la case voisine au
+  bord du texte. Elle se remplit aussi dans la section Tableau du dock, où elle est nommée
+  par son rang — « L1 · C2 » — : ce qu'on tape d'un côté se voit de l'autre.
 - **Plusieurs styles dans un même bloc** : une portion de texte porte sa propre police,
   son corps, son gras, son italique, son souligné, sa couleur, et se pose en indice ou en
   exposant. Elle se met en forme à la souris : trois mots sélectionnés, `Ctrl+G`, et eux
@@ -306,8 +309,8 @@ Fenêtre masque aussi l'un ou l'autre.
   reprend au début, et le dit. Le texte trouvé est sélectionné en saisie, la page suivant, et le
   focus reste dans la barre, comme dans le volet de Publisher : `Entrée` cherche encore le suivant,
   `Échap` ferme la barre et laisse taper par-dessus le texte trouvé. Dans un groupe, le groupe est
-  sélectionné et le texte trouvé l'est en saisie, comme ailleurs ; dans une case, le tableau, et
-  la barre d'état dit où.
+  sélectionné et le texte trouvé l'est en saisie, comme ailleurs ; dans une case, le tableau, le
+  texte trouvé l'est en saisie dans la case, et la barre d'état dit laquelle.
   *Remplacer tout* fait un seul pas d'annulation, et le texte remplacé prend le style de son
   premier caractère : un mot gras remplacé reste gras.
 - **La vérification orthographique** (*Edition ▸ Vérifier l'orthographe…*, `F7` ; *Vérifier
@@ -569,6 +572,7 @@ comptés pour rien : sur un AZERTY, `Ctrl+]` se tape `Ctrl+AltGr+)`, `Ctrl+[` se
 | `Ctrl+Maj+>` / `Ctrl+Maj+<` | La taille suivante / précédente de la liste standard : 8, 9, 10, 10,5, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36, 48, 72 ; au-delà, de dix en dix ; en deçà, d'un point |
 | Dans la liste des polices de la barre : `Entrée` ou `Tab`, `↑` / `↓`, `Échap` | Pose la police proposée — la première de celles qui commencent par la frappe — et rend la planche, ou passe au champ suivant ; marque la proposition précédente / suivante ; renonce à ce qui est tapé et rend la planche |
 | Dans la saisie d'un bloc : `Entrée` / `Maj+Entrée` / `Tab` | Un nouveau paragraphe / Un saut de ligne forcé, qui coupe la ligne sans changer de paragraphe — ni retrait de première ligne, ni espace de paragraphe après lui / Une tabulation, au taquet suivant, tous les 36 pt ; `Maj+Tab` ne quitte pas le bloc. Dans le dock, `Tab` reste le passage au champ suivant |
+| Dans une case d'un tableau : `Tab` / `Maj+Tab`, `Ctrl+Tab`, `←` / `→` / `↑` / `↓` au bord du texte | La case suivante, son texte sélectionné — dans la dernière, une ligne de plus, en un pas — / la précédente ; une tabulation ; la case d'avant ou d'après, au début du texte et à sa fin ; celle du dessus depuis la première ligne, celle du dessous depuis la dernière, à la même abscisse. `Échap` rend le tableau |
 | Dans la saisie d'un bloc : `Début` / `Fin`, `↑` / `↓`, `Pg.Préc` / `Pg.Suiv` | Le début / le bout de la ligne telle qu'elle s'imprime ; la ligne du dessus / du dessous, à la même abscisse, gardée d'une flèche à l'autre — d'une colonne à la suivante dans l'ordre du texte, au début du texte depuis la première ligne, à sa fin depuis la dernière ; la première / la dernière ligne du bloc. Sous `Maj`, chacune étend la sélection ; `Ctrl+Début` et `Ctrl+Fin` mènent au début et à la fin du texte |
 
 ### Affichage
@@ -596,7 +600,7 @@ comptés pour rien : sur un AZERTY, `Ctrl+]` se tape `Ctrl+AltGr+)`, `Ctrl+[` se
 
 | Raccourci | Action |
 |---|---|
-| Clic | Dans le texte d'un bloc, y entre, le curseur au caractère visé ; sur son bord, le prend |
+| Clic | Dans le texte d'un bloc, y entre, le curseur au caractère visé — dans une case d'un tableau aussi, le tableau restant pris — ; sur son bord, le prend |
 | Glisser | Dans le texte, sélectionne du texte ; par le bord, déplace le bloc |
 | Double-clic | Dans le texte, sélectionne un mot ; glissé ensuite, étend la sélection par mots. Sur une image ou une forme, ouvre sa section du dock |
 | Triple-clic | Dans le texte en saisie, sélectionne le paragraphe ; glissé ensuite, étend la sélection par paragraphes |
@@ -840,7 +844,8 @@ partout ailleurs — à l'écran, à l'export — un chemin d'image est absolu.
 - Sans sélection, la mise en forme va au mot du curseur ; au bord d'un mot ou dans un
   blanc, elle ne s'applique à rien, et la frappe qui suit ne la prend pas : Publisher et
   Word la gardent en attente pour le texte qu'on va taper. Un tableau se met en forme en
-  entier : ses cases ne se saisissent pas sur la page.
+  entier, même quand on tape dans l'une de ses cases : `Ctrl+G` y met tout le tableau en
+  gras, et non la sélection.
 - L'interligne est un réglage du bloc entier : Publisher le règle par paragraphe.
 - La coupure des lignes se décide, à l'écran comme au PDF, sur la plus large des deux
   mesures, et sur la largeur du bloc telle que le modèle la donne. Ce qui est vérifié,
