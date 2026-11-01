@@ -133,7 +133,7 @@ public partial class PageCanvas
         if (_vm is null) return false;
 
         var contexte = _editing is not null ? EnSaisie : _vm.HasSelection ? SurDesBlocs : DansLeVide;
-        var texte = _vm.SingleSelected is TextFrame;
+        var texte = _vm.BlocVise is TextFrame;
         var coordonnees = _vm.EstUnBlocDeCoordonnees;
         _vm.NotifierLeMenuDuBloc();
         // Les suggestions d'une faute, en tête du menu du texte (N25).

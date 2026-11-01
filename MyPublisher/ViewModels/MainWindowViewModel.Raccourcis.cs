@@ -82,7 +82,7 @@ public partial class MainWindowViewModel
     /// </summary>
     private void ChangerLeCorps(Func<double, double> nouveau)
     {
-        switch (SingleSelected)
+        switch (BlocVise)
         {
             case TextFrame:
                 MettreEnFormeLeTexte(visee => visee.ChangerLeCorps(nouveau),

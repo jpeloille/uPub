@@ -1284,8 +1284,11 @@
                                          bloc est tirée d'un gabarit par sorte de bloc, construit une
                                          fois et gardé, masqué sans bloc de sa sorte : la reconstruire à
                                          chaque sélection figeait la pression du pointeur (poste Q23,
-                                         voir GabaritsGardes). -->
-                                    <views:GabaritsGardes Bloc="{Binding SingleSelected}">
+                                         voir GabaritsGardes). Elles suivent le bloc visé : le
+                                         bloc seul, ou le membre d'un groupe en saisie ou pris seul
+                                         (poste N26), dont la position et la taille ne se règlent
+                                         qu'après la dissociation. -->
+                                    <views:GabaritsGardes Bloc="{Binding BlocVise}" IsEnabled="{Binding PositionReglable}">
                                         <views:GabaritsGardes.DataTemplates>
                                             <DataTemplate DataType="models:Frame">
                                                 <StackPanel>
@@ -1384,7 +1387,7 @@
                                     </views:GabaritsGardes>
 
                                     <!-- Les sections propres au type de bloc. -->
-                                    <views:GabaritsGardes Bloc="{Binding SingleSelected}">
+                                    <views:GabaritsGardes Bloc="{Binding BlocVise}">
                                         <views:GabaritsGardes.DataTemplates>
 
                                             <DataTemplate DataType="models:TextFrame">
@@ -1853,7 +1856,7 @@
                                     <!-- Fond et contour, communs à tous les blocs. En dernier, après ce
                                          qui est propre au type : d'abord ce qu'est le bloc, ensuite
                                          comment il est habillé. -->
-                                    <views:GabaritsGardes Bloc="{Binding SingleSelected}">
+                                    <views:GabaritsGardes Bloc="{Binding BlocVise}">
                                         <views:GabaritsGardes.DataTemplates>
                                             <DataTemplate DataType="models:Frame">
                                                 <StackPanel>

@@ -118,8 +118,11 @@ public class GroupementTests
         // Déplacer le groupe à la souris, en le saisissant par l'un de ses blocs. Les
         // bords de l'ensemble, avant comme après, restent loin de tout repère de la
         // page : seul le pointeur décide, et il se déplace d'un nombre entier de points.
+        // Par la bande de bord du bloc, à 2 pt de son bord gauche : depuis N26, une
+        // pression dans le texte d'un membre ouvre sa saisie, le groupe restant pris
+        // (règle 14 de la phase N ; on le prenait par le texte, à 40 pt du bord).
         var avant = (groupe.X, groupe.Y);
-        var prise = (X: gauche + 40, Y: Blocs[0].Y + 20);
+        var prise = (X: gauche + 2, Y: Blocs[0].Y + 20);
         fenetre.MouseDown(Rendu.SurLaPage(fenetre, prise.X, prise.Y), MouseButton.Left);
         fenetre.MouseMove(Rendu.SurLaPage(fenetre, prise.X + Dx, prise.Y + Dy));
         fenetre.MouseUp(Rendu.SurLaPage(fenetre, prise.X + Dx, prise.Y + Dy), MouseButton.Left);

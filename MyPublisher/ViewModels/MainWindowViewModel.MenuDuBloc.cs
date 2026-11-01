@@ -30,7 +30,7 @@ public partial class MainWindowViewModel
     [RelayCommand(CanExecute = nameof(HasSingleSelection))]
     private void FormatDuBloc()
     {
-        switch (SingleSelected)
+        switch (BlocVise)
         {
             case TextFrame:
                 AllerAuDock(SectionDuBloc("ContenuCadreDeTexte"), () => SectionCadreOuverte = true);
@@ -57,7 +57,7 @@ public partial class MainWindowViewModel
     private static DockDemande SectionDuBloc(string section) => new(DestinationDuReglage.Proprietes, section, null);
 
     /// <summary>Un bloc de texte seul, sans champ, qui a du texte : celui qu'on peut vider.</summary>
-    public bool PeutSupprimerLeTexte => SingleSelected is TextFrame { HasField: false, Text.Length: > 0 };
+    public bool PeutSupprimerLeTexte => BlocVise is TextFrame { HasField: false, Text.Length: > 0 };
 
     /// <summary>
     /// <i>Supprimer le texte</i> : le bloc garde sa place, son cadre et son style ; son texte
@@ -68,7 +68,7 @@ public partial class MainWindowViewModel
     [RelayCommand(CanExecute = nameof(PeutSupprimerLeTexte))]
     private void SupprimerLeTexte()
     {
-        if (SingleSelected is not TextFrame { HasField: false } bloc || string.IsNullOrEmpty(bloc.Text)) return;
+        if (BlocVise is not TextFrame { HasField: false } bloc || string.IsNullOrEmpty(bloc.Text)) return;
 
         UnGesteUnPas(() => bloc.Saisie = "");
         Status = $"« {bloc.Name} » : texte supprimé";
@@ -76,7 +76,7 @@ public partial class MainWindowViewModel
 
     /// <summary>Le bloc seul est un bloc de coordonnées : un bloc de texte qui porte l'un des six champs de texte du jeu.</summary>
     public bool EstUnBlocDeCoordonnees =>
-        SingleSelected is TextFrame { Field: >= FieldKind.ContactName and <= FieldKind.ContactTagline };
+        BlocVise is TextFrame { Field: >= FieldKind.ContactName and <= FieldKind.ContactTagline };
 
     /// <summary>
     /// <i>Convertir en texte</i> : le champ du bloc de coordonnées cède la place au texte qu'il
@@ -86,7 +86,7 @@ public partial class MainWindowViewModel
     [RelayCommand(CanExecute = nameof(EstUnBlocDeCoordonnees))]
     private void ConvertirEnTexte()
     {
-        if (!EstUnBlocDeCoordonnees || SingleSelected is not TextFrame bloc) return;
+        if (!EstUnBlocDeCoordonnees || BlocVise is not TextFrame bloc) return;
 
         var affiche = FieldResolver.Resolve(bloc.Field, bloc.Text, FieldContext);
         UnGesteUnPas(() =>

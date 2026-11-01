@@ -23,9 +23,9 @@ namespace MyPublisher.ViewModels;
 /// prend le bloc, change de page s'il le faut, et demande à la planche d'ouvrir sa saisie la plage
 /// sélectionnée (<see cref="TexteTrouve"/>), dessinée sur la composition (N21). Cherché depuis la
 /// barre, le focus y reste, comme dans le volet de Publisher, et <c>Échap</c> le rend au texte
-/// trouvé (décision du propriétaire, 31 octobre 2026). Trouvé dans un groupe, il sélectionne le groupe et le
-/// dit, jusqu'à N26, qui entrera dans les groupes ; dans une case, il sélectionne le tableau et
-/// nomme la case, qui se règle au dock — la page n'a pas de saisie de case.
+/// trouvé (décision du propriétaire, 31 octobre 2026). Trouvé dans un groupe, il sélectionne le groupe et
+/// ouvre la saisie du bloc qui le porte, comme dans un bloc de la page (poste N26) ; dans une case, il
+/// sélectionne le tableau et nomme la case, qui se règle au dock — la page n'a pas de saisie de case.
 ///
 /// Le remplacement passe par le noyau (<see cref="Recherche.Remplacer(TextFrame, Plage, string)"/>,
 /// <see cref="Recalage"/>), sans passer par l'écran : le texte remplacé prend le style de son
@@ -87,15 +87,18 @@ public partial class MainWindowViewModel
     {
         public string Texte => Case?.Text ?? Bloc?.Text ?? "";
 
-        /// <summary>Un bloc de texte posé sur la page, hors de tout groupe : on y entre en saisie.</summary>
-        public bool EnSaisie => Bloc is not null && ReferenceEquals(Bloc, Racine);
+        /// <summary>
+        /// Un bloc de texte, posé sur la page ou membre d'un groupe : on y entre en saisie, le groupe
+        /// restant la sélection depuis le poste N26.
+        /// </summary>
+        public bool EnSaisie => Bloc is not null;
     }
 
     /// <summary>Une occurrence trouvée : le texte où elle est, et sa plage.</summary>
     private sealed record Occurrence(Cible Cible, Plage Plage);
 
     /// <summary>
-    /// La dernière occurrence montrée hors de la saisie — dans un groupe ou une case —, d'où la
+    /// La dernière occurrence montrée hors de la saisie — dans une case —, d'où la
     /// recherche suivante repart et que <i>Remplacer</i> remplace, tant que son bloc reste
     /// sélectionné. Dans un bloc de texte, c'est la sélection du texte (N15) qui le dit.
     /// </summary>
@@ -266,8 +269,8 @@ public partial class MainWindowViewModel
 
     /// <summary>
     /// L'occurrence suivante, à partir de <paramref name="apres"/> — la fin d'un remplacement —,
-    /// ou de là où l'on est : la sélection du texte en saisie, l'occurrence montrée dans un groupe
-    /// ou une case, le début du bloc sélectionné, ou celui de la page courante. Au bout du
+    /// ou de là où l'on est : la sélection du texte en saisie, l'occurrence montrée dans une case,
+    /// le début du bloc sélectionné, ou celui de la page courante. Au bout du
     /// document, la recherche reprend au début ; elle revient au texte d'où elle partait, et y
     /// retrouve ce qui précédait le départ.
     /// </summary>
@@ -321,8 +324,8 @@ public partial class MainWindowViewModel
 
     /// <summary>
     /// Montre l'occurrence : sa page devient la page courante, et son bloc la sélection. Dans un
-    /// bloc de texte, la planche ouvre la saisie, la plage sélectionnée ; dans un groupe ou une
-    /// case, la barre d'état dit où elle est.
+    /// bloc de texte, la planche ouvre la saisie, la plage sélectionnée — dans un groupe aussi,
+    /// le groupe sélectionné, depuis le poste N26 ; dans une case, la barre d'état dit où elle est.
     /// </summary>
     private void Montrer(Occurrence occurrence, bool reprise)
     {
@@ -343,15 +346,15 @@ public partial class MainWindowViewModel
             return;
         }
 
+        // Une case, seule à n'avoir pas de saisie sur la page (N27), d'un tableau posé sur la page ou
+        // dans un groupe.
         _occurrenceMontree = occurrence;
-        Status = cible.Racine is GroupFrame groupe
-            ? $"{trouve}, dans le groupe « {groupe.Name} »{repris} : dissociez-le pour entrer dans son texte."
-            : $"{trouve}, dans la case {cible.Case?.Label} du tableau « {cible.Tableau?.Name} »{repris} : la case se règle au dock.";
+        Status = $"{trouve}, dans la case {cible.Case?.Label} du tableau « {cible.Tableau?.Name} »{repris} : la case se règle au dock.";
     }
 
     /// <summary>
     /// L'occurrence que <i>Remplacer</i> remplace : la sélection du texte en saisie, si elle en est
-    /// une ; sinon l'occurrence montrée dans un groupe ou une case, si son bloc est toujours la
+    /// une ; sinon l'occurrence montrée dans une case, si son bloc est toujours la
     /// sélection et que son texte n'a pas changé sous elle.
     /// </summary>
     private Occurrence? OccurrenceSelectionnee()

@@ -58,7 +58,12 @@ public partial class MainWindowViewModel
 
         switch (e.PropertyName)
         {
+            // Le bloc seul a changé : le bloc visé l'annonce à son tour (poste N26), et l'alerte
+            // suit celui-ci — le texte d'un groupe en saisie a son excédent.
             case nameof(SingleSelected):
+                SuivreLeMembreApresLaSelection();
+                break;
+            case nameof(BlocVise):
                 SuivreLeBlocCompte();
                 break;
             case nameof(Document) or nameof(FieldContext) or nameof(ChosenFontScheme):
@@ -81,7 +86,7 @@ public partial class MainWindowViewModel
             _blocCompte.Paragraphs.CollectionChanged -= SurBlocCompteRetouche;
         }
 
-        _blocCompte = SingleSelected as TextFrame;
+        _blocCompte = BlocVise as TextFrame;
 
         if (_blocCompte is not null)
         {

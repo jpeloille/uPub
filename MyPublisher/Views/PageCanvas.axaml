@@ -86,6 +86,12 @@
             <Setter Property="Stroke" Value="{StaticResource Accent}"/>
             <Setter Property="StrokeThickness" Value="1.5"/>
         </Style>
+        <!-- Les poignées d'un membre de groupe pris seul (poste N26) : sur le gris des
+             graduations, elles disent ce qui est pris sans se laisser tirer — on ne
+             redimensionne un membre qu'après avoir dissocié son groupe. -->
+        <Style Selector="Rectangle.poignee.inerte">
+            <Setter Property="Stroke" Value="{StaticResource Graduation}"/>
+        </Style>
         <Style Selector="Polyline.tigeDeRotation">
             <Setter Property="Stroke" Value="{StaticResource Accent}"/>
             <Setter Property="StrokeThickness" Value="1.5"/>
@@ -376,13 +382,18 @@
                 <views:FondBloc Classes="frameFill"/>
                 <!-- Les blocs sont découpés à la zone que le noyau calcule, la même qu'à
                      l'export (poste Q5), et non au cadre du groupe comme le ferait le
-                     thème : un filet centré sur le bord du groupe y perdrait sa moitié. -->
+                     thème : un filet centré sur le bord du groupe y perdrait sa moitié.
+                     Elle suit aussi le nombre des blocs du groupe et la révision que la
+                     planche avance quand le filet d'un membre visé change : un membre se
+                     règle et se retire dans son groupe depuis le poste N26. -->
                 <ItemsControl Classes="frames" ItemsSource="{Binding Children}" ClipToBounds="False">
                     <ItemsControl.Clip>
                         <MultiBinding Converter="{x:Static conv:DecoupeDesBlocs.Instance}">
                             <Binding/>
                             <Binding Path="Width"/>
                             <Binding Path="Height"/>
+                            <Binding Path="Children.Count"/>
+                            <Binding Path="$self.(views:PageCanvas.RevisionDeLaDecoupe)"/>
                         </MultiBinding>
                     </ItemsControl.Clip>
                     <ItemsControl.ItemsPanel>

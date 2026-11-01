@@ -3116,6 +3116,43 @@ saboter "l'épinglage de Pkcs (Q27) retiré du noyau : PdfSharp ramène la 8.0.1
     '' \
     'Q27-pkcs|DependanceDePdfSharpTests'
 
+# Celui du plan : la saisie qui dissocie le groupe, comme il fallait le faire avant le poste — le
+# texte s'ouvre, mais le groupe n'est plus.
+saboter "la saisie qui dissocie le groupe (N26)" \
+    MyPublisher/Views/PageCanvas.Saisie.cs \
+    '        if (_vm.Selection.Count != 1 || !_vm.Selection.Contains(racine)) _vm.SelectOnly(racine);' \
+    $'        _vm.SelectOnly(racine);\n        _vm.UngroupSelectedCommand.Execute(null);' \
+    'N26-saisie-dans-un-groupe|SaisieDansUnGroupeTests'
+
+# Suppr sur l'image prise seule retire le groupe entier, comme avant le poste.
+saboter "Suppr retire le groupe au lieu du membre pris seul (N26)" \
+    MyPublisher/ViewModels/MainWindowViewModel.cs \
+    '        if (SupprimerLeMembreVise()) return;' \
+    '' \
+    'N26-saisie-dans-un-groupe|SaisieDansUnGroupeTests'
+
+# La barre reste sur le groupe pendant la saisie de son texte : ses réglages règlent le groupe.
+saboter "la barre reste sur le groupe pendant la saisie de son texte (N26)" \
+    MyPublisher/Views/BarreContextuelle.axaml \
+    '<views:GabaritsGardes x:Name="ReglagesDuBloc" Bloc="{Binding BlocVise}" VerticalAlignment="Center">' \
+    '<views:GabaritsGardes x:Name="ReglagesDuBloc" Bloc="{Binding SingleSelected}" VerticalAlignment="Center">' \
+    'N26-saisie-dans-un-groupe|SaisieDansUnGroupeTests'
+
+# La flèche mène le membre dans le repère du groupe, et non de l'écran : dans un groupe tourné, il
+# part de travers.
+saboter "la flèche ignore la rotation du groupe du membre (N26)" \
+    MyPublisher/ViewModels/MainWindowViewModel.MembreDuGroupe.cs \
+    '        if (rotation % 360 == 0) return (dx, dy);' \
+    '        return (dx, dy);' \
+    'N26-saisie-dans-un-groupe|SaisieDansUnGroupeTests'
+
+# La découpe du groupe ne suit plus le filet d'un membre réglé : l'écran le rogne, l'export non (Q5).
+saboter "la découpe du groupe ne suit pas le filet d'un membre (N26)" \
+    MyPublisher/Views/PageCanvas.axaml \
+    '                            <Binding Path="$self.(views:PageCanvas.RevisionDeLaDecoupe)"/>' \
+    '' \
+    'N26-saisie-dans-un-groupe|SaisieDansUnGroupeTests'
+
 # Un motif qui ne désigne aucun sabotage ne prouve rien. « eprouver-le-juge.sh I4 » sortait
 # en 0 sur « 0 sabotages, 0 attrapés », quand les intitulés de la planche ne portaient pas
 # encore le code du poste : le filet passait pour éprouvé sans qu'on l'ait troué.

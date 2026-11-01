@@ -272,6 +272,8 @@ public partial class MainWindowViewModel : ViewModelBase
     public void NudgeSelection(double dx, double dy, bool fine)
     {
         if (Selection.Count == 0) return;
+        // Un membre visé se déplace dans son groupe (poste N26).
+        if (DeplacerLeMembreVise(dx, dy, fine)) return;
 
         var step = fine ? 0.5 : 3.0;
         BeginEdit();
@@ -1216,6 +1218,8 @@ public partial class MainWindowViewModel : ViewModelBase
     private void DeleteSelected()
     {
         if (CurrentPage is null || Selection.Count == 0) return;
+        // Un membre visé quitte son groupe, et lui seul (poste N26).
+        if (SupprimerLeMembreVise()) return;
 
         var doomed = SelectionInPageOrder();
 
@@ -1515,6 +1519,9 @@ public partial class MainWindowViewModel : ViewModelBase
     /// </summary>
     private void AlignEach(Func<Extent, Extent, (double Dx, double Dy)> shift, string label)
     {
+        // Un membre visé s'aligne dans son groupe (poste N26).
+        if (AlignerLeMembreVise(shift, label)) return;
+
         if (BlocsAlignables.Count == 0)
         {
             if (Selection.Count > 0) Status = "Un bloc masqué ne s'aligne pas.";

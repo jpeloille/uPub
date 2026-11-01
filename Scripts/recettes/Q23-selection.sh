@@ -13,7 +13,8 @@
 # Quatre temps :
 #
 #   1. LES SOURCES : aucun réglage du bloc n'est plus un ContentControl lié au bloc seul —
-#      les trois sections du dock et la barre sont des GabaritsGardes —, et les tests de Q14
+#      les trois sections du dock et la barre sont des GabaritsGardes, liés depuis N26 au bloc
+#      visé (BlocVise : le bloc seul, ou le membre d'un groupe en saisie ou pris seul) —, et les tests de Q14
 #      ne sélectionnent plus le bloc par le modèle de vue avant le geste : leur premier clic
 #      le prend — et, depuis N12, ouvre sa saisie ;
 #   2. LES TESTS, par leur trait « poste=Q23 » (PressionTests) : au pointeur synthétisé,
@@ -82,8 +83,9 @@ for nom, attendus in (("MainWindow.axaml", 3), ("BarreContextuelle.axaml", 1)):
     lies = [e for e in vue.iter() if e.get("Content") == "{Binding SingleSelected}"]
     exige(not lies, f"{nom} : {len(lies)} contrôle(s) dont le contenu est le bloc seul — une sélection vide "
                     "les vide, et la pression suivante les reconstruit.")
-    gardes = [e for e in vue.iter(VIEWS + "GabaritsGardes") if e.get("Bloc") == "{Binding SingleSelected}"]
-    exige(len(gardes) == attendus, f"{nom} : {len(gardes)} réglages gardés liés au bloc seul, {attendus} attendu(s).")
+    # Liés au bloc visé depuis N26 : le bloc seul, ou le membre d'un groupe en saisie ou pris seul.
+    gardes = [e for e in vue.iter(VIEWS + "GabaritsGardes") if e.get("Bloc") == "{Binding BlocVise}"]
+    exige(len(gardes) == attendus, f"{nom} : {len(gardes)} réglages gardés liés au bloc visé, {attendus} attendu(s).")
     for g in gardes:
         exige(list(g.iter(A + "DataTemplate")), f"{nom} : des réglages gardés sans gabarit.")
     if nom == "BarreContextuelle.axaml":

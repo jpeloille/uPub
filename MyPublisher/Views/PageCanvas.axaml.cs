@@ -317,6 +317,12 @@ public partial class PageCanvas : UserControl
             case nameof(MainWindowViewModel.Selected):
                 RefreshOverlay();
                 break;
+            // Le membre d'un groupe pris seul, ou le texte d'un groupe en saisie : leur cadre suit
+            // leur place (poste N26, PageCanvas.MembreDuGroupe.cs).
+            case nameof(MainWindowViewModel.MembreSeul) or nameof(MainWindowViewModel.TexteEnSaisie):
+                TrackFrames();
+                RefreshOverlay();
+                break;
             case nameof(MainWindowViewModel.Document):
                 // Un autre document, d'autres repères : les traits de la planche suivent
                 // les listes du nouveau.
@@ -349,7 +355,12 @@ public partial class PageCanvas : UserControl
     /// </summary>
     private void TrackFrames()
     {
-        foreach (var frame in _tracked) frame.PropertyChanged -= OnFramePropertyChanged;
+        foreach (var frame in _tracked)
+        {
+            frame.PropertyChanged -= OnFramePropertyChanged;
+            frame.PropertyChanged -= SuivreLaDecoupe;
+        }
+
         _tracked.Clear();
 
         if (_vm is null) return;
@@ -358,6 +369,17 @@ public partial class PageCanvas : UserControl
         {
             _tracked.Add(frame);
             frame.PropertyChanged += OnFramePropertyChanged;
+        }
+
+        // Les membres visés d'un groupe et les groupes qui les portent (poste N26) : leur cadre, et
+        // la découpe de leurs groupes.
+        foreach (var membre in MembresSuivis().Distinct().ToList())
+        {
+            if (_tracked.Contains(membre)) continue;
+
+            _tracked.Add(membre);
+            membre.PropertyChanged += OnFramePropertyChanged;
+            membre.PropertyChanged += SuivreLaDecoupe;
         }
     }
 
@@ -425,7 +447,17 @@ public partial class PageCanvas : UserControl
             outline.IsVisible = true;
         }
 
-        for (var i = frames.Count; i < _outlines.Count; i++) _outlines[i].IsVisible = false;
+        // Le membre visé d'un groupe a son cadre, dans le repère de ses groupes (poste N26).
+        var encadre = MembreEncadre();
+        var cadres = frames.Count;
+        if (encadre is { Chemin: var cheminEncadre })
+        {
+            var outline = OutlineAt(cadres++);
+            outline.Points = CoinsDuChemin(cheminEncadre);
+            outline.IsVisible = true;
+        }
+
+        for (var i = cadres; i < _outlines.Count; i++) _outlines[i].IsVisible = false;
 
         // La projection sur les règles suit la sélection, et le geste avec elle : chaque
         // mouvement d'un bloc pris repasse par ici. Un tracé en cours projette son cadre.
@@ -435,10 +467,15 @@ public partial class PageCanvas : UserControl
         // redimensionner — ou tourner — un ensemble demanderait de reprendre chacun de
         // ses blocs autour d'un pivot commun, ce que le groupe fait proprement. On
         // sélectionne, on groupe, puis on redimensionne ou l'on tourne.
-        var single = frames.Count == 1 ? frames[0] : null;
+        //
+        // Un membre pris seul a les siennes, inertes, et le groupe n'en a plus (poste N26).
+        var membrePris = encadre is { } pris && ReferenceEquals(pris.Membre, _vm?.MembreSeul) ? pris.Chemin : null;
+        var single = frames.Count == 1 && membrePris is null ? frames[0] : null;
+        foreach (var poignee in _handles) poignee.Classes.Set("inerte", false);
         // Un trait n'en a que deux, sur ses extrémités, et pas de rotation (poste A10).
         for (var i = 0; i < _handles.Length; i++) _handles[i].IsVisible = single is not null && PoigneeServie(single, (Anchor)i);
         _rotateStem.IsVisible = single is not null && !single.IsLine;
+        if (membrePris is not null) PoserLesPoigneesDuMembre(membrePris);
 
         // La bulle de dimensions ne parle que pendant un redimensionnement — et pendant un
         // tracé, que UpdatePreview sert. Elle dit la taille du bloc, comme la barre d'état.
@@ -536,6 +573,10 @@ public partial class PageCanvas : UserControl
 
     private Anchor? HitHandle(Frame frame, Point surfacePoint)
     {
+        // Un membre pris seul montre des poignées inertes, et le groupe n'en a plus : aucune ne se
+        // prend — redimensionner un membre reste réservé à la dissociation (poste N26).
+        if (_vm?.MembreSeul is not null) return null;
+
         for (var i = 0; i < _handles.Length; i++)
         {
             if (!PoigneeServie(frame, (Anchor)i)) continue;
@@ -665,6 +706,7 @@ public partial class PageCanvas : UserControl
         // pas, ou le vide, qui la vide (A12).
         if (droit)
         {
+            PrendreAuBoutonDroitDansLeGroupe(hit, page);
             PrendreAuBoutonDroit(hit);
             e.Handled = true;
             return;
@@ -710,6 +752,14 @@ public partial class PageCanvas : UserControl
             return;
         }
 
+        // Sur le groupe sélectionné seul, la pression prend le membre visé au relâché, ou déplace le
+        // membre pris seul dans son groupe (poste N26, PageCanvas.MembreDuGroupe.cs).
+        if (PrendreDansLeGroupe(hit, page, e))
+        {
+            e.Handled = true;
+            return;
+        }
+
         if (!_vm.Selection.Contains(hit)) _vm.SelectOnly(hit);
 
         // Un bloc déjà pris garde la sélection entière : c'est ce qui permet de saisir
@@ -740,6 +790,7 @@ public partial class PageCanvas : UserControl
     {
         if (_vm is null) return;
 
+        _cheminDuMembreDeplace = null;
         _startPointer = page;
         _moveStart.Clear();
         // Les blocs visibles seuls : un bloc masqué ne suit pas la main, et son empreinte
@@ -816,6 +867,8 @@ public partial class PageCanvas : UserControl
             // Sous Ctrl ou Maj, le glissé décide au seuil de ce que la pression prenait : le
             // bloc s'ajoute, et Ctrl le copie avec le reste de la sélection (N17).
             PrendreLeGlisseSousUnModificateur();
+            // Le groupe pris par l'un de ses membres bouge entier : c'est lui qui est visé (N26).
+            LacherLeMembreAuGlisse();
             ApplyMove(page, e.KeyModifiers);
             return;
         }
@@ -897,6 +950,8 @@ public partial class PageCanvas : UserControl
 
         // Un Ctrl+clic ou un Maj+clic qui n'a pas glissé bascule le bloc au relâché (N17).
         BasculerAuRelache();
+        // Un clic sur un membre du groupe sélectionné le prend seul au relâché (N26).
+        PrendreAuRelache();
 
         // Le geste fini, la bulle se retire ; la projection, elle, reste sur la sélection.
         RefreshOverlay();
@@ -1128,6 +1183,13 @@ public partial class PageCanvas : UserControl
 
     private void ApplyMove(Point page, KeyModifiers modifiers)
     {
+        // Le membre pris seul se déplace dans son groupe (poste N26).
+        if (_cheminDuMembreDeplace is { } chemin)
+        {
+            DeplacerLeMembre(chemin, page, modifiers);
+            return;
+        }
+
         var dx = page.X - _startPointer.X;
         var dy = page.Y - _startPointer.Y;
 
@@ -1354,6 +1416,9 @@ public partial class PageCanvas : UserControl
         // et N21).
         _editing = frame;
         frame.IsEditing = true;
+        // Le texte en saisie, que la barre et le dock visent — le membre d'un groupe, le groupe
+        // restant la sélection (poste N26).
+        _vm?.SuivreLeTexteEnSaisie(frame);
         RefreshOverlay();
 
         // Le TextBox n'existe qu'après le passage de mise en page suivant.
@@ -1381,6 +1446,7 @@ public partial class PageCanvas : UserControl
         _editing.IsEditing = false;
         _editing = null;
         _zoneDeSaisie = null;
+        _vm?.SuivreLeTexteEnSaisie(null);
         RefreshOverlay();
     }
 

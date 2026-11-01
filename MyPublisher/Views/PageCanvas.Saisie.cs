@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using Avalonia;
@@ -87,13 +88,21 @@ public partial class PageCanvas
     /// <summary>
     /// Le point de la page, en points, tombe-t-il dans le texte du bloc — son intérieur moins la
     /// bande de bord, lu dans le repère du bloc, rotation comprise ? Un bloc masqué ou à champ
-    /// n'a pas de texte où entrer : tout y est bord.
+    /// n'a pas de texte où entrer : tout y est bord. Dans un groupe, c'est le texte du membre sous
+    /// le point, lu à travers le repère de chaque groupe (poste N26).
     /// </summary>
-    private bool DansLeTexte(Frame bloc, Point page)
-    {
-        if (bloc is not TextFrame { Visible: true, HasField: false } texte) return false;
+    private bool DansLeTexte(Frame bloc, Point page) => DansLeTexteDuChemin(CheminSous(bloc, page), page);
 
-        var (lx, ly) = texte.ToLocal(page.X, page.Y);
+    /// <summary>
+    /// Le point de la page tombe-t-il dans le texte du dernier bloc du chemin — son intérieur moins
+    /// la bande de bord, lu dans son repère à travers ceux des groupes (poste N26) ? Un bloc qui
+    /// n'est pas un texte visible et sans champ n'a pas de texte où entrer.
+    /// </summary>
+    private bool DansLeTexteDuChemin(IReadOnlyList<Frame> chemin, Point page)
+    {
+        if (chemin[^1] is not TextFrame { Visible: true, HasField: false } texte) return false;
+
+        var (lx, ly) = MainWindowViewModel.VersLeBloc(chemin, page.X, page.Y);
         var bandeX = Math.Min(BandeDeBord / Scale, texte.Width / 4);
         var bandeY = Math.Min(BandeDeBord / Scale, texte.Height / 4);
         return lx > bandeX && lx < texte.Width - bandeX && ly > bandeY && ly < texte.Height - bandeY;
@@ -136,7 +145,9 @@ public partial class PageCanvas
     /// <summary>
     /// Une pression sans <c>Ctrl</c> ni <c>Maj</c> dans le texte d'un bloc : elle prend ce bloc
     /// seul, ouvre la saisie le curseur sur le caractère visé, et garde le geste, que le glissé
-    /// changera en sélection de texte. Rend faux, sans rien faire, hors du texte.
+    /// changera en sélection de texte. Rend faux, sans rien faire, hors du texte. Dans le texte d'un
+    /// membre de groupe, c'est le groupe qu'elle prend, et la saisie du membre qu'elle ouvre : rien
+    /// ne se dissocie (poste N26).
     ///
     /// La position est lue sur la composition qui était à l'écran, par le contrôle même qui la
     /// dessinait : le point du pointeur y entre par la transformation de l'écran, mise en page et
@@ -146,11 +157,14 @@ public partial class PageCanvas
     /// </summary>
     private bool EntrerDansLeTexte(Frame bloc, Point page, PointerPressedEventArgs e)
     {
-        if (_vm is null || !DansLeTexte(bloc, page) || bloc is not TextFrame texte) return false;
+        var chemin = CheminSous(bloc, page);
+        if (_vm is null || !DansLeTexteDuChemin(chemin, page) || chemin[^1] is not TextFrame texte) return false;
 
         var curseur = PositionVisee(texte, e);
 
-        if (_vm.Selection.Count != 1 || !_vm.Selection.Contains(texte)) _vm.SelectOnly(texte);
+        // Le texte d'un groupe s'ouvre dans le groupe, qui reste la sélection (poste N26).
+        var racine = chemin[0];
+        if (_vm.Selection.Count != 1 || !_vm.Selection.Contains(racine)) _vm.SelectOnly(racine);
         BeginTextEdit(texte, curseur);
         if (!ReferenceEquals(_editing, texte)) return true;
 
@@ -607,8 +621,11 @@ public partial class PageCanvas
     /// </summary>
     private bool DansLeTexteEnSaisie(Point surfacePoint)
     {
+        // Les poignées sont celles du bloc seul de la sélection : le bloc en saisie, ou le groupe
+        // dont il est membre (poste N26).
         if (_editing is not { } bloc || !DansLaPage(ToPageCoordinates(surfacePoint)) ||
-            HitHandle(bloc, surfacePoint) is not null || TexteComposeDe(bloc) is not { } compose)
+            (_vm?.SingleSelected is { } porteur && HitHandle(porteur, surfacePoint) is not null) ||
+            TexteComposeDe(bloc) is not { } compose)
         {
             return false;
         }

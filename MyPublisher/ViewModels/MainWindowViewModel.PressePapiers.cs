@@ -51,7 +51,11 @@ public partial class MainWindowViewModel
     {
         if (CurrentPage is null || Selection.Count == 0) return null;
 
-        var blocs = SelectionInPageOrder();
+        // Un membre de groupe visé se copie seul, posé où il se voit sur la page (poste N26) : Couper
+        // le retire de son groupe, et c'est lui qu'on recolle.
+        var blocs = MembreVise is { } membre && CheminDe(membre) is { Count: > 1 } chemin
+            ? [CopieSurLaPage(chemin)]
+            : SelectionInPageOrder();
         var page = new Page { Name = "Presse-papiers" };
         foreach (var bloc in blocs) page.Frames.Add(bloc.Clone());
 

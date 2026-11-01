@@ -73,7 +73,7 @@ public partial class MainWindowViewModel
     // ------------------------------------------------------------------ le dock
 
     /// <summary>Le trait seul sélectionné, s'il y en a un.</summary>
-    public ShapeFrame? TraitSeul => SingleSelected is ShapeFrame { IsLine: true } trait ? trait : null;
+    public ShapeFrame? TraitSeul => BlocVise is ShapeFrame { IsLine: true } trait ? trait : null;
 
     /// <summary>
     /// L'abscisse du début du trait, en points de page, telle que le dock la saisit. Les
@@ -108,7 +108,9 @@ public partial class MainWindowViewModel
 
     private void Reposer((double? X, double? Y) debut, (double? X, double? Y) fin)
     {
-        if (TraitSeul is not { } trait) return;
+        // Reposer les bouts d'un trait membre d'un groupe le redimensionne : réservé à la
+        // dissociation, comme à la souris (poste N26).
+        if (TraitSeul is not { } trait || MembreVise is not null) return;
 
         var (x1, y1) = trait.Debut;
         var (x2, y2) = trait.Fin;

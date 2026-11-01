@@ -39,20 +39,21 @@ public partial class MainWindowViewModel
     /// </summary>
     public double LargeurDuBloc
     {
-        get => SingleSelected?.Width ?? 0;
+        get => BlocVise?.Width ?? 0;
         set => SaisirLaTaille(largeur: value, hauteur: null);
     }
 
     /// <summary>Le champ H du dock, en points : le jumeau de <see cref="LargeurDuBloc"/>.</summary>
     public double HauteurDuBloc
     {
-        get => SingleSelected?.Height ?? 0;
+        get => BlocVise?.Height ?? 0;
         set => SaisirLaTaille(largeur: null, hauteur: value);
     }
 
     private void SaisirLaTaille(double? largeur, double? hauteur)
     {
-        if (SingleSelected is not { } bloc) return;
+        // Un membre visé ne se redimensionne qu'après la dissociation de son groupe (N26).
+        if (BlocVise is not { } bloc || MembreVise is not null) return;
 
         if (!ConserverLesProportions)
         {

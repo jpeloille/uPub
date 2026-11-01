@@ -71,7 +71,7 @@ public sealed partial class MiseEnFormeVisee : ObservableObject
     }
 
     /// <summary>Le bloc de texte seul que la barre met en forme ; nul sans lui.</summary>
-    public TextFrame? Bloc => _vm.SingleSelected as TextFrame;
+    public TextFrame? Bloc => _vm.BlocVise as TextFrame;
 
     /// <summary>
     /// La sélection du texte en saisie, si c'est celle du bloc seul ; nulle hors saisie — la barre
@@ -339,7 +339,7 @@ public sealed partial class MiseEnFormeVisee : ObservableObject
     {
         switch (e.PropertyName)
         {
-            case nameof(MainWindowViewModel.SingleSelected):
+            case nameof(MainWindowViewModel.BlocVise):
                 SuivreLeBloc();
                 break;
             case nameof(MainWindowViewModel.SelectionDuTexte) or nameof(MainWindowViewModel.ChosenColorScheme)
@@ -420,7 +420,7 @@ public partial class MainWindowViewModel
     /// </summary>
     private bool MettreEnFormeLeTexte(Func<MiseEnFormeVisee, bool> geste, Func<bool, string> message)
     {
-        if (SingleSelected is not TextFrame) return false;
+        if (BlocVise is not TextFrame) return false;
 
         var visee = MiseEnFormeVisee;
         if (visee.EnSaisie && visee.Caracteres is { Length: 0 })
@@ -467,7 +467,7 @@ public partial class MainWindowViewModel
     [RelayCommand(CanExecute = nameof(EstUnBlocDeTexte))]
     private void CopierLaMiseEnForme()
     {
-        if (SingleSelected is not TextFrame) return;
+        if (BlocVise is not TextFrame) return;
 
         MiseEnFormeCopiee = MiseEnFormeVisee.Lire() with { Langue = null };
         Status = "Mise en forme copiée";
@@ -480,7 +480,7 @@ public partial class MainWindowViewModel
     [RelayCommand(CanExecute = nameof(EstUnBlocDeTexte))]
     private void CollerLaMiseEnForme()
     {
-        if (SingleSelected is not TextFrame) return;
+        if (BlocVise is not TextFrame) return;
         if (MiseEnFormeCopiee is not { } copiee)
         {
             Status = "Aucune mise en forme copiée : Ctrl+Maj+C la copie.";

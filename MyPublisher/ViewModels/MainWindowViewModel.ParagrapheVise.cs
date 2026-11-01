@@ -62,7 +62,7 @@ public sealed class ParagrapheVise : ObservableObject
     }
 
     /// <summary>Le bloc de texte seul que le panneau règle ; nul sans lui.</summary>
-    public TextFrame? Bloc => _vm.SingleSelected as TextFrame;
+    public TextFrame? Bloc => _vm.BlocVise as TextFrame;
 
     /// <summary>
     /// Les paragraphes visés en saisie — ceux de la sélection du texte, ou celui du curseur —, si
@@ -234,7 +234,7 @@ public sealed class ParagrapheVise : ObservableObject
     {
         switch (e.PropertyName)
         {
-            case nameof(MainWindowViewModel.SingleSelected):
+            case nameof(MainWindowViewModel.BlocVise):
                 SuivreLeBloc();
                 break;
             case nameof(MainWindowViewModel.SelectionDuTexte):
@@ -310,7 +310,7 @@ public partial class MainWindowViewModel
     /// </summary>
     private void AlignerLesParagraphesVises(TextAlign alignement)
     {
-        if (SingleSelected is not TextFrame) return;
+        if (BlocVise is not TextFrame) return;
 
         var vises = ParagrapheVise.Paragraphes;
         UnGesteUnPas(() => ParagrapheVise.Poser(new ReglagesDeLaPlage { Align = alignement }));
@@ -332,7 +332,7 @@ public partial class MainWindowViewModel
 
     private void DecalerLeRetrait(int sens, string message)
     {
-        if (SingleSelected is not TextFrame) return;
+        if (BlocVise is not TextFrame) return;
 
         UnGesteUnPas(() => ParagrapheVise.Decaler(sens));
         Status = message;

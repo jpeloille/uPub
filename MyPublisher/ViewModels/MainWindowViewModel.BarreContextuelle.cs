@@ -51,7 +51,7 @@ public partial class MainWindowViewModel
     [RelayCommand]
     private void SoulignerEn(SorteDeSouligne sorte)
     {
-        if (SingleSelected is not TextFrame)
+        if (BlocVise is not TextFrame)
         {
             Status = "Souligné : sélectionnez un seul bloc de texte.";
             return;

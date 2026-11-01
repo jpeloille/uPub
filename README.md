@@ -306,7 +306,8 @@ Fenêtre masque aussi l'un ou l'autre.
   reprend au début, et le dit. Le texte trouvé est sélectionné en saisie, la page suivant, et le
   focus reste dans la barre, comme dans le volet de Publisher : `Entrée` cherche encore le suivant,
   `Échap` ferme la barre et laisse taper par-dessus le texte trouvé. Dans un groupe, le groupe est
-  sélectionné, dans une case, le tableau, et la barre d'état dit où.
+  sélectionné et le texte trouvé l'est en saisie, comme ailleurs ; dans une case, le tableau, et
+  la barre d'état dit où.
   *Remplacer tout* fait un seul pas d'annulation, et le texte remplacé prend le style de son
   premier caractère : un mot gras remplacé reste gras.
 - **La vérification orthographique** (*Edition ▸ Vérifier l'orthographe…*, `F7` ; *Vérifier
@@ -384,10 +385,16 @@ Fenêtre masque aussi l'un ou l'autre.
   au degré près dans le dock. `Maj` pendant le geste tourne par pas de 15°, et remet
   d'aplomb un bloc qui ne l'est pas.
 - Groupes : plusieurs blocs réunis se déplacent, se tournent et se redimensionnent
-  d'une pièce — le redimensionnement met les blocs du groupe à la même échelle. Un
-  bloc d'un groupe ne se sélectionne pas directement : on dissocie pour le retoucher, puis
-  *Disposition ▸ Regrouper* refait le dernier groupe dissous, en un pas, sans avoir à
-  resélectionner ses blocs.
+  d'une pièce — le redimensionnement met les blocs du groupe à la même échelle. Le texte
+  d'un groupe se tape sans le dissocier : un clic dans le texte d'un de ses blocs y pose le
+  curseur, et le groupe reste la sélection ; la barre et le dock règlent le texte en saisie.
+  Un clic sur un bloc d'un groupe déjà sélectionné le prend seul — un clic de plus descend
+  dans un groupe qu'il porte, un double-clic sur une image ou une forme ouvre sa section du
+  dock : la barre et le dock le règlent, `Suppr` le retire du groupe, les flèches et
+  l'alignement le déplacent dans le groupe, le glisser aussi, `Échap` rend le groupe. Le
+  redimensionner reste réservé à la dissociation, comme dans Publisher : ses poignées sont
+  grises et ne se tirent pas. *Disposition ▸ Regrouper* refait le dernier groupe dissous,
+  en un pas, sans avoir à resélectionner ses blocs.
 - Sélection d'un bloc ou de plusieurs (`Ctrl` + clic), déplacement d'ensemble,
   redimensionnement par huit poignées, rotation par une neuvième. Les poignées ne
   paraissent que sur un bloc seul : pour tourner ou redimensionner plusieurs blocs, on

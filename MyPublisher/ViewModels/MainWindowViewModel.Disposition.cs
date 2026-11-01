@@ -211,6 +211,8 @@ public partial class MainWindowViewModel
     public string Pastille => Selection.Count switch
     {
         0 => "Page",
+        // Le membre d'un groupe que la barre vise : le texte en saisie, ou le membre pris seul (N26).
+        1 when MembreVise is { } membre => $"{NatureDe(membre)} du groupe",
         1 => NatureDe(Selection[0]),
         _ => $"{Selection.Count} blocs",
     };
@@ -231,10 +233,10 @@ public partial class MainWindowViewModel
     // -------------------------------------------------------------- le menu Texte
 
     /// <summary>Un bloc seul qui porte du texte : texte, titre, ou tableau.</summary>
-    public bool PorteDuTexte => SingleSelected is TextFrame or TableFrame;
+    public bool PorteDuTexte => BlocVise is TextFrame or TableFrame;
 
     /// <summary>Un bloc de texte seul : l'alignement est le sien, un tableau aligne case par case.</summary>
-    public bool EstUnBlocDeTexte => SingleSelected is TextFrame;
+    public bool EstUnBlocDeTexte => BlocVise is TextFrame;
 
     /// <summary>
     /// Gras, <c>Ctrl+G</c> comme dans Publisher en français, en un pas d'annulation. Sur un bloc de
@@ -267,8 +269,8 @@ public partial class MainWindowViewModel
 
     private void Retoucher(Action<TextFrame> surTexte, Action<TableFrame>? surTableau, string message)
     {
-        if (SingleSelected is TextFrame texte) UnGesteUnPas(() => surTexte(texte));
-        else if (SingleSelected is TableFrame tableau && surTableau is not null) UnGesteUnPas(() => surTableau(tableau));
+        if (BlocVise is TextFrame texte) UnGesteUnPas(() => surTexte(texte));
+        else if (BlocVise is TableFrame tableau && surTableau is not null) UnGesteUnPas(() => surTableau(tableau));
         else return;
 
         Status = message;
@@ -323,14 +325,14 @@ public partial class MainWindowViewModel
 
     public OptionDeFond? FondDuBloc
     {
-        get => SingleSelected is not { } bloc ? null
+        get => BlocVise is not { } bloc ? null
             : !bloc.HasFill ? SortesDeFond[0]
             : SortesDeFond[1 + (int)bloc.FillKind];
         set
         {
             // La liste renvoie null quand elle se vide — un bloc qui s'en va : ce n'est
             // pas un choix, et le bloc d'après ne doit pas perdre son fond.
-            if (value is null || SingleSelected is not { } bloc || value == FondDuBloc) return;
+            if (value is null || BlocVise is not { } bloc || value == FondDuBloc) return;
 
             BeginEdit();
             if (value.Sorte is not { } sorte) bloc.HasFill = false;
@@ -346,12 +348,12 @@ public partial class MainWindowViewModel
 
     public OptionDeContour? ContourDuBloc
     {
-        get => SingleSelected is not { } bloc ? null
+        get => BlocVise is not { } bloc ? null
             : !bloc.HasStroke ? SortesDeContour[0]
             : SortesDeContour[1 + (int)bloc.StrokeStyle];
         set
         {
-            if (value is null || SingleSelected is not { } bloc || value == ContourDuBloc) return;
+            if (value is null || BlocVise is not { } bloc || value == ContourDuBloc) return;
 
             BeginEdit();
             if (value.Trait is not { } trait) bloc.HasStroke = false;
@@ -381,10 +383,10 @@ public partial class MainWindowViewModel
     /// <summary>La marge commune, écrite sur les quatre côtés à la fois.</summary>
     public double MargeInterieure
     {
-        get => (SingleSelected as TextFrame)?.PaddingLeft ?? 0;
+        get => (BlocVise as TextFrame)?.PaddingLeft ?? 0;
         set
         {
-            if (SingleSelected is not TextFrame bloc) return;
+            if (BlocVise is not TextFrame bloc) return;
             if (bloc.PaddingLeft == value && bloc.PaddingRight == value &&
                 bloc.PaddingTop == value && bloc.PaddingBottom == value) return;
 
@@ -431,10 +433,11 @@ public partial class MainWindowViewModel
     private void NotifierLaDisposition()
     {
         if (_blocSuivi is not null) _blocSuivi.PropertyChanged -= SurBlocRetouche;
-        _blocSuivi = SingleSelected;
+        // Le bloc visé (N26) : le bloc seul, ou le membre d'un groupe en saisie ou pris seul.
+        _blocSuivi = BlocVise;
         if (_blocSuivi is not null) _blocSuivi.PropertyChanged += SurBlocRetouche;
 
-        MargesInterieuresEgales = SingleSelected is TextFrame t &&
+        MargesInterieuresEgales = BlocVise is TextFrame t &&
                                   t.PaddingLeft == t.PaddingRight && t.PaddingLeft == t.PaddingTop &&
                                   t.PaddingLeft == t.PaddingBottom;
 
